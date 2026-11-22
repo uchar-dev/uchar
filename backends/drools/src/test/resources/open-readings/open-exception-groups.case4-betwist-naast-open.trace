@@ -1,0 +1,17 @@
+reading /rules/prioritizedDefaults/0/defaults/0/exceptions/members/0/defaults/0 "V1" 0 CharacteristicCheck true
+reading /rules/prioritizedDefaults/0/defaults/0/exceptions/members/0/defaults/0 "V1" 1 Literal 0
+reading /rules/prioritizedDefaults/0/defaults/0/exceptions/members/0/defaults/0 "V1" HOLDS
+reading /rules/prioritizedDefaults/0/defaults/0/exceptions/members/1/defaults/0 "V1" 0 CharacteristicCheck undetermined open "V1" "beschadigd"
+reading /rules/prioritizedDefaults/0/defaults/0/exceptions/members/1/defaults/0 "V1" 1 Literal unreached
+reading /rules/prioritizedDefaults/0/defaults/0/exceptions/members/1/defaults/0 "V1" OPEN
+reading /rules/prioritizedDefaults/0/defaults/1 "V1" 0 Compound true
+reading /rules/prioritizedDefaults/0/defaults/1 "V1" 1 Binary 100
+reading /rules/prioritizedDefaults/0/defaults/1 "V1" 2 AttributeReference 50
+reading /rules/prioritizedDefaults/0/defaults/1 "V1" 3 Literal 2
+reading /rules/prioritizedDefaults/0/defaults/1 "V1" DISPLACED
+state attribute "V1" "gewicht" 50
+state attribute "V1" "vindloon" open
+state characteristic "V1" "beschadigd" open
+state characteristic "V1" "betwist"
+state characteristic "V1" "verzekerd" open
+state object "V1" "Vondst"

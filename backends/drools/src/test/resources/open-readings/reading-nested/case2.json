@@ -1,0 +1,418 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S11",
+        "objectType": "Stempel",
+        "attributes": {
+          "inkt": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K9",
+        "objectType": "Keuring",
+        "attributes": {
+          "score": {
+            "number": "6"
+          },
+          "deling": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "stempels": [
+            "S15"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S3",
+        "objectType": "Stempel",
+        "attributes": {
+          "inkt": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K5",
+        "objectType": "Keuring",
+        "attributes": {
+          "score": {
+            "number": "6"
+          }
+        },
+        "roles": {
+          "stempels": [
+            "S8",
+            "S9"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S8",
+        "objectType": "Stempel",
+        "attributes": {
+          "inkt": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S10",
+        "objectType": "Stempel",
+        "attributes": {
+          "inkt": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "8"
+          }
+        },
+        "roles": {
+          "keuringen": [
+            "K8",
+            "K9"
+          ]
+        },
+        "characteristics": [
+          "gemerkt"
+        ]
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V1",
+            "V2",
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K6",
+        "objectType": "Keuring",
+        "attributes": {
+          "score": {
+            "number": "8"
+          },
+          "deling": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "stempels": [
+            "S10",
+            "S11"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S4",
+        "objectType": "Stempel",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S14",
+        "objectType": "Stempel",
+        "attributes": {
+          "inkt": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K1",
+        "objectType": "Keuring",
+        "attributes": {
+          "score": {
+            "number": "8"
+          },
+          "deling": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "stempels": [
+            "S1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Stempel",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S5",
+        "objectType": "Stempel",
+        "attributes": {
+          "inkt": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S12",
+        "objectType": "Stempel",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K2",
+        "objectType": "Keuring",
+        "attributes": {
+          "score": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "stempels": [
+            "S2",
+            "S3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S15",
+        "objectType": "Stempel",
+        "attributes": {
+          "inkt": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Stempel",
+        "attributes": {
+          "inkt": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S9",
+        "objectType": "Stempel",
+        "attributes": {
+          "inkt": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "9"
+          }
+        },
+        "roles": {
+          "keuringen": [
+            "K6",
+            "K7"
+          ]
+        },
+        "characteristics": [],
+        "characteristicsAbsent": [
+          "gemerkt"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "keuringen": [
+            "K4",
+            "K5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S7",
+        "objectType": "Stempel",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S6",
+        "objectType": "Stempel",
+        "attributes": {
+          "inkt": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K7",
+        "objectType": "Keuring",
+        "attributes": {
+          "deling": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "stempels": [
+            "S12"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K3",
+        "objectType": "Keuring",
+        "attributes": {
+          "score": {
+            "number": "1"
+          },
+          "deling": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "stempels": [
+            "S4",
+            "S5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K4",
+        "objectType": "Keuring",
+        "attributes": {
+          "score": {
+            "number": "6"
+          },
+          "deling": {
+            "number": "0"
+          }
+        },
+        "roles": {
+          "stempels": [
+            "S6",
+            "S7"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "8"
+          }
+        },
+        "roles": {
+          "keuringen": [
+            "K1",
+            "K2",
+            "K3"
+          ]
+        },
+        "characteristics": [],
+        "characteristicsAbsent": [
+          "gemerkt"
+        ]
+      },
+      {
+        "label": "K8",
+        "objectType": "Keuring",
+        "attributes": {
+          "score": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "stempels": [
+            "S13",
+            "S14"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S13",
+        "objectType": "Stempel",
+        "attributes": {
+          "inkt": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "keurgrens": {
+        "number": "4"
+      }
+    }
+  },
+  "expected": [
+    {
+      "label": "J1",
+      "kind": "attributeEmpty",
+      "attribute": "verenigd aantal"
+    }
+  ]
+}

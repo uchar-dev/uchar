@@ -1,0 +1,45 @@
+reading /rules/rules/0/versions/0 "V1" 0 Binary 100
+reading /rules/rules/0/versions/0 "V1" 1 AttributeReference 100
+reading /rules/rules/0/versions/0 "V1" 2 AttributeReference empty on none
+reading /rules/rules/0/versions/0 "V1" HOLDS
+reading /rules/rules/0/versions/0 "V2" 0 Binary undetermined open "J1" "bonus"
+reading /rules/rules/0/versions/0 "V2" 1 AttributeReference 100
+reading /rules/rules/0/versions/0 "V2" 2 AttributeReference undetermined open "J1" "bonus"
+reading /rules/rules/0/versions/0 "V2" OPEN
+reading /rules/rules/0/versions/0 "V3" 0 Binary 120
+reading /rules/rules/0/versions/0 "V3" 1 AttributeReference 100
+reading /rules/rules/0/versions/0 "V3" 2 AttributeReference 20 on "J2"
+reading /rules/rules/0/versions/0 "V3" HOLDS
+reading /rules/rules/1/versions/0 "V1" 0 CharacteristicCheck false on none
+reading /rules/rules/1/versions/0 "V1" FAILS
+reading /rules/rules/1/versions/0 "V2" 0 CharacteristicCheck undetermined open "J1" "ervaren"
+reading /rules/rules/1/versions/0 "V2" OPEN
+reading /rules/rules/1/versions/0 "V3" 0 CharacteristicCheck true on "J2"
+reading /rules/rules/1/versions/0 "V3" HOLDS
+reading /rules/rules/2/versions/0 "V1" 0 RoleMembership false
+reading /rules/rules/2/versions/0 "V1" FAILS
+reading /rules/rules/2/versions/0 "V2" 0 RoleMembership true
+reading /rules/rules/2/versions/0 "V2" HOLDS
+reading /rules/rules/2/versions/0 "V3" 0 RoleMembership true
+reading /rules/rules/2/versions/0 "V3" HOLDS
+state attribute "J1" "bonus" open
+state attribute "J2" "bonus" 20
+state attribute "V1" "vindpremie" 100
+state attribute "V1" "waarde" 100
+state attribute "V2" "vindpremie" open
+state attribute "V2" "waarde" 100
+state attribute "V3" "vindpremie" 120
+state attribute "V3" "waarde" 100
+state characteristic "J1" "ervaren" open
+state characteristic "J2" "ervaren"
+state characteristic "V2" "deskundig" open
+state characteristic "V2" "toegewezen"
+state characteristic "V3" "deskundig"
+state characteristic "V3" "toegewezen"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state link "vinding" "vinder" "J2" "vondst" "V3"
+state object "J1" "Jutter"
+state object "J2" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"
+state object "V3" "Vondst"

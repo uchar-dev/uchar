@@ -1,0 +1,14 @@
+reading /rules/rules/0/versions/0 "V1" 0 Compound false
+reading /rules/rules/0/versions/0 "V1" 1 Comparison undetermined open "V1" "gewicht"
+reading /rules/rules/0/versions/0 "V1" 2 AttributeReference undetermined open "V1" "gewicht"
+reading /rules/rules/0/versions/0 "V1" 3 Literal unreached
+reading /rules/rules/0/versions/0 "V1" 4 Comparison undetermined open "V1" "gewicht"
+reading /rules/rules/0/versions/0 "V1" 5 ContextValue fault EF-011
+reading /rules/rules/0/versions/0 "V1" 6 Literal unreached
+reading /rules/rules/0/versions/0 "V1" 7 Comparison false
+reading /rules/rules/0/versions/0 "V1" 8 AttributeReference 50
+reading /rules/rules/0/versions/0 "V1" 9 Literal 1000
+reading /rules/rules/0/versions/0 "V1" FAILS
+state attribute "V1" "gewicht" open
+state attribute "V1" "taxatie" 50
+state object "V1" "Vondst"

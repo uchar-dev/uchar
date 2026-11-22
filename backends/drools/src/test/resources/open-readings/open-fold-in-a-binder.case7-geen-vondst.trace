@@ -1,0 +1,39 @@
+reading /rules/rules/0/versions/0 "J1" 0 Let empty
+reading /rules/rules/0/versions/0 "J1" 1 Aggregation empty
+reading /rules/rules/0/versions/0 "J1" 6 Binary empty
+reading /rules/rules/0/versions/0 "J1" 7 BinderRef empty
+reading /rules/rules/0/versions/0 "J1" 8 Literal unreached
+reading /rules/rules/0/versions/0 "J1" HOLDS
+reading /rules/rules/1/versions/0 "J1" 0 Let empty
+reading /rules/rules/1/versions/0 "J1" 1 Aggregation empty
+reading /rules/rules/1/versions/0 "J1" 3 Binary empty
+reading /rules/rules/1/versions/0 "J1" 4 BinderRef empty
+reading /rules/rules/1/versions/0 "J1" 5 BinderRef unreached
+reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 Let empty
+reading /rules/rules/2/versions/0 "J1" 1 Aggregation 0
+reading /rules/rules/2/versions/0 "J1" 3 Binary empty
+reading /rules/rules/2/versions/0 "J1" 4 AttributeReference 20
+reading /rules/rules/2/versions/0 "J1" 5 BinderRef 0
+reading /rules/rules/2/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 Comparison false
+reading /rules/rules/3/versions/0 "J1" 1 Binary empty
+reading /rules/rules/3/versions/0 "J1" 2 AttributeReference 20
+reading /rules/rules/3/versions/0 "J1" 3 Aggregation 0
+reading /rules/rules/3/versions/0 "J1" 5 Literal 5
+reading /rules/rules/3/versions/0 "J1" FAILS
+reading /rules/rules/4/versions/0 "J1" 0 Compound false
+reading /rules/rules/4/versions/0 "J1" 1 Comparison true
+reading /rules/rules/4/versions/0 "J1" 2 Aggregation 0
+reading /rules/rules/4/versions/0 "J1" 4 Literal 2
+reading /rules/rules/4/versions/0 "J1" 5 Comparison false
+reading /rules/rules/4/versions/0 "J1" 6 AttributeReference 20
+reading /rules/rules/4/versions/0 "J1" 7 Literal 5
+reading /rules/rules/4/versions/0 "J1" FAILS
+reading /rules/rules/5/versions/0 "J1" 0 CharacteristicCheck true
+reading /rules/rules/5/versions/0 "J1" HOLDS
+state attribute "J1" "gift" 20
+state channel "giftdeel" "J1" EF-005
+state channel "gul" "J1" EF-005
+state characteristic "J1" "krap"
+state object "J1" "Jutter"

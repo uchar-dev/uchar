@@ -194,7 +194,8 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
 
     /** The members of {@code bean}, of type {@code ot}, that hold a value, into {@code out}: the derived value where a rule
      *  derived one, the bean field's input elsewhere, each with what its bean field holds; and those of {@code open}, which
-     *  hold none, into {@code opened}. A member without a bean field of its own has no value here. */
+     *  hold none, into {@code opened}. A member without a bean field of its own has no value here, and its input, which no
+     *  case gives, can be open. */
     private static void members(Object bean, ObjectType ot, List<FactModelGenerator.Displacement> displacements,
                                 Map<Object, Map<String, Object>> derived,
                                 Map<Object, Map<String, Map<List<String>, Object>>> derivedCells,
@@ -242,8 +243,11 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
                 if (v != null) out.add(new Member(false, name, null, v, unit, mine.containsKey(key), given(field)));
             }
             for (String name : t.characteristics) {
-                if (FactModelGenerator.displacedMember(displacements, ot, name, true) != null) continue;
                 String key = Namen.norm(name);
+                if (FactModelGenerator.displacedMember(displacements, ot, name, true) != null) {
+                    if (openCharacteristics.contains(key)) opened.add(new Open(true, name, null));
+                    continue;
+                }
                 if (t.characteristicGranularity.containsKey(name)) {
                     Object field = CaseRunner.invokeGetter(bean, Namen.getter(name));
                     Object v = mine.containsKey(key) ? mine.get(key) : field;

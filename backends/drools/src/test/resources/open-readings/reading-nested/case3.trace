@@ -1,0 +1,241 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation 1 contributors ["V1" 1 reached]
+reading /rules/rules/0/versions/0 "J1" HOLDS
+reading /rules/rules/0/versions/0 "J2" 0 Aggregation 4 contributors ["V3" 4 reached]
+reading /rules/rules/0/versions/0 "J2" HOLDS
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/1/versions/0 "J2" 0 Aggregation 1 contributors ["V3" empty reached]
+reading /rules/rules/1/versions/0 "J2" HOLDS
+reading /rules/rules/10/versions/0 "J1" 0 Aggregation undetermined open "K5" "score"
+reading /rules/rules/10/versions/0 "J1" OPEN
+reading /rules/rules/10/versions/0 "J2" 0 Aggregation undetermined open "K9" "score"
+reading /rules/rules/10/versions/0 "J2" OPEN
+reading /rules/rules/11/versions/0 "J1" 0 Comparison undetermined open "K5" "score"
+reading /rules/rules/11/versions/0 "J1" 1 Aggregation undetermined open "K5" "score"
+reading /rules/rules/11/versions/0 "J1" 12 Literal unreached
+reading /rules/rules/11/versions/0 "J1" OPEN
+reading /rules/rules/11/versions/0 "J2" 0 Comparison undetermined open "K9" "score"
+reading /rules/rules/11/versions/0 "J2" 1 Aggregation undetermined open "K9" "score"
+reading /rules/rules/11/versions/0 "J2" 12 Literal unreached
+reading /rules/rules/11/versions/0 "J2" OPEN
+reading /rules/rules/12/versions/0 "J1" 0 Aggregation undetermined open "K6" "score"
+reading /rules/rules/12/versions/0 "J1" OPEN
+reading /rules/rules/12/versions/0 "J2" 0 Aggregation undetermined open "K11" "score"
+reading /rules/rules/12/versions/0 "J2" OPEN
+reading /rules/rules/13/versions/0 "J1" 0 Aggregation undetermined open "K6" "score"
+reading /rules/rules/13/versions/0 "J1" OPEN
+reading /rules/rules/13/versions/0 "J2" 0 Aggregation undetermined open "K11" "score"
+reading /rules/rules/13/versions/0 "J2" OPEN
+reading /rules/rules/14/versions/0 "J1" 0 Aggregation undetermined open "K6" "score"
+reading /rules/rules/14/versions/0 "J1" OPEN
+reading /rules/rules/14/versions/0 "J2" 0 Aggregation undetermined open "K11" "score"
+reading /rules/rules/14/versions/0 "J2" OPEN
+reading /rules/rules/15/versions/0 "J1" 0 Comparison undetermined open "K6" "score"
+reading /rules/rules/15/versions/0 "J1" 1 Aggregation undetermined open "K6" "score"
+reading /rules/rules/15/versions/0 "J1" 13 Literal unreached
+reading /rules/rules/15/versions/0 "J1" OPEN
+reading /rules/rules/15/versions/0 "J2" 0 Comparison undetermined open "K11" "score"
+reading /rules/rules/15/versions/0 "J2" 1 Aggregation undetermined open "K11" "score"
+reading /rules/rules/15/versions/0 "J2" 13 Literal unreached
+reading /rules/rules/15/versions/0 "J2" OPEN
+reading /rules/rules/16/versions/0 "J1" 0 Aggregation undetermined open "K5" "score"
+reading /rules/rules/16/versions/0 "J1" OPEN
+reading /rules/rules/16/versions/0 "J2" 0 Aggregation undetermined open "K9" "score"
+reading /rules/rules/16/versions/0 "J2" OPEN
+reading /rules/rules/2/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/2/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J2" 0 Aggregation 1 contributors ["V3" empty reached]
+reading /rules/rules/2/versions/0 "J2" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 Comparison true closure
+reading /rules/rules/3/versions/0 "J1" 1 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/3/versions/0 "J1" 8 Literal 0
+reading /rules/rules/3/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J2" 0 Comparison true closure
+reading /rules/rules/3/versions/0 "J2" 1 Aggregation 1 contributors ["V3" empty reached]
+reading /rules/rules/3/versions/0 "J2" 8 Literal 0
+reading /rules/rules/3/versions/0 "J2" HOLDS
+reading /rules/rules/4/versions/0 "J1" 0 Aggregation undetermined open "K5" "score"
+reading /rules/rules/4/versions/0 "J1" OPEN
+reading /rules/rules/4/versions/0 "J2" 0 Aggregation undetermined open "K9" "score"
+reading /rules/rules/4/versions/0 "J2" OPEN
+reading /rules/rules/5/versions/0 "J1" 0 Aggregation undetermined open "K5" "score"
+reading /rules/rules/5/versions/0 "J1" OPEN
+reading /rules/rules/5/versions/0 "J2" 0 Aggregation undetermined open "K9" "score"
+reading /rules/rules/5/versions/0 "J2" OPEN
+reading /rules/rules/6/versions/0 "J1" 0 Aggregation undetermined open "K5" "score"
+reading /rules/rules/6/versions/0 "J1" OPEN
+reading /rules/rules/6/versions/0 "J2" 0 Aggregation undetermined open "K9" "score"
+reading /rules/rules/6/versions/0 "J2" OPEN
+reading /rules/rules/7/versions/0 "J1" 0 Comparison undetermined open "K5" "score"
+reading /rules/rules/7/versions/0 "J1" 1 Aggregation undetermined open "K5" "score"
+reading /rules/rules/7/versions/0 "J1" 8 Literal unreached
+reading /rules/rules/7/versions/0 "J1" OPEN
+reading /rules/rules/7/versions/0 "J2" 0 Comparison undetermined open "K9" "score"
+reading /rules/rules/7/versions/0 "J2" 1 Aggregation undetermined open "K9" "score"
+reading /rules/rules/7/versions/0 "J2" 8 Literal unreached
+reading /rules/rules/7/versions/0 "J2" OPEN
+reading /rules/rules/8/versions/0 "J1" 0 Aggregation undetermined open "K5" "score"
+reading /rules/rules/8/versions/0 "J1" OPEN
+reading /rules/rules/8/versions/0 "J2" 0 Aggregation undetermined open "K9" "score"
+reading /rules/rules/8/versions/0 "J2" OPEN
+reading /rules/rules/9/versions/0 "J1" 0 Aggregation undetermined open "K5" "score"
+reading /rules/rules/9/versions/0 "J1" OPEN
+reading /rules/rules/9/versions/0 "J2" 0 Aggregation undetermined open "K9" "score"
+reading /rules/rules/9/versions/0 "J2" OPEN
+state attribute "J1" "aantal kdiep" open
+state attribute "J1" "aantal kgevuld" 1
+state attribute "J1" "aantal kgrens" open
+state attribute "J1" "aantal ksom" open
+state attribute "J1" "gewicht kdiep" open
+state attribute "J1" "gewicht kgevuld" 1
+state attribute "J1" "gewicht kgrens" open
+state attribute "J1" "gewicht ksom" open
+state attribute "J1" "verenigd aantal" open
+state attribute "J1" "volle kdiep" open
+state attribute "J1" "volle kgevuld" 1
+state attribute "J1" "volle kgrens" open
+state attribute "J1" "volle ksom" open
+state attribute "J2" "aantal kdiep" open
+state attribute "J2" "aantal kgevuld" 1
+state attribute "J2" "aantal kgrens" open
+state attribute "J2" "aantal ksom" open
+state attribute "J2" "gewicht kdiep" open
+state attribute "J2" "gewicht kgevuld" 4
+state attribute "J2" "gewicht kgrens" open
+state attribute "J2" "gewicht ksom" open
+state attribute "J2" "verenigd aantal" open
+state attribute "J2" "volle kdiep" open
+state attribute "J2" "volle kgevuld" 1
+state attribute "J2" "volle kgrens" open
+state attribute "J2" "volle ksom" open
+state attribute "K1" "deling" 0
+state attribute "K1" "score" 12
+state attribute "K10" "deling" 1
+state attribute "K10" "score" 9
+state attribute "K11" "deling" open
+state attribute "K11" "score" open
+state attribute "K2" "deling" 3
+state attribute "K2" "score" 12
+state attribute "K3" "deling" 1
+state attribute "K3" "score" 3
+state attribute "K4" "deling" 2
+state attribute "K4" "score" 7
+state attribute "K5" "deling" 2
+state attribute "K5" "score" open
+state attribute "K6" "deling" open
+state attribute "K6" "score" open
+state attribute "K7" "deling" 2
+state attribute "K7" "score" 5
+state attribute "K8" "deling" 0
+state attribute "K8" "score" 5
+state attribute "K9" "deling" 3
+state attribute "K9" "score" open
+state attribute "S1" "inkt" 1
+state attribute "S10" "inkt" open
+state attribute "S11" "inkt" open
+state attribute "S12" "inkt" 2
+state attribute "S2" "inkt" 3
+state attribute "S3" "inkt" open
+state attribute "S4" "inkt" 0
+state attribute "S5" "inkt" 1
+state attribute "S6" "inkt" open
+state attribute "S7" "inkt" 1
+state attribute "S8" "inkt" open
+state attribute "S9" "inkt" 0
+state attribute "V1" "gewicht" 1
+state attribute "V2" "gewicht" 6
+state attribute "V3" "gewicht" 4
+state attribute "V4" "gewicht" open
+state characteristic "J1" "rijk kdiep" open
+state characteristic "J1" "rijk kgevuld"
+state characteristic "J1" "rijk kgrens" open
+state characteristic "J1" "rijk ksom" open
+state characteristic "J2" "rijk kdiep" open
+state characteristic "J2" "rijk kgevuld"
+state characteristic "J2" "rijk kgrens" open
+state characteristic "J2" "rijk ksom" open
+state characteristic "K1" "gestempeld" open
+state characteristic "K10" "gestempeld" open
+state characteristic "K11" "gestempeld" open
+state characteristic "K2" "gestempeld" open
+state characteristic "K3" "gestempeld" open
+state characteristic "K4" "gestempeld" open
+state characteristic "K5" "gestempeld" open
+state characteristic "K6" "gestempeld" open
+state characteristic "K7" "gestempeld" open
+state characteristic "K8" "gestempeld" open
+state characteristic "K9" "gestempeld" open
+state characteristic "V1" "kdiep" open
+state characteristic "V1" "kgevuld" open
+state characteristic "V1" "kgrens" open
+state characteristic "V1" "ksom" open
+state characteristic "V2" "kdiep" open
+state characteristic "V2" "kgevuld" open
+state characteristic "V2" "kgrens" open
+state characteristic "V2" "ksom" open
+state characteristic "V3" "gemerkt"
+state characteristic "V3" "kdiep" open
+state characteristic "V3" "kgevuld" open
+state characteristic "V3" "kgrens" open
+state characteristic "V3" "ksom" open
+state characteristic "V4" "gemerkt"
+state characteristic "V4" "kdiep" open
+state characteristic "V4" "kgevuld" open
+state characteristic "V4" "kgrens" open
+state characteristic "V4" "ksom" open
+state link "keurgang" "gekeurde" "V1" "keuring" "K1"
+state link "keurgang" "gekeurde" "V1" "keuring" "K2"
+state link "keurgang" "gekeurde" "V1" "keuring" "K3"
+state link "keurgang" "gekeurde" "V2" "keuring" "K4"
+state link "keurgang" "gekeurde" "V2" "keuring" "K5"
+state link "keurgang" "gekeurde" "V2" "keuring" "K6"
+state link "keurgang" "gekeurde" "V3" "keuring" "K7"
+state link "keurgang" "gekeurde" "V3" "keuring" "K8"
+state link "keurgang" "gekeurde" "V3" "keuring" "K9"
+state link "keurgang" "gekeurde" "V4" "keuring" "K10"
+state link "keurgang" "gekeurde" "V4" "keuring" "K11"
+state link "stempelgang" "gestempelde" "K10" "stempel" "S11"
+state link "stempelgang" "gestempelde" "K11" "stempel" "S12"
+state link "stempelgang" "gestempelde" "K2" "stempel" "S1"
+state link "stempelgang" "gestempelde" "K3" "stempel" "S2"
+state link "stempelgang" "gestempelde" "K4" "stempel" "S3"
+state link "stempelgang" "gestempelde" "K4" "stempel" "S4"
+state link "stempelgang" "gestempelde" "K6" "stempel" "S5"
+state link "stempelgang" "gestempelde" "K6" "stempel" "S6"
+state link "stempelgang" "gestempelde" "K7" "stempel" "S7"
+state link "stempelgang" "gestempelde" "K7" "stempel" "S8"
+state link "stempelgang" "gestempelde" "K8" "stempel" "S10"
+state link "stempelgang" "gestempelde" "K8" "stempel" "S9"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state link "vinding" "vinder" "J2" "vondst" "V3"
+state link "vinding" "vinder" "J2" "vondst" "V4"
+state object "J1" "Jutter"
+state object "J2" "Jutter"
+state object "K1" "Keuring"
+state object "K10" "Keuring"
+state object "K11" "Keuring"
+state object "K2" "Keuring"
+state object "K3" "Keuring"
+state object "K4" "Keuring"
+state object "K5" "Keuring"
+state object "K6" "Keuring"
+state object "K7" "Keuring"
+state object "K8" "Keuring"
+state object "K9" "Keuring"
+state object "S1" "Stempel"
+state object "S10" "Stempel"
+state object "S11" "Stempel"
+state object "S12" "Stempel"
+state object "S2" "Stempel"
+state object "S3" "Stempel"
+state object "S4" "Stempel"
+state object "S5" "Stempel"
+state object "S6" "Stempel"
+state object "S7" "Stempel"
+state object "S8" "Stempel"
+state object "S9" "Stempel"
+state object "V1" "Vondst"
+state object "V2" "Vondst"
+state object "V3" "Vondst"
+state object "V4" "Vondst"

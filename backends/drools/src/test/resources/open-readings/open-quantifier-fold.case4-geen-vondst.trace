@@ -1,0 +1,35 @@
+reading /rules/consistencies/0/versions/0 "J1" 0 QuantifierFold false
+reading /rules/consistencies/0/versions/0 "J1" FAILS
+reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/0/versions/0 "J1" HOLDS
+reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/10/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/10/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold false
+reading /rules/rules/2/versions/0 "J1" FAILS
+reading /rules/rules/3/versions/0 "J1" 0 QuantifierFold false
+reading /rules/rules/3/versions/0 "J1" FAILS
+reading /rules/rules/4/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/4/versions/0 "J1" HOLDS
+reading /rules/rules/5/versions/0 "J1" 0 QuantifierFold false
+reading /rules/rules/5/versions/0 "J1" FAILS
+reading /rules/rules/6/versions/0 "J1" 0 QuantifierFold false
+reading /rules/rules/6/versions/0 "J1" FAILS
+reading /rules/rules/7/versions/0 "J1" 0 CharacteristicCheck true
+reading /rules/rules/7/versions/0 "J1" 1 Literal 5
+reading /rules/rules/7/versions/0 "J1" HOLDS
+reading /rules/rules/8/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/8/versions/0 "J1" HOLDS
+reading /rules/rules/9/versions/0 "J1" 0 Compound false
+reading /rules/rules/9/versions/0 "J1" 1 QuantifierFold false
+reading /rules/rules/9/versions/0 "J1" 5 QuantifierFold unreached
+reading /rules/rules/9/versions/0 "J1" FAILS
+state attribute "J1" "toeslag" 5
+state channel "zwaarte" "J1" EF-025
+state characteristic "J1" "gewogen"
+state characteristic "J1" "hoogstens"
+state characteristic "J1" "keurder"
+state characteristic "J1" "kundig"
+state characteristic "J1" "licht"
+state object "J1" "Jutter"

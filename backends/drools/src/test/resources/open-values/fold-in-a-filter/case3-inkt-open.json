@@ -1,0 +1,123 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "K1",
+        "objectType": "Keuring",
+        "attributes": {
+          "score": {
+            "number": "5"
+          }
+        },
+        "roles": {
+          "stempels": [
+            "S1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K2",
+        "objectType": "Keuring",
+        "attributes": {
+          "score": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K3",
+        "objectType": "Keuring",
+        "attributes": {
+          "score": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "keuringen": [
+            "K1",
+            "K2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "keuringen": [
+            "K3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Stempel",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "keurgrens": {
+        "number": "4"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "gewicht kdiep"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal kdiep",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "gewicht ksom",
+      "value": {
+        "number": "3"
+      }
+    }
+  ]
+}

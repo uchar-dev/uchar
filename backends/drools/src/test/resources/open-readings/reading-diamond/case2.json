@@ -1,0 +1,138 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": "2025-03-01",
+  "input": {
+    "instances": [
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {
+          "leeftijd": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "club": [
+            "C2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "leeftijd": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "club": [
+            "C2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "C2",
+        "objectType": "Club",
+        "attributes": {
+          "contributie": {
+            "number": "12"
+          },
+          "ledentelling": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "leeftijd": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "C3",
+        "objectType": "Club",
+        "attributes": {
+          "contributie": {
+            "number": "0"
+          },
+          "ledentelling": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "C1",
+        "objectType": "Club",
+        "attributes": {
+          "contributie": {
+            "number": "20"
+          },
+          "ledentelling": {
+            "number": "1500"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "leeftijd": {
+            "number": "12"
+          }
+        },
+        "roles": {
+          "club": [
+            "C3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Strand",
+        "attributes": {},
+        "roles": {
+          "jutters": [
+            "J4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Strand",
+        "attributes": {},
+        "roles": {
+          "jutters": [
+            "J1",
+            "J2",
+            "J3"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "totale contributie"
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation 3 contributors ["V1" 3 reached]
+reading /rules/rules/0/versions/0 "J1" HOLDS
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/10/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/10/versions/0 "J1" HOLDS
+reading /rules/rules/11/versions/0 "J1" 0 Comparison true
+reading /rules/rules/11/versions/0 "J1" 1 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/11/versions/0 "J1" 12 Literal 0
+reading /rules/rules/11/versions/0 "J1" HOLDS
+reading /rules/rules/12/versions/0 "J1" 0 Aggregation empty
+reading /rules/rules/12/versions/0 "J1" OPEN
+reading /rules/rules/13/versions/0 "J1" 0 Aggregation 0
+reading /rules/rules/13/versions/0 "J1" HOLDS
+reading /rules/rules/14/versions/0 "J1" 0 Aggregation 0
+reading /rules/rules/14/versions/0 "J1" HOLDS
+reading /rules/rules/15/versions/0 "J1" 0 Comparison false closure
+reading /rules/rules/15/versions/0 "J1" 1 Aggregation 0
+reading /rules/rules/15/versions/0 "J1" 13 Literal 0
+reading /rules/rules/15/versions/0 "J1" OPEN
+reading /rules/rules/16/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/16/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/2/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 Comparison true
+reading /rules/rules/3/versions/0 "J1" 1 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/3/versions/0 "J1" 8 Literal 0
+reading /rules/rules/3/versions/0 "J1" HOLDS
+reading /rules/rules/4/versions/0 "J1" 0 Aggregation 3 contributors ["V1" 3 reached]
+reading /rules/rules/4/versions/0 "J1" HOLDS
+reading /rules/rules/5/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/5/versions/0 "J1" HOLDS
+reading /rules/rules/6/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/6/versions/0 "J1" HOLDS
+reading /rules/rules/7/versions/0 "J1" 0 Comparison true
+reading /rules/rules/7/versions/0 "J1" 1 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/7/versions/0 "J1" 8 Literal 0
+reading /rules/rules/7/versions/0 "J1" HOLDS
+reading /rules/rules/8/versions/0 "J1" 0 Aggregation 3 contributors ["V1" 3 reached]
+reading /rules/rules/8/versions/0 "J1" HOLDS
+reading /rules/rules/9/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/9/versions/0 "J1" HOLDS
+state attribute "J1" "aantal kdiep" 0
+state attribute "J1" "aantal kgevuld" 1
+state attribute "J1" "aantal kgrens" 1
+state attribute "J1" "aantal ksom" 1
+state attribute "J1" "gewicht kdiep" open
+state attribute "J1" "gewicht kgevuld" 3
+state attribute "J1" "gewicht kgrens" 3
+state attribute "J1" "gewicht ksom" 3
+state attribute "J1" "verenigd aantal" 1
+state attribute "J1" "volle kdiep" 0
+state attribute "J1" "volle kgevuld" 1
+state attribute "J1" "volle kgrens" 1
+state attribute "J1" "volle ksom" 1
+state attribute "K1" "deling" open
+state attribute "K1" "score" 5
+state attribute "K2" "deling" open
+state attribute "K2" "score" 7
+state attribute "K3" "deling" open
+state attribute "K3" "score" 2
+state attribute "S1" "inkt" open
+state attribute "V1" "gewicht" 3
+state attribute "V2" "gewicht" 4
+state characteristic "J1" "rijk kdiep" open
+state characteristic "J1" "rijk kgevuld"
+state characteristic "J1" "rijk kgrens"
+state characteristic "J1" "rijk ksom"
+state characteristic "K1" "gestempeld" open
+state characteristic "K2" "gestempeld" open
+state characteristic "K3" "gestempeld" open
+state characteristic "V1" "gemerkt" open
+state characteristic "V1" "kdiep" open
+state characteristic "V1" "kgevuld" open
+state characteristic "V1" "kgrens" open
+state characteristic "V1" "ksom" open
+state characteristic "V2" "gemerkt" open
+state characteristic "V2" "kdiep" open
+state characteristic "V2" "kgevuld" open
+state characteristic "V2" "kgrens" open
+state characteristic "V2" "ksom" open
+state link "keurgang" "gekeurde" "V1" "keuring" "K1"
+state link "keurgang" "gekeurde" "V1" "keuring" "K2"
+state link "keurgang" "gekeurde" "V2" "keuring" "K3"
+state link "stempelgang" "gestempelde" "K1" "stempel" "S1"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state object "J1" "Jutter"
+state object "K1" "Keuring"
+state object "K2" "Keuring"
+state object "K3" "Keuring"
+state object "S1" "Stempel"
+state object "V1" "Vondst"
+state object "V2" "Vondst"

@@ -1,0 +1,117 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "schade": {
+            "number": "12"
+          },
+          "bonus": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "2"
+          },
+          "schade": {
+            "number": "1"
+          },
+          "bonus": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "schade": {
+            "number": "12"
+          },
+          "deling": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V4",
+            "V5"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "2"
+          },
+          "taxatie": {
+            "number": "1500"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V1",
+            "V2",
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "2"
+          },
+          "deling": {
+            "number": "0"
+          },
+          "bonus": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "ervaring"
+    }
+  ]
+}

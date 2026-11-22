@@ -1,0 +1,1401 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "ervaring",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "proefa",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "proefb",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "proefc",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "plural": "gewichten"
+          },
+          {
+            "node": "Attribute",
+            "name": "taxatie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "schade",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "deling",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bonus",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "complete": true
+          },
+          {
+            "node": "Attribute",
+            "name": "loon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "kortloon",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "kenbaar",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "deelbaar",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "proefd",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "proefe",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "proeff",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "proefg",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vinding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "proefa",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "proefa",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is proefa"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "QuantifierFold",
+                  "quantifier": "all",
+                  "elementType": "Vondst",
+                  "test": {
+                    "node": "Compound",
+                    "quantifier": "atLeast",
+                    "threshold": 1,
+                    "parts": [
+                      {
+                        "node": "Predicate",
+                        "kind": "empty",
+                        "operand": {
+                          "node": "AttributeReference",
+                          "attribute": "gewicht",
+                          "subjectType": "Vondst",
+                          "source": {
+                            "snippet": "zijn gewicht"
+                          }
+                        },
+                        "negated": false,
+                        "digits": 0,
+                        "source": {
+                          "snippet": "zijn gewicht is leeg"
+                        }
+                      },
+                      {
+                        "node": "Comparison",
+                        "op": "greater",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "taxatie",
+                          "subjectType": "Vondst",
+                          "source": {
+                            "snippet": "zijn taxatie"
+                          }
+                        },
+                        "right": {
+                          "node": "Literal",
+                          "value": {
+                            "number": "10"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "unspecified"
+                          },
+                          "source": {
+                            "snippet": "10"
+                          }
+                        },
+                        "source": {
+                          "snippet": "zijn taxatie is groter dan 10"
+                        }
+                      }
+                    ],
+                    "source": {
+                      "snippet": "er aan ten minste één van de volgende voorwaarden wordt voldaan: - zijn gewicht is leeg - zijn taxatie is groter dan 10"
+                    }
+                  },
+                  "source": {
+                    "snippet": "alle vondsten van de Jutter zijn kenbaar"
+                  },
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "vinding",
+                    "role": "vondst"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "ContextValue",
+                    "name": "evaluationYear",
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "het Rekenjaar"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "2025"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "2025"
+                    }
+                  },
+                  "source": {
+                    "snippet": "het Rekenjaar is groter dan 2025"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ervaring",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn ervaring"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "5"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "5"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn ervaring is groter dan 5"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "er aan alle volgende voorwaarden wordt voldaan: - alle vondsten van de Jutter zijn kenbaar - het Rekenjaar is groter dan 2025 - zijn ervaring is groter dan 5"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "proefb",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "proefb",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is proefb"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "parts": [
+                {
+                  "node": "QuantifierFold",
+                  "quantifier": "all",
+                  "elementType": "Vondst",
+                  "test": {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "gewicht",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn gewicht"
+                        }
+                      },
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "deling",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn deling"
+                        }
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "zijn gewicht gedeeld door zijn deling"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "2"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "2"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn gewicht gedeeld door zijn deling groter is dan 2"
+                    }
+                  },
+                  "source": {
+                    "snippet": "alle vondsten van de Jutter zijn deelbaar"
+                  },
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "vinding",
+                    "role": "vondst"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "ContextValue",
+                    "name": "evaluationYear",
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "het Rekenjaar"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "2025"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "2025"
+                    }
+                  },
+                  "source": {
+                    "snippet": "het Rekenjaar is groter dan 2025"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ervaring",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn ervaring"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "5"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "5"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn ervaring is groter dan 5"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "er aan ten minste één van de volgende voorwaarden wordt voldaan: - alle vondsten van de Jutter zijn deelbaar - het Rekenjaar is groter dan 2025 - zijn ervaring is groter dan 5"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "proefc",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "proefc",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is proefc"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "ervaring",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn ervaring"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "5"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "5"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn ervaring is groter dan 5"
+                  }
+                },
+                {
+                  "node": "QuantifierFold",
+                  "quantifier": "all",
+                  "elementType": "Vondst",
+                  "test": {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Binary",
+                      "op": "dividedBy",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "gewicht",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn gewicht"
+                        }
+                      },
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "deling",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn deling"
+                        }
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": false,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "zijn gewicht gedeeld door zijn deling"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "2"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "2"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn gewicht gedeeld door zijn deling groter is dan 2"
+                    }
+                  },
+                  "source": {
+                    "snippet": "alle vondsten van de Jutter zijn deelbaar"
+                  },
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "vinding",
+                    "role": "vondst"
+                  }
+                },
+                {
+                  "node": "QuantifierFold",
+                  "quantifier": "all",
+                  "elementType": "Vondst",
+                  "test": {
+                    "node": "Compound",
+                    "quantifier": "atLeast",
+                    "threshold": 1,
+                    "parts": [
+                      {
+                        "node": "Predicate",
+                        "kind": "empty",
+                        "operand": {
+                          "node": "AttributeReference",
+                          "attribute": "gewicht",
+                          "subjectType": "Vondst",
+                          "source": {
+                            "snippet": "zijn gewicht"
+                          }
+                        },
+                        "negated": false,
+                        "digits": 0,
+                        "source": {
+                          "snippet": "zijn gewicht is leeg"
+                        }
+                      },
+                      {
+                        "node": "Comparison",
+                        "op": "greater",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "taxatie",
+                          "subjectType": "Vondst",
+                          "source": {
+                            "snippet": "zijn taxatie"
+                          }
+                        },
+                        "right": {
+                          "node": "Literal",
+                          "value": {
+                            "number": "10"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "unspecified"
+                          },
+                          "source": {
+                            "snippet": "10"
+                          }
+                        },
+                        "source": {
+                          "snippet": "zijn taxatie is groter dan 10"
+                        }
+                      }
+                    ],
+                    "source": {
+                      "snippet": "er aan ten minste één van de volgende voorwaarden wordt voldaan: - zijn gewicht is leeg - zijn taxatie is groter dan 10"
+                    }
+                  },
+                  "source": {
+                    "snippet": "alle vondsten van de Jutter zijn kenbaar"
+                  },
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "vinding",
+                    "role": "vondst"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "er aan alle volgende voorwaarden wordt voldaan: - zijn ervaring is groter dan 5 - alle vondsten van de Jutter zijn deelbaar - alle vondsten van de Jutter zijn kenbaar"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "proefd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "proefd",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is proefd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Compound",
+                  "quantifier": "none",
+                  "threshold": 0,
+                  "parts": [
+                    {
+                      "node": "Predicate",
+                      "kind": "empty",
+                      "operand": {
+                        "node": "AttributeReference",
+                        "attribute": "gewicht",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn gewicht"
+                        }
+                      },
+                      "negated": false,
+                      "digits": 0,
+                      "source": {
+                        "snippet": "zijn gewicht is leeg"
+                      }
+                    },
+                    {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "schade",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn schade"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "100"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "100"
+                        }
+                      },
+                      "source": {
+                        "snippet": "zijn schade is groter dan 100"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "hij voldoet aan geen van de volgende voorwaarden: .. zijn gewicht is leeg .. zijn schade is groter dan 100"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "taxatie",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn taxatie"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "10"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "10"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn taxatie is groter dan 10"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "er aan alle volgende voorwaarden wordt voldaan: - hij voldoet aan geen van de volgende voorwaarden: .. zijn gewicht is leeg .. zijn schade is groter dan 100 - zijn taxatie is groter dan 10"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "proefe",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "proefe",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is proefe"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn gewicht"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "10"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "10"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn gewicht is groter dan 10"
+                  }
+                },
+                {
+                  "node": "Compound",
+                  "quantifier": "atLeast",
+                  "threshold": 1,
+                  "parts": [
+                    {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "ContextValue",
+                        "name": "evaluationYear",
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "het Rekenjaar"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "2025"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "2025"
+                        }
+                      },
+                      "source": {
+                        "snippet": "het Rekenjaar is groter dan 2025"
+                      }
+                    },
+                    {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "taxatie",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn taxatie"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "1000"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "1000"
+                        }
+                      },
+                      "source": {
+                        "snippet": "zijn taxatie is groter dan 1000"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "hij voldoet aan ten minste één van de volgende voorwaarden: .. het Rekenjaar is groter dan 2025 .. zijn taxatie is groter dan 1000"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "schade",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn schade"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "1"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "1"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn schade is groter dan 1"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "er aan alle volgende voorwaarden wordt voldaan: - zijn gewicht is groter dan 10 - hij voldoet aan ten minste één van de volgende voorwaarden: .. het Rekenjaar is groter dan 2025 .. zijn taxatie is groter dan 1000 - zijn schade is groter dan 1"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "proeff",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "proeff",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is proeff"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 2,
+              "parts": [
+                {
+                  "node": "Predicate",
+                  "kind": "empty",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn gewicht"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn gewicht is leeg"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "Binary",
+                    "op": "dividedBy",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "taxatie",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn taxatie"
+                      }
+                    },
+                    "right": {
+                      "node": "AttributeReference",
+                      "attribute": "deling",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn deling"
+                      }
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": false,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "zijn taxatie gedeeld door zijn deling"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "3"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "3"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn taxatie gedeeld door zijn deling is groter dan 3"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "ContextValue",
+                    "name": "evaluationYear",
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "het Rekenjaar"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "2025"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "2025"
+                    }
+                  },
+                  "source": {
+                    "snippet": "het Rekenjaar is groter dan 2025"
+                  }
+                },
+                {
+                  "node": "Predicate",
+                  "kind": "filled",
+                  "operand": {
+                    "node": "AttributeReference",
+                    "attribute": "schade",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn schade"
+                    }
+                  },
+                  "negated": false,
+                  "digits": 0,
+                  "source": {
+                    "snippet": "zijn schade is gevuld"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "er aan ten minste twee van de volgende voorwaarden wordt voldaan: - zijn gewicht is leeg - zijn taxatie gedeeld door zijn deling is groter dan 3 - het Rekenjaar is groter dan 2025 - zijn schade is gevuld"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "proefg",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "proefg",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is proefg"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "empty",
+              "operand": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn gewicht"
+                  }
+                },
+                "right": {
+                  "node": "AttributeReference",
+                  "attribute": "deling",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "zijn deling"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn gewicht gedeeld door zijn deling"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn gewicht gedeeld door zijn deling leeg is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "loon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "loon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het loon van een Vondst"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "bonus",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "zijn bonus"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "empty",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn gewicht"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn gewicht leeg is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "kortloon",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "kortloon",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Het kortloon van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "dividedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "taxatie",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn taxatie"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "deling",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn deling"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn taxatie gedeeld door zijn deling"
+              }
+            },
+            "condition": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "schade",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn schade"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn schade gevuld is"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

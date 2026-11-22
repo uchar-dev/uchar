@@ -1,0 +1,34 @@
+reading /rules/prioritizedDefaults/0/defaults/0 "V1" 0 CharacteristicCheck undetermined open "V1" "betwist"
+reading /rules/prioritizedDefaults/0/defaults/0 "V1" 1 Literal unreached
+reading /rules/prioritizedDefaults/0/defaults/0 "V1" OPEN
+reading /rules/prioritizedDefaults/0/defaults/1 "V1" 0 Compound true
+reading /rules/prioritizedDefaults/0/defaults/1 "V1" 1 Literal 10
+reading /rules/prioritizedDefaults/0/defaults/1 "V1" DISPLACED
+reading /rules/rules/0/versions/0 "V1" 0 Comparison undetermined open "V1" "taxatie"
+reading /rules/rules/0/versions/0 "V1" 1 AttributeReference undetermined open "V1" "taxatie"
+reading /rules/rules/0/versions/0 "V1" 2 Literal unreached
+reading /rules/rules/0/versions/0 "V1" OPEN
+reading /rules/rules/1/versions/0 "V1" 0 Binary 15
+reading /rules/rules/1/versions/0 "V1" 1 AttributeReference 5
+reading /rules/rules/1/versions/0 "V1" 2 Literal 10
+reading /rules/rules/1/versions/0 "V1" HOLDS
+reading /rules/rules/2/versions/0 "V1" 0 CharacteristicCheck undetermined open "V1" "kostbaar"
+reading /rules/rules/2/versions/0 "V1" 1 Literal unreached
+reading /rules/rules/2/versions/0 "V1" OPEN
+reading /rules/rules/3/versions/0 "V1" 0 Predicate true closure
+reading /rules/rules/3/versions/0 "V1" 1 AttributeReference undetermined open "V1" "taxatie"
+reading /rules/rules/3/versions/0 "V1" HOLDS
+reading /rules/rules/4/versions/0 "V1" 0 CharacteristicCheck true
+reading /rules/rules/4/versions/0 "V1" 1 Literal 3
+reading /rules/rules/4/versions/0 "V1" HOLDS
+state attribute "V1" "bewakingstoeslag" open
+state attribute "V1" "gewicht" 5
+state attribute "V1" "meldloon" 3
+state attribute "V1" "premie" open
+state attribute "V1" "taxatie" open
+state attribute "V1" "vindloon" 15
+state characteristic "V1" "betwist" open
+state characteristic "V1" "gemeld"
+state characteristic "V1" "kostbaar" open
+state characteristic "V1" "ongetaxeerd"
+state object "V1" "Vondst"

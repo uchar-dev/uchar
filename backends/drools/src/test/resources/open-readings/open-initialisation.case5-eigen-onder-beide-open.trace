@@ -1,0 +1,16 @@
+reading /rules/prioritizedDefaults/0/defaults/0 "W1" 0 CharacteristicCheck undetermined open "W1" "betwist"
+reading /rules/prioritizedDefaults/0/defaults/0 "W1" 1 Literal unreached
+reading /rules/prioritizedDefaults/0/defaults/0 "W1" OPEN
+reading /rules/prioritizedDefaults/0/defaults/1 "W1" 0 Literal 5
+reading /rules/prioritizedDefaults/0/defaults/1 "W1" HOLDS
+reading /rules/rules/0/versions/0 "W1" 0 Comparison undetermined open "W1" "gewicht"
+reading /rules/rules/0/versions/0 "W1" 1 AttributeReference undetermined open "W1" "gewicht"
+reading /rules/rules/0/versions/0 "W1" 2 Literal unreached
+reading /rules/rules/0/versions/0 "W1" 3 Binary unreached
+reading /rules/rules/0/versions/0 "W1" 4 Literal unreached
+reading /rules/rules/0/versions/0 "W1" 5 AttributeReference unreached
+reading /rules/rules/0/versions/0 "W1" OPEN
+state attribute "W1" "bergloon" 5
+state attribute "W1" "gewicht" open
+state characteristic "W1" "betwist" open
+state object "W1" "Wrakvondst"

@@ -1,0 +1,166 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J4",
+        "objectType": "Jutter",
+        "attributes": {
+          "leeftijd": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "club": [
+            "C1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "leeftijd": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "C1",
+        "objectType": "Club",
+        "attributes": {
+          "contributie": {
+            "number": "9"
+          },
+          "ledentelling": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Strand",
+        "attributes": {},
+        "roles": {
+          "jutters": [
+            "J1",
+            "J2",
+            "J3",
+            "J4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J5",
+        "objectType": "Jutter",
+        "attributes": {
+          "leeftijd": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "club": [
+            "C1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J6",
+        "objectType": "Jutter",
+        "attributes": {
+          "leeftijd": {
+            "number": "2"
+          }
+        },
+        "roles": {
+          "club": [
+            "C3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "C2",
+        "objectType": "Club",
+        "attributes": {
+          "contributie": {
+            "number": "1500"
+          },
+          "ledentelling": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "leeftijd": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "leeftijd": {
+            "number": "9"
+          }
+        },
+        "roles": {
+          "club": [
+            "C1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Strand",
+        "attributes": {},
+        "roles": {
+          "jutters": [
+            "J5",
+            "J6"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "C3",
+        "objectType": "Club",
+        "attributes": {
+          "contributie": {
+            "number": "12"
+          },
+          "ledentelling": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "totale contributie"
+    }
+  ]
+}

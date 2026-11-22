@@ -1,0 +1,28 @@
+reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" true reached]
+reading /rules/rules/0/versions/0 "J1" HOLDS
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation 9 contributors ["V1" 4 reached; "V2" 5 reached]
+reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 Aggregation 2 contributors ["V1" empty reached; "V2" empty reached]
+reading /rules/rules/2/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 Compound false
+reading /rules/rules/3/versions/0 "J1" 1 Comparison true
+reading /rules/rules/3/versions/0 "J1" 10 Literal 5
+reading /rules/rules/3/versions/0 "J1" 11 Comparison false
+reading /rules/rules/3/versions/0 "J1" 12 Aggregation 2 contributors ["V1" empty reached; "V2" empty reached]
+reading /rules/rules/3/versions/0 "J1" 14 Literal 5
+reading /rules/rules/3/versions/0 "J1" 2 Aggregation 9 contributors ["V1" 4 reached; "V2" 5 reached]
+reading /rules/rules/3/versions/0 "J1" FAILS
+state attribute "J1" "verdeeld aantal" 2
+state attribute "J1" "verdeeld gewicht" 9
+state attribute "V1" "deelnemers" 2
+state attribute "V1" "gewicht" 10
+state attribute "V1" "lengte" 4
+state attribute "V2" "deelnemers" 3
+state attribute "V2" "gewicht" 12
+state attribute "V2" "lengte" 5
+state characteristic "J1" "gelijkmatig"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"

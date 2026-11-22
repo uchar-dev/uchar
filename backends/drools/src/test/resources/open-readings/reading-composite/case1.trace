@@ -1,0 +1,470 @@
+reading /rules/rules/0/versions/0 "J1" 0 Compound undetermined open "V1" "gewicht"
+reading /rules/rules/0/versions/0 "J1" 1 QuantifierFold true closure contributors ["V1" true reached; "V2" true reached; "V3" true reached]
+reading /rules/rules/0/versions/0 "J1" 10 Literal unreached
+reading /rules/rules/0/versions/0 "J1" 11 Comparison undetermined open "J1" "ervaring"
+reading /rules/rules/0/versions/0 "J1" 12 AttributeReference undetermined open "J1" "ervaring"
+reading /rules/rules/0/versions/0 "J1" 13 Literal unreached
+reading /rules/rules/0/versions/0 "J1" 8 Comparison undetermined open "V1" "gewicht"
+reading /rules/rules/0/versions/0 "J1" 9 ContextValue fault EF-011
+reading /rules/rules/0/versions/0 "J1" OPEN
+reading /rules/rules/0/versions/0 "J2" 0 Compound undetermined open "V4" "gewicht"
+reading /rules/rules/0/versions/0 "J2" 1 QuantifierFold true closure contributors ["V4" true reached; "V5" true reached; "V6" true reached]
+reading /rules/rules/0/versions/0 "J2" 10 Literal unreached
+reading /rules/rules/0/versions/0 "J2" 11 Comparison undetermined open "J2" "ervaring"
+reading /rules/rules/0/versions/0 "J2" 12 AttributeReference undetermined open "J2" "ervaring"
+reading /rules/rules/0/versions/0 "J2" 13 Literal unreached
+reading /rules/rules/0/versions/0 "J2" 8 Comparison undetermined open "V4" "gewicht"
+reading /rules/rules/0/versions/0 "J2" 9 ContextValue fault EF-011
+reading /rules/rules/0/versions/0 "J2" OPEN
+reading /rules/rules/1/versions/0 "J1" 0 Compound undetermined open "V1" "gewicht"
+reading /rules/rules/1/versions/0 "J1" 1 QuantifierFold undetermined open "V1" "gewicht" contributors ["V1" undetermined reached; "V2" undetermined reached; "V3" undetermined reached]
+reading /rules/rules/1/versions/0 "J1" 10 Comparison undetermined open "J1" "ervaring"
+reading /rules/rules/1/versions/0 "J1" 11 AttributeReference undetermined open "J1" "ervaring"
+reading /rules/rules/1/versions/0 "J1" 12 Literal unreached
+reading /rules/rules/1/versions/0 "J1" 7 Comparison undetermined open "V1" "gewicht"
+reading /rules/rules/1/versions/0 "J1" 8 ContextValue fault EF-011
+reading /rules/rules/1/versions/0 "J1" 9 Literal unreached
+reading /rules/rules/1/versions/0 "J1" OPEN
+reading /rules/rules/1/versions/0 "J2" 0 Compound undetermined open "V4" "gewicht"
+reading /rules/rules/1/versions/0 "J2" 1 QuantifierFold undetermined open "V4" "gewicht" contributors ["V4" undetermined reached; "V5" undetermined reached; "V6" undetermined reached]
+reading /rules/rules/1/versions/0 "J2" 10 Comparison undetermined open "J2" "ervaring"
+reading /rules/rules/1/versions/0 "J2" 11 AttributeReference undetermined open "J2" "ervaring"
+reading /rules/rules/1/versions/0 "J2" 12 Literal unreached
+reading /rules/rules/1/versions/0 "J2" 7 Comparison undetermined open "V4" "gewicht"
+reading /rules/rules/1/versions/0 "J2" 8 ContextValue fault EF-011
+reading /rules/rules/1/versions/0 "J2" 9 Literal unreached
+reading /rules/rules/1/versions/0 "J2" OPEN
+reading /rules/rules/2/versions/0 "J1" 0 Compound undetermined open "J1" "ervaring"
+reading /rules/rules/2/versions/0 "J1" 1 Comparison undetermined open "J1" "ervaring"
+reading /rules/rules/2/versions/0 "J1" 10 QuantifierFold true closure contributors ["V1" true reached; "V2" true reached; "V3" true reached]
+reading /rules/rules/2/versions/0 "J1" 2 AttributeReference undetermined open "J1" "ervaring"
+reading /rules/rules/2/versions/0 "J1" 3 Literal unreached
+reading /rules/rules/2/versions/0 "J1" 4 QuantifierFold undetermined open "V1" "gewicht" contributors ["V1" undetermined reached; "V2" undetermined reached; "V3" undetermined reached]
+reading /rules/rules/2/versions/0 "J1" OPEN
+reading /rules/rules/2/versions/0 "J2" 0 Compound undetermined open "J2" "ervaring"
+reading /rules/rules/2/versions/0 "J2" 1 Comparison undetermined open "J2" "ervaring"
+reading /rules/rules/2/versions/0 "J2" 10 QuantifierFold true closure contributors ["V4" true reached; "V5" true reached; "V6" true reached]
+reading /rules/rules/2/versions/0 "J2" 2 AttributeReference undetermined open "J2" "ervaring"
+reading /rules/rules/2/versions/0 "J2" 3 Literal unreached
+reading /rules/rules/2/versions/0 "J2" 4 QuantifierFold undetermined open "V4" "gewicht" contributors ["V4" undetermined reached; "V5" undetermined reached; "V6" undetermined reached]
+reading /rules/rules/2/versions/0 "J2" OPEN
+reading /rules/rules/3/versions/0 "V1" 0 Compound false closure
+reading /rules/rules/3/versions/0 "V1" 1 Compound false closure
+reading /rules/rules/3/versions/0 "V1" 2 Predicate true closure
+reading /rules/rules/3/versions/0 "V1" 3 AttributeReference undetermined open "V1" "gewicht"
+reading /rules/rules/3/versions/0 "V1" 4 Comparison false
+reading /rules/rules/3/versions/0 "V1" 5 AttributeReference 9
+reading /rules/rules/3/versions/0 "V1" 6 Literal 100
+reading /rules/rules/3/versions/0 "V1" 7 Comparison undetermined open "V1" "taxatie"
+reading /rules/rules/3/versions/0 "V1" 8 AttributeReference undetermined open "V1" "taxatie"
+reading /rules/rules/3/versions/0 "V1" 9 Literal unreached
+reading /rules/rules/3/versions/0 "V1" OPEN
+reading /rules/rules/3/versions/0 "V2" 0 Compound false closure
+reading /rules/rules/3/versions/0 "V2" 1 Compound false closure
+reading /rules/rules/3/versions/0 "V2" 2 Predicate true closure
+reading /rules/rules/3/versions/0 "V2" 3 AttributeReference undetermined open "V2" "gewicht"
+reading /rules/rules/3/versions/0 "V2" 4 Comparison undetermined open "V2" "schade"
+reading /rules/rules/3/versions/0 "V2" 5 AttributeReference undetermined open "V2" "schade"
+reading /rules/rules/3/versions/0 "V2" 6 Literal unreached
+reading /rules/rules/3/versions/0 "V2" 7 Comparison undetermined open "V2" "taxatie"
+reading /rules/rules/3/versions/0 "V2" 8 AttributeReference undetermined open "V2" "taxatie"
+reading /rules/rules/3/versions/0 "V2" 9 Literal unreached
+reading /rules/rules/3/versions/0 "V2" OPEN
+reading /rules/rules/3/versions/0 "V3" 0 Compound false closure
+reading /rules/rules/3/versions/0 "V3" 1 Compound false closure
+reading /rules/rules/3/versions/0 "V3" 2 Predicate true closure
+reading /rules/rules/3/versions/0 "V3" 3 AttributeReference undetermined open "V3" "gewicht"
+reading /rules/rules/3/versions/0 "V3" 4 Comparison undetermined open "V3" "schade"
+reading /rules/rules/3/versions/0 "V3" 5 AttributeReference undetermined open "V3" "schade"
+reading /rules/rules/3/versions/0 "V3" 6 Literal unreached
+reading /rules/rules/3/versions/0 "V3" 7 Comparison undetermined open "V3" "taxatie"
+reading /rules/rules/3/versions/0 "V3" 8 AttributeReference undetermined open "V3" "taxatie"
+reading /rules/rules/3/versions/0 "V3" 9 Literal unreached
+reading /rules/rules/3/versions/0 "V3" OPEN
+reading /rules/rules/3/versions/0 "V4" 0 Compound false
+reading /rules/rules/3/versions/0 "V4" 1 Compound false closure
+reading /rules/rules/3/versions/0 "V4" 2 Predicate true closure
+reading /rules/rules/3/versions/0 "V4" 3 AttributeReference undetermined open "V4" "gewicht"
+reading /rules/rules/3/versions/0 "V4" 4 Comparison undetermined open "V4" "schade"
+reading /rules/rules/3/versions/0 "V4" 5 AttributeReference undetermined open "V4" "schade"
+reading /rules/rules/3/versions/0 "V4" 6 Literal unreached
+reading /rules/rules/3/versions/0 "V4" 7 Comparison false
+reading /rules/rules/3/versions/0 "V4" 8 AttributeReference 9
+reading /rules/rules/3/versions/0 "V4" 9 Literal 10
+reading /rules/rules/3/versions/0 "V4" FAILS
+reading /rules/rules/3/versions/0 "V5" 0 Compound false closure
+reading /rules/rules/3/versions/0 "V5" 1 Compound false closure
+reading /rules/rules/3/versions/0 "V5" 2 Predicate true closure
+reading /rules/rules/3/versions/0 "V5" 3 AttributeReference undetermined open "V5" "gewicht"
+reading /rules/rules/3/versions/0 "V5" 4 Comparison undetermined open "V5" "schade"
+reading /rules/rules/3/versions/0 "V5" 5 AttributeReference undetermined open "V5" "schade"
+reading /rules/rules/3/versions/0 "V5" 6 Literal unreached
+reading /rules/rules/3/versions/0 "V5" 7 Comparison undetermined open "V5" "taxatie"
+reading /rules/rules/3/versions/0 "V5" 8 AttributeReference undetermined open "V5" "taxatie"
+reading /rules/rules/3/versions/0 "V5" 9 Literal unreached
+reading /rules/rules/3/versions/0 "V5" OPEN
+reading /rules/rules/3/versions/0 "V6" 0 Compound false closure
+reading /rules/rules/3/versions/0 "V6" 1 Compound false closure
+reading /rules/rules/3/versions/0 "V6" 2 Predicate true closure
+reading /rules/rules/3/versions/0 "V6" 3 AttributeReference undetermined open "V6" "gewicht"
+reading /rules/rules/3/versions/0 "V6" 4 Comparison false
+reading /rules/rules/3/versions/0 "V6" 5 AttributeReference 1
+reading /rules/rules/3/versions/0 "V6" 6 Literal 100
+reading /rules/rules/3/versions/0 "V6" 7 Comparison undetermined open "V6" "taxatie"
+reading /rules/rules/3/versions/0 "V6" 8 AttributeReference undetermined open "V6" "taxatie"
+reading /rules/rules/3/versions/0 "V6" 9 Literal unreached
+reading /rules/rules/3/versions/0 "V6" OPEN
+reading /rules/rules/4/versions/0 "V1" 0 Compound undetermined open "V1" "gewicht"
+reading /rules/rules/4/versions/0 "V1" 1 Comparison undetermined open "V1" "gewicht"
+reading /rules/rules/4/versions/0 "V1" 10 Literal unreached
+reading /rules/rules/4/versions/0 "V1" 11 Comparison true
+reading /rules/rules/4/versions/0 "V1" 12 AttributeReference 9
+reading /rules/rules/4/versions/0 "V1" 13 Literal 1
+reading /rules/rules/4/versions/0 "V1" 2 AttributeReference undetermined open "V1" "gewicht"
+reading /rules/rules/4/versions/0 "V1" 3 Literal unreached
+reading /rules/rules/4/versions/0 "V1" 4 Compound undetermined open "V1" "gewicht"
+reading /rules/rules/4/versions/0 "V1" 5 Comparison fault EF-011
+reading /rules/rules/4/versions/0 "V1" 6 ContextValue fault EF-011
+reading /rules/rules/4/versions/0 "V1" 7 Literal unreached
+reading /rules/rules/4/versions/0 "V1" 8 Comparison unreached
+reading /rules/rules/4/versions/0 "V1" 9 AttributeReference unreached
+reading /rules/rules/4/versions/0 "V1" OPEN
+reading /rules/rules/4/versions/0 "V2" 0 Compound undetermined open "V2" "gewicht"
+reading /rules/rules/4/versions/0 "V2" 1 Comparison undetermined open "V2" "gewicht"
+reading /rules/rules/4/versions/0 "V2" 10 Literal unreached
+reading /rules/rules/4/versions/0 "V2" 11 Comparison undetermined open "V2" "schade"
+reading /rules/rules/4/versions/0 "V2" 12 AttributeReference undetermined open "V2" "schade"
+reading /rules/rules/4/versions/0 "V2" 13 Literal unreached
+reading /rules/rules/4/versions/0 "V2" 2 AttributeReference undetermined open "V2" "gewicht"
+reading /rules/rules/4/versions/0 "V2" 3 Literal unreached
+reading /rules/rules/4/versions/0 "V2" 4 Compound undetermined open "V2" "gewicht"
+reading /rules/rules/4/versions/0 "V2" 5 Comparison fault EF-011
+reading /rules/rules/4/versions/0 "V2" 6 ContextValue fault EF-011
+reading /rules/rules/4/versions/0 "V2" 7 Literal unreached
+reading /rules/rules/4/versions/0 "V2" 8 Comparison unreached
+reading /rules/rules/4/versions/0 "V2" 9 AttributeReference unreached
+reading /rules/rules/4/versions/0 "V2" OPEN
+reading /rules/rules/4/versions/0 "V3" 0 Compound undetermined open "V3" "gewicht"
+reading /rules/rules/4/versions/0 "V3" 1 Comparison undetermined open "V3" "gewicht"
+reading /rules/rules/4/versions/0 "V3" 10 Literal unreached
+reading /rules/rules/4/versions/0 "V3" 11 Comparison undetermined open "V3" "schade"
+reading /rules/rules/4/versions/0 "V3" 12 AttributeReference undetermined open "V3" "schade"
+reading /rules/rules/4/versions/0 "V3" 13 Literal unreached
+reading /rules/rules/4/versions/0 "V3" 2 AttributeReference undetermined open "V3" "gewicht"
+reading /rules/rules/4/versions/0 "V3" 3 Literal unreached
+reading /rules/rules/4/versions/0 "V3" 4 Compound undetermined open "V3" "gewicht"
+reading /rules/rules/4/versions/0 "V3" 5 Comparison fault EF-011
+reading /rules/rules/4/versions/0 "V3" 6 ContextValue fault EF-011
+reading /rules/rules/4/versions/0 "V3" 7 Literal unreached
+reading /rules/rules/4/versions/0 "V3" 8 Comparison unreached
+reading /rules/rules/4/versions/0 "V3" 9 AttributeReference unreached
+reading /rules/rules/4/versions/0 "V3" OPEN
+reading /rules/rules/4/versions/0 "V4" 0 Compound undetermined open "V4" "gewicht"
+reading /rules/rules/4/versions/0 "V4" 1 Comparison undetermined open "V4" "gewicht"
+reading /rules/rules/4/versions/0 "V4" 10 Literal unreached
+reading /rules/rules/4/versions/0 "V4" 11 Comparison undetermined open "V4" "schade"
+reading /rules/rules/4/versions/0 "V4" 12 AttributeReference undetermined open "V4" "schade"
+reading /rules/rules/4/versions/0 "V4" 13 Literal unreached
+reading /rules/rules/4/versions/0 "V4" 2 AttributeReference undetermined open "V4" "gewicht"
+reading /rules/rules/4/versions/0 "V4" 3 Literal unreached
+reading /rules/rules/4/versions/0 "V4" 4 Compound undetermined open "V4" "gewicht"
+reading /rules/rules/4/versions/0 "V4" 5 Comparison fault EF-011
+reading /rules/rules/4/versions/0 "V4" 6 ContextValue fault EF-011
+reading /rules/rules/4/versions/0 "V4" 7 Literal unreached
+reading /rules/rules/4/versions/0 "V4" 8 Comparison unreached
+reading /rules/rules/4/versions/0 "V4" 9 AttributeReference unreached
+reading /rules/rules/4/versions/0 "V4" OPEN
+reading /rules/rules/4/versions/0 "V5" 0 Compound undetermined open "V5" "gewicht"
+reading /rules/rules/4/versions/0 "V5" 1 Comparison undetermined open "V5" "gewicht"
+reading /rules/rules/4/versions/0 "V5" 10 Literal unreached
+reading /rules/rules/4/versions/0 "V5" 11 Comparison undetermined open "V5" "schade"
+reading /rules/rules/4/versions/0 "V5" 12 AttributeReference undetermined open "V5" "schade"
+reading /rules/rules/4/versions/0 "V5" 13 Literal unreached
+reading /rules/rules/4/versions/0 "V5" 2 AttributeReference undetermined open "V5" "gewicht"
+reading /rules/rules/4/versions/0 "V5" 3 Literal unreached
+reading /rules/rules/4/versions/0 "V5" 4 Compound undetermined open "V5" "gewicht"
+reading /rules/rules/4/versions/0 "V5" 5 Comparison fault EF-011
+reading /rules/rules/4/versions/0 "V5" 6 ContextValue fault EF-011
+reading /rules/rules/4/versions/0 "V5" 7 Literal unreached
+reading /rules/rules/4/versions/0 "V5" 8 Comparison unreached
+reading /rules/rules/4/versions/0 "V5" 9 AttributeReference unreached
+reading /rules/rules/4/versions/0 "V5" OPEN
+reading /rules/rules/4/versions/0 "V6" 0 Compound false
+reading /rules/rules/4/versions/0 "V6" 1 Comparison undetermined open "V6" "gewicht"
+reading /rules/rules/4/versions/0 "V6" 10 Literal unreached
+reading /rules/rules/4/versions/0 "V6" 11 Comparison false
+reading /rules/rules/4/versions/0 "V6" 12 AttributeReference 1
+reading /rules/rules/4/versions/0 "V6" 13 Literal 1
+reading /rules/rules/4/versions/0 "V6" 2 AttributeReference undetermined open "V6" "gewicht"
+reading /rules/rules/4/versions/0 "V6" 3 Literal unreached
+reading /rules/rules/4/versions/0 "V6" 4 Compound undetermined open "V6" "gewicht"
+reading /rules/rules/4/versions/0 "V6" 5 Comparison fault EF-011
+reading /rules/rules/4/versions/0 "V6" 6 ContextValue fault EF-011
+reading /rules/rules/4/versions/0 "V6" 7 Literal unreached
+reading /rules/rules/4/versions/0 "V6" 8 Comparison unreached
+reading /rules/rules/4/versions/0 "V6" 9 AttributeReference unreached
+reading /rules/rules/4/versions/0 "V6" FAILS
+reading /rules/rules/5/versions/0 "V1" 0 Compound true closure
+reading /rules/rules/5/versions/0 "V1" 1 Predicate true closure
+reading /rules/rules/5/versions/0 "V1" 10 Literal unreached
+reading /rules/rules/5/versions/0 "V1" 11 Predicate true
+reading /rules/rules/5/versions/0 "V1" 12 AttributeReference 9
+reading /rules/rules/5/versions/0 "V1" 2 AttributeReference undetermined open "V1" "gewicht"
+reading /rules/rules/5/versions/0 "V1" 3 Comparison undetermined open "V1" "taxatie"
+reading /rules/rules/5/versions/0 "V1" 4 Binary undetermined open "V1" "taxatie"
+reading /rules/rules/5/versions/0 "V1" 5 AttributeReference undetermined open "V1" "taxatie"
+reading /rules/rules/5/versions/0 "V1" 6 AttributeReference unreached
+reading /rules/rules/5/versions/0 "V1" 7 Literal unreached
+reading /rules/rules/5/versions/0 "V1" 8 Comparison undetermined open "V1" "gewicht"
+reading /rules/rules/5/versions/0 "V1" 9 ContextValue fault EF-011
+reading /rules/rules/5/versions/0 "V1" HOLDS
+reading /rules/rules/5/versions/0 "V2" 0 Compound undetermined open "V2" "taxatie"
+reading /rules/rules/5/versions/0 "V2" 1 Predicate true closure
+reading /rules/rules/5/versions/0 "V2" 10 Literal unreached
+reading /rules/rules/5/versions/0 "V2" 11 Predicate false closure
+reading /rules/rules/5/versions/0 "V2" 12 AttributeReference undetermined open "V2" "schade"
+reading /rules/rules/5/versions/0 "V2" 2 AttributeReference undetermined open "V2" "gewicht"
+reading /rules/rules/5/versions/0 "V2" 3 Comparison undetermined open "V2" "taxatie"
+reading /rules/rules/5/versions/0 "V2" 4 Binary undetermined open "V2" "taxatie"
+reading /rules/rules/5/versions/0 "V2" 5 AttributeReference undetermined open "V2" "taxatie"
+reading /rules/rules/5/versions/0 "V2" 6 AttributeReference unreached
+reading /rules/rules/5/versions/0 "V2" 7 Literal unreached
+reading /rules/rules/5/versions/0 "V2" 8 Comparison undetermined open "V2" "gewicht"
+reading /rules/rules/5/versions/0 "V2" 9 ContextValue fault EF-011
+reading /rules/rules/5/versions/0 "V2" OPEN
+reading /rules/rules/5/versions/0 "V3" 0 Compound undetermined open "V3" "taxatie"
+reading /rules/rules/5/versions/0 "V3" 1 Predicate true closure
+reading /rules/rules/5/versions/0 "V3" 10 Literal unreached
+reading /rules/rules/5/versions/0 "V3" 11 Predicate false closure
+reading /rules/rules/5/versions/0 "V3" 12 AttributeReference undetermined open "V3" "schade"
+reading /rules/rules/5/versions/0 "V3" 2 AttributeReference undetermined open "V3" "gewicht"
+reading /rules/rules/5/versions/0 "V3" 3 Comparison undetermined open "V3" "taxatie"
+reading /rules/rules/5/versions/0 "V3" 4 Binary undetermined open "V3" "taxatie"
+reading /rules/rules/5/versions/0 "V3" 5 AttributeReference undetermined open "V3" "taxatie"
+reading /rules/rules/5/versions/0 "V3" 6 AttributeReference unreached
+reading /rules/rules/5/versions/0 "V3" 7 Literal unreached
+reading /rules/rules/5/versions/0 "V3" 8 Comparison undetermined open "V3" "gewicht"
+reading /rules/rules/5/versions/0 "V3" 9 ContextValue fault EF-011
+reading /rules/rules/5/versions/0 "V3" OPEN
+reading /rules/rules/5/versions/0 "V4" 0 Compound undetermined open "V4" "deling"
+reading /rules/rules/5/versions/0 "V4" 1 Predicate true closure
+reading /rules/rules/5/versions/0 "V4" 10 Literal unreached
+reading /rules/rules/5/versions/0 "V4" 11 Predicate false closure
+reading /rules/rules/5/versions/0 "V4" 12 AttributeReference undetermined open "V4" "schade"
+reading /rules/rules/5/versions/0 "V4" 2 AttributeReference undetermined open "V4" "gewicht"
+reading /rules/rules/5/versions/0 "V4" 3 Comparison undetermined open "V4" "deling"
+reading /rules/rules/5/versions/0 "V4" 4 Binary undetermined open "V4" "deling"
+reading /rules/rules/5/versions/0 "V4" 5 AttributeReference 9
+reading /rules/rules/5/versions/0 "V4" 6 AttributeReference undetermined open "V4" "deling"
+reading /rules/rules/5/versions/0 "V4" 7 Literal unreached
+reading /rules/rules/5/versions/0 "V4" 8 Comparison undetermined open "V4" "gewicht"
+reading /rules/rules/5/versions/0 "V4" 9 ContextValue fault EF-011
+reading /rules/rules/5/versions/0 "V4" OPEN
+reading /rules/rules/5/versions/0 "V5" 0 Compound undetermined open "V5" "taxatie"
+reading /rules/rules/5/versions/0 "V5" 1 Predicate true closure
+reading /rules/rules/5/versions/0 "V5" 10 Literal unreached
+reading /rules/rules/5/versions/0 "V5" 11 Predicate false closure
+reading /rules/rules/5/versions/0 "V5" 12 AttributeReference undetermined open "V5" "schade"
+reading /rules/rules/5/versions/0 "V5" 2 AttributeReference undetermined open "V5" "gewicht"
+reading /rules/rules/5/versions/0 "V5" 3 Comparison undetermined open "V5" "taxatie"
+reading /rules/rules/5/versions/0 "V5" 4 Binary undetermined open "V5" "taxatie"
+reading /rules/rules/5/versions/0 "V5" 5 AttributeReference undetermined open "V5" "taxatie"
+reading /rules/rules/5/versions/0 "V5" 6 AttributeReference unreached
+reading /rules/rules/5/versions/0 "V5" 7 Literal unreached
+reading /rules/rules/5/versions/0 "V5" 8 Comparison undetermined open "V5" "gewicht"
+reading /rules/rules/5/versions/0 "V5" 9 ContextValue fault EF-011
+reading /rules/rules/5/versions/0 "V5" OPEN
+reading /rules/rules/5/versions/0 "V6" 0 Compound true closure
+reading /rules/rules/5/versions/0 "V6" 1 Predicate true closure
+reading /rules/rules/5/versions/0 "V6" 10 Literal unreached
+reading /rules/rules/5/versions/0 "V6" 11 Predicate true
+reading /rules/rules/5/versions/0 "V6" 12 AttributeReference 1
+reading /rules/rules/5/versions/0 "V6" 2 AttributeReference undetermined open "V6" "gewicht"
+reading /rules/rules/5/versions/0 "V6" 3 Comparison undetermined open "V6" "taxatie"
+reading /rules/rules/5/versions/0 "V6" 4 Binary undetermined open "V6" "taxatie"
+reading /rules/rules/5/versions/0 "V6" 5 AttributeReference undetermined open "V6" "taxatie"
+reading /rules/rules/5/versions/0 "V6" 6 AttributeReference unreached
+reading /rules/rules/5/versions/0 "V6" 7 Literal unreached
+reading /rules/rules/5/versions/0 "V6" 8 Comparison undetermined open "V6" "gewicht"
+reading /rules/rules/5/versions/0 "V6" 9 ContextValue fault EF-011
+reading /rules/rules/5/versions/0 "V6" HOLDS
+reading /rules/rules/6/versions/0 "V1" 0 Predicate true closure
+reading /rules/rules/6/versions/0 "V1" 1 Binary undetermined open "V1" "gewicht"
+reading /rules/rules/6/versions/0 "V1" 2 AttributeReference undetermined open "V1" "gewicht"
+reading /rules/rules/6/versions/0 "V1" 3 AttributeReference unreached
+reading /rules/rules/6/versions/0 "V1" HOLDS
+reading /rules/rules/6/versions/0 "V2" 0 Predicate true closure
+reading /rules/rules/6/versions/0 "V2" 1 Binary undetermined open "V2" "gewicht"
+reading /rules/rules/6/versions/0 "V2" 2 AttributeReference undetermined open "V2" "gewicht"
+reading /rules/rules/6/versions/0 "V2" 3 AttributeReference unreached
+reading /rules/rules/6/versions/0 "V2" HOLDS
+reading /rules/rules/6/versions/0 "V3" 0 Predicate true closure
+reading /rules/rules/6/versions/0 "V3" 1 Binary undetermined open "V3" "gewicht"
+reading /rules/rules/6/versions/0 "V3" 2 AttributeReference undetermined open "V3" "gewicht"
+reading /rules/rules/6/versions/0 "V3" 3 AttributeReference unreached
+reading /rules/rules/6/versions/0 "V3" HOLDS
+reading /rules/rules/6/versions/0 "V4" 0 Predicate true closure
+reading /rules/rules/6/versions/0 "V4" 1 Binary undetermined open "V4" "gewicht"
+reading /rules/rules/6/versions/0 "V4" 2 AttributeReference undetermined open "V4" "gewicht"
+reading /rules/rules/6/versions/0 "V4" 3 AttributeReference unreached
+reading /rules/rules/6/versions/0 "V4" HOLDS
+reading /rules/rules/6/versions/0 "V5" 0 Predicate true closure
+reading /rules/rules/6/versions/0 "V5" 1 Binary undetermined open "V5" "gewicht"
+reading /rules/rules/6/versions/0 "V5" 2 AttributeReference undetermined open "V5" "gewicht"
+reading /rules/rules/6/versions/0 "V5" 3 AttributeReference unreached
+reading /rules/rules/6/versions/0 "V5" HOLDS
+reading /rules/rules/6/versions/0 "V6" 0 Predicate true closure
+reading /rules/rules/6/versions/0 "V6" 1 Binary undetermined open "V6" "gewicht"
+reading /rules/rules/6/versions/0 "V6" 2 AttributeReference undetermined open "V6" "gewicht"
+reading /rules/rules/6/versions/0 "V6" 3 AttributeReference unreached
+reading /rules/rules/6/versions/0 "V6" HOLDS
+reading /rules/rules/7/versions/0 "V1" 0 Predicate true closure
+reading /rules/rules/7/versions/0 "V1" 1 AttributeReference undetermined open "V1" "gewicht"
+reading /rules/rules/7/versions/0 "V1" 2 AttributeReference empty
+reading /rules/rules/7/versions/0 "V1" HOLDS
+reading /rules/rules/7/versions/0 "V2" 0 Predicate true closure
+reading /rules/rules/7/versions/0 "V2" 1 AttributeReference undetermined open "V2" "gewicht"
+reading /rules/rules/7/versions/0 "V2" 2 AttributeReference empty
+reading /rules/rules/7/versions/0 "V2" HOLDS
+reading /rules/rules/7/versions/0 "V3" 0 Predicate true closure
+reading /rules/rules/7/versions/0 "V3" 1 AttributeReference undetermined open "V3" "gewicht"
+reading /rules/rules/7/versions/0 "V3" 2 AttributeReference empty
+reading /rules/rules/7/versions/0 "V3" HOLDS
+reading /rules/rules/7/versions/0 "V4" 0 Predicate true closure
+reading /rules/rules/7/versions/0 "V4" 1 AttributeReference undetermined open "V4" "gewicht"
+reading /rules/rules/7/versions/0 "V4" 2 AttributeReference 12
+reading /rules/rules/7/versions/0 "V4" HOLDS
+reading /rules/rules/7/versions/0 "V5" 0 Predicate true closure
+reading /rules/rules/7/versions/0 "V5" 1 AttributeReference undetermined open "V5" "gewicht"
+reading /rules/rules/7/versions/0 "V5" 2 AttributeReference 1500
+reading /rules/rules/7/versions/0 "V5" HOLDS
+reading /rules/rules/7/versions/0 "V6" 0 Predicate true closure
+reading /rules/rules/7/versions/0 "V6" 1 AttributeReference undetermined open "V6" "gewicht"
+reading /rules/rules/7/versions/0 "V6" 2 AttributeReference empty
+reading /rules/rules/7/versions/0 "V6" HOLDS
+reading /rules/rules/8/versions/0 "V1" 0 Predicate true
+reading /rules/rules/8/versions/0 "V1" 1 AttributeReference 9
+reading /rules/rules/8/versions/0 "V1" 2 Binary undetermined open "V1" "taxatie"
+reading /rules/rules/8/versions/0 "V1" 3 AttributeReference undetermined open "V1" "taxatie"
+reading /rules/rules/8/versions/0 "V1" 4 AttributeReference unreached
+reading /rules/rules/8/versions/0 "V1" OPEN
+reading /rules/rules/8/versions/0 "V2" 0 Predicate false closure
+reading /rules/rules/8/versions/0 "V2" 1 AttributeReference undetermined open "V2" "schade"
+reading /rules/rules/8/versions/0 "V2" 2 Binary unreached
+reading /rules/rules/8/versions/0 "V2" 3 AttributeReference unreached
+reading /rules/rules/8/versions/0 "V2" 4 AttributeReference unreached
+reading /rules/rules/8/versions/0 "V2" OPEN
+reading /rules/rules/8/versions/0 "V3" 0 Predicate false closure
+reading /rules/rules/8/versions/0 "V3" 1 AttributeReference undetermined open "V3" "schade"
+reading /rules/rules/8/versions/0 "V3" 2 Binary unreached
+reading /rules/rules/8/versions/0 "V3" 3 AttributeReference unreached
+reading /rules/rules/8/versions/0 "V3" 4 AttributeReference unreached
+reading /rules/rules/8/versions/0 "V3" OPEN
+reading /rules/rules/8/versions/0 "V4" 0 Predicate false closure
+reading /rules/rules/8/versions/0 "V4" 1 AttributeReference undetermined open "V4" "schade"
+reading /rules/rules/8/versions/0 "V4" 2 Binary unreached
+reading /rules/rules/8/versions/0 "V4" 3 AttributeReference unreached
+reading /rules/rules/8/versions/0 "V4" 4 AttributeReference unreached
+reading /rules/rules/8/versions/0 "V4" OPEN
+reading /rules/rules/8/versions/0 "V5" 0 Predicate false closure
+reading /rules/rules/8/versions/0 "V5" 1 AttributeReference undetermined open "V5" "schade"
+reading /rules/rules/8/versions/0 "V5" 2 Binary unreached
+reading /rules/rules/8/versions/0 "V5" 3 AttributeReference unreached
+reading /rules/rules/8/versions/0 "V5" 4 AttributeReference unreached
+reading /rules/rules/8/versions/0 "V5" OPEN
+reading /rules/rules/8/versions/0 "V6" 0 Predicate true
+reading /rules/rules/8/versions/0 "V6" 1 AttributeReference 1
+reading /rules/rules/8/versions/0 "V6" 2 Binary undetermined open "V6" "taxatie"
+reading /rules/rules/8/versions/0 "V6" 3 AttributeReference undetermined open "V6" "taxatie"
+reading /rules/rules/8/versions/0 "V6" 4 AttributeReference unreached
+reading /rules/rules/8/versions/0 "V6" OPEN
+state attribute "J1" "ervaring" open
+state attribute "J2" "ervaring" open
+state attribute "V1" "deling" open
+state attribute "V1" "gewicht" open
+state attribute "V1" "kortloon" open
+state attribute "V1" "schade" 9
+state attribute "V1" "taxatie" open
+state attribute "V2" "deling" 3
+state attribute "V2" "gewicht" open
+state attribute "V2" "kortloon" open
+state attribute "V2" "schade" open
+state attribute "V2" "taxatie" open
+state attribute "V3" "deling" open
+state attribute "V3" "gewicht" open
+state attribute "V3" "kortloon" open
+state attribute "V3" "schade" open
+state attribute "V3" "taxatie" open
+state attribute "V4" "bonus" 12
+state attribute "V4" "deling" open
+state attribute "V4" "gewicht" open
+state attribute "V4" "kortloon" open
+state attribute "V4" "loon" 12
+state attribute "V4" "schade" open
+state attribute "V4" "taxatie" 9
+state attribute "V5" "bonus" 1500
+state attribute "V5" "deling" 2
+state attribute "V5" "gewicht" open
+state attribute "V5" "kortloon" open
+state attribute "V5" "loon" 1500
+state attribute "V5" "schade" open
+state attribute "V5" "taxatie" open
+state attribute "V6" "deling" 3
+state attribute "V6" "gewicht" open
+state attribute "V6" "kortloon" open
+state attribute "V6" "schade" 1
+state attribute "V6" "taxatie" open
+state characteristic "J1" "proefa" open
+state characteristic "J1" "proefb" open
+state characteristic "J1" "proefc" open
+state characteristic "J2" "proefa" open
+state characteristic "J2" "proefb" open
+state characteristic "J2" "proefc" open
+state characteristic "V1" "deelbaar" open
+state characteristic "V1" "kenbaar" open
+state characteristic "V1" "proefd" open
+state characteristic "V1" "proefe" open
+state characteristic "V1" "proeff"
+state characteristic "V1" "proefg"
+state characteristic "V2" "deelbaar" open
+state characteristic "V2" "kenbaar" open
+state characteristic "V2" "proefd" open
+state characteristic "V2" "proefe" open
+state characteristic "V2" "proeff" open
+state characteristic "V2" "proefg"
+state characteristic "V3" "deelbaar" open
+state characteristic "V3" "kenbaar" open
+state characteristic "V3" "proefd" open
+state characteristic "V3" "proefe" open
+state characteristic "V3" "proeff" open
+state characteristic "V3" "proefg"
+state characteristic "V4" "deelbaar" open
+state characteristic "V4" "kenbaar" open
+state characteristic "V4" "proefe" open
+state characteristic "V4" "proeff" open
+state characteristic "V4" "proefg"
+state characteristic "V5" "deelbaar" open
+state characteristic "V5" "kenbaar" open
+state characteristic "V5" "proefd" open
+state characteristic "V5" "proefe" open
+state characteristic "V5" "proeff" open
+state characteristic "V5" "proefg"
+state characteristic "V6" "deelbaar" open
+state characteristic "V6" "kenbaar" open
+state characteristic "V6" "proefd" open
+state characteristic "V6" "proeff"
+state characteristic "V6" "proefg"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state link "vinding" "vinder" "J1" "vondst" "V3"
+state link "vinding" "vinder" "J2" "vondst" "V4"
+state link "vinding" "vinder" "J2" "vondst" "V5"
+state link "vinding" "vinder" "J2" "vondst" "V6"
+state object "J1" "Jutter"
+state object "J2" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"
+state object "V3" "Vondst"
+state object "V4" "Vondst"
+state object "V5" "Vondst"
+state object "V6" "Vondst"

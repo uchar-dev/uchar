@@ -1,0 +1,62 @@
+reading /rules/prioritizedDefaults/0/defaults/0 "V1" 0 CharacteristicCheck undetermined open "V1" "betwist"
+reading /rules/prioritizedDefaults/0/defaults/0 "V1" 1 Literal unreached
+reading /rules/prioritizedDefaults/0/defaults/0 "V1" OPEN
+reading /rules/prioritizedDefaults/0/defaults/0 "V2" 0 CharacteristicCheck undetermined open "V2" "betwist"
+reading /rules/prioritizedDefaults/0/defaults/0 "V2" 1 Literal unreached
+reading /rules/prioritizedDefaults/0/defaults/0 "V2" OPEN
+reading /rules/prioritizedDefaults/0/defaults/1 "V1" 0 Compound true
+reading /rules/prioritizedDefaults/0/defaults/1 "V1" 1 Literal 10
+reading /rules/prioritizedDefaults/0/defaults/1 "V1" DISPLACED
+reading /rules/prioritizedDefaults/0/defaults/1 "V2" 0 Compound true
+reading /rules/prioritizedDefaults/0/defaults/1 "V2" 1 Literal 10
+reading /rules/prioritizedDefaults/0/defaults/1 "V2" DISPLACED
+reading /rules/rules/0/versions/0 "V1" 0 Comparison true
+reading /rules/rules/0/versions/0 "V1" 1 AttributeReference 2000
+reading /rules/rules/0/versions/0 "V1" 2 Literal 1000
+reading /rules/rules/0/versions/0 "V1" HOLDS
+reading /rules/rules/0/versions/0 "V2" 0 Comparison false
+reading /rules/rules/0/versions/0 "V2" 1 AttributeReference 50
+reading /rules/rules/0/versions/0 "V2" 2 Literal 1000
+reading /rules/rules/0/versions/0 "V2" FAILS
+reading /rules/rules/1/versions/0 "V1" 0 Binary 15
+reading /rules/rules/1/versions/0 "V1" 1 AttributeReference 5
+reading /rules/rules/1/versions/0 "V1" 2 Literal 10
+reading /rules/rules/1/versions/0 "V1" HOLDS
+reading /rules/rules/1/versions/0 "V2" 0 Binary 10
+reading /rules/rules/1/versions/0 "V2" 1 AttributeReference 0
+reading /rules/rules/1/versions/0 "V2" 2 Literal 10
+reading /rules/rules/1/versions/0 "V2" HOLDS
+reading /rules/rules/2/versions/0 "V1" 0 CharacteristicCheck false
+reading /rules/rules/2/versions/0 "V1" 1 Literal unreached
+reading /rules/rules/2/versions/0 "V1" FAILS
+reading /rules/rules/2/versions/0 "V2" 0 CharacteristicCheck true
+reading /rules/rules/2/versions/0 "V2" 1 Literal 5
+reading /rules/rules/2/versions/0 "V2" HOLDS
+reading /rules/rules/3/versions/0 "V1" 0 Predicate false
+reading /rules/rules/3/versions/0 "V1" 1 AttributeReference 2000
+reading /rules/rules/3/versions/0 "V1" FAILS
+reading /rules/rules/3/versions/0 "V2" 0 Predicate false
+reading /rules/rules/3/versions/0 "V2" 1 AttributeReference 50
+reading /rules/rules/3/versions/0 "V2" FAILS
+reading /rules/rules/4/versions/0 "V1" 0 CharacteristicCheck true
+reading /rules/rules/4/versions/0 "V1" 1 Literal 3
+reading /rules/rules/4/versions/0 "V1" HOLDS
+reading /rules/rules/4/versions/0 "V2" 0 CharacteristicCheck false
+reading /rules/rules/4/versions/0 "V2" 1 Literal unreached
+reading /rules/rules/4/versions/0 "V2" FAILS
+state attribute "V1" "gewicht" 5
+state attribute "V1" "meldloon" 3
+state attribute "V1" "premie" open
+state attribute "V1" "taxatie" 2000
+state attribute "V1" "vindloon" 15
+state attribute "V2" "bewakingstoeslag" 5
+state attribute "V2" "gewicht" 0
+state attribute "V2" "premie" open
+state attribute "V2" "taxatie" 50
+state attribute "V2" "vindloon" 10
+state characteristic "V1" "betwist" open
+state characteristic "V1" "gemeld"
+state characteristic "V1" "kostbaar"
+state characteristic "V2" "betwist" open
+state object "V1" "Vondst"
+state object "V2" "Vondst"

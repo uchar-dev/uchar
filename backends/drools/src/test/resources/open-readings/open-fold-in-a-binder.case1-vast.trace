@@ -1,0 +1,49 @@
+reading /rules/rules/0/versions/0 "J1" 0 Let 13
+reading /rules/rules/0/versions/0 "J1" 1 Aggregation 12 contributors ["V1" 5 reached; "V2" 7 reached]
+reading /rules/rules/0/versions/0 "J1" 6 Binary 13
+reading /rules/rules/0/versions/0 "J1" 7 BinderRef 12
+reading /rules/rules/0/versions/0 "J1" 8 Literal 1
+reading /rules/rules/0/versions/0 "J1" HOLDS
+reading /rules/rules/1/versions/0 "J1" 0 Let 24
+reading /rules/rules/1/versions/0 "J1" 1 Aggregation 12 contributors ["V1" 5 reached; "V2" 7 reached]
+reading /rules/rules/1/versions/0 "J1" 3 Binary 24
+reading /rules/rules/1/versions/0 "J1" 4 BinderRef 12
+reading /rules/rules/1/versions/0 "J1" 5 BinderRef 12
+reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 Let 10
+reading /rules/rules/2/versions/0 "J1" 1 Aggregation 2 contributors ["V1" empty reached; "V2" empty reached]
+reading /rules/rules/2/versions/0 "J1" 3 Binary 10
+reading /rules/rules/2/versions/0 "J1" 4 AttributeReference 20
+reading /rules/rules/2/versions/0 "J1" 5 BinderRef 2
+reading /rules/rules/2/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 Comparison true
+reading /rules/rules/3/versions/0 "J1" 1 Binary 10
+reading /rules/rules/3/versions/0 "J1" 2 AttributeReference 20
+reading /rules/rules/3/versions/0 "J1" 3 Aggregation 2 contributors ["V1" empty reached; "V2" empty reached]
+reading /rules/rules/3/versions/0 "J1" 5 Literal 5
+reading /rules/rules/3/versions/0 "J1" HOLDS
+reading /rules/rules/4/versions/0 "J1" 0 Compound false
+reading /rules/rules/4/versions/0 "J1" 1 Comparison false
+reading /rules/rules/4/versions/0 "J1" 2 Aggregation 2 contributors ["V1" empty reached; "V2" empty reached]
+reading /rules/rules/4/versions/0 "J1" 4 Literal 2
+reading /rules/rules/4/versions/0 "J1" 5 Comparison unreached
+reading /rules/rules/4/versions/0 "J1" 6 AttributeReference unreached
+reading /rules/rules/4/versions/0 "J1" 7 Literal unreached
+reading /rules/rules/4/versions/0 "J1" FAILS
+reading /rules/rules/5/versions/0 "J1" 0 CharacteristicCheck true
+reading /rules/rules/5/versions/0 "J1" HOLDS
+state attribute "J1" "dubbelgewicht" 24
+state attribute "J1" "gift" 20
+state attribute "J1" "giftdeel" 10
+state attribute "J1" "keurgewicht" 13
+state attribute "V1" "getuigen" 2
+state attribute "V1" "gewicht" 5
+state attribute "V2" "getuigen" 1
+state attribute "V2" "gewicht" 7
+state characteristic "J1" "gul"
+state characteristic "J1" "krap"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"

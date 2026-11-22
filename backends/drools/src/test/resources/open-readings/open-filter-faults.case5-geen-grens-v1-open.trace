@@ -1,0 +1,11 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation undetermined open "V1" "gewicht"
+reading /rules/rules/0/versions/0 "J1" OPEN
+state attribute "J1" "keuraantal" open
+state attribute "J1" "zwaaraantal" open
+state attribute "V1" "gewicht" open
+state attribute "V2" "gewicht" 20
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"

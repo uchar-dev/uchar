@@ -1,0 +1,47 @@
+reading /rules/consistencies/0/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" true unreached; "V3" undetermined unreached]
+reading /rules/consistencies/0/versions/0 "J1" HOLDS
+reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold undetermined open "V3" "gewicht" contributors ["V1" true reached; "V2" true reached; "V3" undetermined reached]
+reading /rules/rules/0/versions/0 "J1" OPEN
+reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" true unreached; "V3" undetermined unreached]
+reading /rules/rules/1/versions/0 "J1" FAILS
+reading /rules/rules/10/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/10/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" true unreached; "V3" undetermined unreached]
+reading /rules/rules/2/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" true reached; "V3" undetermined unreached]
+reading /rules/rules/3/versions/0 "J1" HOLDS
+reading /rules/rules/4/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" true reached; "V3" undetermined unreached]
+reading /rules/rules/4/versions/0 "J1" FAILS
+reading /rules/rules/5/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" true reached; "V3" undetermined unreached]
+reading /rules/rules/5/versions/0 "J1" FAILS
+reading /rules/rules/6/versions/0 "J1" 0 QuantifierFold true closure contributors ["V1" false reached; "V2" false reached; "V3" true reached]
+reading /rules/rules/6/versions/0 "J1" HOLDS
+reading /rules/rules/7/versions/0 "J1" 0 CharacteristicCheck false
+reading /rules/rules/7/versions/0 "J1" 1 Literal unreached
+reading /rules/rules/7/versions/0 "J1" FAILS
+reading /rules/rules/8/versions/0 "J1" 0 QuantifierFold false closure contributors ["V1" true reached; "V2" true reached; "V3" false reached]
+reading /rules/rules/8/versions/0 "J1" OPEN
+reading /rules/rules/9/versions/0 "J1" 0 Compound undetermined open "V3" "gewicht"
+reading /rules/rules/9/versions/0 "J1" 1 QuantifierFold true contributors ["V1" true reached; "V2" true unreached; "V3" undetermined unreached]
+reading /rules/rules/9/versions/0 "J1" 5 QuantifierFold undetermined open "V3" "gewicht" contributors ["V1" false reached; "V2" false reached; "V3" undetermined reached]
+reading /rules/rules/9/versions/0 "J1" OPEN
+state attribute "V1" "gewicht" 20
+state attribute "V1" "schade" open
+state attribute "V2" "gewicht" 30
+state attribute "V2" "schade" open
+state attribute "V3" "gewicht" open
+state attribute "V3" "schade" open
+state characteristic "J1" "eenmaal"
+state characteristic "J1" "gemengd" open
+state characteristic "J1" "gewogen" open
+state characteristic "J1" "keurder"
+state characteristic "J1" "kundig" open
+state characteristic "J1" "ongewogen"
+state characteristic "J1" "tweemaal"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state link "vinding" "vinder" "J1" "vondst" "V3"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"
+state object "V3" "Vondst"

@@ -1,0 +1,2937 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht kgevuld",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal kgevuld",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "volle kgevuld",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht ksom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal ksom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "volle ksom",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht kgrens",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal kgrens",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "volle kgrens",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht kdiep",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal kdiep",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "volle kdiep",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "verenigd aantal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "rijk kgevuld",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "rijk ksom",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "rijk kgrens",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "rijk kdiep",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "plural": "gewichten"
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gemerkt",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "kgevuld",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "ksom",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "kgrens",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "kdiep",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Keuring",
+        "animate": false,
+        "plural": "Keuringen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "score",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "plural": "scores"
+          },
+          {
+            "node": "Attribute",
+            "name": "deling",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gestempeld",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Stempel",
+        "animate": false,
+        "plural": "Stempels",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "inkt",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "plural": "inkten"
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vinding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "keurgang",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "gekeurde",
+            "objectType": "Vondst",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "keuring",
+            "objectType": "Keuring",
+            "plural": "keuringen",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "stempelgang",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "gestempelde",
+            "objectType": "Keuring",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "stempel",
+            "objectType": "Stempel",
+            "plural": "stempels",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "keurgrens",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "gewicht kgevuld",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gewicht kgevuld",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het gewicht kgevuld van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgevuld"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Aggregation",
+                      "kind": "filledCount",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "score",
+                          "subjectType": "Keuring",
+                          "source": {
+                            "snippet": "de score van alle keuringen van de Vondst"
+                          }
+                        }
+                      ],
+                      "elementType": "Keuring",
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "keurgang",
+                        "role": "keuring"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "nonNegative"
+                      },
+                      "source": {
+                        "snippet": "het aantal gevulde waarden van de score van alle keuringen van de Vondst"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "1"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "1"
+                      }
+                    },
+                    "source": {
+                      "snippet": "het aantal gevulde waarden van de score van alle keuringen van de Vondst groter is dan 1"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is kgevuld"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgevuld"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal kgevuld",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal kgevuld",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal kgevuld van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondsten",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgevuld"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Aggregation",
+                      "kind": "filledCount",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "score",
+                          "subjectType": "Keuring",
+                          "source": {
+                            "snippet": "de score van alle keuringen van de Vondst"
+                          }
+                        }
+                      ],
+                      "elementType": "Keuring",
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "keurgang",
+                        "role": "keuring"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "nonNegative"
+                      },
+                      "source": {
+                        "snippet": "het aantal gevulde waarden van de score van alle keuringen van de Vondst"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "1"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "1"
+                      }
+                    },
+                    "source": {
+                      "snippet": "het aantal gevulde waarden van de score van alle keuringen van de Vondst groter is dan 1"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is kgevuld"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgevuld"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vol kgevuld",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "volle kgevuld",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het volle kgevuld van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "filledCount",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgevuld"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Aggregation",
+                      "kind": "filledCount",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "score",
+                          "subjectType": "Keuring",
+                          "source": {
+                            "snippet": "de score van alle keuringen van de Vondst"
+                          }
+                        }
+                      ],
+                      "elementType": "Keuring",
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "keurgang",
+                        "role": "keuring"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "nonNegative"
+                      },
+                      "source": {
+                        "snippet": "het aantal gevulde waarden van de score van alle keuringen van de Vondst"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "1"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "1"
+                      }
+                    },
+                    "source": {
+                      "snippet": "het aantal gevulde waarden van de score van alle keuringen van de Vondst groter is dan 1"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is kgevuld"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgevuld"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "rijk kgevuld",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rijk kgevuld",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is rijk kgevuld"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Aggregation",
+                "kind": "count",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "vondsten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgevuld"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "filter": {
+                  "node": "Compound",
+                  "quantifier": "the",
+                  "threshold": 0,
+                  "parts": [
+                    {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "Aggregation",
+                        "kind": "filledCount",
+                        "arguments": [
+                          {
+                            "node": "AttributeReference",
+                            "attribute": "score",
+                            "subjectType": "Keuring",
+                            "source": {
+                              "snippet": "de score van alle keuringen van de Vondst"
+                            }
+                          }
+                        ],
+                        "elementType": "Keuring",
+                        "sourceRole": {
+                          "node": "RoleBinding",
+                          "factType": "keurgang",
+                          "role": "keuring"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "nonNegative"
+                        },
+                        "source": {
+                          "snippet": "het aantal gevulde waarden van de score van alle keuringen van de Vondst"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "1"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "1"
+                        }
+                      },
+                      "source": {
+                        "snippet": "het aantal gevulde waarden van de score van alle keuringen van de Vondst groter is dan 1"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "aan de volgende voorwaarde voldoen: hij is kgevuld"
+                  }
+                },
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "vinding",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgevuld"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgevuld groter is dan 0"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "gewicht ksom",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gewicht ksom",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het gewicht ksom van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is ksom"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Aggregation",
+                      "kind": "sum",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "score",
+                          "subjectType": "Keuring",
+                          "source": {
+                            "snippet": "de score van alle keuringen van de Vondst"
+                          }
+                        }
+                      ],
+                      "elementType": "Keuring",
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "keurgang",
+                        "role": "keuring"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "de som van de score van alle keuringen van de Vondst"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "10"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "10"
+                      }
+                    },
+                    "source": {
+                      "snippet": "de som van de score van alle keuringen van de Vondst groter is dan 10"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is ksom"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is ksom"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal ksom",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal ksom",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal ksom van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondsten",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is ksom"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Aggregation",
+                      "kind": "sum",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "score",
+                          "subjectType": "Keuring",
+                          "source": {
+                            "snippet": "de score van alle keuringen van de Vondst"
+                          }
+                        }
+                      ],
+                      "elementType": "Keuring",
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "keurgang",
+                        "role": "keuring"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "de som van de score van alle keuringen van de Vondst"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "10"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "10"
+                      }
+                    },
+                    "source": {
+                      "snippet": "de som van de score van alle keuringen van de Vondst groter is dan 10"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is ksom"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is ksom"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vol ksom",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "volle ksom",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het volle ksom van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "filledCount",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is ksom"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Aggregation",
+                      "kind": "sum",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "score",
+                          "subjectType": "Keuring",
+                          "source": {
+                            "snippet": "de score van alle keuringen van de Vondst"
+                          }
+                        }
+                      ],
+                      "elementType": "Keuring",
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "keurgang",
+                        "role": "keuring"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "de som van de score van alle keuringen van de Vondst"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "10"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "10"
+                      }
+                    },
+                    "source": {
+                      "snippet": "de som van de score van alle keuringen van de Vondst groter is dan 10"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is ksom"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is ksom"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "rijk ksom",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rijk ksom",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is rijk ksom"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Aggregation",
+                "kind": "count",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "vondsten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is ksom"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "filter": {
+                  "node": "Compound",
+                  "quantifier": "the",
+                  "threshold": 0,
+                  "parts": [
+                    {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "Aggregation",
+                        "kind": "sum",
+                        "arguments": [
+                          {
+                            "node": "AttributeReference",
+                            "attribute": "score",
+                            "subjectType": "Keuring",
+                            "source": {
+                              "snippet": "de score van alle keuringen van de Vondst"
+                            }
+                          }
+                        ],
+                        "elementType": "Keuring",
+                        "sourceRole": {
+                          "node": "RoleBinding",
+                          "factType": "keurgang",
+                          "role": "keuring"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "de som van de score van alle keuringen van de Vondst"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "10"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "10"
+                        }
+                      },
+                      "source": {
+                        "snippet": "de som van de score van alle keuringen van de Vondst groter is dan 10"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "aan de volgende voorwaarde voldoen: hij is ksom"
+                  }
+                },
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "vinding",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is ksom"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is ksom groter is dan 0"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "gewicht kgrens",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gewicht kgrens",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het gewicht kgrens van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgrens"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Aggregation",
+                      "kind": "sum",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "score",
+                          "subjectType": "Keuring",
+                          "source": {
+                            "snippet": "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens"
+                          }
+                        }
+                      ],
+                      "elementType": "Keuring",
+                      "filter": {
+                        "node": "Compound",
+                        "quantifier": "the",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "Comparison",
+                            "op": "greater",
+                            "left": {
+                              "node": "AttributeReference",
+                              "attribute": "score",
+                              "subjectType": "Keuring",
+                              "source": {
+                                "snippet": "zijn score"
+                              }
+                            },
+                            "right": {
+                              "node": "ParameterReference",
+                              "parameter": "keurgrens",
+                              "source": {
+                                "snippet": "de keurgrens"
+                              }
+                            },
+                            "source": {
+                              "snippet": "zijn score is groter dan de keurgrens"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens"
+                        }
+                      },
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "keurgang",
+                        "role": "keuring"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "5"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "5"
+                      }
+                    },
+                    "source": {
+                      "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens groter is dan 5"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is kgrens"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgrens"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal kgrens",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal kgrens",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal kgrens van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondsten",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgrens"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Aggregation",
+                      "kind": "sum",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "score",
+                          "subjectType": "Keuring",
+                          "source": {
+                            "snippet": "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens"
+                          }
+                        }
+                      ],
+                      "elementType": "Keuring",
+                      "filter": {
+                        "node": "Compound",
+                        "quantifier": "the",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "Comparison",
+                            "op": "greater",
+                            "left": {
+                              "node": "AttributeReference",
+                              "attribute": "score",
+                              "subjectType": "Keuring",
+                              "source": {
+                                "snippet": "zijn score"
+                              }
+                            },
+                            "right": {
+                              "node": "ParameterReference",
+                              "parameter": "keurgrens",
+                              "source": {
+                                "snippet": "de keurgrens"
+                              }
+                            },
+                            "source": {
+                              "snippet": "zijn score is groter dan de keurgrens"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens"
+                        }
+                      },
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "keurgang",
+                        "role": "keuring"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "5"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "5"
+                      }
+                    },
+                    "source": {
+                      "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens groter is dan 5"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is kgrens"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgrens"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vol kgrens",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "volle kgrens",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het volle kgrens van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "filledCount",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgrens"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Aggregation",
+                      "kind": "sum",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "score",
+                          "subjectType": "Keuring",
+                          "source": {
+                            "snippet": "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens"
+                          }
+                        }
+                      ],
+                      "elementType": "Keuring",
+                      "filter": {
+                        "node": "Compound",
+                        "quantifier": "the",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "Comparison",
+                            "op": "greater",
+                            "left": {
+                              "node": "AttributeReference",
+                              "attribute": "score",
+                              "subjectType": "Keuring",
+                              "source": {
+                                "snippet": "zijn score"
+                              }
+                            },
+                            "right": {
+                              "node": "ParameterReference",
+                              "parameter": "keurgrens",
+                              "source": {
+                                "snippet": "de keurgrens"
+                              }
+                            },
+                            "source": {
+                              "snippet": "zijn score is groter dan de keurgrens"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens"
+                        }
+                      },
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "keurgang",
+                        "role": "keuring"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "5"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "5"
+                      }
+                    },
+                    "source": {
+                      "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens groter is dan 5"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is kgrens"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgrens"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "rijk kgrens",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rijk kgrens",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is rijk kgrens"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Aggregation",
+                "kind": "count",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "vondsten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgrens"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "filter": {
+                  "node": "Compound",
+                  "quantifier": "the",
+                  "threshold": 0,
+                  "parts": [
+                    {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "Aggregation",
+                        "kind": "sum",
+                        "arguments": [
+                          {
+                            "node": "AttributeReference",
+                            "attribute": "score",
+                            "subjectType": "Keuring",
+                            "source": {
+                              "snippet": "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens"
+                            }
+                          }
+                        ],
+                        "elementType": "Keuring",
+                        "filter": {
+                          "node": "Compound",
+                          "quantifier": "the",
+                          "threshold": 0,
+                          "parts": [
+                            {
+                              "node": "Comparison",
+                              "op": "greater",
+                              "left": {
+                                "node": "AttributeReference",
+                                "attribute": "score",
+                                "subjectType": "Keuring",
+                                "source": {
+                                  "snippet": "zijn score"
+                                }
+                              },
+                              "right": {
+                                "node": "ParameterReference",
+                                "parameter": "keurgrens",
+                                "source": {
+                                  "snippet": "de keurgrens"
+                                }
+                              },
+                              "source": {
+                                "snippet": "zijn score is groter dan de keurgrens"
+                              }
+                            }
+                          ],
+                          "source": {
+                            "snippet": "aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens"
+                          }
+                        },
+                        "sourceRole": {
+                          "node": "RoleBinding",
+                          "factType": "keurgang",
+                          "role": "keuring"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "5"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "5"
+                        }
+                      },
+                      "source": {
+                        "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens groter is dan 5"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "aan de volgende voorwaarde voldoen: hij is kgrens"
+                  }
+                },
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "vinding",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgrens"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kgrens groter is dan 0"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "gewicht kdiep",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gewicht kdiep",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het gewicht kdiep van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kdiep"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Aggregation",
+                      "kind": "sum",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "score",
+                          "subjectType": "Keuring",
+                          "source": {
+                            "snippet": "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is gestempeld"
+                          }
+                        }
+                      ],
+                      "elementType": "Keuring",
+                      "filter": {
+                        "node": "Compound",
+                        "quantifier": "the",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "Comparison",
+                            "op": "greater",
+                            "left": {
+                              "node": "Aggregation",
+                              "kind": "filledCount",
+                              "arguments": [
+                                {
+                                  "node": "AttributeReference",
+                                  "attribute": "inkt",
+                                  "subjectType": "Stempel",
+                                  "source": {
+                                    "snippet": "de inkt van alle stempels van de Keuring"
+                                  }
+                                }
+                              ],
+                              "elementType": "Stempel",
+                              "sourceRole": {
+                                "node": "RoleBinding",
+                                "factType": "stempelgang",
+                                "role": "stempel"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "nonNegative"
+                              },
+                              "source": {
+                                "snippet": "het aantal gevulde waarden van de inkt van alle stempels van de Keuring"
+                              }
+                            },
+                            "right": {
+                              "node": "Literal",
+                              "value": {
+                                "number": "0"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "unspecified"
+                              },
+                              "source": {
+                                "snippet": "0"
+                              }
+                            },
+                            "source": {
+                              "snippet": "het aantal gevulde waarden van de inkt van alle stempels van de Keuring groter is dan 0"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "aan de volgende voorwaarde voldoen: hij is gestempeld"
+                        }
+                      },
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "keurgang",
+                        "role": "keuring"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is gestempeld"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "5"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "5"
+                      }
+                    },
+                    "source": {
+                      "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is gestempeld groter is dan 5"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is kdiep"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kdiep"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal kdiep",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal kdiep",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal kdiep van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondsten",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kdiep"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Aggregation",
+                      "kind": "sum",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "score",
+                          "subjectType": "Keuring",
+                          "source": {
+                            "snippet": "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is gestempeld"
+                          }
+                        }
+                      ],
+                      "elementType": "Keuring",
+                      "filter": {
+                        "node": "Compound",
+                        "quantifier": "the",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "Comparison",
+                            "op": "greater",
+                            "left": {
+                              "node": "Aggregation",
+                              "kind": "filledCount",
+                              "arguments": [
+                                {
+                                  "node": "AttributeReference",
+                                  "attribute": "inkt",
+                                  "subjectType": "Stempel",
+                                  "source": {
+                                    "snippet": "de inkt van alle stempels van de Keuring"
+                                  }
+                                }
+                              ],
+                              "elementType": "Stempel",
+                              "sourceRole": {
+                                "node": "RoleBinding",
+                                "factType": "stempelgang",
+                                "role": "stempel"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "nonNegative"
+                              },
+                              "source": {
+                                "snippet": "het aantal gevulde waarden van de inkt van alle stempels van de Keuring"
+                              }
+                            },
+                            "right": {
+                              "node": "Literal",
+                              "value": {
+                                "number": "0"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "unspecified"
+                              },
+                              "source": {
+                                "snippet": "0"
+                              }
+                            },
+                            "source": {
+                              "snippet": "het aantal gevulde waarden van de inkt van alle stempels van de Keuring groter is dan 0"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "aan de volgende voorwaarde voldoen: hij is gestempeld"
+                        }
+                      },
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "keurgang",
+                        "role": "keuring"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is gestempeld"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "5"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "5"
+                      }
+                    },
+                    "source": {
+                      "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is gestempeld groter is dan 5"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is kdiep"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kdiep"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vol kdiep",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "volle kdiep",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het volle kdiep van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "filledCount",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kdiep"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "Aggregation",
+                      "kind": "sum",
+                      "arguments": [
+                        {
+                          "node": "AttributeReference",
+                          "attribute": "score",
+                          "subjectType": "Keuring",
+                          "source": {
+                            "snippet": "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is gestempeld"
+                          }
+                        }
+                      ],
+                      "elementType": "Keuring",
+                      "filter": {
+                        "node": "Compound",
+                        "quantifier": "the",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "Comparison",
+                            "op": "greater",
+                            "left": {
+                              "node": "Aggregation",
+                              "kind": "filledCount",
+                              "arguments": [
+                                {
+                                  "node": "AttributeReference",
+                                  "attribute": "inkt",
+                                  "subjectType": "Stempel",
+                                  "source": {
+                                    "snippet": "de inkt van alle stempels van de Keuring"
+                                  }
+                                }
+                              ],
+                              "elementType": "Stempel",
+                              "sourceRole": {
+                                "node": "RoleBinding",
+                                "factType": "stempelgang",
+                                "role": "stempel"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "nonNegative"
+                              },
+                              "source": {
+                                "snippet": "het aantal gevulde waarden van de inkt van alle stempels van de Keuring"
+                              }
+                            },
+                            "right": {
+                              "node": "Literal",
+                              "value": {
+                                "number": "0"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "unspecified"
+                              },
+                              "source": {
+                                "snippet": "0"
+                              }
+                            },
+                            "source": {
+                              "snippet": "het aantal gevulde waarden van de inkt van alle stempels van de Keuring groter is dan 0"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "aan de volgende voorwaarde voldoen: hij is gestempeld"
+                        }
+                      },
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "keurgang",
+                        "role": "keuring"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is gestempeld"
+                      }
+                    },
+                    "right": {
+                      "node": "Literal",
+                      "value": {
+                        "number": "5"
+                      },
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "5"
+                      }
+                    },
+                    "source": {
+                      "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is gestempeld groter is dan 5"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is kdiep"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kdiep"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "rijk kdiep",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "rijk kdiep",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is rijk kdiep"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Aggregation",
+                "kind": "count",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "vondsten",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kdiep"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "filter": {
+                  "node": "Compound",
+                  "quantifier": "the",
+                  "threshold": 0,
+                  "parts": [
+                    {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "Aggregation",
+                        "kind": "sum",
+                        "arguments": [
+                          {
+                            "node": "AttributeReference",
+                            "attribute": "score",
+                            "subjectType": "Keuring",
+                            "source": {
+                              "snippet": "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is gestempeld"
+                            }
+                          }
+                        ],
+                        "elementType": "Keuring",
+                        "filter": {
+                          "node": "Compound",
+                          "quantifier": "the",
+                          "threshold": 0,
+                          "parts": [
+                            {
+                              "node": "Comparison",
+                              "op": "greater",
+                              "left": {
+                                "node": "Aggregation",
+                                "kind": "filledCount",
+                                "arguments": [
+                                  {
+                                    "node": "AttributeReference",
+                                    "attribute": "inkt",
+                                    "subjectType": "Stempel",
+                                    "source": {
+                                      "snippet": "de inkt van alle stempels van de Keuring"
+                                    }
+                                  }
+                                ],
+                                "elementType": "Stempel",
+                                "sourceRole": {
+                                  "node": "RoleBinding",
+                                  "factType": "stempelgang",
+                                  "role": "stempel"
+                                },
+                                "type": {
+                                  "node": "Number",
+                                  "whole": true,
+                                  "decimals": 0,
+                                  "sign": "nonNegative"
+                                },
+                                "source": {
+                                  "snippet": "het aantal gevulde waarden van de inkt van alle stempels van de Keuring"
+                                }
+                              },
+                              "right": {
+                                "node": "Literal",
+                                "value": {
+                                  "number": "0"
+                                },
+                                "type": {
+                                  "node": "Number",
+                                  "whole": true,
+                                  "decimals": 0,
+                                  "sign": "unspecified"
+                                },
+                                "source": {
+                                  "snippet": "0"
+                                }
+                              },
+                              "source": {
+                                "snippet": "het aantal gevulde waarden van de inkt van alle stempels van de Keuring groter is dan 0"
+                              }
+                            }
+                          ],
+                          "source": {
+                            "snippet": "aan de volgende voorwaarde voldoen: hij is gestempeld"
+                          }
+                        },
+                        "sourceRole": {
+                          "node": "RoleBinding",
+                          "factType": "keurgang",
+                          "role": "keuring"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is gestempeld"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "5"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "5"
+                        }
+                      },
+                      "source": {
+                        "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is gestempeld groter is dan 5"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "aan de volgende voorwaarde voldoen: hij is kdiep"
+                  }
+                },
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "vinding",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kdiep"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is kdiep groter is dan 0"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "verenigd aantal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "verenigd aantal",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal kgevuld van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "InstanceSetUnion",
+                  "branches": [
+                    {
+                      "node": "InstanceSetBranch",
+                      "elementType": "Vondst",
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "vinding",
+                        "role": "vondst"
+                      },
+                      "filter": {
+                        "node": "Compound",
+                        "quantifier": "the",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "Comparison",
+                            "op": "greater",
+                            "left": {
+                              "node": "Aggregation",
+                              "kind": "sum",
+                              "arguments": [
+                                {
+                                  "node": "AttributeReference",
+                                  "attribute": "score",
+                                  "subjectType": "Keuring",
+                                  "source": {
+                                    "snippet": "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens"
+                                  }
+                                }
+                              ],
+                              "elementType": "Keuring",
+                              "filter": {
+                                "node": "Compound",
+                                "quantifier": "the",
+                                "threshold": 0,
+                                "parts": [
+                                  {
+                                    "node": "Comparison",
+                                    "op": "greater",
+                                    "left": {
+                                      "node": "AttributeReference",
+                                      "attribute": "score",
+                                      "subjectType": "Keuring",
+                                      "source": {
+                                        "snippet": "zijn score"
+                                      }
+                                    },
+                                    "right": {
+                                      "node": "ParameterReference",
+                                      "parameter": "keurgrens",
+                                      "source": {
+                                        "snippet": "de keurgrens"
+                                      }
+                                    },
+                                    "source": {
+                                      "snippet": "zijn score is groter dan de keurgrens"
+                                    }
+                                  }
+                                ],
+                                "source": {
+                                  "snippet": "aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens"
+                                }
+                              },
+                              "sourceRole": {
+                                "node": "RoleBinding",
+                                "factType": "keurgang",
+                                "role": "keuring"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "unspecified"
+                              },
+                              "source": {
+                                "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens"
+                              }
+                            },
+                            "right": {
+                              "node": "Literal",
+                              "value": {
+                                "number": "5"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "unspecified"
+                              },
+                              "source": {
+                                "snippet": "5"
+                              }
+                            },
+                            "source": {
+                              "snippet": "de som van de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: zijn score is groter dan de keurgrens groter is dan 5"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "aan de volgende voorwaarde voldoen: hij is kgrens"
+                        }
+                      },
+                      "source": {
+                        "snippet": "vondsten van de Jutter die gekeurd zijn"
+                      }
+                    },
+                    {
+                      "node": "InstanceSetBranch",
+                      "elementType": "Vondst",
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "vinding",
+                        "role": "vondst"
+                      },
+                      "filter": {
+                        "node": "Compound",
+                        "quantifier": "the",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "Comparison",
+                            "op": "greater",
+                            "left": {
+                              "node": "Aggregation",
+                              "kind": "filledCount",
+                              "arguments": [
+                                {
+                                  "node": "AttributeReference",
+                                  "attribute": "score",
+                                  "subjectType": "Keuring",
+                                  "source": {
+                                    "snippet": "de score van alle keuringen van de Vondst"
+                                  }
+                                }
+                              ],
+                              "elementType": "Keuring",
+                              "sourceRole": {
+                                "node": "RoleBinding",
+                                "factType": "keurgang",
+                                "role": "keuring"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "nonNegative"
+                              },
+                              "source": {
+                                "snippet": "het aantal gevulde waarden van de score van alle keuringen van de Vondst"
+                              }
+                            },
+                            "right": {
+                              "node": "Literal",
+                              "value": {
+                                "number": "1"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "unspecified"
+                              },
+                              "source": {
+                                "snippet": "1"
+                              }
+                            },
+                            "source": {
+                              "snippet": "het aantal gevulde waarden van de score van alle keuringen van de Vondst groter is dan 1"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "aan de volgende voorwaarde voldoen: hij is kgevuld"
+                        }
+                      },
+                      "source": {
+                        "snippet": "vondsten van de Jutter die gemerkt zijn"
+                      }
+                    },
+                    {
+                      "node": "InstanceSetBranch",
+                      "elementType": "Vondst",
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "vinding",
+                        "role": "vondst"
+                      },
+                      "filter": {
+                        "node": "Compound",
+                        "quantifier": "the",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "Comparison",
+                            "op": "greater",
+                            "left": {
+                              "node": "Aggregation",
+                              "kind": "sum",
+                              "arguments": [
+                                {
+                                  "node": "AttributeReference",
+                                  "attribute": "score",
+                                  "subjectType": "Keuring",
+                                  "source": {
+                                    "snippet": "de score van alle keuringen van de Vondst"
+                                  }
+                                }
+                              ],
+                              "elementType": "Keuring",
+                              "sourceRole": {
+                                "node": "RoleBinding",
+                                "factType": "keurgang",
+                                "role": "keuring"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "unspecified"
+                              },
+                              "source": {
+                                "snippet": "de som van de score van alle keuringen van de Vondst"
+                              }
+                            },
+                            "right": {
+                              "node": "Literal",
+                              "value": {
+                                "number": "10"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "unspecified"
+                              },
+                              "source": {
+                                "snippet": "10"
+                              }
+                            },
+                            "source": {
+                              "snippet": "de som van de score van alle keuringen van de Vondst groter is dan 10"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "aan de volgende voorwaarde voldoen: hij is ksom"
+                        }
+                      },
+                      "source": {
+                        "snippet": "vondsten van de Jutter die gekeurd zijn"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "het aantal vondsten van de Jutter die gekeurd zijn en vondsten van de Jutter die gemerkt zijn"
+                  }
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die gekeurd zijn en vondsten van de Jutter die gemerkt zijn"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

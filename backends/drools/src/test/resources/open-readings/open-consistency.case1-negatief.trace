@@ -1,0 +1,7 @@
+reading /rules/consistencies/0/versions/0 "V1" 0 Comparison false
+reading /rules/consistencies/0/versions/0 "V1" 1 AttributeReference -1
+reading /rules/consistencies/0/versions/0 "V1" 2 Literal 0
+reading /rules/consistencies/0/versions/0 "V1" FAILS
+state attribute "V1" "gewicht" -1
+state channel "gewichtscontrole" "V1" EF-025
+state object "V1" "Vondst"

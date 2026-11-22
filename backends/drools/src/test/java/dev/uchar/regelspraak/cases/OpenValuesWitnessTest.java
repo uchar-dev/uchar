@@ -280,6 +280,12 @@ class OpenValuesWitnessTest {
         assertEquals(5, play("set-fold", "case"));
     }
 
+    /** WV-1.5-set-fold with a fold in the filter: a closure in the inner one (a filled-value count), an open value of it, its
+     *  own filter, two levels, and a count over a union of such selections. */
+    @Test void a_fold_in_a_filter() throws Exception {
+        assertEquals(4, play("fold-in-a-filter", "case"));
+    }
+
     /** WV-1.5-closure-in-a-value: a filled-value count and a filter on gevuld are closures: they decide for the form
      *  itself, a comparison of one that is false leaves its target open, and so does a value that is leeg after one, with
      *  what it deposited. */
@@ -364,6 +370,8 @@ class OpenValuesWitnessTest {
             between("stack-first-decides", "case5-basis-open.json", branch, "V1", "vindloon", "V1", "setGewicht", 50, "open",
                     "100");
             between("set-fold", "case2-gewicht-open.json", branch, "J1", "totaalgewicht", "V2", "setGewicht", 5, "open", "25");
+            between("fold-in-a-filter", "case2-score-open.json", branch, "J1", "gewicht ksom", "K2", "setScore", 7, "open", "3");
+            between("fold-in-a-filter", "case2-score-open.json", branch, "J1", "gewicht kgevuld", "K2", "setScore", 7, "open", "3");
             between("set-fold", "case2-gewicht-open.json", branch, "J1", "zwaargewicht", "V2", "setGewicht", 5, "open", "20");
             between("closure-in-a-value", "case2-alle-open.json", branch, "J1", "gewogen totaal", "V2", "setGewicht", 5, "open",
                     "5");
@@ -450,7 +458,7 @@ class OpenValuesWitnessTest {
         names.sort(null);
         assertEquals(List.of("boundary-after", "boundary-before", "closure-in-a-value", "complete", "complete-derived",
                 "composite-tables", "consistency", "derived", "filled-test", "fold-chain", "fold-in-a-binder",
-                "fold-in-a-date-stack", "fold-over-a-parameter", "fold-over-a-union", "fold-over-the-date", "fold-subtype",
+                "fold-in-a-date-stack", "fold-in-a-filter", "fold-over-a-parameter", "fold-over-a-union", "fold-over-the-date", "fold-subtype",
                 "fold-value-after-filters", "initialisation", "initialisation-condition", "input-per-object", "instance-ordered", "link",
                 "no-open-without-the-property", "open-input", "outside-the-window", "past-undetermined-deposit",
                 "past-undetermined-fault", "past-undetermined-fold", "quantifier-fold", "reach", "reach-without-the-property", "read-for-another", "rule",

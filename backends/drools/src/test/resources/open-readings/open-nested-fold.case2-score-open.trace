@@ -1,0 +1,89 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation empty
+reading /rules/rules/0/versions/0 "J1" OPEN
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation 0
+reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/10/versions/0 "J1" 0 Aggregation undetermined open "K2" "score"
+reading /rules/rules/10/versions/0 "J1" OPEN
+reading /rules/rules/11/versions/0 "J1" 0 Comparison undetermined open "K2" "score"
+reading /rules/rules/11/versions/0 "J1" 1 Aggregation undetermined open "K2" "score"
+reading /rules/rules/11/versions/0 "J1" 12 Literal unreached
+reading /rules/rules/11/versions/0 "J1" OPEN
+reading /rules/rules/12/versions/0 "J1" 0 Aggregation empty
+reading /rules/rules/12/versions/0 "J1" HOLDS
+reading /rules/rules/13/versions/0 "J1" 0 Aggregation 0
+reading /rules/rules/13/versions/0 "J1" HOLDS
+reading /rules/rules/14/versions/0 "J1" 0 Aggregation 0
+reading /rules/rules/14/versions/0 "J1" HOLDS
+reading /rules/rules/15/versions/0 "J1" 0 Comparison false
+reading /rules/rules/15/versions/0 "J1" 1 Aggregation 0
+reading /rules/rules/15/versions/0 "J1" 13 Literal 0
+reading /rules/rules/15/versions/0 "J1" FAILS
+reading /rules/rules/16/versions/0 "J1" 0 Aggregation undetermined open "K2" "score"
+reading /rules/rules/16/versions/0 "J1" OPEN
+reading /rules/rules/2/versions/0 "J1" 0 Aggregation 0
+reading /rules/rules/2/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 Comparison false closure
+reading /rules/rules/3/versions/0 "J1" 1 Aggregation 0
+reading /rules/rules/3/versions/0 "J1" 8 Literal 0
+reading /rules/rules/3/versions/0 "J1" OPEN
+reading /rules/rules/4/versions/0 "J1" 0 Aggregation undetermined open "K2" "score"
+reading /rules/rules/4/versions/0 "J1" OPEN
+reading /rules/rules/5/versions/0 "J1" 0 Aggregation undetermined open "K2" "score"
+reading /rules/rules/5/versions/0 "J1" OPEN
+reading /rules/rules/6/versions/0 "J1" 0 Aggregation undetermined open "K2" "score"
+reading /rules/rules/6/versions/0 "J1" OPEN
+reading /rules/rules/7/versions/0 "J1" 0 Comparison undetermined open "K2" "score"
+reading /rules/rules/7/versions/0 "J1" 1 Aggregation undetermined open "K2" "score"
+reading /rules/rules/7/versions/0 "J1" 8 Literal unreached
+reading /rules/rules/7/versions/0 "J1" OPEN
+reading /rules/rules/8/versions/0 "J1" 0 Aggregation undetermined open "K2" "score"
+reading /rules/rules/8/versions/0 "J1" OPEN
+reading /rules/rules/9/versions/0 "J1" 0 Aggregation undetermined open "K2" "score"
+reading /rules/rules/9/versions/0 "J1" OPEN
+state attribute "J1" "aantal kdiep" 0
+state attribute "J1" "aantal kgevuld" 0
+state attribute "J1" "aantal kgrens" open
+state attribute "J1" "aantal ksom" open
+state attribute "J1" "gewicht kgevuld" open
+state attribute "J1" "gewicht kgrens" open
+state attribute "J1" "gewicht ksom" open
+state attribute "J1" "verenigd aantal" open
+state attribute "J1" "volle kdiep" 0
+state attribute "J1" "volle kgevuld" 0
+state attribute "J1" "volle kgrens" open
+state attribute "J1" "volle ksom" open
+state attribute "K1" "deling" open
+state attribute "K1" "score" 5
+state attribute "K2" "deling" open
+state attribute "K2" "score" open
+state attribute "K3" "deling" open
+state attribute "K3" "score" 2
+state attribute "V1" "gewicht" 3
+state attribute "V2" "gewicht" 4
+state characteristic "J1" "rijk kgevuld" open
+state characteristic "J1" "rijk kgrens" open
+state characteristic "J1" "rijk ksom" open
+state characteristic "K1" "gestempeld" open
+state characteristic "K2" "gestempeld" open
+state characteristic "K3" "gestempeld" open
+state characteristic "V1" "gemerkt" open
+state characteristic "V1" "kdiep" open
+state characteristic "V1" "kgevuld" open
+state characteristic "V1" "kgrens" open
+state characteristic "V1" "ksom" open
+state characteristic "V2" "gemerkt" open
+state characteristic "V2" "kdiep" open
+state characteristic "V2" "kgevuld" open
+state characteristic "V2" "kgrens" open
+state characteristic "V2" "ksom" open
+state link "keurgang" "gekeurde" "V1" "keuring" "K1"
+state link "keurgang" "gekeurde" "V1" "keuring" "K2"
+state link "keurgang" "gekeurde" "V2" "keuring" "K3"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state object "J1" "Jutter"
+state object "K1" "Keuring"
+state object "K2" "Keuring"
+state object "K3" "Keuring"
+state object "V1" "Vondst"
+state object "V2" "Vondst"

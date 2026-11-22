@@ -1,0 +1,43 @@
+reading /rules/consistencies/0/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" false unreached]
+reading /rules/consistencies/0/versions/0 "J1" HOLDS
+reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" false reached]
+reading /rules/rules/0/versions/0 "J1" FAILS
+reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" false unreached]
+reading /rules/rules/1/versions/0 "J1" FAILS
+reading /rules/rules/10/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/10/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" false unreached]
+reading /rules/rules/2/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" false reached]
+reading /rules/rules/3/versions/0 "J1" FAILS
+reading /rules/rules/4/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" false reached]
+reading /rules/rules/4/versions/0 "J1" HOLDS
+reading /rules/rules/5/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" false reached]
+reading /rules/rules/5/versions/0 "J1" HOLDS
+reading /rules/rules/6/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached; "V2" false reached]
+reading /rules/rules/6/versions/0 "J1" FAILS
+reading /rules/rules/7/versions/0 "J1" 0 CharacteristicCheck true
+reading /rules/rules/7/versions/0 "J1" 1 Literal 5
+reading /rules/rules/7/versions/0 "J1" HOLDS
+reading /rules/rules/8/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" true reached]
+reading /rules/rules/8/versions/0 "J1" HOLDS
+reading /rules/rules/9/versions/0 "J1" 0 Compound true
+reading /rules/rules/9/versions/0 "J1" 1 QuantifierFold true contributors ["V1" true reached; "V2" false unreached]
+reading /rules/rules/9/versions/0 "J1" 5 QuantifierFold true contributors ["V1" false reached; "V2" true reached]
+reading /rules/rules/9/versions/0 "J1" HOLDS
+state attribute "J1" "toeslag" 5
+state attribute "V1" "gewicht" 20
+state attribute "V1" "schade" open
+state attribute "V2" "gewicht" 5
+state attribute "V2" "schade" open
+state characteristic "J1" "eenling"
+state characteristic "J1" "eenmaal"
+state characteristic "J1" "gemengd"
+state characteristic "J1" "gewogen"
+state characteristic "J1" "hoogstens"
+state characteristic "J1" "keurder"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"

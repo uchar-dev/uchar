@@ -1,0 +1,15 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation 2 contributors ["V1" empty reached; "V2" empty reached]
+reading /rules/rules/0/versions/0 "J1" HOLDS
+state attribute "J1" "keuraantal" 2
+state attribute "J1" "zwaaraantal" open
+state attribute "V1" "gewicht" 5
+state attribute "V2" "gewicht" 20
+state attribute "V3" "gewicht" 5
+state characteristic "V1" "gekeurd"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state link "vinding" "vinder" "J1" "vondst" "V3"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"
+state object "V3" "Vondst"

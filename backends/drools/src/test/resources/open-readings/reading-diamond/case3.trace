@@ -1,0 +1,72 @@
+reading /rules/rules/0/versions/0 "S1" 0 Aggregation 9 contributors ["C1" 9 reached]
+reading /rules/rules/0/versions/0 "S1" HOLDS
+reading /rules/rules/0/versions/0 "S2" 0 Aggregation 21 contributors ["C1" 9 reached; "C3" 12 reached]
+reading /rules/rules/0/versions/0 "S2" HOLDS
+reading /rules/rules/1/versions/0 "S1" 0 Aggregation 1 contributors ["C1" empty reached]
+reading /rules/rules/1/versions/0 "S1" HOLDS
+reading /rules/rules/1/versions/0 "S2" 0 Aggregation 1 contributors ["C1" empty reached]
+reading /rules/rules/1/versions/0 "S2" HOLDS
+reading /rules/rules/2/versions/0 "S1" 0 QuantifierFold true contributors ["C1" true reached]
+reading /rules/rules/2/versions/0 "S1" HOLDS
+reading /rules/rules/2/versions/0 "S2" 0 QuantifierFold true contributors ["C1" true reached; "C3" true reached]
+reading /rules/rules/2/versions/0 "S2" HOLDS
+reading /rules/rules/3/versions/0 "S1" 0 Comparison false
+reading /rules/rules/3/versions/0 "S1" 1 Aggregation 9 contributors ["C1" 9 reached]
+reading /rules/rules/3/versions/0 "S1" 7 Literal 10
+reading /rules/rules/3/versions/0 "S1" FAILS
+reading /rules/rules/3/versions/0 "S2" 0 Comparison false
+reading /rules/rules/3/versions/0 "S2" 1 Aggregation 9 contributors ["C1" 9 reached]
+reading /rules/rules/3/versions/0 "S2" 7 Literal 10
+reading /rules/rules/3/versions/0 "S2" FAILS
+state attribute "C1" "contributie" 9
+state attribute "C1" "ledentelling" 12
+state attribute "C2" "contributie" 1500
+state attribute "C2" "ledentelling" 1
+state attribute "C3" "contributie" 12
+state attribute "C3" "ledentelling" 2
+state attribute "J1" "leeftijd" 9
+state attribute "J2" "leeftijd" 2
+state attribute "J3" "leeftijd" 0
+state attribute "J4" "leeftijd" 1
+state attribute "J5" "leeftijd" 4
+state attribute "J6" "leeftijd" 2
+state attribute "S1" "clubaantal" open
+state attribute "S1" "totale contributie" 9
+state attribute "S1" "volle aantal" 1
+state attribute "S2" "clubaantal" open
+state attribute "S2" "totale contributie" 21
+state attribute "S2" "volle aantal" 1
+state characteristic "C1" "erkend" open
+state characteristic "C1" "groot" open
+state characteristic "C1" "verdeeld" open
+state characteristic "C2" "erkend" open
+state characteristic "C2" "groot" open
+state characteristic "C2" "verdeeld" open
+state characteristic "C3" "erkend" open
+state characteristic "C3" "groot" open
+state characteristic "C3" "verdeeld" open
+state characteristic "S1" "gedeeld" open
+state characteristic "S1" "keurig"
+state characteristic "S2" "gedeeld" open
+state characteristic "S2" "keurig"
+state link "lidmaatschap" "club" "C1" "lid" "J1"
+state link "lidmaatschap" "club" "C1" "lid" "J4"
+state link "lidmaatschap" "club" "C1" "lid" "J5"
+state link "lidmaatschap" "club" "C3" "lid" "J6"
+state link "strandgang" "strand" "S1" "jutter" "J1"
+state link "strandgang" "strand" "S1" "jutter" "J2"
+state link "strandgang" "strand" "S1" "jutter" "J3"
+state link "strandgang" "strand" "S1" "jutter" "J4"
+state link "strandgang" "strand" "S2" "jutter" "J5"
+state link "strandgang" "strand" "S2" "jutter" "J6"
+state object "C1" "Club"
+state object "C2" "Club"
+state object "C3" "Club"
+state object "J1" "Jutter"
+state object "J2" "Jutter"
+state object "J3" "Jutter"
+state object "J4" "Jutter"
+state object "J5" "Jutter"
+state object "J6" "Jutter"
+state object "S1" "Strand"
+state object "S2" "Strand"

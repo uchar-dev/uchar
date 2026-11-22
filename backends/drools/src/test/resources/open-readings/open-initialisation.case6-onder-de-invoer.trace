@@ -1,0 +1,9 @@
+reading /rules/prioritizedDefaults/0/defaults/0 "W1" 0 CharacteristicCheck undetermined open "W1" "betwist"
+reading /rules/prioritizedDefaults/0/defaults/0 "W1" 1 Literal unreached
+reading /rules/prioritizedDefaults/0/defaults/0 "W1" OPEN
+reading /rules/prioritizedDefaults/0/defaults/1 "W1" DISPLACED
+reading /rules/rules/0/versions/0 "W1" DISPLACED
+state attribute "W1" "bergloon" open
+state attribute "W1" "gewicht" 5
+state characteristic "W1" "betwist" open
+state object "W1" "Wrakvondst"

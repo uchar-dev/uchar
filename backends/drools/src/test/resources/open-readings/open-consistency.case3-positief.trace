@@ -1,0 +1,6 @@
+reading /rules/consistencies/0/versions/0 "V1" 0 Comparison true
+reading /rules/consistencies/0/versions/0 "V1" 1 AttributeReference 5
+reading /rules/consistencies/0/versions/0 "V1" 2 Literal 0
+reading /rules/consistencies/0/versions/0 "V1" HOLDS
+state attribute "V1" "gewicht" 5
+state object "V1" "Vondst"

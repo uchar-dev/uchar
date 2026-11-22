@@ -1,0 +1,28 @@
+reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached; "V2" undetermined unreached]
+reading /rules/rules/0/versions/0 "J1" FAILS
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation undetermined open "V2" "gewicht"
+reading /rules/rules/1/versions/0 "J1" OPEN
+reading /rules/rules/2/versions/0 "J1" 0 Aggregation undetermined open "V2" "gewicht"
+reading /rules/rules/2/versions/0 "J1" OPEN
+reading /rules/rules/3/versions/0 "J1" 0 Compound false
+reading /rules/rules/3/versions/0 "J1" 1 Comparison undetermined open "V2" "gewicht"
+reading /rules/rules/3/versions/0 "J1" 10 Literal unreached
+reading /rules/rules/3/versions/0 "J1" 11 Comparison false
+reading /rules/rules/3/versions/0 "J1" 12 Aggregation 2 contributors ["V1" empty reached; "V2" empty reached]
+reading /rules/rules/3/versions/0 "J1" 14 Literal 5
+reading /rules/rules/3/versions/0 "J1" 2 Aggregation undetermined open "V2" "gewicht"
+reading /rules/rules/3/versions/0 "J1" FAILS
+state attribute "J1" "verdeeld aantal" open
+state attribute "J1" "verdeeld gewicht" open
+state attribute "V1" "deelnemers" 0
+state attribute "V1" "gewicht" 9
+state attribute "V1" "lengte" 3
+state attribute "V2" "deelnemers" 2
+state attribute "V2" "gewicht" open
+state attribute "V2" "lengte" 1
+state channel "gelijkmatig" "J1" EF-005
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"

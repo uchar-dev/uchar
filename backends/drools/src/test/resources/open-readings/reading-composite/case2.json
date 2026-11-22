@@ -1,0 +1,120 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V1",
+            "V2",
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "1"
+          },
+          "deling": {
+            "number": "2"
+          },
+          "bonus": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V6",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "0"
+          },
+          "bonus": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "bonus": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V4",
+            "V5",
+            "V6"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V5",
+        "objectType": "Vondst",
+        "attributes": {
+          "schade": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V4",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "9"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "9"
+          },
+          "taxatie": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "ervaring"
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+reading /rules/rules/0/versions/0 "V1" 0 Compound undetermined open "V1" "schatting"
+reading /rules/rules/0/versions/0 "V1" 1 Comparison true
+reading /rules/rules/0/versions/0 "V1" 2 AttributeReference 200
+reading /rules/rules/0/versions/0 "V1" 3 Literal 100
+reading /rules/rules/0/versions/0 "V1" 4 Comparison undetermined open "V1" "schatting"
+reading /rules/rules/0/versions/0 "V1" 5 AttributeReference undetermined open "V1" "schatting"
+reading /rules/rules/0/versions/0 "V1" 6 Literal unreached
+reading /rules/rules/0/versions/0 "V1" OPEN
+reading /rules/rules/1/versions/0 "V1" 0 Compound true
+reading /rules/rules/1/versions/0 "V1" 1 Comparison true
+reading /rules/rules/1/versions/0 "V1" 2 AttributeReference 200
+reading /rules/rules/1/versions/0 "V1" 3 Literal 100
+reading /rules/rules/1/versions/0 "V1" 4 Comparison unreached
+reading /rules/rules/1/versions/0 "V1" 5 AttributeReference unreached
+reading /rules/rules/1/versions/0 "V1" 6 Literal unreached
+reading /rules/rules/1/versions/0 "V1" HOLDS
+reading /rules/rules/2/versions/0 "V1" 0 Compound false
+reading /rules/rules/2/versions/0 "V1" 1 Comparison true
+reading /rules/rules/2/versions/0 "V1" 2 AttributeReference 200
+reading /rules/rules/2/versions/0 "V1" 3 Literal 100
+reading /rules/rules/2/versions/0 "V1" 4 Comparison unreached
+reading /rules/rules/2/versions/0 "V1" 5 AttributeReference unreached
+reading /rules/rules/2/versions/0 "V1" 6 Literal unreached
+reading /rules/rules/2/versions/0 "V1" FAILS
+reading /rules/rules/3/versions/0 "V1" 0 Compound false
+reading /rules/rules/3/versions/0 "V1" 1 Comparison true
+reading /rules/rules/3/versions/0 "V1" 2 AttributeReference 200
+reading /rules/rules/3/versions/0 "V1" 3 Literal 100
+reading /rules/rules/3/versions/0 "V1" FAILS
+reading /rules/rules/4/versions/0 "V1" 0 Compound undetermined open "V1" "schatting"
+reading /rules/rules/4/versions/0 "V1" 1 Comparison true
+reading /rules/rules/4/versions/0 "V1" 2 AttributeReference 200
+reading /rules/rules/4/versions/0 "V1" 3 Literal 100
+reading /rules/rules/4/versions/0 "V1" 4 Comparison undetermined open "V1" "schatting"
+reading /rules/rules/4/versions/0 "V1" 5 AttributeReference undetermined open "V1" "schatting"
+reading /rules/rules/4/versions/0 "V1" 6 Literal unreached
+reading /rules/rules/4/versions/0 "V1" 7 Comparison undetermined open "V1" "lengte"
+reading /rules/rules/4/versions/0 "V1" 8 AttributeReference undetermined open "V1" "lengte"
+reading /rules/rules/4/versions/0 "V1" 9 Literal unreached
+reading /rules/rules/4/versions/0 "V1" OPEN
+reading /rules/rules/5/versions/0 "V1" 0 Compound undetermined open "V1" "schatting"
+reading /rules/rules/5/versions/0 "V1" 1 Comparison true
+reading /rules/rules/5/versions/0 "V1" 2 AttributeReference 200
+reading /rules/rules/5/versions/0 "V1" 3 Literal 100
+reading /rules/rules/5/versions/0 "V1" 4 Comparison undetermined open "V1" "schatting"
+reading /rules/rules/5/versions/0 "V1" 5 AttributeReference undetermined open "V1" "schatting"
+reading /rules/rules/5/versions/0 "V1" 6 Literal unreached
+reading /rules/rules/5/versions/0 "V1" 7 Comparison undetermined open "V1" "lengte"
+reading /rules/rules/5/versions/0 "V1" 8 AttributeReference undetermined open "V1" "lengte"
+reading /rules/rules/5/versions/0 "V1" 9 Literal unreached
+reading /rules/rules/5/versions/0 "V1" OPEN
+reading /rules/rules/6/versions/0 "V1" 0 Compound undetermined open "V1" "schatting"
+reading /rules/rules/6/versions/0 "V1" 1 Comparison true
+reading /rules/rules/6/versions/0 "V1" 2 AttributeReference 200
+reading /rules/rules/6/versions/0 "V1" 3 Literal 100
+reading /rules/rules/6/versions/0 "V1" 4 Comparison undetermined open "V1" "schatting"
+reading /rules/rules/6/versions/0 "V1" 5 AttributeReference undetermined open "V1" "schatting"
+reading /rules/rules/6/versions/0 "V1" 6 Literal unreached
+reading /rules/rules/6/versions/0 "V1" 7 Comparison undetermined open "V1" "lengte"
+reading /rules/rules/6/versions/0 "V1" 8 AttributeReference undetermined open "V1" "lengte"
+reading /rules/rules/6/versions/0 "V1" 9 Literal unreached
+reading /rules/rules/6/versions/0 "V1" OPEN
+state attribute "V1" "gewicht" 200
+state attribute "V1" "lengte" open
+state attribute "V1" "schatting" open
+state characteristic "V1" "alles" open
+state characteristic "V1" "eenvan"
+state characteristic "V1" "exact" open
+state characteristic "V1" "hoogstens" open
+state characteristic "V1" "tweevan" open
+state object "V1" "Vondst"
