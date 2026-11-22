@@ -586,35 +586,35 @@ Rekenjaar is groter dan 2025, zijn taxatie is groter dan 1000", in a session
 without an evaluation date: without a gewicht the second member faults and is
 undetermined, and vrijgesteld stands not to hold at taxatie 50 and is open at
 taxatie 2000; at gewicht 20 the session faults with EF-011 (ch. 8.2), and at
-gewicht 5 the read stops at the first member. Such a member that reads a leeg
-binder of a Let around it (ch. 10.6) makes an open read instead of the
-Let's barrier: whether the Let is leeg does not stand, so the value it stands
-in is open. Example (WV-1.5-past-undetermined-barrier): "de uitkering van een
-Vondst is, daarbij geldt: de toeslag is zijn vindloon, 10 als ten minste één
-van: zijn gewicht is groter dan 10, de toeslag is groter dan 5; anders 0",
-with the vindloon of the card and taxatie 50, so that the toeslag is leeg:
-without a gewicht the uitkering is open; at gewicht 20 it is 10, and at
-gewicht 5 the second member reads the leeg toeslag and the uitkering is
-settled leeg. A binder such a member reads first is computed there, once, and
-what the computation deposits arises at the first read of the binder that is
-not provisional, and not at all where none comes; a fault of the computation
-leaves the member undetermined and arises at that read, and an open read in
-it is an open read at every read of the binder. Example
-(WV-1.5-past-undetermined-binder): with the toeslag "zijn taxatie gedeeld door
-0 plus 3", "alle van" for "ten minste één van" and "anders 0", at taxatie 50:
-without a gewicht the uitkering is 0 without the EF-005 fact of the division,
-at gewicht 20 0 with it, at gewicht 5 0 without it; with "anders de toeslag" it
-is 3 with the fact, once. In a document without the property every member stands, and
-nothing is read provisionally (WV-1.5-past-undetermined-ordinary; the
-uitkering without a gewicht is settled leeg there). Example (WV-1.5-atom, WV-1.5-table-*): "een Vondst is zwaar indien zijn
-gewicht groter is dan 100" is undetermined without a gewicht. With "een
-Vondst is opvallend indien [Q] van: zijn gewicht groter is dan 100 (A), zijn
-schatting groter is dan 1000 (B), zijn lengte groter is dan 2 (C)": `all`
-over A undetermined and B false is false; `atLeast 1` over A undetermined and
-B true is true; over A true, B true and C undetermined, `atLeast 2` is true
-and `atMost 1` and `exactly 1` are false; over A true, B false and C
-undetermined, all three are undetermined; over A false, B false and C
-undetermined, `atLeast 2` is false, `atMost 1` true and `exactly 1`
+gewicht 5 the read stops at the first member. In a document without the
+property every member stands, and nothing is read provisionally
+(WV-1.5-past-undetermined-ordinary). Whether a member read provisionally reads
+a binder of a `Let` around it (ch. 10.6) does not stand either, and this
+section gives no reading to a binder there: a document in which a member of a
+composite other than its first, or the filter or the matrix of a quantifier
+fold, reads one is refused (`let-in-composite`, below). Example
+(WV-1.5-let-in-composite-*): "de uitkering van een Vondst is, daarbij geldt: de
+toeslag is zijn vindloon, 10 als ten minste één van: zijn gewicht is groter dan
+10, de toeslag is groter dan 5; anders 0" is refused, and so is the uitkering
+with the condition "alle van: zijn gewicht is groter dan 10, ten minste één
+van: de toeslag is groter dan 5, zijn schade is groter dan 1"; without the
+property the first is 10 at taxatie 2000 without a gewicht. With the condition
+"ten minste één van: de toeslag is groter dan 5, zijn gewicht is groter dan 10"
+the uitkering has a reading (WV-1.5-let-in-composite-not-*): without a gewicht
+it is 10 at taxatie 2000 and settled leeg at taxatie 50, where the read of the
+leeg toeslag ends the Let; without a taxatie it is 10 at gewicht 20 and open
+at gewicht 5. So has "7 als alle van: zijn gewicht is groter dan 10, zijn
+schade is groter dan 1; anders de toeslag", which reads the binder outside
+every condition: without a gewicht, at schade 0, it is 10 at taxatie 2000 and
+settled leeg at taxatie 50. Example (WV-1.5-atom, WV-1.5-table-*): "een Vondst
+is zwaar indien zijn gewicht groter is dan 100" is undetermined without a
+gewicht. With "een Vondst is opvallend indien [Q] van: zijn gewicht groter is
+dan 100 (A), zijn schatting groter is dan 1000 (B), zijn lengte groter is dan
+2 (C)": `all` over A undetermined and B false is false; `atLeast 1` over A
+undetermined and B true is true; over A true, B true and C undetermined,
+`atLeast 2` is true and `atMost 1` and `exactly 1` are false; over A true, B
+false and C undetermined, all three are undetermined; over A false, B false
+and C undetermined, `atLeast 2` is false, `atMost 1` true and `exactly 1`
 undetermined. The suite holds all nine rows of `all`, `atLeast 1` and `none`
 over A and B, and the three rows of "niet A".
 
@@ -1073,6 +1073,7 @@ several, it names the first of this list:
 | `whole-period` | the whole-period qualifier (ch. 3.9) |
 | `time-window` | a period window (ch. 3.10) |
 | `rule-status-check` | a check of the status of a rule version |
+| `let-in-composite` | a `Let` (ch. 10.6) whose body holds, at any depth, a read of its binder in a member of a composite other than the first, or in the filter or the matrix of a quantifier fold |
 
 The suite holds this table to the slugs the reference interpreter refuses
 with, in this order (`WV-1.5-uncarried-forms`).
@@ -7490,12 +7491,11 @@ has there:
   the form itself, of its filter where the filter is undetermined and else of
   its matrix; at a node that an undetermined condition broke off, that
   condition's; at a member of a composite or a matrix of a quantifier fold
-  that a fault left undetermined or that the barrier of a Let around it
-  broke off (ch. 1.5, read provisionally), the open read of the first member
-  or filter read before it that is undetermined for another form, for a
-  closure the read it closed over. Inside such a member the node that
-  faulted, and every node the fault passed on its way out to the member,
-  carries `fault` with its code; the read of the leeg binder is `empty`.
+  that a fault left undetermined (ch. 1.5, read provisionally), the open read
+  of the first member or filter read before it that is undetermined for
+  another form, for a closure the read it closed over. Inside such a member
+  the node that faulted, and every node the fault passed on its way out to the
+  member, carries `fault` with its code.
 
 A composite and a quantifier fold read their members until their judgement
 for another form stands (ch. 1.5), and the members after that are not
@@ -7558,9 +7558,7 @@ gewicht is groter dan 10, het Rekenjaar is groter dan 2025, zijn taxatie is
 groter dan 1000", without a gewicht and an evaluation date and at taxatie 50,
 reads `0 Compound false`, `1 Comparison undetermined open "V1" "gewicht"`, `4
 Comparison undetermined open "V1" "gewicht"`, `5 ContextValue fault EF-011`,
-`6 Literal unreached`, `7 Comparison false`, `FAILS`; the uitkering of
-ch. 1.5 without a gewicht reads `0 Let undetermined open "V1" "gewicht"`, `7
-Comparison undetermined open "V1" "gewicht"`, `8 BinderRef empty`, `OPEN`.
+`6 Literal unreached`, `7 Comparison false`, `FAILS`.
 Example (`WV-5.12-open-quantifier-fold`, `WV-5.12-open-fold-over-a-set`, the
 documents of `ref/test/fixtures/strict-empty/`): "een Jutter is kundig
 indien het gewicht van alle vondsten van de Jutter groter is dan 10", over

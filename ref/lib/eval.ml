@@ -283,7 +283,7 @@ let uncarried_forms =
   [ "allocation"; "creation-cycle"; "uniqueness"; "start-point"; "day-kind"; "function-def"; "timeline-member";
     "dimension-cell"; "dimension-fold"; "time-proportional-part"; "temporal-total"; "builtin-filter";
     "variable-reference"; "unresolved"; "temporal-read"; "match"; "record"; "list-family"; "invoke"; "whole-period";
-    "time-window"; "rule-status-check" ]
+    "time-window"; "rule-status-check"; "let-in-composite" ]
 
 let refuse_uncarried (doc : document) =
   if not doc.infer_from_empty then begin
@@ -322,17 +322,25 @@ let refuse_uncarried (doc : document) =
         then refuse "timeline-member")
       doc.object_types;
     List.iter (fun (_, (p : parameter)) -> if p.par_granularity <> None then refuse "timeline-member") doc.parameters;
-    let rec expr (e : expr) =
+    (* [lets]: the binders of the Lets around, each with whether the place is,
+       within the body of its Let, in a member of a composite other than its
+       first or in the filter or the matrix of a quantifier fold: a member read
+       past one that does not stand for another is read provisionally, and no
+       binder is ([judge_cond ~past]) *)
+    let past lets = SMap.map (fun _ -> true) lets in
+    let rec expr lets (e : expr) =
+      let opt = Option.iter (expr lets) in
       match e with
-      | Literal _ | Parameter_ref _ | Context_value _ | Binder_ref _ | Attribute_reference _ -> ()
+      | Literal _ | Parameter_ref _ | Context_value _ | Attribute_reference _ -> ()
+      | Binder_ref { ident; _ } -> if SMap.find_opt (norm ident) lets = Some true then refuse "let-in-composite"
       | Text_composition { pieces; _ } ->
-          List.iter (function Embedded_expression { expr = Some e; _ } -> expr e | _ -> ()) pieces
+          List.iter (function Embedded_expression { expr = Some e; _ } -> expr lets e | _ -> ()) pieces
       | Binary { left_side; right_side; _ } -> opt left_side; opt right_side
       | Rounding { base_expr; _ } -> opt base_expr
       | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr; opt minimum; opt maximum
       | Construct { argument; _ } -> opt argument
-      | Payload_access { base; _ } -> expr base
-      | Let { value; body; _ } -> expr value; expr body
+      | Payload_access { base; _ } -> expr lets base
+      | Let { binder; value; body; _ } -> expr lets value; expr (SMap.add (norm binder) false lets) body
       | Function_call
           { kind; call_arguments; element_object_type; filter; dimension_selections; grain; source_role; source_path;
             empty_fallback; _ } -> (
@@ -343,18 +351,19 @@ let refuse_uncarried (doc : document) =
           | Day_count -> refuse "day-kind"
           (* a fold over a set: its filter, its source and a sum's fallback *)
           | (Sum_function | Total | Count | Filled_count | Minimum | Maximum | First | Last) when ranged ->
-              Option.iter cond filter;
-              List.iter expr call_arguments;
+              Option.iter (cond lets) filter;
+              List.iter (expr lets) call_arguments;
               opt empty_fallback
           (* the count of an instance-set union (ch. 3.4d) *)
           | Count when (match call_arguments with [ Instance_set_union _ ] -> filter = None | _ -> false) ->
-              List.iter expr call_arguments
+              List.iter (expr lets) call_arguments
           | Sum_function | Total | Count | Filled_count -> refuse "temporal-total"
           | _ when filter <> None || grain <> None -> refuse "builtin-filter"
           | Minimum | Maximum | First | Last | Square_root | Absolute_value | Concatenation | Duration
           | Absolute_duration | Easter_sunday | Year_of | Month_of | Day_of | Date_with | Date_time_with ->
-              List.iter expr call_arguments)
-      | Instance_set_union { branches; _ } -> List.iter (fun (b : instance_set_branch) -> Option.iter cond b.isb_filter) branches
+              List.iter (expr lets) call_arguments)
+      | Instance_set_union { branches; _ } ->
+          List.iter (fun (b : instance_set_branch) -> Option.iter (cond lets) b.isb_filter) branches
       | Dimension_cell_read _ -> refuse "dimension-cell"
       | Variable_reference _ -> refuse "variable-reference"
       | Expr_unresolved _ -> refuse "unresolved"
@@ -363,10 +372,10 @@ let refuse_uncarried (doc : document) =
       | Match _ -> refuse "match"
       | Struct_literal _ | Field_access _ -> refuse "record"
       | List_literal _ | Lambda _ | Fold _ | Map_list _ | Filter_list _ | List_length _ -> refuse "list-family"
-      | If_then_else { condition; then_; else_; _ } -> cond condition; expr then_; expr else_
+      | If_then_else { condition; then_; else_; _ } -> cond lets condition; expr lets then_; expr lets else_
       | Invoke _ -> refuse "invoke"
-    and opt = function Some e -> expr e | None -> ()
-    and cond (c : condition_expr) =
+    and cond lets (c : condition_expr) =
+      let opt = Option.iter (expr lets) in
       match c with
       | Comparison { time_period = Some _; _ } | Predicate { time_period = Some _; _ }
       | Characteristic_check { time_period = Some _; _ } ->
@@ -375,12 +384,13 @@ let refuse_uncarried (doc : document) =
       | Predicate { variety = Day_kind_predicate; _ } -> refuse "day-kind"
       | Predicate { operand; _ } -> opt operand
       | Characteristic_check _ | Role_membership _ | Identity_check _ -> ()
-      | Compound { components; _ } -> List.iter cond components
-      | Quantifier_fold { kv_filter; kv_test; _ } -> Option.iter cond kv_filter; Option.iter cond kv_test
+      | Compound { components; _ } -> List.iteri (fun i c -> cond (if i = 0 then lets else past lets) c) components
+      | Quantifier_fold { kv_filter; kv_test; _ } -> List.iter (Option.iter (cond (past lets))) [ kv_filter; kv_test ]
       | Time_window _ -> refuse "time-window"
       | Rule_status_check _ -> refuse "rule-status-check"
       | Condition_unresolved _ -> refuse "unresolved"
     in
+    let expr = expr SMap.empty and cond = cond SMap.empty in
     List.iter
       (fun (r : resolved_rule) ->
         (match r.objective with Some (Dimension_cell_read _) -> refuse "dimension-cell" | _ -> ());

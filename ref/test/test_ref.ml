@@ -15676,106 +15676,6 @@ let () =
     (ov_fault_of (fun () -> ov_eval fault (ov_v1 [ ("gewicht", "20"); ("taxatie", "2000") ])))
     "EF-011"
 
-(* "de uitkering van een Vondst is, daarbij geldt: de toeslag is zijn
-   vindloon, 10 als ten minste één van: zijn gewicht is groter dan 10, de
-   toeslag is groter dan 5; anders 0", beside the vindloon of the card *)
-let ov_uitkering ?(strict = true) () =
-  let toeslag : Ir_v0.Ast.expr = Binder_ref { ident = "toeslag"; source_name = None } in
-  let condition =
-    ov_compound At_least 1
-      [ ov_cmp Greater "gewicht" "10";
-        Comparison { op = Greater; left_side = Some toeslag; right_side = Some (ov_lit "5"); time_period = None; source_name = None } ]
-  in
-  ov_doc ~strict
-    [ ov_vondst [ "taxatie"; "vindloon"; "gewicht"; "uitkering" ] [] ]
-    [ ov_vindloon;
-      ov_calc "uitkering"
-        (Let
-           { typ = Some num0; binder = "toeslag"; value = ov_ref "vindloon";
-             body = If_then_else { typ = Some num0; condition; then_ = ov_lit "10"; else_ = ov_lit "0"; source_name = None };
-             source_name = None }) ]
-
-(* WV-1.5-past-undetermined-barrier: a member read past one undetermined for
-   another that reads a leeg binder of a Let around it (ch. 10.6) makes an
-   open read: whether the ordinary reading reaches that read does not stand,
-   so the value the Let stands in is open. The uitkering above at taxatie 50,
-   where the vindloon is settled leeg: without a gewicht it is open; at gewicht
-   20 the first member decides and it is 10; at gewicht 5 the second member
-   reads the leeg binder and it is settled leeg, and so without the property
-   and without a gewicht *)
-let () =
-  let id = "WV-1.5-past-undetermined-barrier" in
-  let uitkering ?(doc = ov_uitkering ()) name attrs =
-    ov_attr (ov_run name doc (ov_v1 (("taxatie", "50") :: attrs))) "V1" "uitkering"
-  in
-  ov_expect (id ^ " (no gewicht)") (uitkering "past-undetermined-barrier-open" []) "open";
-  ov_expect (id ^ " (gewicht 20)") (uitkering "past-undetermined-barrier-decided" [ ("gewicht", "20") ]) "10";
-  ov_expect (id ^ " (gewicht 5)") (uitkering "past-undetermined-barrier-reached" [ ("gewicht", "5") ]) "leeg";
-  ov_expect (id ^ " (without the property, no gewicht)")
-    (uitkering ~doc:(ov_uitkering ~strict:false ()) "past-undetermined-barrier-ordinary" [])
-    "leeg"
-
-(* "de uitkering van een Vondst is, daarbij geldt: de toeslag is [value], 10
-   als alle van: zijn gewicht is groter dan 10, de toeslag is groter dan 5[,
-   more]; anders [otherwise]" *)
-let ov_toeslag : Ir_v0.Ast.expr = Binder_ref { ident = "toeslag"; source_name = None }
-
-let ov_toeslag_uitkering ?(more = []) ~value otherwise =
-  let condition =
-    ov_compound All 0
-      ([ ov_cmp Greater "gewicht" "10";
-         Comparison { op = Greater; left_side = Some ov_toeslag; right_side = Some (ov_lit "5"); time_period = None; source_name = None } ]
-      @ more)
-  in
-  ov_doc
-    [ ov_vondst [ "taxatie"; "gewicht"; "uitkering" ] [] ]
-    [ ov_calc "uitkering"
-        (Let
-           { typ = Some num0; binder = "toeslag"; value;
-             body = If_then_else { typ = Some num0; condition; then_ = ov_lit "10"; else_ = otherwise; source_name = None };
-             source_name = None }) ]
-
-(* WV-1.5-past-undetermined-binder: a binder of a Let read first by a member
-   read provisionally is computed there, once, and what the computation
-   deposits arises at the first read of the binder that is not provisional,
-   and not at all where none comes. With the toeslag "zijn taxatie gedeeld
-   door 0 plus 3" (3, with the EF-005 fact of the division) and taxatie 50:
-   without a gewicht the uitkering is 0 without the fact; at gewicht 20 the
-   second member reads the toeslag as in the ordinary reading, and it is 0
-   with the fact; at gewicht 5 the read stops at the first member, 0 without
-   it. With "anders de toeslag" the else branch reads the toeslag after the
-   provisional member, and the uitkering is 3 with the fact once. A fault of
-   the computation leaves the member undetermined and arises at the first
-   read that is not provisional: with the toeslag "het Rekenjaar" (EF-011 in
-   a session without an evaluation date) and a third member "zijn taxatie is
-   groter dan 1000", the uitkering is 0 with "anders 0", and the session faults
-   with "anders de toeslag" *)
-let () =
-  let id = "WV-1.5-past-undetermined-binder" in
-  let quotient = ov_bin Plus (ov_bin Divided_by (ov_ref "taxatie") (ov_lit "0")) (ov_lit "3") in
-  let row name otherwise gewicht want want_fact =
-    let w = ov_run name (ov_toeslag_uitkering ~value:quotient otherwise) (ov_v1 (("taxatie", "50") :: gewicht)) in
-    ov_expect (id ^ " (" ^ name ^ ")") (ov_attr w "V1" "uitkering") want;
-    ov_expect (id ^ " (" ^ name ^ ", channel)") (String.concat "; " (ov_channel w))
-      (if want_fact then "uitkering V1 EF-005" else "")
-  in
-  row "past-undetermined-binder-open" (ov_lit "0") [] "0" false;
-  row "past-undetermined-binder-reached" (ov_lit "0") [ ("gewicht", "20") ] "0" true;
-  row "past-undetermined-binder-stops" (ov_lit "0") [ ("gewicht", "5") ] "0" false;
-  row "past-undetermined-binder-read-after" ov_toeslag [] "3" true;
-  row "past-undetermined-binder-read-after-stops" ov_toeslag [ ("gewicht", "5") ] "3" true;
-  let rekenjaar : Ir_v0.Ast.expr = Context_value { ident = Some Ir_v0.Spelling.evaluation_year; typ = Some num0; source_name = None } in
-  let fault otherwise =
-    ov_toeslag_uitkering ~more:[ ov_cmp Greater "taxatie" "1000" ] ~value:rekenjaar otherwise
-  in
-  ov_expect (id ^ " (fault, no ordinary read)")
-    (ov_attr (ov_run "past-undetermined-binder-fault" (fault (ov_lit "0")) (ov_v1 [ ("taxatie", "50") ])) "V1" "uitkering")
-    "0";
-  (* not registered: a run that faults has no outcomes to compare *)
-  ov_expect (id ^ " (fault at the ordinary read)")
-    (ov_fault_of (fun () -> ov_eval (fault ov_toeslag) (ov_v1 [ ("taxatie", "50") ])))
-    "EF-011"
-
 (* WV-1.5-boundary-*: within one boundary, what the evaluation deposited
    before an open read is dropped, a fault before it stays a fault, and a
    fault that would come after it does not arise. "Het restgewicht van een
@@ -16788,6 +16688,152 @@ let () =
         (Printf.sprintf "WV-1.5-uncarried-forms (the first of the list: %s)" (String.concat ", " (List.map snd params)))
         (params = [ ("form", "list-family") ])
 
+(* "de uitkering van een Vondst is, daarbij geldt: de toeslag is zijn
+   vindloon, [body]", beside the vindloon of the card *)
+let ov_let binder value body : Ir_v0.Ast.expr = Let { typ = Some num0; binder; value; body; source_name = None }
+let ov_binder ident : Ir_v0.Ast.expr = Binder_ref { ident; source_name = None }
+
+let ov_ite condition then_ else_ : Ir_v0.Ast.expr =
+  If_then_else { typ = Some num0; condition; then_; else_; source_name = None }
+
+let ov_greater l v : Ir_v0.Ast.condition_expr =
+  Comparison { op = Greater; left_side = Some l; right_side = Some (ov_lit v); time_period = None; source_name = None }
+
+let ov_toeslag = ov_binder "toeslag"
+
+let ov_uitkering ?(strict = true) body =
+  ov_doc ~strict
+    [ ov_vondst [ "taxatie"; "vindloon"; "gewicht"; "schade"; "uitkering" ] [] ]
+    [ ov_vindloon; ov_calc "uitkering" (ov_let "toeslag" (ov_ref "vindloon") body) ]
+
+(* WV-1.5-let-in-composite-*: a Let of which a condition in the body reads the
+   binder in a member of a composite other than its first, at any depth, or in
+   the filter or the matrix of a quantifier fold is refused by name; without
+   the property the document is not walked and plays as ch. 10.6 and 5.10 lay
+   down. The uitkering with "10 als ten minste één van: zijn gewicht is groter
+   dan 10, de toeslag is groter dan 5; anders 0" reads the toeslag in a later
+   member; so do a later member of a composite that is the first member of
+   another, a first member of a composite that is a later member of another, a
+   choice inside a later member, the value of a Let inside a later member, and
+   a later member inside the body of a Let between the two. Without the
+   property, at gewicht 20, schade 3 and taxatie 2000 (a toeslag of 10), at
+   gewicht 5 and taxatie 50 (a leeg toeslag), at gewicht 20 and taxatie 50, and
+   without a gewicht at taxatie 2000 *)
+let () =
+  let refused id doc =
+    match Eval.refuse_uncarried doc with
+    | () -> check (id ^ " (no refusal)") false
+    | exception Value.Fault { code; params; text } ->
+        check (id ^ " (got " ^ Value.report ~code text ^ ")") (code = Some "REF-014" && params = [ ("form", "let-in-composite") ])
+  in
+  let gewicht = ov_cmp Greater "gewicht" "10" and schade = ov_cmp Greater "schade" "1" and toeslag = ov_greater ov_toeslag "5" in
+  let any = ov_compound At_least 1 and all = ov_compound All 0 in
+  let row name condition want =
+    let body = ov_ite condition (ov_lit "10") (ov_lit "0") in
+    let id = "WV-1.5-let-in-composite-" ^ name in
+    refused id (ov_uitkering body);
+    let ordinary attrs = ov_attr (ov_eval (ov_uitkering ~strict:false body) (ov_v1 (("schade", "3") :: attrs))) "V1" "uitkering" in
+    ov_expect (id ^ " (without the property)")
+      (String.concat " "
+         [ ordinary [ ("gewicht", "20"); ("taxatie", "2000") ]; ordinary [ ("gewicht", "5"); ("taxatie", "50") ];
+           ordinary [ ("gewicht", "20"); ("taxatie", "50") ]; ordinary [ ("taxatie", "2000") ] ])
+      want
+  in
+  row "later-member" (any [ gewicht; toeslag ]) "10 leeg 10 10";
+  row "later-member-of-a-first-member" (all [ any [ gewicht; toeslag ]; schade ]) "10 leeg 10 10";
+  row "first-member-of-a-later-member" (all [ gewicht; any [ toeslag; schade ] ]) "10 0 leeg 0";
+  row "choice-in-a-later-member" (all [ gewicht; ov_greater (ov_ite toeslag (ov_lit "1") (ov_lit "0")) "0" ]) "10 0 leeg 0";
+  row "let-value-in-a-later-member"
+    (all [ gewicht; ov_greater (ov_let "verhoogd" (ov_bin Plus ov_toeslag (ov_lit "1")) (ov_binder "verhoogd")) "5" ])
+    "10 0 leeg 0";
+  let body = ov_let "zwaarte" (ov_ref "gewicht") (ov_ite (any [ ov_greater (ov_binder "zwaarte") "10"; toeslag ]) (ov_lit "10") (ov_lit "0")) in
+  refused "WV-1.5-let-in-composite-under-a-let" (ov_uitkering body);
+  ov_expect "WV-1.5-let-in-composite-under-a-let (without the property)"
+    (String.concat " "
+       (List.map
+          (fun attrs -> ov_attr (ov_eval (ov_uitkering ~strict:false body) (ov_v1 attrs)) "V1" "uitkering")
+          [ [ ("gewicht", "20"); ("taxatie", "50") ]; [ ("gewicht", "5"); ("taxatie", "50") ]; [ ("taxatie", "2000") ] ]))
+    "10 leeg leeg";
+  (* the rules of the golden jutterswet-grens-per-jutter, which read the binder
+     in the matrix and in the filter of a quantifier fold, in the filter of a
+     count; every one with the property is refused but the last, which plays
+     its value, and the golden without it plays its cases *)
+  let dir = "corpus/golden/jutterswet-grens-per-jutter/" in
+  let golden = Ir_v0.Loader.load_file (corpus_file (dir ^ "ir.json")) in
+  let only n = { golden with infer_from_empty = false; resolved_rules = [ List.nth golden.resolved_rules n ] } in
+  refused "WV-1.5-let-in-composite-quantifier-fold-matrix" (only 0);
+  refused "WV-1.5-let-in-composite-quantifier-fold-filter" (only 1);
+  refused "WV-1.5-let-in-composite-quantifier-fold-matrix (a nested Let)" (only 2);
+  List.iter
+    (fun file ->
+      let c = Case.load_file golden (corpus_file (dir ^ file)) in
+      let run doc = Eval.evaluate { (env_of doc) with params = c.params; param_tls = c.param_tls; as_of = c.as_of } c.world in
+      check ("WV-1.5-let-in-composite-quantifier-fold (without the property, " ^ file ^ ")") (Case.check c (run golden) = []);
+      let w = run (only 3) in
+      ov_expect ("WV-1.5-let-in-composite-filter-of-a-fold (" ^ file ^ ")")
+        (ov_attr w "J1" "aantal late vondsten" ^ " " ^ ov_attr w "J2" "aantal late vondsten")
+        "2 2")
+    [ "case.json"; "case2-beslissend-lid-eerst.json" ]
+
+(* WV-1.5-let-in-composite-not-*: a Let of which no condition in the body reads
+   the binder there is read as before. The uitkering with "10 als ten minste
+   één van: de toeslag is groter dan 5, zijn gewicht is groter dan 10; anders 0"
+   reads the toeslag in the first member: at taxatie 2000 it is 10 without a
+   gewicht, at taxatie 50 the leeg toeslag ends the Let and it is settled leeg
+   without a gewicht, and without a taxatie it is 10 at gewicht 20 and open at
+   gewicht 5. A first member of a first member is a first member: "10 als alle
+   van: (ten minste één van: de toeslag …, zijn gewicht …), zijn schade is
+   groter dan 1; anders 0". With "7 als alle van: zijn gewicht is groter dan
+   10, zijn schade is groter dan 1; anders de toeslag" the binder is read
+   outside every condition: without a gewicht and at schade 0 the uitkering is
+   10 at taxatie 2000 and settled leeg at taxatie 50. A later member that reads
+   a binder of the same name bound inside it reads no binder of the Let around
+   it: "7 als alle van: zijn gewicht is groter dan 10, (daarbij geldt: de toeslag
+   is zijn schade, de toeslag) is groter dan 1; anders de toeslag". A Let inside
+   a later member whose binder is read there is none around it: "een Vondst is
+   beloond indien alle van: zijn gewicht is groter dan 10, (daarbij geldt: de
+   toeslag is zijn vindloon, de toeslag plus 1) is groter dan 5", without a
+   gewicht, stands not to hold at taxatie 50 and is open at taxatie 2000 *)
+let () =
+  let gewicht = ov_cmp Greater "gewicht" "10" and schade = ov_cmp Greater "schade" "1" and toeslag = ov_greater ov_toeslag "5" in
+  let any = ov_compound At_least 1 and all = ov_compound All 0 in
+  let row name body attrs want =
+    let id = "let-in-composite-not-" ^ name in
+    ov_row ("WV-1.5-" ^ id) (fun () -> ov_run id (ov_uitkering body) (ov_v1 attrs)) (fun w -> ov_attr w "V1" "uitkering") want
+  in
+  let first = ov_ite (any [ toeslag; gewicht ]) (ov_lit "10") (ov_lit "0") in
+  row "first-member-decides" first [ ("taxatie", "2000") ] "10";
+  row "first-member-barrier" first [ ("taxatie", "50") ] "leeg";
+  row "first-member-open" first [ ("gewicht", "20") ] "10";
+  row "first-member-undetermined" first [ ("gewicht", "5") ] "open";
+  let first = ov_ite (all [ any [ toeslag; gewicht ]; schade ]) (ov_lit "10") (ov_lit "0") in
+  row "first-of-a-first" first [ ("taxatie", "2000"); ("schade", "3") ] "10";
+  row "first-of-a-first-barrier" first [ ("taxatie", "50"); ("schade", "3") ] "leeg";
+  row "first-of-a-first-open" first [ ("schade", "0") ] "0";
+  let outside = ov_ite (all [ gewicht; schade ]) (ov_lit "7") ov_toeslag in
+  row "outside-a-condition" outside [ ("taxatie", "2000"); ("schade", "0") ] "10";
+  row "outside-a-condition-barrier" outside [ ("taxatie", "50"); ("schade", "0") ] "leeg";
+  row "outside-a-condition-open" outside [ ("schade", "0") ] "open";
+  let shadowed =
+    ov_ite (all [ gewicht; ov_greater (ov_let "toeslag" (ov_ref "schade") ov_toeslag) "1" ]) (ov_lit "7") ov_toeslag
+  in
+  row "shadowed" shadowed [ ("taxatie", "2000"); ("schade", "0") ] "10";
+  row "shadowed-inner-barrier" (ov_ite (all [ gewicht; ov_greater (ov_let "toeslag" (ov_ref "vindloon") ov_toeslag) "1" ]) (ov_lit "7") (ov_lit "0"))
+    [ ("taxatie", "50") ] "0";
+  let doc =
+    ov_doc
+      [ ov_vondst [ "taxatie"; "vindloon"; "gewicht" ] [ "beloond" ] ]
+      [ ov_vindloon;
+        ov_attribution "beloond"
+          (all [ gewicht; ov_greater (ov_let "toeslag" (ov_ref "vindloon") (ov_bin Plus ov_toeslag (ov_lit "1"))) "5" ]) ]
+  in
+  let row name attrs want =
+    let id = "let-in-composite-not-" ^ name in
+    ov_row ("WV-1.5-" ^ id) (fun () -> ov_run id doc (ov_v1 attrs)) (fun w -> ov_char w "V1" "beloond") want
+  in
+  row "inside-a-later-member" [ ("taxatie", "50") ] "not";
+  row "inside-a-later-member-true" [ ("taxatie", "2000") ] "open"
+
 (* WV-1.5-if-then-else: an IfThenElse in a value reads its condition as a
    judgement: an undetermined condition leaves the value open, and a closure
    that decided it tells the boundary, so the value stands for the form itself
@@ -16835,10 +16881,7 @@ let () =
    indien (daarbij geldt …, 1 als t gelijk is aan 3, anders t) groter is dan 4"
    is open over the vondst of gewicht 5 without getuigen and holds with them *)
 let () =
-  let t : Ir_v0.Ast.expr = Binder_ref { ident = "t"; source_name = None } in
-  let ite condition then_ else_ : Ir_v0.Ast.expr =
-    If_then_else { typ = Some num0; condition; then_; else_; source_name = None }
-  in
+  let t = ov_binder "t" in
   let is_three : Ir_v0.Ast.condition_expr =
     Comparison { op = Equal; left_side = Some t; right_side = Some (ov_lit "3"); time_period = None; source_name = None }
   and is_filled : Ir_v0.Ast.condition_expr =
@@ -16846,10 +16889,8 @@ let () =
       { variety = Filled; operand = Some t; day_kind = None; negation = false; digit_chars = 0; time_period = None;
         source_name = None }
   in
-  let keurgewicht variety condition : Ir_v0.Ast.expr =
-    Let
-      { typ = Some num0; binder = "t"; value = ov_fold ~filter:(ov_test variety "getuigen") Sum_function "gewicht";
-        body = ite condition (ov_lit "1") t; source_name = None }
+  let keurgewicht variety condition =
+    ov_let "t" (ov_fold ~filter:(ov_test variety "getuigen") Sum_function "gewicht") (ov_ite condition (ov_lit "1") t)
   in
   let doc variety condition =
     ov_jdoc ~jutter:[ "keurgewicht" ] ~vondst:[ "gewicht"; "getuigen" ] [ ov_jcalc "keurgewicht" (keurgewicht variety condition) ]
@@ -16871,10 +16912,7 @@ let () =
   row "gevuld-test-filled" (doc Filled is_filled) [ ("gewicht", "5"); ("getuigen", "2") ] "1";
   let doc =
     ov_jdoc ~jchars:[ "keurig" ] ~vondst:[ "gewicht"; "getuigen" ]
-      [ ov_jattribution "keurig"
-          (Comparison
-             { op = Greater; left_side = Some (keurgewicht Filled is_three); right_side = Some (ov_lit "4");
-               time_period = None; source_name = None }) ]
+      [ ov_jattribution "keurig" (ov_greater (keurgewicht Filled is_three) "4") ]
   in
   let row name v1 want =
     let id = "closure-before-a-barrier-" ^ name in
@@ -16892,25 +16930,19 @@ let () =
    and decides nothing; the third is false, and the schadetoeslag is the settled
    leeg vindloon, settled leeg and not leeg after a closure *)
 let () =
-  let ite condition then_ else_ : Ir_v0.Ast.expr =
-    If_then_else { typ = Some num0; condition; then_; else_; source_name = None }
-  in
   let rekenjaar : Ir_v0.Ast.expr =
     Context_value { ident = Some Ir_v0.Spelling.evaluation_year; typ = Some num0; source_name = None }
   in
   let condition =
     ov_compound All 0
       [ ov_cmp Greater "gewicht" "10";
-        Comparison
-          { op = Greater;
-            left_side = Some (ov_bin Plus (ite (ov_test Empty_predicate "getuigen") (ov_lit "1") (ov_lit "0")) rekenjaar);
-            right_side = Some (ov_lit "3"); time_period = None; source_name = None };
+        ov_greater (ov_bin Plus (ov_ite (ov_test Empty_predicate "getuigen") (ov_lit "1") (ov_lit "0")) rekenjaar) "3";
         ov_cmp Greater "schade" "100" ]
   in
   let doc =
     ov_doc
       [ ov_vondst [ "taxatie"; "vindloon"; "gewicht"; "getuigen"; "schade"; "schadetoeslag" ] [] ]
-      [ ov_vindloon; ov_calc "schadetoeslag" (ite condition (ov_lit "1") (ov_ref "vindloon")) ]
+      [ ov_vindloon; ov_calc "schadetoeslag" (ov_ite condition (ov_lit "1") (ov_ref "vindloon")) ]
   in
   ov_expect "WV-1.5-closure-before-a-fault"
     (ov_attr (ov_run "closure-before-a-fault" doc (ov_v1 [ ("taxatie", "50"); ("schade", "3") ])) "V1" "schadetoeslag")
@@ -17328,10 +17360,7 @@ let () =
    the node that faulted carries its fault, and the nodes after it within the
    member are not reached. The document of WV-1.5-past-undetermined-fault
    without a gewicht and at taxatie 50: the second member names the gewicht
-   of V1, the Rekenjaar faulted, and the third member decides. A member that
-   the barrier of a Let around it broke off is broken off in the same way, and
-   so is every node on the way out to the boundary; the read of the binder is
-   empty. The uitkering of WV-1.5-past-undetermined-barrier without a gewicht *)
+   of V1, the Rekenjaar faulted, and the third member decides *)
 let () =
   lines_equal "WV-5.12-open-past-undetermined"
     (ov_readings ov_vrijgesteld (ov_v1 [ ("taxatie", "50") ]))
@@ -17339,18 +17368,7 @@ let () =
        [ "0 Compound false"; "1 Comparison undetermined open \"V1\" \"gewicht\"";
          "2 AttributeReference undetermined open \"V1\" \"gewicht\""; "3 Literal unreached";
          "4 Comparison undetermined open \"V1\" \"gewicht\""; "5 ContextValue fault EF-011"; "6 Literal unreached";
-         "7 Comparison false"; "8 AttributeReference 50"; "9 Literal 1000"; "FAILS" ]);
-  let form = rule_form 1 in
-  lines_equal "WV-5.12-open-past-undetermined (barrier)"
-    (List.filter
-       (fun l -> String.starts_with ~prefix:(form ^ " ") l)
-       (ov_readings (ov_uitkering ()) (ov_v1 [ ("taxatie", "50") ])))
-    (on_object form "V1"
-       [ "0 Let undetermined open \"V1\" \"gewicht\""; "1 AttributeReference empty";
-         "2 IfThenElse undetermined open \"V1\" \"gewicht\""; "3 Compound undetermined open \"V1\" \"gewicht\"";
-         "4 Comparison undetermined open \"V1\" \"gewicht\""; "5 AttributeReference undetermined open \"V1\" \"gewicht\"";
-         "6 Literal unreached"; "7 Comparison undetermined open \"V1\" \"gewicht\""; "8 BinderRef empty";
-         "9 Literal unreached"; "10 Literal unreached"; "11 Literal unreached"; "OPEN" ])
+         "7 Comparison false"; "8 AttributeReference 50"; "9 Literal 1000"; "FAILS" ])
 
 (* WV-5.12-open-quantifier-fold: a contributor carries the truth of the matrix
    on it for the form itself, undetermined among them, and the fold the open
