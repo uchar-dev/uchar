@@ -19898,26 +19898,58 @@ let ov_consistency ~name assertion =
 
 (* an object type: its name, its whole-number attributes and characteristics,
    and its supertype *)
-let ov_type ?supertype name attrs chars =
+let ov_type ?supertype ?(complete = []) name attrs chars =
+  let complete m = if List.mem m complete then {|, "complete": true|} else "" in
   Printf.sprintf
     {|{"node": "ObjectType", "name": "%s", "animate": false, "plural": "%sen"%s, "attributes": [%s], "characteristics": [%s]}|}
     name name
     (match supertype with Some s -> Printf.sprintf {|, "supertype": "%s"|} s | None -> "")
-    (String.concat ", " (List.map (fun a -> Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s}|} a ov_num) attrs))
+    (String.concat ", " (List.map (fun a -> Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s%s}|} a ov_num (complete a)) attrs))
     (String.concat ", "
-       (List.map (fun k -> Printf.sprintf {|{"node": "Characteristic", "name": "%s", "kind": "adjectival"}|} k) chars))
+       (List.map (fun k -> Printf.sprintf {|{"node": "Characteristic", "name": "%s", "kind": "adjectival"%s}|} k (complete k)) chars))
 
 (* the fact type vangst: the vinder (a Jutter) of a Vondst *)
 let ov_vangst =
   {|{"node": "FactType", "name": "vangst", "reciprocal": false, "roles": [{"node": "Role", "name": "vinder", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true}]}|}
 
-let ov_doc ?(strict = true) ?(fact_types = []) ?(parameters = []) ?(consistencies = []) types rules =
+let ov_doc ?(strict = true) ?(fact_types = []) ?(parameters = []) ?(consistencies = []) ?(defaults = [])
+    ?(object_creations = []) ?(fact_creations = []) types rules =
   Printf.sprintf
-    {|{"format": "uchar-ir-v1",%s "model": {"objectTypes": [%s], "factTypes": [%s], "parameters": [%s], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [%s], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []}, "diagnostics": []}|}
+    {|{"format": "uchar-ir-v1",%s "model": {"objectTypes": [%s], "factTypes": [%s], "parameters": [%s], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [%s], "dayKindDefinitions": [], "objectCreations": [%s], "allocations": [], "consistencies": [%s], "uniquenesses": [], "factCreations": [%s], "startPointDeterminations": [], "ruleGroups": []%s}, "diagnostics": []}|}
     (if strict then {| "inferFromEmpty": false,|} else "")
     (String.concat ", " types) (String.concat ", " fact_types)
     (String.concat ", " (List.map (fun p -> Printf.sprintf {|{"node": "Parameter", "name": "%s", "datatype": %s}|} p ov_num) parameters))
-    (String.concat ", " rules) (String.concat ", " consistencies)
+    (String.concat ", " rules) (String.concat ", " object_creations) (String.concat ", " consistencies)
+    (String.concat ", " fact_creations)
+    (if defaults = [] then "" else Printf.sprintf {|, "prioritizedDefaults": [%s]|} (String.concat ", " defaults))
+
+(* a defaults group on the Vondst (or [subject]), its defaults highest first
+   ([ov_dflt]); "altijd" is `all` over no member *)
+let ov_always = {|{"node": "Compound", "quantifier": "all", "threshold": 0, "parts": [], "source": {"snippet": "altijd"}}|}
+
+let ov_dflt ?justification ?decision ?consequence ?exceptions ?(init = false) () =
+  "{"
+  ^ String.concat ", "
+      (List.filter_map Fun.id
+         [ Some {|"node": "Default"|};
+           Option.map (Printf.sprintf {|"decision": %b|}) decision;
+           Option.map (( ^ ) {|"justification": |}) justification;
+           Option.map (( ^ ) {|"consequence": |}) consequence;
+           (if init then Some {|"initialisation": true|} else None);
+           Option.map (( ^ ) {|"exceptions": |}) exceptions ])
+  ^ "}"
+
+let ov_groups groups =
+  Printf.sprintf {|{"unordered": true, "members": [%s]}|}
+    (String.concat ", "
+       (List.map (fun ds -> Printf.sprintf {|{"node": "ExceptionGroup", "defaults": [%s]}|} (String.concat ", " ds)) groups))
+
+let ov_stack ?(subject = "Vondst") ?(unordered = false) ?name ?characteristic ?attribute defaults =
+  let target = match (characteristic, attribute) with Some k, _ -> ("characteristic", k) | _, Some a -> ("attribute", a) | _ -> invalid_arg "ov_stack" in
+  Printf.sprintf {|{"node": "PrioritizedDefaults", "name": "%s", "subject": "%s", "%s": "%s"%s, "defaults": [%s], "validity": {"node": "Validity"}}|}
+    (Option.value name ~default:(snd target)) subject (fst target) (snd target)
+    (if unordered then {|, "unordered": true|} else "")
+    (String.concat ", " defaults)
 
 (* an object of the case: its attributes (number lexemes), the characteristics
    it names, those it names in characteristicsAbsent, and its links *)
@@ -19950,7 +19982,7 @@ let ov_char_is ?(label = "V1") k state =
   Printf.sprintf {|{"kind": "%s", "label": "%s", "characteristic": "%s"}|} kind label k
 
 let ov_consistent = {|{"kind": "consistent"}|}
-let ov_inconsistent ?code rule = Printf.sprintf {|{"kind": "inconsistent", "rule": "%s", "label": "V1"%s}|} rule
+let ov_inconsistent ?(label = "V1") ?code rule = Printf.sprintf {|{"kind": "inconsistent", "rule": "%s", "label": "%s"%s}|} rule label
     (match code with Some c -> Printf.sprintf {|, "code": "%s"|} c | None -> "")
 
 let ov_case ?(as_of = "null") ?(parameters = []) objs expected =
@@ -20489,35 +20521,340 @@ let () =
          (ov_doc ~parameters:[ "TARIEF" ] [ vondst ] [ ite_rule; not_first ]))
     "timeline-member"
 
+(* --- the stack (ch. 1.5, "A stack" to "Complete input") -------------------
+   A defaults group on a target of the Vondst. "betwist" is an input
+   characteristic; where a row says that it stands not to hold, its
+   declaration says that its input is complete *)
+let ov_betwist = ov_dflt ~justification:(ov_check "betwist") ~consequence:(ov_lit "0") ()
+let ov_stack_base = ov_dflt ~justification:ov_always ~consequence:(ov_bin "times" (ov_attr "gewicht") (ov_lit "2")) ()
+
+(* WV-1.5-stack-first-decides: "het vindloon van een Vondst is zijn gewicht
+   maal 2", with above it "… op 0 indien hij betwist is": the first default
+   that decides decides, a lower one only where it stands of every higher one
+   that it gives way, and at the first default that is open the target is open *)
+let () =
+  let ir complete =
+    ov_doc ~defaults:[ ov_stack ~attribute:"vindloon" [ ov_betwist; ov_stack_base ] ]
+      [ ov_type ~complete "Vondst" [ "gewicht"; "vindloon" ] [ "betwist" ] ] []
+  in
+  List.iter
+    (fun (name, complete, chars, attrs, want) ->
+      ov_frame ~name:("WV-1.5-stack-first-decides (" ^ name ^ ")") ~ir:(ir complete)
+        ~case_text:(ov_case (ov_v1 ~chars attrs) [ ov_attr_is "vindloon" want ]) ())
+    [ ("the base", [ "betwist" ], [], [ ("gewicht", "50") ], "100");
+      ("the exception", [], [ "betwist" ], [ ("gewicht", "50") ], "0");
+      ("the exception open", [], [], [ ("gewicht", "50") ], "open");
+      ("the exception above an open base", [], [ "betwist" ], [], "0");
+      ("the base open", [ "betwist" ], [], [], "open") ]
+
+(* WV-1.5-stack-gives-way, WV-1.5-stack-settled-leeg: "het bergloon is 7
+   indien hij gemeld is", above it "… zijn vindloon indien hij gemeld is en
+   zijn gewicht groter is dan 100", with the vindloon of the card: a default
+   that holds with a settled leeg value gives way; where every default gives
+   way the bergloon is settled leeg *)
+let () =
+  let gemeld = ov_check "gemeld" in
+  let ir complete =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"bergloon"
+            [ ov_dflt ~justification:(ov_compound "all" 0 [ gemeld; ov_gt "gewicht" "100" ]) ~consequence:(ov_attr "vindloon") ();
+              ov_dflt ~justification:gemeld ~consequence:(ov_lit "7") () ] ]
+      [ ov_type ~complete "Vondst" [ "gewicht"; "taxatie"; "vindloon"; "bergloon" ] [ "gemeld" ] ]
+      [ ov_vindloon ]
+  in
+  List.iter
+    (fun (name, complete, chars, attrs, want) ->
+      ov_frame ~name ~ir:(ir complete) ~case_text:(ov_case (ov_v1 ~chars attrs) [ ov_attr_is "bergloon" want ]) ())
+    [ ("WV-1.5-stack-gives-way (vindloon settled leeg)", [], [ "gemeld" ], [ ("gewicht", "200"); ("taxatie", "50") ], "7");
+      ("WV-1.5-stack-gives-way (vindloon open)", [], [ "gemeld" ], [ ("gewicht", "200") ], "open");
+      ("WV-1.5-stack-gives-way (vindloon filled)", [], [ "gemeld" ], [ ("gewicht", "200"); ("taxatie", "2000") ], "10");
+      ("WV-1.5-stack-settled-leeg", [ "gemeld" ], [], [ ("gewicht", "50"); ("taxatie", "2000") ], "leeg");
+      ("WV-1.5-stack-settled-leeg (whatever the gewicht)", [ "gemeld" ], [], [], "leeg") ]
+
+(* WV-1.5-stack-initialisation: "… moet geïnitialiseerd worden op 5" below
+   the stack of the vindloon closes over it: it decides where nothing above it
+   decides, also where a default above it is open; a value the case gives the
+   vindloon stands above it *)
+let () =
+  let ir ?(init = ov_lit "5") complete =
+    ov_doc
+      ~defaults:[ ov_stack ~attribute:"vindloon" [ ov_betwist; ov_stack_base; ov_dflt ~init:true ~consequence:init () ] ]
+      [ ov_type ~complete "Vondst" [ "gewicht"; "vindloon"; "schatting" ] [ "betwist" ] ] []
+  in
+  List.iter
+    (fun (name, init, complete, chars, attrs, want) ->
+      ov_frame ~name:("WV-1.5-stack-initialisation (" ^ name ^ ")") ~ir:(ir ?init complete)
+        ~case_text:(ov_case (ov_v1 ~chars attrs) [ ov_attr_is "vindloon" want ]) ())
+    [ ("below an open exception", None, [], [], [ ("gewicht", "50") ], "5");
+      ("below an open base", None, [ "betwist" ], [], [], "5");
+      ("below the base", None, [ "betwist" ], [], [ ("gewicht", "50") ], "100");
+      ("below the exception", None, [], [ "betwist" ], [], "0");
+      ("with an open value", Some (ov_attr "schatting"), [], [], [ ("gewicht", "50") ], "open");
+      ("with a value", Some (ov_attr "schatting"), [], [], [ ("gewicht", "50"); ("schatting", "4") ], "4");
+      ("below the input", None, [], [], [ ("gewicht", "50"); ("vindloon", "7") ], "open");
+      ("below the input, given way", None, [ "betwist" ], [], [ ("gewicht", "50"); ("vindloon", "7") ], "100") ]
+
+(* WV-1.5-stack-opgave: "het bergloon is zijn opgegeven bergloon" above "…
+   zijn gewicht maal 2": the opgave is an input member, open where the case
+   gives it no value; declared complete it is settled leeg there and gives way;
+   an initialisation closes over an open opgave *)
+let () =
+  let opgave = ov_dflt ~justification:ov_always ~consequence:(ov_attr "opgegeven bergloon") () in
+  let ir ?(init = []) complete =
+    ov_doc ~defaults:[ ov_stack ~attribute:"bergloon" ([ opgave; ov_stack_base ] @ init) ]
+      [ ov_type ~complete "Vondst" [ "gewicht"; "opgegeven bergloon"; "bergloon" ] [] ] []
+  in
+  List.iter
+    (fun (name, init, complete, attrs, want) ->
+      ov_frame ~name:("WV-1.5-stack-opgave (" ^ name ^ ")") ~ir:(ir ~init complete)
+        ~case_text:(ov_case (ov_v1 attrs) [ ov_attr_is "bergloon" want ]) ())
+    [ ("given", [], [], [ ("gewicht", "10"); ("opgegeven bergloon", "30") ], "30");
+      ("not given", [], [], [ ("gewicht", "10") ], "open");
+      ("complete", [], [ "opgegeven bergloon" ], [ ("gewicht", "10") ], "20");
+      ("complete, given", [], [ "opgegeven bergloon" ], [ ("gewicht", "10"); ("opgegeven bergloon", "30") ], "30");
+      ("below an initialisation", [ ov_dflt ~init:true ~consequence:(ov_lit "25") () ], [], [ ("gewicht", "10") ], "25") ]
+
+(* WV-1.5-stack-characteristic: "een Vondst is beloonbaar indien zijn gewicht
+   groter is dan 2", with above it "niet beloonbaar indien hij betwist is en
+   zijn gewicht groter is dan 2", "de premie is 10 indien hij beloonbaar is"
+   and "de wachtpremie is 3 indien hij niet beloonbaar is" *)
+let () =
+  let zwaar = ov_gt "gewicht" "2" in
+  let ir complete =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~characteristic:"beloonbaar"
+            [ ov_dflt ~justification:(ov_compound "all" 0 [ ov_check "betwist"; zwaar ]) ~decision:false ();
+              ov_dflt ~justification:zwaar ~decision:true () ] ]
+      [ ov_type ~complete "Vondst" [ "gewicht"; "premie"; "wachtpremie" ] [ "betwist"; "beloonbaar" ] ]
+      [ ov_rule ~name:"premie" ~cond:(ov_check "beloonbaar") "premie" (Some (ov_lit "10"));
+        ov_rule ~name:"wachtpremie" ~cond:(ov_check ~negated:true "beloonbaar") "wachtpremie" (Some (ov_lit "3")) ]
+  in
+  List.iter
+    (fun (name, complete, chars, attrs, (k, premie, wacht)) ->
+      ov_frame ~name:("WV-1.5-stack-characteristic (" ^ name ^ ")") ~ir:(ir complete)
+        ~case_text:
+          (ov_case (ov_v1 ~chars attrs) [ ov_char_is "beloonbaar" k; ov_attr_is "premie" premie; ov_attr_is "wachtpremie" wacht ])
+        ())
+    [ ("attributes", [ "betwist" ], [], [ ("gewicht", "5") ], ("holds", "10", "leeg"));
+      ("does not attribute", [], [ "betwist" ], [ ("gewicht", "5") ], ("not", "leeg", "3"));
+      ("nothing applies", [], [], [ ("gewicht", "1") ], ("not", "leeg", "3"));
+      ("the exception open", [], [], [ ("gewicht", "5") ], ("open", "open", "open"));
+      ("the base open", [ "betwist" ], [], [], ("open", "open", "open")) ]
+
+(* WV-1.5-stack-exception-groups, WV-1.5-stack-unordered: the vindloon "zijn
+   gewicht maal 2" with the exception groups "op 0 indien hij betwist is" and
+   "op 5 indien hij beschadigd is", and the two as a declared-unordered group
+   of two groups: a member decides only where it stands of every other member
+   that it gives way or decides the same, and beside a member that is open the
+   group is open *)
+let () =
+  let schade = ov_dflt ~justification:(ov_check "beschadigd") ~consequence:(ov_lit "5") () in
+  let exceptions complete =
+    ov_doc
+      ~defaults:[ ov_stack ~attribute:"vindloon" [ ov_dflt ~justification:ov_always ~consequence:(ov_bin "times" (ov_attr "gewicht") (ov_lit "2")) ~exceptions:(ov_groups [ [ ov_betwist ]; [ schade ] ]) () ] ]
+      [ ov_type ~complete "Vondst" [ "gewicht"; "vindloon" ] [ "betwist"; "beschadigd" ] ] []
+  and unordered complete =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~unordered:true ~name:"vindloon bij betwisting" ~attribute:"vindloon" [ ov_betwist ];
+          ov_stack ~unordered:true ~name:"vindloon bij schade" ~attribute:"vindloon" [ schade ] ]
+      [ ov_type ~complete "Vondst" [ "vindloon" ] [ "betwist"; "beschadigd" ] ] []
+  in
+  List.iter
+    (fun (name, ir, complete, chars, attrs, want, channel) ->
+      ov_frame ~name ~ir:(ir complete)
+        ~case_text:
+          (ov_case (ov_v1 ~chars attrs)
+             (ov_attr_is "vindloon" want
+             :: (match channel with Some rule -> [ ov_inconsistent ~code:"EF-027" rule ] | None -> [ ov_consistent ])))
+        ())
+    [ ("WV-1.5-stack-exception-groups (fall-back)", exceptions, [ "betwist"; "beschadigd" ], [], [ ("gewicht", "50") ], "100", None);
+      ("WV-1.5-stack-exception-groups (one decides)", exceptions, [ "beschadigd" ], [ "betwist" ], [ ("gewicht", "50") ], "0", None);
+      ("WV-1.5-stack-exception-groups (one open)", exceptions, [ "beschadigd" ], [], [ ("gewicht", "50") ], "open", None);
+      ("WV-1.5-stack-exception-groups (one decides beside one open)", exceptions, [], [ "betwist" ], [ ("gewicht", "50") ], "open", None);
+      ("WV-1.5-stack-exception-groups (conflict)", exceptions, [], [ "betwist"; "beschadigd" ], [ ("gewicht", "50") ], "leeg",
+       Some "Vondst.vindloon/0");
+      ("WV-1.5-stack-unordered (one decides)", unordered, [ "beschadigd" ], [ "betwist" ], [], "0", None);
+      ("WV-1.5-stack-unordered (one decides beside one open)", unordered, [], [ "betwist" ], [], "open", None);
+      ("WV-1.5-stack-unordered (none decides)", unordered, [ "betwist"; "beschadigd" ], [], [], "leeg", None);
+      ("WV-1.5-stack-unordered (conflict)", unordered, [], [ "betwist"; "beschadigd" ], [], "leeg", Some "Vondst.vindloon") ]
+
+(* WV-1.5-stack-type-chain: the effective stack of a subtype (ch. 7.10). On
+   Strandrecht "de uitkering is zijn grondslag" with the exception "op 99
+   indien hij betwist is"; on Wrakrecht, a Strandrecht, "zijn grondslag maal 2"
+   with the exception "op 55 indien zijn bergingsdiepte groter is dan 20" *)
+let () =
+  let ir complete =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~subject:"Strandrecht" ~attribute:"uitkering"
+            [ ov_dflt ~justification:(ov_check "betwist") ~consequence:(ov_lit "99") ();
+              ov_dflt ~justification:ov_always ~consequence:(ov_attr ~ty:"Strandrecht" "grondslag") () ];
+          ov_stack ~subject:"Wrakrecht" ~name:"uitkering van een Wrakrecht" ~attribute:"uitkering"
+            [ ov_dflt ~justification:(ov_cmp "greater" (ov_attr ~ty:"Wrakrecht" "bergingsdiepte") (ov_lit "20")) ~consequence:(ov_lit "55") ();
+              ov_dflt ~justification:ov_always ~consequence:(ov_bin "times" (ov_attr ~ty:"Wrakrecht" "grondslag") (ov_lit "2")) () ] ]
+      [ ov_type ~complete "Strandrecht" [ "grondslag"; "uitkering" ] [ "betwist" ];
+        ov_type ~supertype:"Strandrecht" "Wrakrecht" [ "bergingsdiepte" ] [] ]
+      []
+  in
+  List.iter
+    (fun (name, complete, ty, chars, attrs, want) ->
+      ov_frame ~name:("WV-1.5-stack-type-chain (" ^ name ^ ")") ~ir:(ir complete)
+        ~case_text:(ov_case [ ov_obj ~ty ~chars "R1" (("grondslag", "10") :: attrs) ] [ ov_attr_is ~label:"R1" "uitkering" want ])
+        ())
+    [ ("own base", [ "betwist" ], "Wrakrecht", [], [ ("bergingsdiepte", "5") ], "20");
+      ("inherited exception open", [], "Wrakrecht", [], [ ("bergingsdiepte", "5") ], "open");
+      ("own exception above it", [], "Wrakrecht", [], [ ("bergingsdiepte", "25") ], "55");
+      ("own exception open", [], "Wrakrecht", [ "betwist" ], [], "open");
+      ("inherited exception", [], "Wrakrecht", [ "betwist" ], [ ("bergingsdiepte", "5") ], "99");
+      ("supertype open", [], "Strandrecht", [], [], "open");
+      ("supertype base", [ "betwist" ], "Strandrecht", [], [], "10") ]
+
+(* WV-1.5-complete-*: a member whose declaration says that its input is
+   complete is settled leeg where the case gives it no value, on an object
+   where it is input; where a writer writes it the field changes nothing *)
+let () =
+  let ir ?(strict = true) ?(rules = [ ov_uitbetaling ]) ?(types = [ "Vondst" ]) complete =
+    ov_doc ~strict
+      (List.map
+         (fun t ->
+           if t = "Vondst" then ov_type ~complete "Vondst" [ "taxatie"; "vindloon"; "bergloon"; "uitbetaling"; "drijftoeslag" ] [ "drijfhout" ]
+           else ov_type ~supertype:"Vondst" t [] [])
+         types)
+      (rules @ [ ov_rule ~name:"drijftoeslag" ~cond:(ov_check ~negated:true "drijfhout") "drijftoeslag" (Some (ov_lit "2")) ])
+  in
+  let frame ?strict ?rules ?types name complete objs expected =
+    ov_frame ~name:("WV-1.5-complete-" ^ name) ~ir:(ir ?strict ?rules ?types complete) ~case_text:(ov_case objs expected) ()
+  in
+  frame "member" [ "vindloon" ] (ov_v1 [ ("bergloon", "3") ]) [ ov_attr_is "vindloon" "leeg"; ov_attr_is "uitbetaling" "3" ];
+  frame "member (bergloon complete instead)" [ "bergloon" ] (ov_v1 [ ("bergloon", "3") ]) [ ov_attr_is "uitbetaling" "open" ];
+  frame "member (both complete)" [ "vindloon"; "bergloon" ] (ov_v1 [ ("bergloon", "3") ]) [ ov_attr_is "uitbetaling" "3" ];
+  ov_frame ~closed:true ~name:"WV-1.5-complete-session" ~ir:(ir []) ~case_text:(ov_case (ov_v1 [ ("bergloon", "3") ]) [ ov_attr_is "uitbetaling" "3" ]) ();
+  frame "characteristic" [ "drijfhout" ] (ov_v1 []) [ ov_char_is "drijfhout" "not"; ov_attr_is "drijftoeslag" "2" ];
+  frame "characteristic (named)" [ "drijfhout" ] (ov_v1 ~chars:[ "drijfhout" ] []) [ ov_char_is "drijfhout" "holds"; ov_attr_is "drijftoeslag" "leeg" ];
+  frame "on-the-supertype" ~types:[ "Vondst"; "Strandvondst" ] [ "vindloon" ]
+    [ ov_obj ~ty:"Strandvondst" "S1" [ ("bergloon", "3") ] ] [ ov_attr_is ~label:"S1" "uitbetaling" "3" ];
+  frame "written" [ "vindloon" ] ~rules:[ ov_vindloon; ov_uitbetaling ] (ov_v1 []) [ ov_attr_is "vindloon" "open" ];
+  frame "written (taxatie 50)" [ "vindloon" ] ~rules:[ ov_vindloon; ov_uitbetaling ] (ov_v1 [ ("taxatie", "50") ]) [ ov_attr_is "vindloon" "leeg" ];
+  frame "writer-on-a-subtype" ~types:[ "Vondst"; "Strandvondst" ] [ "vindloon" ]
+    ~rules:
+      [ ov_rule ~ty:"Strandvondst" ~name:"vindloon" ~cond:(ov_cmp "greater" (ov_attr ~ty:"Strandvondst" "taxatie") (ov_lit "1000"))
+          "vindloon" (Some (ov_lit "10"));
+        ov_uitbetaling ]
+    [ ov_obj "V1" []; ov_obj ~ty:"Strandvondst" "S1" [] ]
+    [ ov_attr_is "vindloon" "leeg"; ov_attr_is ~label:"S1" "vindloon" "open" ];
+  frame "without-the-property" ~strict:false [ "vindloon" ] (ov_v1 [ ("bergloon", "3") ]) [ ov_attr_is "uitbetaling" "3" ]
+
+(* --- the folds (ch. 1.5, "A quantifier fold" to "An IfThenElse in a value")
+   A Jutter and his vondsten, linked by the aanmelding *)
+let ov_aanmelding =
+  {|{"node": "FactType", "name": "aanmelding", "reciprocal": false, "roles": [{"node": "Role", "name": "aanmeldende jutter", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true}]}|}
+
+let ov_range = {|"sourceRole": {"node": "RoleBinding", "factType": "aanmelding", "role": "vondst"}|}
+
+let ov_qf ?filter q k test =
+  Printf.sprintf {|{"node": "QuantifierFold", "quantifier": "%s"%s, "elementType": "Vondst"%s, "test": %s, %s, %s}|} q
+    (if q = "all" || q = "none" then "" else Printf.sprintf {|, "threshold": %d|} k)
+    (match filter with Some f -> {|, "filter": |} ^ f | None -> "")
+    test (ov_src q) ov_range
+
+(* J1 with the vondsten [vs], each a label, its attributes, the
+   characteristics it names and those it names in characteristicsAbsent *)
+let ov_jutter ?(attrs = []) vs =
+  ov_obj ~ty:"Jutter" ~roles:(if vs = [] then [] else [ ("vondsten", List.map (fun (l, _, _, _) -> l) vs) ]) "J1" attrs
+  :: List.map (fun (l, a, chars, absent) -> ov_obj ~chars ~absent l a) vs
+
+(* WV-1.5-quantifier-fold-*: "een Jutter is [Q] indien [Q] van zijn vondsten
+   een gewicht groter dan 10 hebben", and "keurder indien al zijn vondsten die
+   gemerkt zijn een gewicht groter dan 10 hebben" *)
+let () =
+  let zwaar = ov_gt "gewicht" "10" in
+  let qs = [ ("alle", "all", 0); ("geen", "none", 0); ("een", "atLeast", 1); ("twee", "atLeast", 2); ("hoogstens een", "atMost", 1); ("precies een", "exactly", 1) ] in
+  let ir =
+    ov_doc ~fact_types:[ ov_aanmelding ]
+      [ ov_type "Jutter" [] (List.map (fun (k, _, _) -> k) qs @ [ "keurder" ]); ov_type "Vondst" [ "gewicht" ] [ "gemerkt" ] ]
+      (List.map (fun (k, q, n) -> ov_rule ~ty:"Jutter" ~name:k ~cond:(ov_qf q n zwaar) k None) qs
+      @ [ ov_rule ~ty:"Jutter" ~name:"keurder" ~cond:(ov_qf ~filter:(ov_check "gemerkt") "all" 0 zwaar) "keurder" None ])
+  in
+  let v l g = (l, (match g with Some g -> [ ("gewicht", g) ] | None -> []), [], []) in
+  List.iter
+    (fun (name, vs, want) ->
+      ov_frame ~name:("WV-1.5-quantifier-fold (" ^ name ^ ")") ~ir
+        ~case_text:(ov_case (ov_jutter vs) (List.map (fun (k, st) -> ov_char_is ~label:"J1" k st) want)) ())
+    [ ("20, 30, open", [ v "V1" (Some "20"); v "V2" (Some "30"); v "V3" None ],
+       [ ("alle", "open"); ("geen", "not"); ("een", "holds"); ("twee", "holds"); ("hoogstens een", "not"); ("precies een", "not") ]);
+      ("5, 6, open", [ v "V1" (Some "5"); v "V2" (Some "6"); v "V3" None ],
+       [ ("twee", "not"); ("hoogstens een", "holds"); ("precies een", "open") ]);
+      ("open first", [ v "V3" None; v "V1" (Some "20"); v "V2" (Some "30") ],
+       [ ("alle", "open"); ("geen", "not"); ("een", "holds"); ("twee", "holds"); ("hoogstens een", "not"); ("precies een", "not") ]);
+      ("no vondst", [], [ ("alle", "holds"); ("een", "not") ]) ];
+  List.iter
+    (fun (name, second, want) ->
+      ov_frame ~name:("WV-1.5-quantifier-fold (keurder, " ^ name ^ ")") ~ir
+        ~case_text:(ov_case (ov_jutter [ ("V1", [ ("gewicht", "20") ], [ "gemerkt" ], []); ("V2", [ ("gewicht", second) ], [], []) ])
+                      [ ov_char_is ~label:"J1" "keurder" want ]) ())
+    [ ("a filter open over 5", "5", "open"); ("a filter open over 30", "30", "holds") ]
+
+(* WV-1.5-past-undetermined-fold, WV-1.5-past-undetermined-filter: "een
+   Jutter is gelijkmatig indien al zijn vondsten een gewicht gedeeld door hun
+   deelnemers groter dan 2 hebben"; a matrix after a member undetermined for
+   another, or beside a filter that is, is read provisionally and deposits
+   nothing *)
+let () =
+  let test = ov_cmp "greater" (ov_bin "dividedBy" (ov_attr "gewicht") (ov_attr "deelnemers")) (ov_lit "2") in
+  let ir ?filter q k =
+    ov_doc ~fact_types:[ ov_aanmelding ]
+      [ ov_type "Jutter" [] [ "gelijkmatig" ]; ov_type "Vondst" [ "gewicht"; "deelnemers" ] [ "gemerkt" ] ]
+      [ ov_rule ~ty:"Jutter" ~name:"gelijkmatig" ~cond:(ov_qf ?filter q k test) "gelijkmatig" None ]
+  in
+  let fact = ov_inconsistent ~label:"J1" ~code:"EF-005" "gelijkmatig" in
+  let frame name ir vs want channel =
+    ov_frame ~name ~ir
+      ~case_text:(ov_case (ov_jutter vs) [ ov_char_is ~label:"J1" "gelijkmatig" want; (if channel then fact else ov_consistent) ])
+      ()
+  in
+  let v2 = ("V2", [ ("gewicht", "9"); ("deelnemers", "0") ], [], []) in
+  frame "WV-1.5-past-undetermined-fold (no gewicht of V1)" (ir "all" 0) [ ("V1", [ ("deelnemers", "2") ], [], []); v2 ] "not" false;
+  frame "WV-1.5-past-undetermined-fold (gewicht 10 of V1)" (ir "all" 0)
+    [ ("V1", [ ("gewicht", "10"); ("deelnemers", "2") ], [], []); v2 ] "not" true;
+  let gemerkt = ov_check "gemerkt" in
+  let v1 chars absent = ("V1", [ ("gewicht", "9"); ("deelnemers", "0") ], chars, absent) in
+  frame "WV-1.5-past-undetermined-filter (gemerkt not named)" (ir ~filter:gemerkt "all" 0) [ v1 [] [] ] "open" false;
+  frame "WV-1.5-past-undetermined-filter (gemerkt)" (ir ~filter:gemerkt "all" 0) [ v1 [ "gemerkt" ] [] ] "not" true;
+  let v2 chars absent = ("V2", [ ("gewicht", "10"); ("deelnemers", "2") ], chars, absent) in
+  frame "WV-1.5-past-undetermined-filter (at least two, V2 not named)" (ir ~filter:gemerkt "atLeast" 2)
+    [ v1 [ "gemerkt" ] []; v2 [] [] ] "not" false;
+  frame "WV-1.5-past-undetermined-filter (at least two, V2 gemerkt)" (ir ~filter:gemerkt "atLeast" 2)
+    [ v1 [ "gemerkt" ] []; v2 [ "gemerkt" ] [] ] "not" true;
+  frame "WV-1.5-past-undetermined-filter (at least two, V2 not gemerkt)" (ir ~filter:gemerkt "atLeast" 2)
+    [ v1 [ "gemerkt" ] []; v2 [] [ "gemerkt" ] ] "not" false
+
 (* WV-1.5-witness-*: the witnesses of ref's suite (ref/test/fixtures/strict-
    empty/), read where they stand, each with its case files and their
    expectations. A witness whose forms this encoding carries plays every case;
    one that holds a form it does not carry is refused, by CLINGO-049 with the
-   slug of that form, or by a limit of this encoding in every document. One
-   waits for the case translation to read the field complete of a
-   declaration, which its document carries. Every witness is in exactly one
-   list *)
+   slug of that form, or by a limit of this encoding in every document. Every
+   witness is in exactly one list *)
 let () =
   let dir = "ref/test/fixtures/strict-empty/" in
   let plays =
-    [ "absent-link"; "absent-link-path"; "characteristic"; "comparison"; "compound-all"; "compound-any";
-      "compound-counting"; "compound-none"; "consistency"; "filled-test"; "initialisation"; "let"; "marker";
-      "navigated-read"; "settled-empty"; "settled-empty-date" ]
+    [ "absent-link"; "absent-link-path"; "characteristic"; "closed-input"; "comparison"; "composite-filled-test";
+      "compound-all"; "compound-any"; "compound-counting"; "compound-none"; "consistency"; "defaults-characteristic";
+      "defaults-stack"; "defaults-subtype"; "filled-test"; "filled-test-not-closure"; "initialisation";
+      "input-above-computation"; "input-above-computation-open"; "let"; "marker"; "navigated-read"; "settled-empty";
+      "quantifier-fold"; "settled-empty-date"; "settled-empty-stack" ]
   and refused =
-    [ ("arithmetic", "CLINGO-005", None); ("composite-filled-test", "CLINGO-049", Some "defaults-group");
-      ("defaults-characteristic", "CLINGO-049", Some "defaults-group"); ("defaults-stack", "CLINGO-049", Some "defaults-group");
-      ("defaults-subtype", "CLINGO-049", Some "defaults-group"); ("empty-by-fault", "CLINGO-049", Some "set-fold");
+    [ ("arithmetic", "CLINGO-005", None); ("empty-by-fault", "CLINGO-049", Some "set-fold");
       ("exact-digits", "CLINGO-046", None); ("fact-creation", "CLINGO-049", Some "set-fold");
-      ("filled-test-not-closure", "CLINGO-049", Some "defaults-group");
-      ("input-above-computation", "CLINGO-049", Some "defaults-group");
-      ("input-above-computation-open", "CLINGO-049", Some "defaults-group"); ("listed-fold", "CLINGO-049", Some "set-fold");
-      ("object-creation", "CLINGO-049", Some "object-creation"); ("quantifier-fold", "CLINGO-049", Some "quantifier-fold");
-      ("set-fold", "CLINGO-049", Some "set-fold"); ("settled-empty-fold", "CLINGO-049", Some "set-fold");
-      ("settled-empty-stack", "CLINGO-049", Some "defaults-group") ]
-  and waits = [ "closed-input" ] in
+      ("listed-fold", "CLINGO-049", Some "set-fold"); ("object-creation", "CLINGO-049", Some "object-creation");
+      ("set-fold", "CLINGO-049", Some "set-fold");
+      ("settled-empty-fold", "CLINGO-049", Some "set-fold") ]
+  in
   let root = if Sys.file_exists dir then dir else Filename.concat "../../../../.." dir in
   let present = List.sort compare (List.filter (fun n -> Sys.is_directory (Filename.concat root n)) (Array.to_list (Sys.readdir root))) in
-  let listed = List.sort compare (plays @ List.map (fun (n, _, _) -> n) refused @ waits) in
+  let listed = List.sort compare (plays @ List.map (fun (n, _, _) -> n) refused) in
   check "WV-1.5-witness-*: every witness is listed once, and every listed one exists" (present = listed);
   let cases name =
     List.sort compare
@@ -20549,15 +20886,7 @@ let () =
              | exception Uchar_ref.Value.Fault { code; params; _ } ->
                  code = Some want && (match form with Some f -> params = [ ("form", f) ] | None -> true)))
         (cases name))
-    refused;
-  List.iter
-    (fun name ->
-      let ir = corpus_file (dir ^ name ^ "/ir.json") in
-      check (Printf.sprintf "WV-1.5-witness-%s waits for the case translation to read the field complete: its document carries it" name)
-        (let doc, _ = load_pair ~ir ~case_text:(corpus_file (dir ^ name ^ "/case1-volledig.json")) in
-         List.exists (fun (_, (ot : Ir_v0.Ast.object_type)) -> ot.attribute_complete <> [] || ot.characteristic_complete <> [])
-           doc.object_types))
-    waits
+    refused
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
