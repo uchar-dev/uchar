@@ -48,7 +48,6 @@ way and the base below it decides (10); where the case names betwist nowhere the
 not decide below an open default, so the premie is open. In the reading of ch. 1.2–1.4 that Vondst has the premie 10.
 Cases 1 to 4 name betwist nowhere and expect nothing of the premie.
 
-The reference interpreter plays the four cases (gate 5). The ASP backend refuses the document with CLINGO-049 (gate 6),
-both Drools branches with DROOLS-370 (gate 12), and the readings at the fixpoint (`runner --trace`) are refused with
-REF-014, `form` `reading` (gate 17); each gate lists the golden by name. The red case
-`corpus/red/jutterswet-kenmerk-wel-en-niet` carries the same document.
+The reference interpreter plays the cases (gate 5), and so do both Drools branches (gate 12). The ASP backend refuses the
+document with CLINGO-049 (gate 6), and the Drools build with readings with DROOLS-370 (gate 17); those gates list the
+golden by name. The red case `corpus/red/jutterswet-kenmerk-wel-en-niet` carries the same document.

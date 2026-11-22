@@ -7,5 +7,4 @@ itself, so it is refused while it is read, before any rule fires, with the fault
 parameters.
 
 The document is the one of the golden `jutterswet-afleiden-uit-leeg`, which carries `inferFromEmpty: false`: the
-field `characteristicsAbsent` decides an outcome only there. The Drools backend refuses that document before it reads
-the case (DROOLS-370), so gate 8 lists the case in its Drools leg with that code.
+field `characteristicsAbsent` decides an outcome only there.

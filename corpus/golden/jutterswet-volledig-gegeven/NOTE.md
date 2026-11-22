@@ -60,6 +60,6 @@ Without the field — the same document with `complete` stripped, measured — c
 drijfhout and the opgave are open, and so are the uitbetaling, the drijftoeslag, the bergloon of case5 and the
 deviation of cases 5 and 6; cases 2 and 4 do not read a member declared complete without a value.
 
-The reference interpreter plays the six cases (gate 5). The ASP backend refuses the document with CLINGO-049 (gate 6)
-and both Drools branches with DROOLS-370 (gate 12), as `jutterswet-afleiden-uit-leeg`: each gate lists the golden by
-name.
+The reference interpreter plays the six cases (gate 5), and so do both Drools branches (gate 12). The ASP backend refuses
+the document with CLINGO-049 (gate 6), and the Drools build with readings with DROOLS-370 (gate 17), as
+`jutterswet-afleiden-uit-leeg`: those gates list the golden by name.
