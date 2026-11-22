@@ -154,3 +154,202 @@ Van de hoofdsessie (voorlopig): de architectuur hierboven, naar het onafhankelij
 
 Voorbeelden komen uit de Jutterswet (vondst, jutter, taxatie, gewicht, vindloon). In niets dat in de repository komt
 staat een naam, regel of casus van een regelset buiten deze repository.
+
+## Result van deel 1: de kern
+
+### Wat er is
+
+Commits op `card/open-values-in-drools`: `da6d38aec` (de kern), `94354c020` (README, getuigen voor `complete` en het deel
+per instantie), `e2d7f18e5` (open invoer naast de bean, het oordeel in één regel), `1868bf221` (de zin van DROOLS-370),
+`d0a15637a` (gate 12: de reden van twee goldens), `f2762d082` (gate 8: de reden van één rode case), `6a8ad5d57` (een
+schrijver vraagt altijd of hij iets doet). De hoofdsessie zette er `8cb33afa8` en `5d3e8f054` (het heap-plafond) vóór.
+
+- **Wat open kan zijn** (`OpenableMembers`): één keer per analyse berekend, leeg in een document zonder de eigenschap.
+  Openable is een invoerlid dat één waarde heeft, op de objecten van een type waarop geen regel en geen defaults-groep
+  het schrijft, zonder `complete` op zijn declaratie; en elk lid dat een vorm schrijft die een openable lid leest, langs
+  elke keten (`ProducerConsumer.forms`). Een relatie en een populatie noemt `forms` niet: leest een creatie een openable
+  lid, dan telt elke vorm als een die er een leest.
+- **De standen.** Een lid met een schrijver leest door zijn standing: `State` en `CharacteristicState` dragen een waarde,
+  leeg of waar/onwaar, of het `OpenMember` van het lid op dat object. Een invoerlid zonder schrijver leest van de bean,
+  met het ene feit `OpenInput` van de sessie ernaast; langs een pad leest het door zijn `PathState`, wier regel de bean
+  aan het eind van het pad als eigen patroon bindt.
+- **De feiten.** `LeftOpen(object, lid, schrijver)`, logisch ingevoegd door een schrijver die niet beslist en van wie
+  niet vaststaat dat hij niets vult; `OpenInput`, één gesteld feit per sessie met per object de invoerleden die niet
+  volledig zijn (`DroolsBackend.insert`).
+- **De grens.** `ComputeHelpers.read` en `readInput` breken een evaluatie af met `OpenRead`; gevangen per lid van een
+  samengestelde voorwaarde, per operand van een toets op leeg en gevuld (`Term.ClosureOverOpen`), in de toets van een
+  regel en in de consequentie van een waarde, telkens met de deponeringen van binnen de grens teruggezet. De
+  productieruntime is niet geraakt.
+- **Het oordeel als paar.** Een voorwaarde die voor beide vaststaat, antwoordt; elke andere werpt `Undetermined` met
+  haar waarheid voor de vorm zelf. `Composite` is de ene lezing van een samengestelde voorwaarde, in elk document: één
+  tabel van Kleene (`Composite.truth`), gelezen tot het oordeel voor een ander staat, een lid na een onbepaald lid
+  voorlopig. `ComputeHelpers.established` en `endVerdict`, die de kwantorvouw nog gebruikt, vragen dezelfde tabel.
+- **De ene functie** is `Reads.conditionTest(Asked, Ends, …)`: de enige plaats die van een voorwaarde van de IR een
+  `TestItem` maakt. `Asked` is `DECIDES`, `ACTS` (een schrijver: hij beslist of laat open), `FAULTS`, `DEPOSITS`;
+  `Ends` zegt of wat gecompileerd is kan falen en of het een openable lid leest. Elke andere toets is er een die de vorm
+  zelf samenstelt (`VORM`).
+- **De drie uitkomsten van een schrijver** staan in één regel: haar functie `oordeel_…` geeft waar (beslist), onwaar
+  (vult niets) of niets (laat open); de toets in de linkerkant vraagt of zij iets doet, de consequentie
+  (`Consequence.Judged`) of zij beslist of haar `LeftOpen` invoegt. Een regel wier voorwaarde niet onbepaald kan zijn,
+  houdt haar toets. De consistentie toetst "geen van" over haar bewering waar die onbepaald kan zijn.
+- **De case**: `characteristicsAbsent`, `attributeOpen`, `characteristicOpen`, EF-047, `Input.characteristicAbsent` en
+  `Input.closedInputs` (in ref `--closed-inputs`), DROOLS-371 voor een `characteristicAbsent` die niet bij de invoer
+  past; `Fixpoint.open` noemt de open leden.
+- **De weigering** (`UncarriedForms`): de tabel van ch. 1.5, dan `defaults-group`, `quantifier-fold`, `set-fold`,
+  `if-then-else`, `object-creation`, `fact-creation`, dan `reading` (de bouw met lezingen).
+
+### Waar `inferFromEmpty` gelezen wordt
+
+Drie plaatsen onder `backends/drools`: `IrLoader` (de wire in het model), `OpenableMembers.of` (wat open kan zijn; de
+enige plaats van de analyse, en via `openableMembers()` ook wat de case-invoer open laat) en `DroolsBackend.build` (de
+weigering bij naam).
+
+### Elke plaats in `TmsTranspiler` die een voorwaardeterm neemt
+
+| plaats | hoe |
+|---|---|
+| `characteristicRule`, `writeRule` (gelijkstelling, berekening, initialisatie) | `ACTS` en `judged` |
+| `consistencyRules` | `DECIDES` over "geen van" de bewering waar die onbepaald kan zijn, anders over `NIET` |
+| `conditionFaultRule`, `depositRule` | `FAULTS`, `DEPOSITS` |
+| `compound` | per lid, met de plaats vanaf waar een lid onbepaald kan zijn |
+| `timelineInitialisationRule`, `periodCondition` (tijdlijnen) | `DECIDES`, resp. per periode; geweigerd: `timeline-member` |
+| `allocation` | `DECIDES`; geweigerd: `allocation` |
+| `objectCreation`, `factCreation` | `DECIDES`; geweigerd: `object-creation`, `fact-creation` |
+| de default van een stapel (twee plaatsen) | `DECIDES`; geweigerd: `defaults-group` |
+| `contributionRules`, `filterDepositRule`, `filterFaultRule`, de emmerscalair van een lid | `DECIDES`, `DEPOSITS`, `FAULTS`, `VORM`; geweigerd: `set-fold` |
+| `quantifierContributions` (filter en matrix) | `DECIDES`, waarde; geweigerd: `quantifier-fold` |
+| `choice` (`IfThenElse`) | waarde; geweigerd: `if-then-else` |
+
+Vier plaatsen gaan in een document met de eigenschap door de functie en zijn gedragen (de eerste vier rijen), de andere
+weigeren bij naam.
+
+### Een document zonder de eigenschap verandert niet
+
+De DRL-tekst van elke golden (433) en elk rood document (77) op `5d3e8f054` naast die van de branch, zonder en met
+lezingen, samen 1020 teksten, waarvan 6 (drie documenten) van een document met de eigenschap: **1014 teksten van 507
+documenten: 828 byte-gelijk, 186 (520 functies) die alleen verschillen in de romp van een functie die een samengestelde
+voorwaarde rekent, 0 overige** (90 ervan zijn een weigering of fout van de analyse, byte-gelijk). De toets herschrijft de
+oude romp (`raak`/`vast`, `established`/`endVerdict`) tot de nieuwe (`var lezing = ComputeHelpers.composite(…)`) en
+vergelijkt dan byte voor byte, dus ook regels, linkerkanten, consequenties, imports en globals. Van de 386 pins in
+`src/test/resources/drl-text` zijn er 81 (230 functies) opnieuw geschreven, met dezelfde toets: 0 overige. De planpins in
+`RulePlanWitnessTest` dragen er `open=false` bij (tien waarden en één deponering), en geen andere wijziging.
+
+### De omvang van een document met de eigenschap
+
+Over de 133 goldens die dit deel draagt, met de eigenschap erbij (niet-lege regels DRL-tekst, `rule`s, functies):
+
+| | regels | `rule`s | functies |
+|---|---|---|---|
+| gewoon | 13 463 | 612 | 677 |
+| met de eigenschap op `da6d38aec` | 29 454 | 1595 | 1127 |
+| met de eigenschap nu | 18 754 (+39%) | 705 (+15%) | 857 (+27%) |
+| met de eigenschap, elke declaratie `complete` | 13 463 | 612 | 677 |
+
+Per soort, met de eigenschap (aantal, regels), eerst op `da6d38aec` en dan nu: standing "uit de invoer" 327, 2943 → 38,
+342; "uit de onvolledige invoer" 290, 2610 → 0; kenmerkstandings 197, 1627 → 64, 529; "open door een schrijver" van een
+attribuut 37, 333 → gelijk; padstandings 58, 435 → 58, 455; regel "laat open" 178, 1685 → 0; functies `toets` 422, 4441
+→ 66, 521 en `oordeel` 0 → 178, 2318; `samengesteld` 96, 2488 → 53, 1329; `sluiting` 76, 608 → 42, 336; `deling` 129, 645
+→ 114, 570; regel van de vorm 398, 6306 → 398, 6863; kop 1274 → 1127. Een functie `oordeel` met haar `try` en de tak
+"open" in de consequentie zijn wat overblijft.
+
+Regels van de KieBase en feiten aan het fixpunt van de eerste case, zonder en met de eigenschap: de 19 getuigen van ref
+die spelen 177 → 216 regels en 119 → 143 feiten; de 21 documenten met de eigenschap van `open-values/` 85 → 96 en 106 →
+141; samen 262 → 312 en 225 → 284. Per getuige (regels; feiten): absent-link 22→30; 10→13, absent-link-path 5→8; 4→6, arithmetic 8→8;
+10→11, characteristic 7→8; 5→7, closed-input 3→3; 5→6, comparison 22→26; 11→12, compound-all 6→7; 5→6, compound-any 5→6;
+4→5, compound-counting 15→18; 8→9, compound-none 6→7; 5→6, consistency 2→2; 3→4, exact-digits 5→6; 4→5, filled-test
+11→13; 7→8, initialisation 2→2; 3→4, let 4→5; 5→6, marker 6→7; 4→5, navigated-read 5→8; 5→7, settled-empty 30→36;
+15→16, settled-empty-date 13→16; 6→7.
+
+### Acceptance
+
+- **De getuigen van ref** (`OpenValuesRefWitnessTest`, gate 12): 34 getuigen, 19 spelen op beide weergaven (77 cases per
+  weergave), 15 weigeren met DROOLS-370 en hun slug: `defaults-group` acht (composite-filled-test,
+  defaults-characteristic, defaults-stack, defaults-subtype, filled-test-not-closure, input-above-computation,
+  input-above-computation-open, settled-empty-stack), `set-fold` vijf (empty-by-fault, fact-creation, listed-fold,
+  set-fold, settled-empty-fold), `object-creation` één, `quantifier-fold` één. `closed-input` speelt: de invoer leest
+  `complete`.
+- **De principes** (`OpenValuesWitnessTest`, 21 tests, gate 12): 23 documenten uit de Jutterswet onder
+  `src/test/resources/open-values/`, 64 cases en twee rode die ook in ref spelen (`runner`, `runner --closed-inputs`),
+  elk principe van de lijst van de kaart onder de naam `WV-1.5-…` in de javadoc, met `complete` en het deel per instantie
+  erbij; en de wijziging van de bean tussen twee keer vuren, ook langs een pad.
+- **Rood eerst**: op de jar van `5d3e8f054` weigert elk van de 52 documenten met de eigenschap met DROOLS-370 en
+  `form: document`, en spelen de twee documenten zonder de eigenschap als nu. `OpenableMembersWitnessTest` toetst een
+  klasse die er niet was.
+- **De weigering**: `InferFromEmptyRefusalWitnessTest` leest de tabel van ch. 1.5 uit de spec en houdt de lijst eraan; de
+  bouw met lezingen weigert een gedragen document met `reading`. Over de 151 documenten van de meting hieronder die ref
+  weigert of die een vorm van de tabel dragen, is de slug gelijk aan die van ref (REF-014), op de documenten na die de
+  lader al weigert.
+- **Buiten de gates gemeten** (eenmalig, programma's in de werkmap): elke golden, elke getuige van ref en elk document van
+  `open-values/` met de eigenschap erbij, elke case als zij is en met elke gegeven invoer weggelaten (hoogstens 60 per
+  document): 173 documenten die dit deel draagt, 3546 runs op de twee weergaven, 2956 met een open lid in de eindstand:
+  **0 verschillen met de eindstand van ref** (`runner --end-state`; acht runs falen in beide). Behoud bij volledige
+  kennis: 132 goldens spelen met de eigenschap en elk invoerlid volledig hun eigen 335 cases op beide weergaven.
+
+### Voorlopige besluiten
+
+1. **`OpenInput` is één feit per sessie, niet één per bean.** Een regel bindt het als de rekendatum, zonder join; een
+   gemaakt object (deel 2) heeft geen eigen feit nodig, want wat het feit niet noemt, is vaststaand leeg. De lezing krijgt
+   het object erbij.
+2. **De regel van een schrijver houdt een `eval` in de linkerkant**, die vraagt of de schrijver iets doet, en de
+   consequentie rekent het oordeel nog eens. Zonder die `eval` zou de regel voor elk object vuren, ook waar de vorm niets
+   vult, en zouden `Observer.firings()` en `DroolsBackend.coverage` elke vorm van een document met de eigenschap als
+   gevuurd melden. Nu vuurt zij waar de vorm beslist of haar doel open laat. De `eval` kost één regel tekst.
+3. **Een functie `established`/`endVerdict` blijft** voor de kwantorvouw en de vouw per periode, op de tabel van
+   `Composite`; de route `ESTABLISHED` is vervallen.
+4. **De samengestelde voorwaarde krijgt alleen een `try` vanaf het eerste lid dat onbepaald kan zijn**
+   (`Term.Compound.openFrom`), en de probe alleen dan.
+5. **`var lezing`** in de functietekst, zodat een gewoon document geen import erbij krijgt.
+6. **Een lid dat op een type een schrijver heeft, houdt zijn standing op elk type**, ook waar het invoer is; de regel "uit
+   de invoer" en de regel "onwaar" lezen daar `OpenInput` in hun consequentie.
+7. **De zin van DROOLS-370** zegt dat de backend die lezing niet draagt "voor alles wat gevraagd is (vorm: …)".
+
+### Voorstellen voor beschermde teksten
+
+- `spec/CONSTRUCTS.md` rij 48, achter de stand van ref: "Drools reads it for rules, initialisations, consistency rules and
+  conditions without a timeline, a fold, a stack, a creation or an IfThenElse, and refuses any other form by its slug
+  (DROOLS-370)." Rij 49: "Drools reads `complete` where it bounds the input that can be open."
+- `CLAUDE.md`: geen alinea van een gate verandert.
+
+### Open punten
+
+1. **Buiten de kaart, in gewone documenten**: een wijziging van een invoerattribuut van een bean tussen twee keer vuren
+   bereikt een regel die dat attribuut langs een link leest niet (de waarde is aan het patroon van het onderwerp
+   gebonden). Kleinste document: `open-values/link` zonder de eigenschap, vindpremie = waarde + bonus van de vinder;
+   bonus van J2 van 20 naar 50 met `session.update` laat de vindpremie van V3 op 120 staan (beide weergaven), waar 150
+   hoort. In een document met de eigenschap is het 150. De README belooft dat `fire` na een update klopt ("Firing again").
+2. `corpus/golden/jutterswet-afleiden-uit-leeg/NOTE.md`, `jutterswet-volledig-gegeven/NOTE.md`,
+   `corpus/red/jutterswet-kenmerk-wel-en-niet/NOTE.md` en `frontends/regelspraak/grammar/DIVERGENCES.md` (r. 4984) zeggen
+   dat Drools een document met de eigenschap weigert. Dat geldt na dit deel per vorm; die bestanden vallen buiten het
+   mandaat.
+3. `Observer` telt een regel die haar doel open laat als gevuurd: zij vuurt. Wil de scenariolaag "beslist" en "laat open"
+   scheiden, dan is dat een uitbreiding van de waarnemer (deel 3 of 4).
+4. De lezingen (deel 3) lezen een `READ` nog niet als "bereikt en open": `RecordingRendering` legt een afgebroken
+   knoop niet vast. De bouw met lezingen weigert tot dan.
+
+### Gates
+
+Elk één keer los gedraaid op `6a8ad5d57`, op 1, 8, 10 en 15 na: die op `f2762d082`, waarna alleen
+`TmsTranspiler.conditionTest` veranderde (dezelfde DRL-tekst voor de goldens zonder en met de eigenschap, 659 teksten).
+
+- 1 `check-self-contained: PASS`
+- 8 `check-red: PASS (102 red cases fault observably in ref and clingo …)`; Drools leg 82 fault-pinned, 20 not-carried, 20
+  EXCLUDE met hun code
+- 10 `check-rgs-codes: PASS — 414 codes, 447 sites …`
+- 12 `check-drools: PASS`: played 384, channel floor 49, DRL-text branch 384, JUnit 2009 tests;
+  `check-drools-codes: PASS — 371 codes …`
+- 13 `check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens …)`
+- 15 `check-graph: PASS`
+- 17 `check-readings: PASS (ref traced 1211 golden case files … on both branches 385 goldens and 1073 case files compared,
+  8468 readings, 27262 node lines …)`, 2 goldens DROOLS-370
+
+Geen verwachting, pin buiten de 81 DRL-teksten en de elf planregels, lijst of floor veranderde, behalve drie redenen
+(twee in gate 12, één in gate 8). De JUnit-suite: 2009 tests, geen overgeslagen (was 1979), 2:39 minuten.
+
+### Omvang van de diff
+
+`backends/drools/src/main`: 35 bestanden, 1895 regels erbij en 344 eraf. Grootste: `TmsTranspiler` 492,
+`UncarriedForms` 213 (nieuw), `DrlRendering` 147, `ComputeHelpers` 141, `OpenableMembers` 138 (nieuw), `Composite` 114
+(nieuw), `ClosureRendering` 106, `CaseRunner` 103, `DroolsBackend` 71, `PatternDslRendering` 68, `Consequence` 65,
+`SessionReaders` 49, `OpenInput` 46, `CaseInput` 44, `RecordingRendering` 39, `Undetermined` 38, `LeftOpen` 37, `Route` 37,
+`Input` 34; de overige onder de 33. `README.md` 78. Tests: 10 Java-bestanden, 694 erbij en 115 eraf, plus de documenten
+van `open-values/`.
