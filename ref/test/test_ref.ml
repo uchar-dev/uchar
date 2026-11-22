@@ -16225,6 +16225,40 @@ let () =
   row "below-the-input" (ov_v1 [ ("gewicht", "50"); ("vindloon", "7") ]) "open";
   row "below-the-input-given-way" ~complete:[ "betwist" ] (ov_v1 [ ("gewicht", "50"); ("vindloon", "7") ]) "100"
 
+(* WV-1.5-stack-two-initialisations: a stack with an inherited initialisation
+   above its own (ch. 7.10): each closes over what stands above it, the lower
+   one also over the upper one, and over a default above both that is open. "Het
+   vindloon van een Vondst moet geïnitialiseerd worden op 2 maal zijn gewicht
+   indien zijn gewicht groter is dan 10"; on a Wrakvondst, a Vondst, "op 0
+   indien hij betwist is" and below it "… moet geïnitialiseerd worden op 5" *)
+let ov_two_initialisations =
+  let wrak = let n, o = ot "Wrakvondst" [] [] in (n, { o with ot_supertype = Some "Vondst" }) in
+  ov_doc
+    ~defaults:
+      [ ov_stack ~subject:"Wrakvondst" ~attribute:"vindloon" [ ov_betwist; ov_dflt ~init:true ~consequence:(ov_lit "5") () ] ]
+    [ ov_vondst [ "gewicht"; "vindloon" ] [ "betwist" ]; wrak ]
+    [ rr "vindloon aanvankelijk" Initialisation (Some (ov_ref "vindloon"))
+        (Some (ov_bin Times (ov_lit "2") (ov_ref "gewicht")))
+        (Some (ov_cmp Greater "gewicht" "10")) ]
+
+let ov_w1 attrs = [ { ov_label = "W1"; ov_type = "Wrakvondst"; ov_attrs = attrs; ov_chars = []; ov_links = [] } ]
+
+let () =
+  let row name ?(complete = []) attrs want =
+    let id = "stack-two-initialisations-" ^ name in
+    ov_row ("WV-1.5-" ^ id)
+      (fun () -> ov_run id (ov_complete complete ov_two_initialisations) (ov_w1 attrs))
+      (fun w -> ov_attr w "W1" "vindloon")
+      want
+  in
+  row "the-upper-below-an-open-default" [ ("gewicht", "20") ] "40";
+  row "the-lower-below-an-open-default" [ ("gewicht", "5") ] "5";
+  row "the-lower-below-an-open-upper" ~complete:[ "betwist" ] [] "5";
+  row "the-lower-below-both-open" [] "5";
+  row "the-upper" ~complete:[ "betwist" ] [ ("gewicht", "20") ] "40";
+  row "the-lower" ~complete:[ "betwist" ] [ ("gewicht", "5") ] "5";
+  row "below-the-input" [ ("gewicht", "5"); ("vindloon", "7") ] "open"
+
 (* WV-1.5-stack-opgave: "het bergloon (mag opgegeven worden)" — a stack whose
    highest default is the opgave, "zijn opgegeven bergloon", above "zijn
    gewicht maal 2". The opgave is an input member: where the case gives it no
@@ -17461,7 +17495,10 @@ let () =
    fixture defaults-stack, with betwist not named: the second default is open,
    the two below it displaced. The fixture input-above-computation-open, whose
    opgave is not declared complete, without an opgave: the opgave is open, the
-   computation displaced, and the initialisation default decides 25 *)
+   computation displaced, and the initialisation default decides 25. The
+   document of WV-1.5-stack-two-initialisations at gewicht 5, betwist not named:
+   below the open default the upper initialisation gives way, and the lower one
+   is at its turn and decides 5 *)
 let () =
   let fixture = strict_fixture "defaults-stack" in
   let statuses lines = List.filter (fun l -> List.exists (fun s -> String.ends_with ~suffix:s l) [ " OPEN"; " DISPLACED"; " HOLDS"; " FAILS" ]) lines in
@@ -17474,7 +17511,10 @@ let () =
     (readings_named (fixture ^ "ir.json") (fixture ^ "case1-opgave-open.json") [ default_form 0; default_form 2 ])
     (on_object (default_form 0) "V1"
        [ "0 Compound true"; "1 AttributeReference undetermined open \"V1\" \"opgegeven bergloon\""; "OPEN" ]
-    @ on_object (default_form 2) "V1" [ "0 Literal 25"; "HOLDS" ])
+    @ on_object (default_form 2) "V1" [ "0 Literal 25"; "HOLDS" ]);
+  lines_equal "WV-5.12-open-stack (the lower of two initialisations closes)"
+    (statuses (ov_readings ov_two_initialisations (ov_w1 [ ("gewicht", "5") ])))
+    [ default_form 0 ^ " \"W1\" OPEN"; default_form 1 ^ " \"W1\" HOLDS"; rule_form 0 ^ " \"W1\" FAILS" ]
 
 (* WV-5.12-open-creation: a creation whose condition is undetermined is open,
    and a read over the relation it leaves open names that relation by its role.
@@ -17609,6 +17649,8 @@ let () =
       (("initialisation", "V1.vangst"), [ "V1.strandloon 5" ]);
       (("stack-initialisation-below-the-base", "V1.gewicht"), [ "V1.vindloon 5" ]);
       (("stack-initialisation-below-the-exception", "V1 betwist"), [ "V1.vindloon 5" ]);
+      (("stack-two-initialisations-the-upper-below-an-open-default", "W1.gewicht"), [ "W1.vindloon 5" ]);
+      (("stack-two-initialisations-the-upper", "W1.gewicht"), [ "W1.vindloon 5" ]);
       (("if-then-else-then", "V1.taxatie"), [ "V1.bergtoeslag 5" ]);
       (("if-then-else-else", "V1.taxatie"), [ "V1.bergtoeslag 5" ]);
       (("if-then-else-else-open", "V1.taxatie"), [ "V1.bergtoeslag 5" ]);

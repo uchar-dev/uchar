@@ -768,7 +768,15 @@ geïnitialiseerd worden op 5" gives 5 at gewicht 50 where betwist is not
 named, and 5 without a gewicht where betwist stands not to hold; with "… op
 zijn schatting" in its place the vindloon is open without a schatting and 4
 at schatting 4. With a vindloon of 7 in the case it is open where betwist is
-not named, and 100 where betwist stands not to hold.
+not named, and 100 where betwist stands not to hold. Of two initialisations in
+one stack (ch. 7.10, an inherited one above its own) each reads so. Example
+(WV-1.5-stack-two-initialisations): with "het vindloon van een Vondst moet
+geïnitialiseerd worden op 2 maal zijn gewicht indien zijn gewicht groter is
+dan 10" and, for a Wrakvondst, a Vondst, "… op 0 indien hij betwist is" above
+"… moet geïnitialiseerd worden op 5", a Wrakvondst whose betwist is not named
+has a vindloon of 40 at gewicht 20 and of 5 at gewicht 5; without a gewicht,
+where the upper initialisation is open, it is 5, also where betwist stands not
+to hold. With a vindloon of 7 in the case it is open at gewicht 5.
 
 **An opgave** — a stack whose highest default is the value the case may give
 for its target, "het bergloon (mag opgegeven worden)" — reads as any default

@@ -5763,17 +5763,17 @@ let run_defaults_group ?only env world ~world0 ~owner
                       | Undecided -> fall_through ()
                       | Left_open -> closing (i + 1) rest)
                   | None -> after (own_outcome env r))
-            (* below a default that is open only the initialisation decides: it
+            (* below a default that is open only an initialisation decides: it
                is a closure over the stack (ch. 1.5, 7.3); no other default is
-               evaluated, and the chain is open where it does not decide *)
+               evaluated, and the chain is open where none decides *)
             and closing i = function
               | [] -> Left_open
-              | (r : default) :: _ when r.default_initialisation -> (
+              | (r : default) :: rest when r.default_initialisation -> (
                   match own_outcome (env_at i) r with
                   | Decides d ->
                       incr closures_applied;
                       Decided d
-                  | Fills_nothing | Leaves_open -> Left_open)
+                  | Fills_nothing | Leaves_open -> closing (i + 1) rest)
               | _ :: rest -> closing (i + 1) rest
             in
             go 0 defaults

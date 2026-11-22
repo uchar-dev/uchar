@@ -892,7 +892,7 @@ let defaults json env ~world0 ~world =
                   in
                   (* what the chain [ds] does. Below the default that decides
                      or settles every default is displaced; below one that is
-                     open only the initialisation default is at its turn, a
+                     open only an initialisation default is at its turn, a
                      closure over the stack (ch. 1.5, 7.3), and every other
                      default is displaced *)
                   let rec decide ~env_at (ds : default list) =
@@ -932,9 +932,11 @@ let defaults json env ~world0 ~world =
                     and closing i = function
                       | [] -> `Open
                       | (d : default) :: rest when d.default_initialisation -> (
-                          let closed = own (env_at i) d in
-                          displace ~env_at ~from:(i + 1) rest;
-                          match closed with `Decides _ as decided -> decided | `Gives_way | `Open -> `Open)
+                          match own (env_at i) d with
+                          | `Decides _ as decided ->
+                              displace ~env_at ~from:(i + 1) rest;
+                              decided
+                          | `Gives_way | `Open -> closing (i + 1) rest)
                       | (d : default) :: rest ->
                           displace_all (env_at i) d;
                           closing (i + 1) rest
