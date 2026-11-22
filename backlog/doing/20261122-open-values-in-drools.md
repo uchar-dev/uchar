@@ -527,3 +527,11 @@ byte-gelijk.
 
 De JUnit-suite op `6c0246149`: 2024 tests, geen overgeslagen (2009 na deel 1, twaalf van dit deel, drie met `main`). Geen floor veranderde; `EXPECTED_PLAYED` ging van 384
 naar 386 en twee `EXCLUDE`-regels van gate 12 en één van gate 8 vervielen.
+
+## Landing van deel 2a
+
+`make gates` op `61676e09d`: alle 17 gates groen (704 s, after-run groen). De hoofdsessie rekende de omvang na over 170
+goldens (gewoon 20 187, strikt 22 351 niet-lege regels, +10,7%; met een stapel +19,0%; alles volledig gelijk aan gewoon;
+393 gewone documenten met dezelfde tekst). Een tweede lezer (Google Neon, alleen lezen, effort high) vond geen openstaand
+punt: de melding over twee initialisaties was al hersteld (`6c0246149`), de andere vormen weigert de analyse of sluit de
+verifier uit (WF-050, WF-075). De kaart blijft in `doing` tot het laatste deel.
