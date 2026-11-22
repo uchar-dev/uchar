@@ -20,6 +20,7 @@ import org.kie.api.event.rule.RuleRuntimeEventListener;
 import org.kie.api.runtime.KieSession;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -62,6 +63,11 @@ import java.util.function.Supplier;
  *       first; and a rule reads a global once, in the rule that states it as a fact at the first fire, so a fire after
  *       a change keeps the old value.</li>
  * </ul>
+ *
+ * <p>Of such an update the watch keeps the bean as well, since a rule that reads an input over a path reads it off the
+ * bean of its subject, along that bean's reference fields, so that an update of the bean the path reaches does not match
+ * the rule again: {@code fire} updates every bean that reaches an updated one before it fires
+ * ({@link #reachingUpdated}).
  *
  * <p>It lives on the session as a listener, so that it goes where the session goes and needs no table beside it, and
  * the entry finds it there ({@link #of}). The entry takes it off the session for its own work ({@link #without}): while
@@ -118,6 +124,8 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
     /** The first insert, update or delete outside the entry other than an update of an attribute or a characteristic of
      *  a bean of the input, as a clause, or null. */
     private Msg otherChange;
+    /** The beans of the input updated outside the entry, by identity. */
+    private final Set<Object> updated = Collections.newSetFromMap(new IdentityHashMap<>());
 
     private Watch(Map<Class<?>, RelationFields> beans) {
         this.beans = Map.copyOf(beans);
@@ -171,6 +179,27 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
         agendaChange = null;
         onOrOff = null;
         otherChange = null;
+        updated.clear();
+    }
+
+    /** The beans of the input that reach one updated outside the entry since {@link #since} along their reference fields,
+     *  over any number of links, and were not updated themselves, in the order they were found. */
+    public List<Object> reachingUpdated() {
+        if (updated.isEmpty()) return List.of();
+        Map<Object, List<Object>> holders = new IdentityHashMap<>();
+        for (Object bean : inputBeans)
+            for (Object target : relations.get(bean))
+                if (target != null) holders.computeIfAbsent(target, k -> new ArrayList<>()).add(bean);
+        Set<Object> reached = Collections.newSetFromMap(new IdentityHashMap<>());
+        reached.addAll(updated);
+        List<Object> open = new ArrayList<>(updated), out = new ArrayList<>();
+        for (int i = 0; i < open.size(); i++)
+            for (Object holder : holders.getOrDefault(open.get(i), List.of()))
+                if (reached.add(holder)) {
+                    open.add(holder);
+                    out.add(holder);
+                }
+        return out;
     }
 
     /** Keeps the globals of {@code session} as they stand now, where it keeps none yet: the entry calls this at the
@@ -326,6 +355,7 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
         if (fact == null) fact = sentence;
         if (otherChange != null) return;
         Object[] before = relations.get(o);
+        if (before != null) updated.add(o);
         if (before == null) {
             otherChange = sentence;
             return;

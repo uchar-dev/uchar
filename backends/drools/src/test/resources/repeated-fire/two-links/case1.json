@@ -1,0 +1,78 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Gemeente",
+        "attributes": {
+          "tarief": {
+            "number": "20"
+          }
+        },
+        "roles": {
+          "inwoners": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "100"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "100"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vindpremie",
+      "value": {
+        "number": "120"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "vindpremie",
+      "value": {
+        "number": "100"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

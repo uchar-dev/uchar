@@ -1,0 +1,186 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Gemeente",
+        "animate": false,
+        "plural": "Gemeenten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "tarief",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "waarde",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vindpremie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "woonplaats",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "gemeente",
+            "objectType": "Gemeente",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "inwoner",
+            "objectType": "Jutter",
+            "plural": "inwoners",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "vinding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vindpremie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vindpremie",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De vindpremie van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "waarde",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn waarde"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "tarief",
+                "subjectType": "Gemeente",
+                "source": {
+                  "snippet": "het tarief van de gemeente van de vinder van de Vondst"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "vinding",
+                    "role": "vinder"
+                  },
+                  {
+                    "node": "RoleBinding",
+                    "factType": "woonplaats",
+                    "role": "gemeente"
+                  }
+                ]
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn waarde plus het tarief van de gemeente van de vinder van de Vondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

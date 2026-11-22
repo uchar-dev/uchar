@@ -1,12 +1,14 @@
 package dev.uchar.regelspraak.cases;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.uchar.regelspraak.transpiler.core.Namen;
 import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
 import dev.uchar.regelspraak.transpiler.tms.Fault;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.kie.api.runtime.KieSession;
 
 import java.math.BigDecimal;
@@ -227,6 +229,46 @@ class TmsRepeatedFireWitnessTest {
             } finally {
                 session.dispose();
             }
+        });
+    }
+
+    /**
+     * A change of an input attribute of a bean between two fires reaches a rule that reads it over a path, of one link and
+     * of two: "De vindpremie van een Vondst is zijn waarde plus de bonus van de vinder van de Vondst" over waarde 100 is
+     * 120 at a bonus of 20 and 150 once the bonus is 50, and "… plus het tarief van de gemeente van de vinder van de
+     * Vondst" alike. The rule reads the attribute off the bean of its subject, so {@code fire} updates every bean that
+     * reaches the updated one ({@code Watch#reachingUpdated}). On both branches, with the values of a fresh session. <b>Red
+     * before the change</b>: the second reading was the first, 120, on both branches and over both paths.
+     */
+    @Test void a_change_reaches_a_read_over_a_path_between_two_fires(@TempDir Path dir) throws Exception {
+        Path link = Path.of("src", "test", "resources", "open-values", "link"), one = dir.resolve("ir.json");
+        ObjectNode ir = (ObjectNode) TmsDocuments.JSON.readTree(link.resolve("ir.json").toFile());
+        ir.remove("inferFromEmpty");
+        TmsDocuments.JSON.writeValue(one.toFile(), ir);
+        Path two = Path.of("src", "test", "resources", "repeated-fire", "two-links");
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+            overAPath(one, link.resolve("case1-links.json"), branch, "V3", "J2", "setBonus");
+            overAPath(two.resolve("ir.json"), two.resolve("case1.json"), branch, "V1", "G1", "setTarief");
+        }
+    }
+
+    /** Plays {@code casePath}, whose vindpremie of {@code of} is 120 over an attribute of 20 of the bean {@code at}, and then
+     *  150 over 50, which {@code setter} puts on it, and 120 again. */
+    private static void overAPath(Path ir, Path casePath, DroolsBackend.Branch branch, String of, String at, String setter)
+            throws Exception {
+        JsonNode c = TmsDocuments.JSON.readTree(casePath.toFile());
+        CaseRunner.forMeasurement(ir, branch).withSession(c, (build, session, labels) -> {
+            Object bean = labels.get(at);
+            for (int bonus : List.of(20, 50, 20)) {
+                CaseRunner.call(bean, setter, BigDecimal.class, BigDecimal.valueOf(bonus));
+                session.update(session.getFactHandle(bean), bean);
+                assertNull(DroolsBackend.fire(build, session).noFixpoint());
+                List<String> read = new ArrayList<>();
+                for (var v : DroolsBackend.fixpointOf(build, session).values())
+                    if (v.object() == labels.get(of) && v.attribute().equals("vindpremie")) read.add(String.valueOf(v.value()));
+                assertEquals(List.of(String.valueOf(100 + bonus)), read, () -> branch + " " + casePath + " " + bonus);
+            }
+            return null;
         });
     }
 

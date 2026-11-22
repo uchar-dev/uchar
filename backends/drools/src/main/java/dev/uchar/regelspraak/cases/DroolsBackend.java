@@ -1460,8 +1460,12 @@ public final class DroolsBackend {
                 : Watch.op(session, relationFields(build, classes), beansInSession(session, classes),
                         Msg.drools("PART.watch.since-first-fire"));
         watch.recordGlobals(session);
+        // a rule that reads an input over a path reads it off the bean of its subject, which an update of the bean the path
+        // reaches does not match again
+        List<Object> reaching = watch.reachingUpdated();
         watch.forget(Msg.drools("PART.watch.since-last-fire"));
         return watch.without(session, () -> {
+            for (Object bean : reaching) session.update(session.getFactHandle(bean), bean);
             for (FactHandle mark : marks) session.delete(mark);
             Firing firing;
             try {

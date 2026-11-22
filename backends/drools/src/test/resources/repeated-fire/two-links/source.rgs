@@ -1,0 +1,22 @@
+Objecttype de Gemeente (mv: Gemeenten)
+    het tarief Numeriek (geheel getal);
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+
+Objecttype de Vondst (mv: Vondsten)
+    de waarde Numeriek (geheel getal);
+    de vindpremie Numeriek (geheel getal);
+
+Feittype woonplaats
+    de gemeente Gemeente
+    de inwoner (mv: inwoners) Jutter
+Eén gemeente heeft meerdere inwoners
+
+Feittype vinding
+    de vinder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
+
+Regel vindpremie
+    geldig altijd
+        De vindpremie van een Vondst moet berekend worden als zijn waarde plus het tarief van de gemeente van de vinder van de Vondst.

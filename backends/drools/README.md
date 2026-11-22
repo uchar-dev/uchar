@@ -167,17 +167,19 @@ all, a session whose last `fire` ended at the cap, at the creation budget or wit
 something happened outside `fire` after its last run (below), each with a sentence that says what is missing. Both
 branches do so alike: the DRL-text branch renders the same analysis, and its rules write no bean either.
 
-**Firing again.** A consumer that fires one session more than once changes an attribute or a characteristic of a
-bean `insert` put in between the fires, with `session.update(handle, bean)`, fires with `fire`, and reads every answer
-with `fixpointOf`; the write-back comes once, after the last fire. A derivation whose reads changed lapses, a fault arises or
-lapses, and an initialisation fires again, since its target stayed empty on the bean (witness
-`TmsRepeatedFireWitnessTest`). Two rules hold a session to that order. The entry keeps both with a watch on the
-session (`Watch`), a listener that `fire` takes off while it fires itself, so that Drools makes no event for it and
-it costs a fire nothing per firing; what Drools reports by no event, a cleared agenda group and a call on a group that
-waits for the next fire, the watch reads from Drools' agenda (`org.drools.core`, the one place the backend reads an
-internal class of Drools). An action of another kind on the agenda's propagation list than an insert, update or delete
-of a fact or one of those two calls on a group, which another version of Drools could queue there, makes the watch
-refuse in a sentence that names its class, since it cannot tell what that action does to the agenda.
+**Firing again.** A consumer that fires one session more than once changes an attribute or a characteristic of a bean
+`insert` put in between the fires, with `session.update(handle, bean)`, fires with `fire`, and reads every answer with
+`fixpointOf`; the write-back comes once, after the last fire. A derivation whose reads changed lapses, a fault arises or
+lapses, and an initialisation fires again, since its target stayed empty on the bean. A read over a path is among those
+reads: a rule takes an input at the end of a path off the bean of its subject, so before it fires `fire` updates every
+bean of the input that reaches an updated one along its reference fields (witness `TmsRepeatedFireWitnessTest`). Two
+rules hold a session to that order. The entry keeps both with a watch on the session (`Watch`), a listener that `fire`
+takes off while it fires itself, so that Drools makes no event for it and it costs a fire nothing per firing; what
+Drools reports by no event, a cleared agenda group and a call on a group that waits for the next fire, the watch reads
+from Drools' agenda (`org.drools.core`, the one place the backend reads an internal class of Drools). An action of
+another kind on the agenda's propagation list than an insert, update or delete of a fact or one of those two calls on a
+group, which another version of Drools could queue there, makes the watch refuse in a sentence that names its class,
+since it cannot tell what that action does to the agenda.
 
 - `fixpointOf` and `setDerivedValues` refuse a session in which something happened outside `fire` after the last
   `fire`: a fact inserted, updated or deleted, or a rule that fired, by a plain `fireAllRules` among others. Their
