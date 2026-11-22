@@ -126,8 +126,10 @@ punt 1, 8 van open punt 2); 403 willekeurige documenten met Lets: 0 stille foute
    eigenschap weigert `let-binder-not-first`.
 2. Grondingsfouten zonder code (luid, ook op `main`): een fence over een lid die het vormonderwerp alleen onder een negatie leest
    (geankerde ≠ of leeg-test in een vouw in een filter), en met één jutter een tellend lid `not eq(S,X)`.
-3. Een deponering in de voorwaarde van een feitcreatie draagt in clingo de naam van de vorige vorm: `translate_fact_creation` zet
-   `ctx.rule_name` niet (ook op `main`; `ref` "leg merk" × J1, clingo "d" × J1).
+3. Opgelost op deze branch: een deponering in de voorwaarde van een feitcreatie droeg in clingo de naam van de vorige vorm;
+   `translate_fact_creation` zet nu `ctx.rule_name`. Suite `the form of a §9.5 fact: …`: regel, feitcreatie, objectcreatie,
+   verdeling, default en consistentie, met `ref` ernaast; op `abaabb3d7` is alleen de feitcreatie rood. Een uniciteit leest geen
+   expressie. De 1313 programma's van het corpus zijn byte-gelijk (`dump_programs.py`).
 
 ### Gates (los)
 

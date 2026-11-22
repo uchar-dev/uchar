@@ -21768,6 +21768,47 @@ let () =
       ("gemeld", [ "gemeld" ], [], ("0", "not", "not", "holds"), false);
       ("gemeld not named", [], [], ("open", "open", "open", "open"), false) ]
 
+(* the §9.5 fact of a division by zero in the condition of a form carries the
+   name of that form (ch. 5.6), whatever form is translated before it: a rule,
+   a fact creation, an object creation, an allocation, a default, which deposits
+   where it decides, and a consistency, in an ordinary document *)
+let () =
+  let quotient ty a = ov_cmp "greater" (ov_div (ov_attr ~ty a) (ov_attr ~ty "getuigen")) (ov_lit "1") in
+  let boven = quotient "Jutter" "drempel" in
+  let creation =
+    Printf.sprintf
+      {|{"node": "FactCreation", "name": "leg hulp", "versions": [{"factType": "hulp", "anchorRole": "helper", "targetRole": "hulpvondst", "anchor": "Jutter", "path": [{"node": "RoleBinding", "factType": "aanmelding", "role": "vondst"}], "condition": %s, "validity": {"node": "Validity"}}]}|}
+      boven
+  and hulp =
+    {|{"node": "FactType", "name": "hulp", "reciprocal": false, "roles": [{"node": "Role", "name": "helper", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "hulpvondst", "objectType": "Vondst", "plural": "hulpvondsten", "many": true}]}|}
+  and allocation =
+    Printf.sprintf
+      {|{"node": "Allocation", "name": "verdeel de pot", "versions": [{"sourceType": "Jutter", "sourceAttribute": "pot", "targetType": "Vondst", "targetAttribute": "deel", "method": "equalShares", "roundingDecimals": 0, "descending": false, "condition": %s, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "aanmelding", "role": "vondst"}}]}|}
+      boven
+  in
+  let ir =
+    ov_doc ~strict:false ~fact_types:[ ov_aanmelding; hulp; ov_proefvangst ] ~fact_creations:[ creation ]
+      ~object_creations:[ ov_creation ~cond:boven ~name:"maak proefvondst" ~ft:"proefvangst" ~role:"proefvondst" [] ]
+      ~defaults:
+        [ ov_stack ~subject:"Jutter" ~characteristic:"gemerkt"
+            [ ov_dflt ~justification:(ov_compound "atLeast" 1 [ boven; ov_test "filled" (ov_attr ~ty:"Jutter" "drempel") ]) ~decision:true () ] ]
+      ~consistencies:[ ov_consistency ~name:"controle" (quotient "Vondst" "gewicht") ]
+      [ ov_type "Jutter" [ "drempel"; "getuigen"; "pot"; "toeslag" ] [ "gemerkt" ]; ov_type "Vondst" [ "gewicht"; "getuigen"; "deel" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"regel" ~cond:boven "toeslag" (Some (ov_lit "3")) ]
+    |> replace_first ~needle:{|"allocations": []|} ~by:(Printf.sprintf {|"allocations": [%s]|} allocation)
+  in
+  List.iter
+    (fun (form, label, rule) ->
+      ov_frame ~name:("the form of a §9.5 fact: " ^ form) ~ir
+        ~case_text:
+          (ov_case
+             [ ov_jutter_of ~attrs:[ ("drempel", "4"); ("getuigen", "0"); ("pot", "10") ] "J1" [ "V1" ];
+               ov_obj "V1" [ ("gewicht", "5"); ("getuigen", "0") ] ]
+             [ ov_inconsistent ~label ~code:"EF-005" rule ])
+        ())
+    [ ("a rule", "J1", "regel"); ("a fact creation", "J1", "leg hulp"); ("an object creation", "J1", "maak proefvondst");
+      ("an allocation", "J1", "verdeel de pot"); ("a default", "J1", "Jutter.gemerkt"); ("a consistency", "V1", "controle") ]
+
 (* a characteristic and an attribute of one name are two members: the
    characteristic toeslag, declared complete and not named, stands not to hold
    beside the attribute toeslag a defaults group writes *)

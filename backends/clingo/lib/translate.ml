@@ -14250,6 +14250,7 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
      second-filler fault can arise from it *)
   validity_gate ctx fc.fc_validity @@ fun () ->
   begin
+  ctx.rule_name <- Option.value fc.fc_name ~default:"?";
   let ftn = fc.fc_fact_type in
   let role rname = created_role ctx.doc ~fact_type:ftn ~role:rname in
   let anchor_role = role fc.anchor_role in
