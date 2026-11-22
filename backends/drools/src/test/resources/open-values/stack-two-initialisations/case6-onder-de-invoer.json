@@ -1,0 +1,33 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "W1",
+        "objectType": "Wrakvondst",
+        "attributes": {
+          "gewicht": {
+            "number": "5"
+          },
+          "bergloon": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "W1",
+      "attribute": "bergloon"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

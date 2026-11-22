@@ -4126,7 +4126,7 @@ public final class TmsTranspiler {
      *
      * <p>A default that can be open (RUNTIME-SEMANTICS ch. 1.5, "A stack") inserts its open {@link Decides}, which
      * displaces the lower defaults all the same, and the {@link LeftOpen} of the target, which the target's standing reads
-     * where nothing decides; the initialisation asks only that no default above it decides ({@link #notAbove}).
+     * where nothing decides; the initialisation asks only that no default above it decides ({@link #closesOverOpen}).
      */
     private List<RulePlan> simpleForm(StackBuild b, List<Node> chain) {
         List<Node> deciding = chain.stream().filter(k -> decidesSelf(b, k.d())).toList();
@@ -4145,31 +4145,18 @@ public final class TmsTranspiler {
             else if (Boolean.TRUE.equals(k.d().decision())) facts.add(new Consequence.StackFact.Characteristic(key));
             facts.add(new Consequence.StackFact.Decides(name, i));
             out.addAll(ownRule(b, k, RuleOrigin.Role.OWN, name + ": default " + k.label(),
-                    () -> higher ? notAbove(b, chain, k, (above, settled) -> noDecides(name, above, settled)) : List.of(),
+                    () -> higher ? List.of(noDecides(name, i, closesOverOpen(b, k))) : List.of(),
                     facts, leavesOpen(new Consequence.StackFact.LeftOpen(key, name + ": default " + k.label()),
                             new Consequence.StackFact.OpenDefault(name, i))));
         }
         return out;
     }
 
-    /**
-     * The control-fact patterns that keep the default {@code k} of {@code chain} under the defaults above it, each made by
-     * {@code not} over the places above one, over every control fact or only over those of a default that does not stand
-     * open. An ordinary default waits on every one. The initialisation of a stack closes over a default above it that is
-     * open (RUNTIME-SEMANTICS ch. 1.5, "The initialisation of a stack"): it waits on those that do not stand open; and
-     * below another initialisation, on every one above that, since only the first below an open default closes over it.
-     */
-    private static List<LhsItem> notAbove(StackBuild b, List<Node> chain, Node k,
-                                          BiFunction<Integer, Boolean, LhsItem> not) {
-        int i = k.position();
-        if (!k.d().initialisation() || !b.openChains.contains(k.chain())) return List.of(not.apply(i, false));
-        List<LhsItem> out = new ArrayList<>(List.of(not.apply(i, true)));
-        for (Node above : chain)
-            if (above.position() > 0 && above.position() < i && above.d().initialisation()) {
-                out.add(not.apply(above.position(), false));
-                break;
-            }
-        return out;
+    /** Whether the default {@code k} waits only on the defaults above it that do not stand open: an initialisation, which
+     *  closes over a default above it that is open (RUNTIME-SEMANTICS ch. 1.5, "The initialisation of a stack"), in a chain
+     *  with a default that can be. Every other default waits on every one above it. */
+    private static boolean closesOverOpen(StackBuild b, Node k) {
+        return k.d().initialisation() && b.openChains.contains(k.chain());
     }
 
     /**
@@ -4212,7 +4199,7 @@ public final class TmsTranspiler {
             int id = k.chain(), i = k.position();
             Supplier<List<LhsItem>> notHigher = () -> {
                 List<LhsItem> guard = new ArrayList<>(ancestors.get());
-                if (i > 0) guard.addAll(notAbove(b, chain, k, (above, settled) -> noOutcome(name, id, above, settled)));
+                if (i > 0) guard.add(noOutcome(name, id, i, closesOverOpen(b, k)));
                 return guard;
             };
             Consequence.StackFact decides = new Consequence.StackFact.Outcome(name, id, i, Outcome.Kind.DECIDED);

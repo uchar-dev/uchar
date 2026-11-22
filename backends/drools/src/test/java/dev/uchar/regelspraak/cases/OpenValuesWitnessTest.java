@@ -223,12 +223,13 @@ class OpenValuesWitnessTest {
 
     /** WV-1.5-stack-initialisation: the initialisation of a stack decides where nothing above it decides, also where a
      *  default above it is open; an input of the target stands above it, and with an open value the target is open. In a
-     *  stack with an inherited initialisation above its own (ch. 7.10) either closes so, and so does one below exception
+     *  stack with an inherited initialisation above its own (ch. 7.10) each closes so, the lower one also where the upper
+     *  one gives way or is open (WV-1.5-stack-two-initialisations), and so does one below exception
      *  groups, where it decides beside a group that is open and not beside one that conflicts. */
     @Test void wv_1_5_stack_initialisation() throws Exception {
         assertEquals(6, play("stack-initialisation", "case"));
         assertEquals(2, play("stack-initialisation-value", "case"));
-        assertEquals(3, play("stack-two-initialisations", "case"));
+        assertEquals(6, play("stack-two-initialisations", "case"));
         assertEquals(5, play("stack-exception-groups-initialisation", "case"));
     }
 
