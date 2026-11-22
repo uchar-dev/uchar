@@ -1197,6 +1197,10 @@ let target_member env (target : expr option) =
       Some (ot, a, cell_member env ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels))
   | _ -> None
 
+(* the member [name] a rule writes, as its open state names it (ch. 1.5) *)
+let written_member (r : resolved_rule) name =
+  if r.rr_presentation = Some Characteristic_attribution then World.characteristic name else World.attribute name
+
 (* The value shapes of a rule on a temporal attribute target that ch. 3.4 and
    ch. 3.5 produce over all time: an operator of ch. 1.2 read per day (plus,
    min, verminderd met, maal, both divisions, percentage van), the sum over the
@@ -4842,13 +4846,7 @@ let run_rule ?only env world (r : resolved_rule) =
             (* the rule does not decide on [self]: what it wrote is given back,
                and where it does not stand that it fills nothing its target is
                open (ch. 1.5) *)
-            let undecided () =
-              left_open ~label:self.label
-                (match r.rr_presentation with
-                | Some Characteristic_attribution -> World.characteristic attr
-                | _ -> World.attribute member)
-                (release ())
-            in
+            let undecided () = left_open ~label:self.label (written_member r member) (release ()) in
             (* the rule decides where its condition is established true for
                itself; where it is established false for another form, it
                stands that the rule fills nothing (ch. 1.5) *)
@@ -6314,9 +6312,7 @@ let open_inputs env ~closed_inputs (world : World.t) =
       List.exists
         (fun (r : resolved_rule) ->
           match target_member env r.objective with
-          | Some (ot, a, _) ->
-              (if r.rr_presentation = Some Characteristic_attribution then World.characteristic a else World.attribute a) = m
-              && isa env otype ot
+          | Some (ot, a, _) -> written_member r a = m && isa env otype ot
           | None -> false)
         env.doc.resolved_rules
       || List.exists

@@ -140,9 +140,9 @@ type t = {
          on which that is leeg too, the initialisation's value (RUNTIME-SEMANTICS
          ch. 3.11, 5.7 and 7.8 per day) *)
   open_input : unit Member.t;
-      (* the input members the case leaves without a
-         value and that are open in this session (RUNTIME-SEMANTICS ch. 1.5),
-         set once before the evaluation (Eval.open_inputs) *)
+      (* the input members the case leaves without a value and that are open
+         in this session (RUNTIME-SEMANTICS ch. 1.5), set once before the
+         evaluation (Eval.open_inputs) *)
   opening : (string * member) list;
       (* the members the evaluation under way leaves open, newest first;
          [close_evaluation] ends it *)
