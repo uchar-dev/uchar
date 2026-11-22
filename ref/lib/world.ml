@@ -204,9 +204,8 @@ let timeline i name = SMap.find_opt (norm name) i.tls
 
 (* A read of a member that is open: what reads it has no value and no verdict
    of its own, and the evaluation it belongs to is broken off where one
-   judgement or one value ends (Eval). [member] is the member as the reader
-   names it, or the spelling of the role of a relation that is open *)
-exception Open_read of { label : string; member : string }
+   judgement or one value ends (Eval) *)
+exception Open_read of { label : string; member : member }
 
 (* The state of a member, the one place a read and the end check of a case get
    it. An attribute without a value is open where it is open input or a
@@ -234,19 +233,19 @@ let char_open w (i : instance) name =
 (* The value of [name] on [i] as an evaluation reads it: the value, leeg where
    it is settled leeg, and [Open_read] where it is open *)
 let read_attr w i name =
-  if attr_open w i name then raise (Open_read { label = i.label; member = name }) else attr i name
+  if attr_open w i name then raise (Open_read { label = i.label; member = attribute name }) else attr i name
 
 (* Whether the characteristic [name] holds on [i] as an evaluation reads it:
    true where it holds, false where it stands that it does not, and
    [Open_read] where it is open *)
 let read_char w i name =
-  if char_open w i name then raise (Open_read { label = i.label; member = name }) else has_char i name
+  if char_open w i name then raise (Open_read { label = i.label; member = characteristic name }) else has_char i name
 
 (* The timeline of [name] on [i] as an evaluation reads it whole: the stored
    timeline, None where there is none, and [Open_read] where the member is
    open *)
 let read_timeline w i name =
-  if attr_open w i name then raise (Open_read { label = i.label; member = name }) else timeline i name
+  if attr_open w i name then raise (Open_read { label = i.label; member = attribute name }) else timeline i name
 
 (* the true periods of the time-dependent characteristic [name] on [i], as the
    case or a writer stored them *)
@@ -255,7 +254,7 @@ let char_periods i name = SMap.find_opt (norm name) i.ctls
 (* The true periods of [name] on [i] as an evaluation reads them: none where
    they are not stored, and [Open_read] where the characteristic is open *)
 let read_char_periods w i name =
-  if char_open w i name then raise (Open_read { label = i.label; member = name })
+  if char_open w i name then raise (Open_read { label = i.label; member = characteristic name })
   else Option.value (char_periods i name) ~default:[]
 
 (* The evaluation under way leaves [member] of [label] open: it writes no value
@@ -293,7 +292,7 @@ let links_open w (i : instance) ~fact_type role = Member.mem (i.label, Relation 
    them: the links that stand, and [Open_read] where the relation is open on
    [i] *)
 let read_links w (i : instance) ~fact_type role =
-  if links_open w i ~fact_type role then raise (Open_read { label = i.label; member = role_spelling role })
+  if links_open w i ~fact_type role then raise (Open_read { label = i.label; member = Relation (link_key ~fact_type role) })
   else links i ~fact_type role
 
 (* The evaluation under way leaves the relation over [role] of [fact_type] open

@@ -7496,8 +7496,9 @@ has there:
   over a set whose filter is undetermined on a member, is `undetermined` in
   the same way;
 - after `undetermined` stands the open read that left the node so: `open`, the
-  object, and the member read open by the name its object's type declares,
-  or a relation open on the object (ch. 1.5) by its role. At a node broken
+  object, and the member read open by the name its object's type declares, an
+  attribute and a characteristic of one name each by its own declaration, or a
+  relation open on the object (ch. 1.5) by its role. At a node broken
   off and at an atomic condition that is the member the evaluation read open;
   at a composite, the open read of its first member that is undetermined for
   the form itself; at a quantifier fold, the relation of its range where that
@@ -7595,7 +7596,12 @@ proefvondst "indien hij niet ervaren is", for a Jutter without an ervaring,
 reads `0 CharacteristicCheck undetermined open "J1" "ervaren"`, `OPEN`, and a
 read over the relation it leaves open reads `0 AttributeReference
 undetermined open "J1" "proefvondst"`; a read of the leeftijd of the vinder
-J1 of V1, which J1 has open, reads `undetermined open "J1" "leeftijd"`. The
+J1 of V1, which J1 has open, reads `undetermined open "J1" "leeftijd"`. Example
+(`WV-5.12-open-shared-name`): on a Vondst with an attribute "Toeslag" and a
+characteristic "toeslag", neither given, "de uitkering is zijn toeslag" reads
+`0 AttributeReference undetermined open "V1" "Toeslag"` and "een Vondst is
+beloond indien hij toeslag is" reads `0 CharacteristicCheck undetermined open
+"V1" "toeslag"`. The
 test `WV-5.12-open-status` holds, over every case of those documents, that a
 rule or a creation is `OPEN` exactly where the session left a member or a
 relation of it open.

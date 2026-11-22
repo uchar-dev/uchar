@@ -17498,6 +17498,23 @@ let () =
        [ "0 Comparison undetermined open \"J1\" \"leeftijd\""; "1 AttributeReference undetermined open \"J1\" \"leeftijd\"";
          "2 Literal unreached"; "OPEN" ])
 
+(* WV-5.12-open-shared-name: an open read names the member that was read, and an
+   attribute and a characteristic of one name are two (WF-002), each spelled as
+   its own declaration spells it. A Vondst with an attribute "Toeslag" and a
+   characteristic "toeslag", neither given: "de uitkering van een Vondst is zijn
+   toeslag" reads the attribute open, and "een Vondst is beloond indien hij
+   toeslag is" the characteristic *)
+let () =
+  let doc =
+    ov_doc
+      [ ov_vondst [ "Toeslag"; "uitkering" ] [ "toeslag"; "beloond" ] ]
+      [ ov_calc "uitkering" (ov_ref "toeslag"); ov_attribution "beloond" (ov_check "toeslag") ]
+  in
+  lines_equal "WV-5.12-open-shared-name"
+    (ov_readings doc (ov_v1 []))
+    (on_object (rule_form 0) "V1" [ "0 AttributeReference undetermined open \"V1\" \"Toeslag\""; "OPEN" ]
+    @ on_object (rule_form 1) "V1" [ "0 CharacteristicCheck undetermined open \"V1\" \"toeslag\""; "OPEN" ])
+
 (* WV-5.12-open-status: the status of a reading is the session's outcome: a
    rule or a creation is OPEN exactly where the session's evaluation of it on
    that object left a member or a relation open. Over every case of every

@@ -219,7 +219,7 @@ let number_nodes json ~form ~condition ~value =
 type outcome =
   | Got of Value.t (* an expression's value *)
   | Judged of Eval.judgement (* a condition's judgement (ch. 1.5) *)
-  | Broken of string * string (* an open read of the member, on the object, broke the evaluation off here *)
+  | Broken of string * World.member (* an open read of the member, on the object, broke the evaluation off here *)
   | Whole of Timeline.t option (* an operand read as a timeline, None where it is absent *)
   | Over of Timeline.t (* a condition read over a timeline: the part in which it holds *)
   | Faulted of string option (* the fault the node raised or passed on, with its EF code *)
@@ -1074,21 +1074,26 @@ let truth_text = function Eval.Established b -> string_of_bool b | Undetermined 
 
 (* An open read as the canonical text names it (ch. 5.12): [open], the
    object, and the member read open — an attribute or a characteristic by the
-   name its object's type declares, a relation by its role as the reader spells
-   it *)
-let open_text (doc : document) (world : World.t) label member =
-  let declared =
-    match SMap.find_opt label world.World.instances with
-    | None -> None
-    | Some (i : World.instance) -> (
-        match Ir_v0.Checks.effective_ot doc i.otype with
-        | None -> None
-        | Some ot -> (
-            match List.find_opt (fun (a, _) -> norm a = norm member) ot.attributes with
-            | Some (a, _) -> Some a
-            | None -> List.find_map (function Some k when norm k = norm member -> Some k | _ -> None) ot.characteristics))
+   name its object's type declares, a relation by its role *)
+let open_text (doc : document) (world : World.t) label (member : World.member) =
+  let ot = Option.bind (SMap.find_opt label world.World.instances) (fun i -> Ir_v0.Checks.effective_ot doc i.World.otype) in
+  let spelled =
+    match (member, ot) with
+    | Attribute a, Some ot -> List.find_map (fun (name, _) -> if norm name = a then Some name else None) ot.attributes
+    | Characteristic k, Some ot ->
+        List.find_map (function Some name when norm name = k -> Some name | _ -> None) ot.characteristics
+    | Relation link, _ ->
+        List.find_map
+          (fun (fact_type, (ft : fact_type_name)) ->
+            List.find_map
+              (fun r -> if World.link_key ~fact_type r = link then Some (World.role_spelling r) else None)
+              ft.role_names)
+          doc.fact_types
+    | (Attribute _ | Characteristic _), None -> None
   in
-  "open " ^ name_of doc world label ^ " " ^ quote (Option.value declared ~default:member)
+  match spelled with
+  | Some name -> "open " ^ name_of doc world label ^ " " ^ quote name
+  | None -> failwith ("ref/lib/reading.ml: an open read on " ^ label ^ " of a member its document does not declare")
 
 (* The judgement at a node (ch. 5.12): the truth for the form itself;
    [closure] after it where the truth for another form is undetermined; and

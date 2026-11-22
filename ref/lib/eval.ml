@@ -149,7 +149,7 @@ let rec filter_in_order p = function
    [other] undetermined, the read a closure closed over; None where [other] is
    established *)
 type truth = Established of bool | Undetermined
-type judgement = { own : truth; other : truth; open_read : (string * string) option }
+type judgement = { own : truth; other : truth; open_read : (string * World.member) option }
 
 type member_found =
   | Member_value of Value.t (* a value fold: what the member contributes; Empty for a count *)
@@ -1719,7 +1719,7 @@ let judged ~verdict ~own ~other ~first ~first_other =
    way ([signal_closure]) with the read it closed over, and the boundary hands
    the first such read back beside the value, so the expression keeps one
    value and is evaluated once. *)
-let boundaries : (string * string) option ref list ref = ref []
+let boundaries : (string * World.member) option ref list ref = ref []
 
 (* how many closures over an open value the session applied: a closure inside a
    value or a judgement ([signal_closure]), an initialisation that writes a
