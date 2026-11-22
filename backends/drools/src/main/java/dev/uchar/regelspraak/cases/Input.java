@@ -27,7 +27,7 @@ import java.util.Objects;
  *       own, as it reads the links of a relation a form creates.</li>
  *   <li>{@link #characteristicAbsent}: a characteristic the input states not to hold ({@code characteristicsAbsent},
  *       RUNTIME-SEMANTICS ch. 1.5). A characteristic on a bean is a truth value, which cannot tell "not named" from
- *       "does not hold"; in a document that infers nothing from an empty value an input characteristic that is not
+ *       "does not hold"; in a document with {@code inferFromEmpty: false} an input characteristic that is not
  *       named is open, and one stated here is not. In any other document it changes no outcome.</li>
  *   <li>{@link #closedInputs}: the session treats every input member as complete (ch. 1.5, "Complete input"), so that
  *       no input member is open: the measurement of preservation with complete knowledge.</li>

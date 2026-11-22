@@ -256,8 +256,8 @@ public final class TmsTranspiler {
     private PrecisionBound precisionBound;
     /** Every member a form of the document writes, lowered or not. A member that no form writes is input. */
     private Map<ElementKey, Set<String>> writers = Map.of();
-    /** The members that can be open (RUNTIME-SEMANTICS ch. 1.5): none in a document that infers from an empty value. A
-     *  member outside it is settled wherever it is not filled, so nothing of the lowering asks whether it is open. */
+    /** The members that can be open (RUNTIME-SEMANTICS ch. 1.5): none in a document without {@code inferFromEmpty: false}.
+     *  A member outside it is settled wherever it is not filled, so nothing of the lowering asks whether it is open. */
     private OpenableMembers openable = OpenableMembers.NONE;
     /** The members of the unbounded form whose one writer is an object creation ({@link #createdExactValues}). */
     private Set<ElementKey> createdExactValues = Set.of();
@@ -409,8 +409,8 @@ public final class TmsTranspiler {
         return defaults;
     }
 
-    /** The members of the document that can be open on an object (RUNTIME-SEMANTICS ch. 1.5): none in a document that
-     *  infers from an empty value. */
+    /** The members of the document that can be open on an object (RUNTIME-SEMANTICS ch. 1.5): none in a document without
+     *  {@code inferFromEmpty: false}. */
     public OpenableMembers openableMembers() {
         return openable;
     }

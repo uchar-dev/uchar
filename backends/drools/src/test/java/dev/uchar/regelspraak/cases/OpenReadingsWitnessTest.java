@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The readings and the end state of a document that infers nothing from an empty value (RUNTIME-SEMANTICS ch. 5.12, "Open
+ * The readings and the end state of a document with {@code inferFromEmpty: false} (RUNTIME-SEMANTICS ch. 5.12, "Open
  * values", and 5.12a, "open members"), on both branches. The pins {@code src/test/resources/open-readings/<example>.<case>.trace}
  * are the lines {@code runner --trace} of the reference interpreter prints for a case of a document of
  * {@code open-values/} or of a golden, and {@code open-readings/<document>/} holds a document with its cases and their pins.

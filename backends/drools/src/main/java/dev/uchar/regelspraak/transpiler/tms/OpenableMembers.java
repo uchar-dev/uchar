@@ -19,8 +19,8 @@ import java.util.Set;
 
 /**
  * The members of a document that can be open on an object (RUNTIME-SEMANTICS ch. 1.5), an upper bound: none in a
- * document that infers from an empty value, so that its lowering asks nowhere whether something is open. In a document
- * with {@code inferFromEmpty: false} a member can be open
+ * document without {@code inferFromEmpty: false}, so that its lowering asks nowhere whether something is open. In a document
+ * with it a member can be open
  * <ul>
  *   <li>as an input that is not complete ({@link #openInput}): a member that holds one value, on the objects of a type on
  *       which no rule and no defaults group writes it, unless its declaration says that its input is complete;</li>

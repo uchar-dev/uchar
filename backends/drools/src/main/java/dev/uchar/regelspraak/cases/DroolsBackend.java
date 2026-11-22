@@ -206,7 +206,7 @@ public final class DroolsBackend {
         IrLoader.Positioned positioned = IrLoader.loadWithPositions(document);
         IrLoader.Loaded loaded = positioned.loaded();
         RegelSpraakModel model = loaded.model();
-        // a document that infers nothing from an empty value is read as RUNTIME-SEMANTICS ch. 1.5 lays down; one that
+        // a document with inferFromEmpty false is read as RUNTIME-SEMANTICS ch. 1.5 lays down; one that
         // holds a form whose reading this backend does not carry is refused before anything is built, naming the form,
         // since an answer in the reading of ch. 1.2-1.4 would be a wrong answer without a word
         if (!model.inferFromEmpty()) {
@@ -399,12 +399,11 @@ public final class DroolsBackend {
      * {@code IllegalStateException}. A link of a relation both of whose roles are to-many ({@link Input#link}) goes in
      * as a {@code RelationLink} of phase 0, the input's; refused are a link whose fact type is no such relation, an end
      * that is no bean of the input or that does not fill its role, and a link that comes twice. A link inserted after
-     * this call is a fact outside it, which {@link #fire} refuses as every such fact. For a document that infers nothing
-     * from an empty value, the input members of the beans that are not complete are set as the global that holds the
-     * session's {@code OpenInput}, less
-     * the characteristics the input states not to hold ({@link #openInput}); refused is such a statement about a bean
-     * outside the input, a member its type does not declare as a characteristic of one truth value, or one the bean
-     * holds.
+     * this call is a fact outside it, which {@link #fire} refuses as every such fact. For a document with
+     * {@code inferFromEmpty: false}, the input members of the beans that are not complete are set as the global that holds
+     * the session's {@code OpenInput}, less the characteristics the input states not to hold ({@link #openInput}); refused
+     * is such a statement about a bean outside the input, a member its type does not declare as a characteristic of one
+     * truth value, or one the bean holds.
      *
      * <p>Then it puts the watch of the entry on the session ({@code Watch}), with the relations the beans hold now,
      * and {@link #fire} refuses a session in which more happened outside it than an update of an attribute or a

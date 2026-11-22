@@ -33,8 +33,8 @@ import java.util.Objects;
  *                        reports them: by the name of the form, then by the sentence
  * @param inconsistencies the §9.5 deposits, the beans of the generated class {@code Inconsistentie}, each with its rule
  *                        and its subject, by the rule, then by the name of the subject, then by the EF codes
- * @param open            every member that is open at the fixpoint (RUNTIME-SEMANTICS ch. 1.5), in a document that
- *                        infers nothing from an empty value; in no particular order. Such a member has no value and
+ * @param open            every member that is open at the fixpoint (RUNTIME-SEMANTICS ch. 1.5), in a document with
+ *                        {@code inferFromEmpty: false}; in no particular order. Such a member has no value and
  *                        does not hold: the bean shows what the input put there, which does not stand
  */
 public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> characteristics, List<MadeObject> objects,

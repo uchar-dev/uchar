@@ -42,7 +42,7 @@ class InferFromEmptyRefusalWitnessTest {
     /** cwd under surefire is the module dir (backends/drools); ref stands two levels up. */
     private static final Path WITNESS = Path.of("..", "..", "ref", "test", "fixtures", "strict-empty", "object-creation");
 
-    /** A case in which every value is filled, so the reading of an empty value decides nothing in it. */
+    /** A case in which every value is filled, so that nothing is open in it. */
     private static final Path CASE = WITNESS.resolve("case2-onervaren.json");
 
     private static ObjectNode witness() throws Exception {
@@ -73,11 +73,13 @@ class InferFromEmptyRefusalWitnessTest {
 
     @Test void the_sentence_in_both_languages() {
         var reason = DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "set-fold");
-        assertEquals("the document carries inferFromEmpty false, a reading in which nothing follows from an empty "
-                + "value, and this backend does not carry that reading for all that is asked (form: set-fold)",
+        assertEquals("the document carries inferFromEmpty false, a reading in which nothing follows from a value that is "
+                + "open, neither filled nor settled empty, and this backend does not carry that reading for all that is asked "
+                + "(form: set-fold)",
                 reason.text(Locale.ENGLISH));
-        assertEquals("het document draagt inferFromEmpty false, een lezing waarin uit een lege waarde niets volgt, en "
-                + "deze backend draagt die lezing niet voor alles wat gevraagd is (vorm: set-fold)",
+        assertEquals("het document draagt inferFromEmpty false, een lezing waarin niets volgt uit een waarde die open is, "
+                + "niet gevuld en niet vaststaand leeg, en deze backend draagt die lezing niet voor alles wat gevraagd is "
+                + "(vorm: set-fold)",
                 reason.text(Locale.forLanguageTag("nl")));
     }
 

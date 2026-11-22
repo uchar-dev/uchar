@@ -431,7 +431,7 @@ DROOLS-366	{description}: {end} is een {objectType} en vult de rol '{role}' van 
 DROOLS-367	{description} komt twee keer voor
 DROOLS-368	het tekstdeel '{snippet}' schrijft de eenheid van zijn getal, en {type} heeft geen eenheid (WF-129)
 DROOLS-369	het tekstdeel '{snippet}' schrijft de eenheid {unit}, en geen eenheidstelsel van het document declareert haar factor '{factor}' van het eenheidstelsel '{unitSystem}': een factor zonder declaratie heeft geen symbool om te schrijven
-DROOLS-370	het document draagt inferFromEmpty false, een lezing waarin uit een lege waarde niets volgt, en deze backend draagt die lezing niet voor alles wat gevraagd is (vorm: {form})
+DROOLS-370	het document draagt inferFromEmpty false, een lezing waarin niets volgt uit een waarde die open is, niet gevuld en niet vaststaand leeg, en deze backend draagt die lezing niet voor alles wat gevraagd is (vorm: {form})
 DROOLS-371	insert: de invoer zegt dat het kenmerk "{characteristic}" van {bean} niet geldt, en {reason}
 DROOLS-371.not-in-input	die bean is geen bean van de invoer
 DROOLS-371.undeclared	zijn type {objectType} declareert geen kenmerk met die naam dat één waarheidswaarde heeft

@@ -783,7 +783,8 @@ public final class IrLoader {
 
     // --- the side table: vocabularies (IR-SPEC ch. 2.12) and origins (ch. 2.13)
 
-    /** The document's choice that nothing follows from an empty value, {@code inferFromEmpty}, into the model: written
+    /** The document's choice that nothing follows from what is open (RUNTIME-SEMANTICS ch. 1.5), {@code inferFromEmpty}, into
+     *  the model: written
      *  {@code false} or not at all, refused in the OCaml loader's sentence otherwise. Read before the key set of the
      *  root, so that a {@code null} is named in that sentence as well, and not as an optional field written as null.
      *  The loader refuses no document that carries it: what a backend does with the choice is its build's to say, and

@@ -56,8 +56,8 @@ public record ConditionReading(Object object, String form, Status status, List<N
     }
 
     /**
-     * How the condition came out on the object, or why the form has no reading there. In a document that infers nothing
-     * from an empty value (RUNTIME-SEMANTICS ch. 1.5) the status says what the form does with its target, for a consistency
+     * How the condition came out on the object, or why the form has no reading there. In a document with
+     * {@code inferFromEmpty: false} (RUNTIME-SEMANTICS ch. 1.5) the status says what the form does with its target, for a consistency
      * how its assertion came out: {@link #OPEN} is the outcome that does not stand, of a form that leaves its target open.
      * It is no judgement of a condition, which a node carries ({@link NodeReading#undetermined()}), and no value: a form
      * that decides with a leeg value, or stands to fill nothing, is {@link #HOLDS} or {@link #FAILS}.
@@ -87,7 +87,7 @@ public record ConditionReading(Object object, String form, Status status, List<N
         OUTSIDE_VALIDITY,
         /** The form leaves its target open (ch. 1.5): its condition is neither true for itself nor false for another, or its
          *  value has an open read or is leeg after a closure over one. Of a consistency, its assertion is undetermined. Only
-         *  in a document that infers nothing from an empty value. */
+         *  in a document with {@code inferFromEmpty: false}. */
         OPEN
     }
 
@@ -98,7 +98,7 @@ public record ConditionReading(Object object, String form, Status status, List<N
      * condition does not hold, is not reached, and has neither a value nor a fault. A node that a read of a leeg binder
      * ended (ch. 10.6, clause 2) is reached and has neither.
      *
-     * <p>In a document that infers nothing from an empty value (ch. 1.5) a reached node tells four things apart. A value is
+     * <p>In a document with {@code inferFromEmpty: false} (ch. 1.5) a reached node tells four things apart. A value is
      * filled, and the markers "onbekend" and "niet van toepassing" of a sum type are filled values like any other; a null
      * without a fault and without {@code open} is leeg that stands, settled leeg; {@code open} says that the node is
      * undetermined, an open read having broken it off or left its judgement so, and has no value; and {@code closure} says
