@@ -11292,6 +11292,19 @@ let () =
   pinned_loud ~entry:"L3"
     ~name:"a barrier raised in the matrix of a fold over created schuiten, ref reads 3 first (l3-3-8)"
     ~ir:(doc ~creations:[ made "3"; made "8" ] l3) ~case_text:(pf_case ~instances:(h1 ()) hb) ~needle:(pf_reason "p");
+  (* the same Let in a document with inferFromEmpty false: refused, since its
+     body reads a werf before k *)
+  (let strict =
+     match Yojson.Safe.from_string (doc ~creations:[ made "3"; made "8" ] l3) with
+     | `Assoc (format :: rest) -> Yojson.Safe.to_string (`Assoc (format :: ("inferFromEmpty", `Bool false) :: rest))
+     | _ -> invalid_arg "README [L3] with the property"
+   in
+   let d, c = load_pair ~ir:strict ~case_text:(pf_case ~instances:(h1 ()) hb) in
+   check "README [L3] with the property: CLINGO-049, form let-binder-not-first"
+     (match Translate.translate d c with
+      | _ -> false
+      | exception Uchar_ref.Value.Fault { code; params; _ } ->
+          code = Some "CLINGO-049" && params = [ ("form", "let-binder-not-first") ]));
   (* tr-w-1: the read of k in a part inside the value of j *)
   let trw ?precondition () =
     pf_rule ~ot:"Werf" ~objective:"bonus" ?precondition

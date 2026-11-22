@@ -363,6 +363,7 @@ type range_order = {
   ro_one_step : bool;
   ro_dynamic : bool; (* a creation or fact creation may add a member at run time *)
   mutable ro_emitted : bool;
+  mutable ro_pairs : bool; (* roN_n written as well *)
 }
 
 (* a part of a fold that runs per member — its die/dat filter, or a quantifier
@@ -629,6 +630,9 @@ type ctx = {
   (* the session treats every input member as complete (ch. 1.5, "Complete
      input") *)
   closed_inputs : bool;
+  (* the attributes whose state the case alone decides, on every object: none
+     a form writes on some type, and none of an object a creation makes *)
+  case_only : string list;
   (* the boundary being translated, and what the evaluation must have read for
      the node being translated to be reached within it: the dividend of a
      divisor, the binder of a Let's body *)
@@ -1242,6 +1246,13 @@ let deposit ctx ~code ~rule ~subject (body : string list) =
    boundary then says where it reached one, and what it yields there is no
    outcome. *)
 
+(* where the attribute stands on [holder]. An attribute whose state the case
+   alone decides stands in facts of its own (given/2, [input_states]), so that
+   grounding decides a read of it: stands/2 is derived from val/3, and lies on
+   the one component of the program that every derived value lies on *)
+let stands_atom ctx ~holder attribute =
+  Printf.sprintf "%s(%s,%s)" (if List.mem (norm attribute) ctx.case_only then "given" else "stands") holder (str attribute)
+
 (* where [body] holds, and the evaluation reaches it ([ctx.reach]), the boundary
    has an open read *)
 let boundary_read ctx ~what body =
@@ -1259,8 +1270,7 @@ let boundary_read ctx ~what body =
    boundary's subject) binds: open where the member does not stand. A link that
    is absent reads a settled leeg value (ch. 1.5, "A read over a link") *)
 let open_read ctx ~holder ~attribute path =
-  boundary_read ctx ~what:(Printf.sprintf "%S" attribute)
-    (path @ [ Printf.sprintf "not stands(%s,%s)" holder (str attribute) ])
+  boundary_read ctx ~what:(Printf.sprintf "%S" attribute) (path @ [ "not " ^ stands_atom ctx ~holder attribute ])
 
 (* a read over the relation [rel] (a role term) from [holder], which [path]
    binds: a relation is complete, but where a creation left it open there
@@ -1986,20 +1996,44 @@ let doc_dynamic (doc : document) = doc.object_creations <> [] || doc.fact_creati
      creations;
    There is no relation for the order of the added links among themselves.
    Returns the prefix. *)
-let use_ro ctx (ro : range_order) =
+let case_order ctx (ro : range_order) =
   let p = Printf.sprintf "ro%d" ro.ro_id in
   if not ro.ro_emitted then begin
     ro.ro_emitted <- true;
     emit_rule ctx ~head:(Printf.sprintf "%s_m(%s,%s)" p ro.ro_parent ro.ro_member)
       ~body:(Printf.sprintf "isa(%s,%s)" ro.ro_parent (str ro.ro_parent_ot) :: ro.ro_join ());
     emit ctx "#defined %s_o/3." p;
-    List.iter (fun (a, b, i) -> emit ctx "%s_o(%s,%s,%d)." p (str_raw a) (str_raw b) i) (Lazy.force ro.ro_facts);
-    if ro.ro_one_step || not (ro.ro_dynamic && ctx.doc.fact_creations <> []) then
+    List.iter (fun (a, b, i) -> emit ctx "%s_o(%s,%s,%d)." p (str_raw a) (str_raw b) i) (Lazy.force ro.ro_facts)
+  end;
+  p
+
+(* whether the case's links stand in the case's order at run time as well *)
+let keeps_case_order ctx (ro : range_order) =
+  ro.ro_one_step || not (ro.ro_dynamic && ctx.doc.fact_creations <> [])
+
+let use_ro ctx (ro : range_order) =
+  let p = case_order ctx ro in
+  if not ro.ro_pairs then begin
+    ro.ro_pairs <- true;
+    if keeps_case_order ctx ro then
       emit_rule ctx ~head:(Printf.sprintf "%s_n(P,X,Y)" p)
         ~body:[ Printf.sprintf "%s_o(P,X,I)" p; Printf.sprintf "%s_o(P,Y,J)" p; "I < J" ]
     else emit ctx "#defined %s_n/3." p
   end;
   p
+
+(* the rules of [head] (an atom over [x]), which holds of a member where [atom]
+   holds of one before it in every order of the range: passed on along the
+   case's links, one by one *)
+let emit_before ctx (ro : range_order) ~subject ~x ~member ~atom ~head =
+  let p = case_order ctx ro in
+  if keeps_case_order ctx ro then
+    List.iter
+      (fun earlier ->
+        emit_rule ctx ~head:(head x)
+          ~body:[ member x; Printf.sprintf "%s_o(%s,%s,I)" p subject x; "J = I - 1"; Printf.sprintf "%s_o(%s,Y,J)" p subject;
+              earlier "Y" ])
+      [ atom; head ]
 
 (* ch. 5.7, binding is fail-fast: THE reading of a parameter the case does not
    bind, shared by every position that reads a parameter's value. ref faults at
@@ -2972,7 +3006,7 @@ let range_order ctx ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join 
            ctx.case.world.instances []);
     ro_one_step = source_path = None;
     ro_dynamic = List.exists (fun (rb : role_binding) -> List.mem (norm rb.rb_fact_type) created) steps;
-    ro_emitted = false }
+    ro_emitted = false; ro_pairs = false }
 
 let new_part ctx (ro : range_order) =
   ctx.part_serial <- ctx.part_serial + 1;
@@ -5460,7 +5494,7 @@ let range_open_reads ctx ~subject ~source_role ~source_path read =
    fold's boundary, the filters before the values. What a filter deposits
    waits until the fold's boundary reaches no open value, and a fault of it
    until no read before the fold is open and no filter of a member before it
-   (in the order of the range, [use_ro]) is undetermined. The result is the
+   ([emit_before]) is undetermined. The result is the
    filter's own truth as an atom over a member, with which the fold itself is
    translated ([fold_filter]) *)
 let fold_reads ctx ~subject ~subject_ot ~el ~kind ~call_arguments ~filter ~source_role ~source_path :
@@ -5529,9 +5563,7 @@ let fold_reads ctx ~subject ~subject_ot ~el ~kind ~call_arguments ~filter ~sourc
                   (side j.own_t, side j.own_f, side j.other_t, side j.other_f)))
         in
         emit_rule ctx ~head:(at "u" x) ~body:(member [ "not " ^ own_t x; "not " ^ own_f x ]);
-        let p = use_ro ctx ro in
-        emit_rule ctx ~head:(at "b" x)
-          ~body:[ at "m" x; at "u" "Y"; Printf.sprintf "%s_n(%s,Y,%s)" p subject x ];
+        emit_before ctx ro ~subject ~x ~member:(at "m") ~atom:(at "u") ~head:(at "b");
         read [ at "u" x ];
         closure [ own_t x; "not " ^ other_t x ];
         closure [ own_f x; "not " ^ other_f x ];
@@ -5540,7 +5572,7 @@ let fold_reads ctx ~subject ~subject_ot ~el ~kind ~call_arguments ~filter ~sourc
   (match (kind, call_arguments) with
   | Count, _ -> ()
   | _, [ Attribute_reference { attribute_ref = Some a; navigation_bindings = None; _ } ] ->
-      let open_value = not_false @ [ Printf.sprintf "not stands(%s,%s)" x (str a) ] in
+      let open_value = not_false @ [ "not " ^ stands_atom ctx ~holder:x a ] in
       if kind = Filled_count then closure open_value else read open_value
   | _ -> (* no source of a fold over a set (WF-037): the fold's own translation says so *) ());
   judged
@@ -13775,12 +13807,11 @@ let translate_rule ctx (r : resolved_rule) =
    navigated subscope input needs. The second atom holds where the attribute
    stands in a document with inferFromEmpty false (ch. 1.5). *)
 let bool_atoms ctx ~subject ~subject_ot (e : expr) : string * string =
-  ignore ctx;
   match e with
   | Attribute_reference
       { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ }
     when norm ot = norm subject_ot ->
-      (Printf.sprintf "has(%s,%s)" subject (str a), Printf.sprintf "stands(%s,%s)" subject (str a))
+      (Printf.sprintf "has(%s,%s)" subject (str a), stands_atom ctx ~holder:subject a)
   | _ ->
       faultc "CLINGO-027"
         "a characteristic-assignment expression here is an own-subject boolean attribute read \
@@ -15634,6 +15665,24 @@ let reify_list ctx ~one_member ~element (xs : Value.t list) =
 
 (* --- case facts ---------------------------------------------------------- *)
 
+(* the attributes whose state the case alone decides ([ctx.case_only]) *)
+let case_only_attributes (doc : document) =
+  let attributes (ot : object_type) = List.map (fun (a, _) -> norm a) ot.attributes in
+  let written =
+    List.filter_map (fun (r : resolved_rule) -> Option.map (fun (_, _, a) -> norm a) (target_member doc r.objective)) doc.resolved_rules
+    @ List.filter_map (fun (l : prioritized_defaults) -> Option.map norm l.pd_attribute) doc.prioritized_defaults
+  and made =
+    List.concat_map
+      (fun (oc : resolved_object_creation) ->
+        match Option.bind oc.created_type (Ir_v0.Checks.effective_ot doc) with
+        | Some made -> attributes made
+        | None -> [])
+      doc.object_creations
+  in
+  List.filter
+    (fun a -> not (List.mem a written || List.mem a made))
+    (List.sort_uniq compare (List.concat_map (fun (_, ot) -> attributes ot) doc.object_types))
+
 (* the standing states of the input members of [i] (ch. 1.5): an attribute the
    case gives no value is settled leeg where its declaration says that its input
    is complete (IR-SPEC ch. 2.2; the effective type carries an inherited
@@ -15647,12 +15696,12 @@ let input_states ctx (i : Uchar_ref.World.instance) =
   let input ~characteristic m = not (written_on ctx ~otype:i.otype ~characteristic m) in
   List.iter
     (fun (a, _) ->
-      if
-        input ~characteristic:false a
-        && (ctx.closed_inputs || List.mem a ot.attribute_complete)
-        && Uchar_ref.World.attr i a = Value.Empty
-        && Uchar_ref.World.timeline i a = None
-      then emit ctx "settled(%s,%s)." (str_raw i.label) (str a))
+      let filled = Uchar_ref.World.attr i a <> Value.Empty || Uchar_ref.World.timeline i a <> None in
+      let settled =
+        (not filled) && input ~characteristic:false a && (ctx.closed_inputs || List.mem a ot.attribute_complete)
+      in
+      if settled then emit ctx "settled(%s,%s)." (str_raw i.label) (str a);
+      if (filled || settled) && List.mem (norm a) ctx.case_only then emit ctx "given(%s,%s)." (str_raw i.label) (str a))
     ot.attributes;
   List.iter
     (function
@@ -16955,7 +17004,8 @@ let translate_guarded ?(closed_inputs = false) (doc : document) (case : Case.t) 
       demand_reaches = []; order_guards = []; order_asks = []; hoisted = [];
       before_arm = []; signs = []; sign_helpers = []; oc_strata;
       form_subject = None; anchored = []; member_reach = lazy []; calendar_rounding = false; form_gate = [];
-      windows = 0; strict; closed_inputs; boundary = None; reach = []; member_gate = []; limit_gate = []; fills_nothing = []; fold_filter = None; group_writers = [] }
+      windows = 0; strict; closed_inputs;
+      case_only = (if strict then case_only_attributes doc else []); boundary = None; reach = []; member_gate = []; limit_gate = []; fills_nothing = []; fold_filter = None; group_writers = [] }
   in
   check_parameter_set wire_doc case;
   emit ctx "%% generated by backends/clingo from uchar-ir-v1 + uchar-case-v0.";
@@ -16965,7 +17015,7 @@ let translate_guarded ?(closed_inputs = false) (doc : document) (case : Case.t) 
   emit ctx "#defined inputval/3. #defined inputtl/5. #defined viol/2. #defined inputrole/3.";
   (* ch. 1.5: an attribute stands where it has a value or is settled leeg *)
   if strict then begin
-    emit ctx "#defined settled/2. #defined hasnot/2. #defined wnila/2. #defined ropen/2. #defined aopen/2. #defined kopen/2.";
+    emit ctx "#defined settled/2. #defined hasnot/2. #defined wnila/2. #defined ropen/2. #defined aopen/2. #defined kopen/2. #defined given/2.";
     emit_rule ctx ~head:"stands(I,A)" ~body:[ "val(I,A,_)" ];
     emit_rule ctx ~head:"stands(I,A)" ~body:[ "settled(I,A)" ]
   end;
