@@ -556,13 +556,12 @@ final class SessionReaders {
             if (!(f instanceof Outcome o))
                 throw new IllegalStateException("the general form of " + name + " inserts only Uitkomst, and on "
                         + FactNames.object(subject) + " stands " + f);
-            Outcome other = perChain.put(o.chain(), o);
-            if (other != null && (other.kind() == Outcome.Kind.OPEN) != (o.kind() == Outcome.Kind.OPEN)) {
-                // the initialisation of the chain decided beside the open default it closes over
-                perChain.put(o.chain(), o.kind() == Outcome.Kind.OPEN ? other : o);
-                continue;
-            }
-            if (other != null)
+            // beside an open default of the chain its initialisation settles, which closes over it: its decision is the
+            // chain's, or it is open as well
+            Outcome other = perChain.get(o.chain());
+            if (other != null && o.kind() == Outcome.Kind.OPEN) continue;
+            perChain.put(o.chain(), o);
+            if (other != null && other.kind() != Outcome.Kind.OPEN)
                 throw new IllegalStateException("chain " + o.chain() + " of " + name + " leaves one outcome per object,"
                         + " that of its highest default, and on " + FactNames.object(subject) + " stand " + other
                         + " and " + o);

@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * Jutterswet that shows it, under the name of the example in the spec (WV-1.5-…): a document with
  * {@code inferFromEmpty: false} read with the three states of a member, filled, settled leeg and open. The documents
  * stand in {@code src/test/resources/open-values/<name>/}, written in RegelSpraak ({@code source.rgs}) and taken to the
- * wire by the frontend ({@code ir.json}), but the three of a stack with an initialisation, which the dialect writes only
+ * wire by the frontend ({@code ir.json}), but the four of a stack with an initialisation, which the dialect writes only
  * beside an opgave and which stand as the frontend's document with that default added; their cases carry the expectations of the spec's example, and the reference
  * interpreter plays every one of them ({@code runner}, {@code runner --closed-inputs} for a case named
  * {@code closed*}), so a case here is the outcome of ref beside that of this backend. Every case plays on both branches
@@ -223,11 +223,13 @@ class OpenValuesWitnessTest {
 
     /** WV-1.5-stack-initialisation: the initialisation of a stack decides where nothing above it decides, also where a
      *  default above it is open; an input of the target stands above it, and with an open value the target is open. In a
-     *  stack with an inherited initialisation above its own (ch. 7.10) either closes so. */
+     *  stack with an inherited initialisation above its own (ch. 7.10) either closes so, and so does one below exception
+     *  groups, where it decides beside a group that is open and not beside one that conflicts. */
     @Test void wv_1_5_stack_initialisation() throws Exception {
         assertEquals(6, play("stack-initialisation", "case"));
         assertEquals(2, play("stack-initialisation-value", "case"));
         assertEquals(3, play("stack-two-initialisations", "case"));
+        assertEquals(5, play("stack-exception-groups-initialisation", "case"));
     }
 
     /** WV-1.5-stack-opgave: an opgave the case gives no value is open and the computation below it does not decide;
@@ -321,6 +323,10 @@ class OpenValuesWitnessTest {
             assertEquals("/rules/prioritizedDefaults/0/defaults/2 5",
                     decision("stack-initialisation", "case1-onder-een-open-uitzondering.json", branch));
             assertEquals("none", decision("stack-initialisation", "case5-onder-de-invoer.json", branch));
+            assertEquals("/rules/prioritizedDefaults/0/defaults/2 4", decision("stack-exception-groups-initialisation",
+                    "case1-schatting-onder-een-open-groep.json", branch));
+            assertEquals("none", decision("stack-exception-groups-initialisation",
+                    "case2-schatting-open-onder-een-open-groep.json", branch));
             assertEquals("none", decision("stack-exception-groups", "case4-betwist-naast-open.json", branch));
             assertEquals("/rules/prioritizedDefaults/0/defaults/0/exceptions/members/0/defaults/0 0",
                     decision("stack-exception-groups", "case2-betwist.json", branch));
@@ -358,7 +364,8 @@ class OpenValuesWitnessTest {
                 "instance-ordered", "link",
                 "no-open-without-the-property", "open-input", "outside-the-window", "past-undetermined-deposit",
                 "past-undetermined-fault", "reach", "reach-without-the-property", "read-for-another", "rule",
-                "stack-characteristic", "stack-deposit", "stack-exception-groups", "stack-exception-groups-nested",
+                "stack-characteristic", "stack-deposit", "stack-exception-groups",
+                "stack-exception-groups-initialisation", "stack-exception-groups-nested",
                 "stack-first-decides", "stack-gives-way", "stack-initialisation", "stack-initialisation-value",
                 "stack-opgave", "stack-opgave-complete", "stack-outside-the-window", "stack-two-initialisations",
                 "stack-type-chain", "stack-unordered", "two-writers"), names);
