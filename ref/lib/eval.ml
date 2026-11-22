@@ -2313,11 +2313,24 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
          identity and passes an enclosing handler by (it belongs to the Let
          that bound the binder that was read). (3) AN UNREAD BINDER EVALUATES
          NOTHING: a body that never reads the binder never forces [memo] — no
-         leeg, no fault, no channel fact — and its outcome IS the Let's. *)
+         leeg, no fault, no channel fact — and its outcome IS the Let's. The
+         value is computed as one value ([open_read_boundary]): a computation
+         that reads an open value deposits nothing, and every read of the
+         binder tells its own boundary the closure the computation applied,
+         since the value read there rests on it (ch. 1.5) *)
       incr let_evaluations;
       let mine = !let_evaluations in
-      let memo = lazy (eval_expr env world self ~err value) in
-      let read () = match Lazy.force memo with Value.Empty -> raise (Let_barrier mine) | v -> v in
+      let memo =
+        lazy
+          (match open_read_boundary ~err (fun err -> eval_expr env world self ~err value) with
+          | Ok computed -> computed
+          | Error (label, member) -> raise (World.Open_read { label; member }))
+      in
+      let read () =
+        let v, closed = Lazy.force memo in
+        Option.iter signal_closure closed;
+        match v with Value.Empty -> raise (Let_barrier mine) | v -> v
+      in
       let locals = SMap.add (norm binder) (Later read) env.locals in
       let btypes = SMap.add (norm binder) (bound_of env value, static_type env value) env.btypes in
       (try eval_expr { env with locals; btypes } world self ~err body with Let_barrier id when id = mine -> Value.Empty)

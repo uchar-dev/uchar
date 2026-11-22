@@ -947,7 +947,21 @@ gevulde gewichten van zijn vondsten gelijk is aan 3" is open there: false for
 itself, undetermined for another; "… groter is dan 1" holds. "Het gewogen
 totaal is de som van het gewicht van zijn vondsten waarvan het gewicht
 gevuld is" is 50 there; over vondsten that all lack a gewicht it is open, and
-over no vondst settled leeg. Where the barrier of a `Let` (ch. 10.6) ends an
+over no vondst settled leeg. A binder of a `Let` (ch. 10.6) whose computation
+applied a closure rests on it at every read: each read tells its own boundary.
+Example (WV-1.5-closure-of-a-binder-*): "een Jutter is bijzonder indien
+(daarbij geldt: t is de som van het gewicht van zijn vondsten waarvan getuigen
+gevuld is, 1 als alle van: t is groter dan 3, zijn ervaring is groter dan 5;
+anders t) gelijk is aan 21", at ervaring 3, over a vondst of gewicht 20 with
+getuigen and one of gewicht 1, holds where the second has getuigen; where it
+has none, the composite is false by its second member, for another form as
+well, the else branch reads t, 20 after a closure, and bijzonder is open. The
+computation of a binder is one value: one that reads an open value deposits
+nothing. Example (WV-1.5-binder-broken-off-*): "de uitkering van een Vondst is,
+daarbij geldt: t is zijn taxatie gedeeld door 0 plus zijn schade, 1 als alle
+van: t is groter dan 3, zijn gewicht is groter dan 10; anders 0", at taxatie 50
+and gewicht 5, is 0 with the EF-005 fact of the division at schade 5, and 0
+without a fact where the schade is open. Where the barrier of a Let ends an
 atomic condition, that condition has no judgement, and the closures applied in
 it count for the value of the Let, which is leeg. Example
 (WV-1.5-closure-before-a-barrier): "het keurgewicht van een Jutter is, daarbij

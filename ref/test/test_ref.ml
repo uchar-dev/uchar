@@ -16921,6 +16921,59 @@ let () =
   row "condition-open" [ ("gewicht", "5") ] "open";
   row "condition-holds" [ ("gewicht", "5"); ("getuigen", "2") ] "holds"
 
+(* WV-1.5-closure-of-a-binder-*: a binder whose computation applied a closure
+   rests on it at every read, not at the first alone. "Een Jutter is bijzonder
+   indien (daarbij geldt: t is de som van het gewicht van zijn vondsten waarvan
+   getuigen gevuld is, 1 als alle van: t is groter dan 3, zijn ervaring is
+   groter dan 5; anders t) gelijk is aan 21", ervaring 3, over a vondst of
+   gewicht 20 with getuigen and one of gewicht 1: the first member reads t after
+   a closure, the second is false and decides the composite for another form as
+   well, and the else branch reads t again. Without the getuigen of the second
+   vondst the comparison is false for the form itself and undetermined for
+   another, so bijzonder is open; with them it holds.
+   WV-1.5-binder-broken-off-*: a computation that reads an open value deposits
+   nothing. "De uitkering van een Vondst is, daarbij geldt: t is zijn taxatie
+   gedeeld door 0 plus zijn schade, 1 als alle van: t is groter dan 3, zijn
+   gewicht is groter dan 10; anders 0", taxatie 50 and gewicht 5, is 0 without a
+   fact where the schade is open, and 0 with the EF-005 fact of the division at
+   schade 5 *)
+let () =
+  let t = ov_binder "t" in
+  let keur =
+    ov_let "t" (ov_fold ~filter:(ov_test Filled "getuigen") Sum_function "gewicht")
+      (ov_ite (ov_compound All 0 [ ov_greater t "3"; ov_jcmp "ervaring" "5" ]) (ov_lit "1") t)
+  in
+  let doc =
+    ov_jdoc ~jutter:[ "ervaring" ] ~jchars:[ "bijzonder" ] ~vondst:[ "gewicht"; "getuigen" ]
+      [ ov_jattribution "bijzonder"
+          (Comparison { op = Equal; left_side = Some keur; right_side = Some (ov_lit "21"); time_period = None; source_name = None }) ]
+  in
+  let row name v2 want =
+    let id = "closure-of-a-binder-" ^ name in
+    let input = ov_j1 [ ("V1", [ ("gewicht", "20"); ("getuigen", "2") ], []); ("V2", ("gewicht", "1") :: v2, []) ] in
+    let input = { (List.hd input) with ov_attrs = [ ("ervaring", "3") ] } :: List.tl input in
+    ov_row ("WV-1.5-" ^ id) (fun () -> ov_run id doc input) (fun w -> ov_char w "J1" "bijzonder") want
+  in
+  row "open" [] "open";
+  row "holds" [ ("getuigen", "1") ] "holds";
+  let doc =
+    ov_doc
+      [ ov_vondst [ "taxatie"; "schade"; "gewicht"; "uitkering" ] [] ]
+      [ ov_calc "uitkering"
+          (ov_let "t"
+             (ov_bin Plus (ov_bin Divided_by (ov_ref "taxatie") (ov_lit "0")) (ov_ref "schade"))
+             (ov_ite (ov_compound All 0 [ ov_greater t "3"; ov_cmp Greater "gewicht" "10" ]) (ov_lit "1") (ov_lit "0"))) ]
+  in
+  let row name schade want =
+    let id = "binder-broken-off-" ^ name in
+    ov_row ("WV-1.5-" ^ id)
+      (fun () -> ov_run id doc (ov_v1 (schade @ [ ("taxatie", "50"); ("gewicht", "5") ])))
+      (fun w -> ov_attr w "V1" "uitkering" ^ " [" ^ String.concat "; " (ov_channel w) ^ "]")
+      want
+  in
+  row "open" [] "0 []";
+  row "given" [ ("schade", "5") ] "0 [uitkering V1 EF-005]"
+
 (* WV-1.5-closure-before-a-fault: a fault passes no closure on. "De schadetoeslag
    van een Vondst is 1 als alle van: zijn gewicht is groter dan 10, (1 als zijn
    getuigen leeg is, anders 0) plus het Rekenjaar is groter dan 3, zijn schade is
