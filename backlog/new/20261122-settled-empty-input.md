@@ -1,6 +1,10 @@
 # settled-empty-input: een casus kan zeggen dat er vaststaand geen waarde is
 
-*Voorstel van de hoofdsessie, 2026-11-22; akkoord van de eigenaar op een eigen kaart, spec eerst. Nog niet begonnen: zij raakt beschermde paden (ch. 1.5, het caseschema) en elke uitvoerder.*
+*Geparkeerd door de eigenaar op 2026-11-22. Voorstel van de hoofdsessie van dezelfde dag; niet begonnen.*
+
+Reden: voor "er is er geen" bestaat al de marker `niet van toepassing` (`(of niet van toepassing)`, RUNTIME-SEMANTICS ch. 9.5), die de auteur dwingt te zeggen wat er dan gebeurt. Een tweede weg om op een leeg
+attribuut door te rekenen maakt de lezing van leeg moeilijker te begrijpen, en zij moet op bekende logica blijven rusten. Wat overblijft, is een aanvrager die zeker weet dat er niets is bij een attribuut zonder marker, en een strikt
+antwoord `{"state": "empty"}` dat als verzoek naar een volgende regelset gaat. Weer oppakken als een van die twee zich voordoet.
 
 ## Aanleiding
 
