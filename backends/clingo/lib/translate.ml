@@ -390,6 +390,11 @@ type let_info = {
   li_order : (expr * (int * bool)) list Lazy.t; (* [let_order] of the body *)
   li_nparts : int; (* how many per-member parts enclose the Let *)
   mutable li_va : string list; (* the need's atoms, once the value is translated *)
+  (* in a document with inferFromEmpty false, where a closure stands in the
+     value: the atom that holds where its computation applied one to an open
+     value, and the predicate of the boundary or computation around the Let,
+     which holds there as well ([computation]) *)
+  mutable li_closed : (string * string) option;
   mutable li_entry : (string list * string * int * datatype option) option; (* its [binders] entry *)
   mutable li_demand : string option; (* the demand atom, when the value has one *)
   mutable li_reads : (expr * site) list; (* every read of the binder, latest first *)
@@ -464,8 +469,9 @@ type boundary = {
   (* the predicate that holds where the evaluation applied a closure to an
      open value inside the boundary (ch. 1.5, "A closure inside a value"):
      its outcome stands for the form itself and not for another; and whether
-     a closure stands in the boundary at all *)
-  bd_closed : string;
+     a closure stands in the boundary at all. Within the computation of a
+     binder both are that computation's ([computation]) *)
+  mutable bd_closed : string;
   mutable bd_closes : bool;
 }
 
@@ -1323,6 +1329,25 @@ let within_boundary ctx ~subject ~subject_ot (f : unit -> 'a) : 'a * string * st
       let x = f () in
       ( x, Printf.sprintf "%s(%s)" b.bd_pred bd_key,
         if b.bd_closes then Some (Printf.sprintf "%s(%s)" b.bd_closed bd_key) else None ))
+
+(* [f] translated as the computation of the binder of a Let within the boundary
+   around it: its result and, where a closure stands in it, the atom that holds
+   where it applied one to an open value, with the predicate around it, which
+   holds there too: the body reads its binder first ([refuse_uncarried]) *)
+let computation ctx (f : unit -> 'a) : 'a * (string * string) option =
+  match ctx.boundary with
+  | None -> (f (), None)
+  | Some b ->
+      let around = b.bd_closed and around_closes = b.bd_closes in
+      ctx.fresh <- ctx.fresh + 1;
+      b.bd_closed <- Printf.sprintf "oc%d" ctx.fresh;
+      b.bd_closes <- false;
+      let x = f () in
+      let closed = if b.bd_closes then Some (Printf.sprintf "%s(%s)" b.bd_closed b.bd_key, around) else None in
+      b.bd_closed <- around;
+      b.bd_closes <- around_closes || closed <> None;
+      Option.iter (fun (atom, _) -> emit_rule ctx ~head:(Printf.sprintf "%s(%s)" around b.bd_key) ~body:[ atom ]) closed;
+      (x, closed)
 
 (* the literal that no closure of a boundary closed over an open value *)
 let unclosed closed = List.map (( ^ ) "not ") (Option.to_list closed)
@@ -2608,6 +2633,13 @@ let note_binder_read ctx ~subject ~subject_ot (node : expr) ident =
       with
       | None -> ()
       | Some li -> (
+          (* a closure the computation applied is told to the boundary of every
+             read: in the filter of a fold it is another than the Let's *)
+          (match (li.li_closed, ctx.boundary) with
+          | Some (atom, around), Some b when b.bd_closed <> around ->
+              b.bd_closes <- true;
+              emit_rule ctx ~head:(Printf.sprintf "%s(%s)" b.bd_closed b.bd_key) ~body:(b.bd_base @ ctx.reach @ [ atom ])
+          | _ -> ());
           li.li_reads <- (node, site ctx ~subject ~subject_ot) :: li.li_reads;
           match li.li_demand with
           | None -> ()
@@ -4926,7 +4958,7 @@ let bind_let ctx ~subject ~subject_ot ~binder ~value ~body translate_value =
   let li =
     { li_id = ctx.let_serial; li_binder = norm binder; li_depth = List.length ctx.let_needs;
       li_outer = ctx.let_needs; li_subject = subject; li_ot = subject_ot;
-      li_order = lazy (let_order body); li_nparts = List.length ctx.parts; li_va = []; li_entry = None;
+      li_order = lazy (let_order body); li_nparts = List.length ctx.parts; li_va = []; li_closed = None; li_entry = None;
       li_demand = None; li_reads = []; li_asks = [] }
   in
   ctx.lets <- li :: ctx.lets;
@@ -4939,9 +4971,10 @@ let bind_let ctx ~subject ~subject_ot ~binder ~value ~body translate_value =
   | None -> ());
   let saved_v = ctx.value_of in
   ctx.value_of <- Some li;
-  let va, vt, vs = under_demand ctx demand translate_value in
+  let (va, vt, vs), closed = computation ctx (fun () -> under_demand ctx demand translate_value) in
   ctx.value_of <- saved_v;
   li.li_va <- va;
+  li.li_closed <- closed;
   (* the binder's static type is its value's, read in the ENCLOSING scope
      (B13: a binder read carries none of its own) *)
   let entry = typed_binder (let_binder ctx ~subject ~subject_ot (va, vt, vs)) (binder_type ctx value) in

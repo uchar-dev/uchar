@@ -21393,6 +21393,99 @@ let () =
         all [ schade; ov_cmp "greater" (ov_let "maat" (ov_attr "gewicht") (ov_bin "plus" (ov_binder "maat") (ov_lit "1"))) (ov_lit "5") ],
         [ ("given", [ ("gewicht", "30"); ("schade", "0") ], "35"); ("gewicht open", [ ("schade", "0") ], "35") ] ) ]
 
+(* WV-1.5-closure-of-a-binder: a binder whose computation applied a closure
+   rests on it at every read. "De grens is de som van het gewicht van zijn
+   vondsten waarvan getuigen gevuld is", over a vondst of gewicht 20 with
+   getuigen and one of gewicht 30 without: the filter's first member reads the
+   grens after a closure, so it is undetermined for another form and the second
+   member is read provisionally: what it deposits is dropped, and its fault
+   leaves it undetermined. With the getuigen complete no closure is applied, and
+   the deposit and the fault arise *)
+let () =
+  let closing = ov_fold ~filter:(ov_test "filled" (ov_attr "getuigen")) "sum" "gewicht" in
+  let quotient = ov_cmp "less" (ov_div (ov_attr "gewicht") (ov_attr "schade")) (ov_lit "3") in
+  let all = ov_compound "all" 0 and any = ov_compound "atLeast" 1 and none = ov_compound "none" 0 in
+  let case ?(v2 = [ ("gewicht", "30"); ("schade", "0") ]) want channel =
+    ov_case
+      (ov_jutter [ ("V1", [ ("gewicht", "20"); ("getuigen", "2"); ("schade", "1"); ("taxatie", "2") ], [], []); ("V2", v2, [], []) ])
+      [ ov_attr_is ~label:"J1" "grenstotaal" want;
+        (if channel then ov_inconsistent ~label:"J1" ~code:"EF-005" "grenstotaal" else ov_consistent) ]
+  in
+  let frame name ?v2 value rows =
+    List.iter
+      (fun (row, complete, want, channel) ->
+        ov_frame
+          ~name:(Printf.sprintf "WV-1.5-closure-of-a-binder (%s, %s)" name row)
+          ~ir:(ov_grens_doc ~complete value) ~case_text:(case ?v2 want channel) ())
+      rows
+  in
+  let direct filter = ov_let "grens" closing (ov_grens_body filter) in
+  frame "a deposit, all" (direct (all [ ov_boven_grens; quotient ]))
+    [ ("the getuigen open", [], "20", false); ("the getuigen complete", [ "getuigen" ], "20", true) ];
+  let under = ov_cmp "less" (ov_attr "gewicht") (ov_binder "grens") in
+  frame "a deposit, at least one" (direct (any [ under; quotient ]))
+    [ ("the getuigen open", [], "20", false); ("the getuigen complete", [ "getuigen" ], "20", true) ];
+  (* a binder computed from the first: "de grens is t plus 1" *)
+  frame "a deposit, a binder of a binder"
+    (ov_let "t" closing (ov_let "grens" (ov_bin "plus" (ov_binder "t") (ov_lit "1")) (ov_grens_body (all [ ov_boven_grens; quotient ]))))
+    [ ("the getuigen open", [], "21", false); ("the getuigen complete", [ "getuigen" ], "21", true) ];
+  frame "a deposit, a Let in the value of a Let"
+    (ov_let "grens" (ov_let "t" closing (ov_bin "plus" (ov_binder "t") (ov_lit "1"))) (ov_grens_body (all [ ov_boven_grens; quotient ])))
+    [ ("the getuigen open", [], "21", false); ("the getuigen complete", [ "getuigen" ], "21", true) ];
+  (* the grens as a divisor that is not reached: the gewicht of the second
+     vondst is settled leeg, so the first member is false for another form as
+     well, and the second member is read *)
+  frame "a read that is not reached" ~v2:[ ("schade", "0"); ("taxatie", "9") ]
+    (direct
+       (any
+          [ ov_cmp "greater" (ov_div (ov_attr "gewicht") (ov_binder "grens")) (ov_lit "5");
+            ov_cmp "less" (ov_div (ov_attr "taxatie") (ov_attr "schade")) (ov_lit "3") ]))
+    [ ("the getuigen open", [ "gewicht" ], "40", true) ];
+  let boven_tarief = ov_cmp "less" (ov_attr "gewicht") (ov_param "TARIEF") in
+  List.iter
+    (fun (name, composite, first, faults_complete) ->
+      let ir complete = ov_grens_doc ~parameters:[ "TARIEF" ] ~complete (direct (composite [ first; boven_tarief ])) in
+      ov_frame ~name:(Printf.sprintf "WV-1.5-closure-of-a-binder (a fault, %s, the getuigen open)" name) ~ir:(ir [])
+        ~case_text:(case "open" false) ();
+      let name = Printf.sprintf "WV-1.5-closure-of-a-binder (a fault, %s, the getuigen complete)" name in
+      match faults_complete with
+      | true -> ov_fault_frame ~name ~ir:(ir [ "getuigen" ]) ~case_text:(case "open" false) "EF-014"
+      | false -> ov_frame ~name ~ir:(ir [ "getuigen" ]) ~case_text:(case "50" false) ())
+    [ ("all", all, ov_boven_grens, true); ("at least one", any, under, true); ("none", none, under, true) ]
+
+(* WV-1.5-closure-before-a-barrier: the closure applied in the computation of a
+   binder that comes out leeg counts for the value of its Let: "het
+   keurgewicht van een Jutter is, daarbij geldt: t is de som van het gewicht
+   van zijn vondsten waarvan getuigen gevuld (leeg) is, 1 als t gelijk is aan 3,
+   anders t", and "een Jutter is keurig indien (daarbij geldt …) groter is dan 4".
+   The test "1 als t gevuld is" is CLINGO-023 in every document *)
+let () =
+  let keurgewicht variety =
+    ov_let "t"
+      (ov_fold ~filter:(ov_test variety (ov_attr "getuigen")) "sum" "gewicht")
+      (ov_ite (ov_cmp "equal" (ov_binder "t") (ov_lit "3")) (ov_lit "1") (ov_binder "t"))
+  in
+  let ir ?(complete = []) variety =
+    ov_doc ~fact_types:[ ov_aanmelding ]
+      [ ov_type "Jutter" [ "keurgewicht" ] [ "keurig" ]; ov_type ~complete "Vondst" [ "gewicht"; "getuigen" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"keurgewicht" "keurgewicht" (Some (keurgewicht variety));
+        ov_rule ~ty:"Jutter" ~name:"keurig" ~cond:(ov_cmp "greater" (keurgewicht variety) (ov_lit "4")) "keurig" None ]
+  in
+  List.iter
+    (fun (name, ir, v1, want, keurig) ->
+      ov_frame ~name:("WV-1.5-closure-before-a-barrier (" ^ name ^ ")") ~ir
+        ~case_text:
+          (ov_case (ov_jutter [ ("V1", v1, [], []) ]) [ ov_attr_is ~label:"J1" "keurgewicht" want; ov_char_is ~label:"J1" "keurig" keurig ])
+        ())
+    (let filled = ir "filled" and empty = ir ~complete:[ "gewicht" ] "empty" in
+     [ ("open", filled, [ ("gewicht", "5") ], "open", "open");
+       ("filled", filled, [ ("gewicht", "5"); ("getuigen", "2") ], "5", "holds");
+       ("a leeg test, open", empty, [], "open", "open");
+       ("a leeg test, false", empty, [ ("getuigen", "2") ], "leeg", "not");
+       ("a leeg test, false beside a gewicht", empty, [ ("gewicht", "4"); ("getuigen", "2") ], "leeg", "not");
+       ("a leeg test, filled", empty, [ ("gewicht", "4") ], "4", "open");
+       ("a leeg test, three", empty, [ ("gewicht", "3") ], "1", "open") ])
+
 (* a Let in the filter of a fold whose binder a filter inside its body reads:
    "de som van het gewicht van zijn vondsten waarvan (daarbij geldt: de maat is
    zijn gewicht, de maat plus de som van het gewicht van de medevondsten met een
@@ -21631,6 +21724,46 @@ let () =
   in
   ov_frame ~name:"WV-1.5-complete (a characteristic and an attribute of one name)" ~ir
     ~case_text:(ov_case (ov_v1 [ ("gewicht", "5") ]) [ ov_attr_is "toeslag" "5"; ov_char_is "toeslag" "not"; ov_attr_is "wachttoeslag" "3" ])
+    ()
+
+(* WV-1.5-shared-name: an attribute and a characteristic of one name (WF-002)
+   are two members, each with its own writers and its own state: both written
+   by a defaults group (a rule's target does not tell them apart, WF-022), one
+   of them an input member, and an object a creation makes *)
+let () =
+  let attribute cond = ov_stack ~name:"toeslagbedrag" ~attribute:"toeslag" [ ov_dflt ~justification:cond ~consequence:(ov_lit "5") () ]
+  and characteristic cond = ov_stack ~name:"toeslagkenmerk" ~characteristic:"toeslag" [ ov_dflt ~justification:cond ~decision:true () ] in
+  let both a k =
+    ov_doc
+      ~defaults:[ attribute (ov_check a); characteristic (ov_check k) ]
+      [ ov_type ~complete:[ "getuigd" ] "Vondst" [ "toeslag" ] [ "toeslag"; "gemerkt"; "getuigd" ] ] []
+  and one stack = ov_doc ~defaults:[ stack (ov_gt "taxatie" "1000") ] [ ov_vondst [ "taxatie"; "toeslag" ] [ "toeslag" ] ] [] in
+  List.iter
+    (fun (name, ir, chars, attrs, (a, k)) ->
+      ov_frame ~name:("WV-1.5-shared-name (" ^ name ^ ")") ~ir
+        ~case_text:(ov_case (ov_v1 ~chars attrs) [ ov_attr_is "toeslag" a; ov_char_is "toeslag" k ]) ())
+    [ ("the attribute open", both "gemerkt" "getuigd", [], [], ("open", "not"));
+      ("the attribute filled", both "gemerkt" "getuigd", [ "gemerkt" ], [], ("5", "not"));
+      ("the characteristic open", both "getuigd" "gemerkt", [], [], ("leeg", "open"));
+      ("the characteristic holds", both "getuigd" "gemerkt", [ "gemerkt" ], [], ("leeg", "holds"));
+      ("an input characteristic, open", one attribute, [], [ ("taxatie", "50") ], ("leeg", "open"));
+      ("an input characteristic, beside a value", one attribute, [], [ ("taxatie", "2000") ], ("5", "open"));
+      ("an input characteristic, named", one attribute, [ "toeslag" ], [ ("taxatie", "50") ], ("leeg", "holds"));
+      ("an input attribute, open", one characteristic, [], [ ("taxatie", "50") ], ("open", "not"));
+      ("an input attribute, beside a mark", one characteristic, [], [ ("taxatie", "2000") ], ("open", "holds"));
+      ("an input attribute, given", one characteristic, [], [ ("taxatie", "50"); ("toeslag", "3") ], ("3", "not")) ];
+  let creation =
+    Printf.sprintf
+      {|{"node": "ObjectCreation", "name": "proefvondst", "versions": [{"createdType": "Vondst", "subject": "Jutter", "assignments": [%s], "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "proefvangst", "role": "proefvondst"}}]}|}
+      (ov_assign "toeslag" (ov_attr ~ty:"Jutter" "ervaring"))
+  in
+  ov_frame ~name:"WV-1.5-shared-name (an object made)"
+    ~ir:
+      (ov_doc ~fact_types:[ ov_proefvangst ] ~object_creations:[ creation ]
+         [ ov_type "Jutter" [ "ervaring"; "prooftoeslag" ] [ "kaal" ]; ov_type "Vondst" [ "toeslag" ] [ "toeslag" ] ]
+         [ ov_rule ~ty:"Jutter" ~name:"prooftoeslag" "prooftoeslag" (Some (ov_attr ~path:[ ("proefvangst", "proefvondst") ] "toeslag"));
+           ov_rule ~ty:"Jutter" ~name:"kaal" ~cond:(ov_check ~negated:true ~navigation:("proefvangst", "proefvondst") "toeslag") "kaal" None ])
+    ~case_text:(ov_case [ ov_obj ~ty:"Jutter" "J1" [] ] [ ov_attr_is ~label:"J1" "prooftoeslag" "open"; ov_char_is ~label:"J1" "kaal" "holds" ])
     ()
 
 (* the characteristic check with a narrowing host (ch. 5.8b rule 4): "de

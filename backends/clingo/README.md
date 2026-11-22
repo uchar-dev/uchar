@@ -486,7 +486,10 @@ spec bug.
     §9.5 deposit arise only outside it, and a fault after an open read
     within it does not. A closure inside it (a filled-value count, a
     filter on gevuld) sets `oc<n>` beside it: what it gives stands for
-    the form itself only.
+    the form itself only. The computation of the binder of a Let has an
+    `oc<n>` of its own (`computation`), which every read of the binder
+    tells to the boundary it stands in, that of a filter in the body
+    among them.
   - *A condition* is judged as a pair (`judge`), for the form itself and
     for another form, each side established true or false: a composite
     by Kleene's strong table over its members, a quantifier fold by the
