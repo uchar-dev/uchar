@@ -353,3 +353,12 @@ Geen verwachting, pin buiten de 81 DRL-teksten en de elf planregels, lijst of fl
 `SessionReaders` 49, `OpenInput` 46, `CaseInput` 44, `RecordingRendering` 39, `Undetermined` 38, `LeftOpen` 37, `Route` 37,
 `Input` 34; de overige onder de 33. `README.md` 78. Tests: 10 Java-bestanden, 694 erbij en 115 eraf, plus de documenten
 van `open-values/`.
+
+## Landing van deel 1
+
+`make gates` in de worktree op `9c4431593`: alle gates groen (681 s, after-run groen). Een onafhankelijke code-review
+(Google Neon, alleen lezen, op de diff van `src/main`) vond geen afwijkende uitkomst. Nagekeken: de vier mogelijke fouten
+bleken geen fout (een vouw anders dan een telling over een unie weigert de loader; een geneste samenstelling achter een open
+lid leest gelijk aan ref; de namen van `characteristicsAbsent` worden op de getter genormaliseerd; de regelbouwer voor een
+tijdlijnkenmerk is een vorm die geweigerd wordt). Mee in het volgende bouwdeel: de uitdrukking in `OpenableMembers.of` die op
+operatorvolgorde rust, en twee kleine vereenvoudigingen. De kaart blijft in `doing` tot het laatste deel.
