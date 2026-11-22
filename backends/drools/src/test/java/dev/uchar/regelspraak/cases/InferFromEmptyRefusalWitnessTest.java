@@ -3,6 +3,7 @@ package dev.uchar.regelspraak.cases;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.refusal.DroolsCode;
 
 import org.junit.jupiter.api.Test;
@@ -14,8 +15,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -127,6 +130,146 @@ class InferFromEmptyRefusalWitnessTest {
         assertEquals(table, UncarriedForms.SLUGS.subList(0, UncarriedForms.TABLE));
         for (String own : UncarriedForms.SLUGS.subList(UncarriedForms.TABLE, UncarriedForms.SLUGS.size()))
             assertEquals(false, table.contains(own), own);
+    }
+
+    /** WV-1.5-let-in-composite-*: a Let whose binder a member of a composite other than the first reads, at any depth,
+     *  is named {@code let-in-composite}, on the documents of the reference interpreter's suite ({@code ref/test}): "de
+     *  uitkering van een Vondst is, daarbij geldt: de toeslag is zijn vindloon, 10 als [condition]; anders 0". The slug
+     *  stands before the slugs of this backend's own, so it is named although the document holds an IfThenElse. */
+    @Test void a_let_read_in_a_later_member_of_a_composite_is_named() throws Exception {
+        String toeslag = greater(binder("toeslag"), "5"), gewicht = greater(attribute("gewicht"), "10"),
+                schade = greater(attribute("schade"), "1");
+        Map<String, String> bodies = new LinkedHashMap<>();
+        bodies.put("later-member", choice(any(gewicht, toeslag), literal("10"), literal("0")));
+        bodies.put("later-member-of-a-first-member", choice(all(any(gewicht, toeslag), schade), literal("10"), literal("0")));
+        bodies.put("first-member-of-a-later-member", choice(all(gewicht, any(toeslag, schade)), literal("10"), literal("0")));
+        bodies.put("choice-in-a-later-member",
+                choice(all(gewicht, greater(choice(toeslag, literal("1"), literal("0")), "0")), literal("10"), literal("0")));
+        bodies.put("let-value-in-a-later-member", choice(all(gewicht,
+                greater(let("verhoogd", plus(binder("toeslag"), literal("1")), binder("verhoogd")), "5")), literal("10"), literal("0")));
+        bodies.put("under-a-let", let("zwaarte", attribute("gewicht"),
+                choice(any(greater(binder("zwaarte"), "10"), toeslag), literal("10"), literal("0"))));
+        for (Map.Entry<String, String> e : bodies.entrySet())
+            assertEquals("let-in-composite", first(uitkering(e.getValue())), e.getKey());
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+            CaseRunner.Excluded refused = assertThrows(CaseRunner.Excluded.class,
+                    () -> DroolsBackend.build(uitkering(bodies.get("later-member")), branch, false), branch::name);
+            assertEquals(DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "let-in-composite").text(), refused.getMessage());
+        }
+    }
+
+    /** WV-1.5-let-in-composite-quantifier-fold-*: the same in the filter and in the matrix of a quantifier fold, the
+     *  rules 0, 1 and 2 of the golden {@code jutterswet-grens-per-jutter} with the property; its rule 3 reads the binder
+     *  in the filter of a count and holds a fold over a set, which is this backend's own slug. */
+    @Test void a_let_read_in_a_quantifier_fold_is_named() throws Exception {
+        for (int rule : List.of(0, 1, 2)) assertEquals("let-in-composite", first(grens(rule)), "rule " + rule);
+        assertEquals("set-fold", first(grens(3)));
+    }
+
+    /** WV-1.5-let-in-composite-not-*: a Let whose binder is read in a first member only, outside every condition, under
+     *  an inner Let of the same name, or inside the later member that holds the Let, is not named: the document holds
+     *  the IfThenElse this backend does not carry, or no form it does not carry. */
+    @Test void a_let_read_elsewhere_is_not_named() throws Exception {
+        String toeslag = greater(binder("toeslag"), "5"), gewicht = greater(attribute("gewicht"), "10"),
+                schade = greater(attribute("schade"), "1");
+        Map<String, String> bodies = new LinkedHashMap<>();
+        bodies.put("first-member", choice(any(toeslag, gewicht), literal("10"), literal("0")));
+        bodies.put("first-of-a-first", choice(all(any(toeslag, gewicht), schade), literal("10"), literal("0")));
+        bodies.put("outside-a-condition", choice(all(gewicht, schade), literal("7"), binder("toeslag")));
+        bodies.put("shadowed", choice(all(gewicht, greater(let("toeslag", attribute("schade"), binder("toeslag")), "1")),
+                literal("7"), binder("toeslag")));
+        for (Map.Entry<String, String> e : bodies.entrySet())
+            assertEquals("if-then-else", first(uitkering(e.getValue())), e.getKey());
+        assertEquals(null, first(beloond(all(gewicht,
+                greater(let("toeslag", attribute("vindloon"), plus(binder("toeslag"), literal("1"))), "5")))));
+    }
+
+    /** The slug {@link UncarriedForms} names for {@code ir}, null where it names none. */
+    private static String first(ObjectNode ir) {
+        IrLoader.Loaded loaded = IrLoader.loadWithPositions(ir).loaded();
+        return UncarriedForms.first(loaded.model(), loaded.prioritizedDefaults(), false);
+    }
+
+    /** The golden jutterswet-grens-per-jutter with the property and only its rule {@code n}. */
+    private static ObjectNode grens(int n) throws Exception {
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(
+                Path.of("..", "..", "corpus", "golden", "jutterswet-grens-per-jutter", "ir.json")));
+        ir.put("inferFromEmpty", false);
+        ObjectNode rules = (ObjectNode) ir.get("rules");
+        rules.set("rules", JSON.createArrayNode().add(rules.get("rules").get(n)));
+        return ir;
+    }
+
+    /** "De uitkering van een Vondst is, daarbij geldt: de toeslag is zijn vindloon, {@code body}". */
+    private static ObjectNode uitkering(String body) throws Exception {
+        return document(rule("uitkering", let("toeslag", attribute("vindloon"), body), null, ",\"presentation\":\"calculation\""));
+    }
+
+    /** "Een Vondst is beloond indien {@code condition}". */
+    private static ObjectNode beloond(String condition) throws Exception {
+        return document(rule("beloond", "{\"node\":\"Literal\",\"value\":{\"boolean\":true},\"type\":{\"node\":\"Boolean\"}}",
+                condition, ""));
+    }
+
+    private static final String NUMBER = "{\"node\":\"Number\",\"whole\":true,\"decimals\":0,\"sign\":\"unspecified\"}";
+
+    /** A document with the property, a Vondst and {@code rule} beside the vindloon of ch. 1.5. */
+    private static ObjectNode document(String rule) throws Exception {
+        StringBuilder attributes = new StringBuilder();
+        for (String a : List.of("taxatie", "vindloon", "gewicht", "schade", "uitkering"))
+            attributes.append(attributes.isEmpty() ? "" : ",")
+                    .append("{\"node\":\"Attribute\",\"name\":\"" + a + "\",\"datatype\":" + NUMBER + "}");
+        return (ObjectNode) JSON.readTree("{\"format\":\"uchar-ir-v1\",\"inferFromEmpty\":false,\"model\":{\"objectTypes\":["
+                + "{\"node\":\"ObjectType\",\"name\":\"Vondst\",\"animate\":false,\"plural\":\"Vondsten\",\"attributes\":[" + attributes
+                + "],\"characteristics\":[{\"node\":\"Characteristic\",\"name\":\"beloond\",\"kind\":\"adjectival\"}]}],"
+                + "\"factTypes\":[],\"parameters\":[],\"domains\":[],\"unitSystems\":[],\"dimensions\":[],\"timelines\":[],"
+                + "\"dayKinds\":[]},\"rules\":{\"rules\":["
+                + rule("vindloon", literal("10"), greater(attribute("taxatie"), "1000"), ",\"presentation\":\"calculation\"") + "," + rule
+                + "],\"dayKindDefinitions\":[],\"objectCreations\":[],\"allocations\":[],\"consistencies\":[],\"uniquenesses\":[],"
+                + "\"factCreations\":[],\"startPointDeterminations\":[],\"ruleGroups\":[]},\"diagnostics\":[]}");
+    }
+
+    private static String rule(String member, String value, String condition, String presentation) {
+        return "{\"node\":\"Rule\",\"name\":\"" + member + "\",\"versions\":[{\"validity\":{\"node\":\"Validity\"},\"target\":"
+                + attribute(member) + ",\"value\":" + value + (condition == null ? "" : ",\"condition\":" + condition)
+                + ",\"initialisation\":false" + presentation + "}]}";
+    }
+
+    private static String attribute(String name) {
+        return "{\"node\":\"AttributeReference\",\"attribute\":\"" + name + "\",\"subjectType\":\"Vondst\"}";
+    }
+
+    private static String literal(String number) {
+        return "{\"node\":\"Literal\",\"value\":{\"number\":\"" + number + "\"},\"type\":" + NUMBER + "}";
+    }
+
+    private static String binder(String name) {
+        return "{\"node\":\"BinderRef\",\"name\":\"" + name + "\"}";
+    }
+
+    private static String plus(String left, String right) {
+        return "{\"node\":\"Binary\",\"op\":\"plus\",\"left\":" + left + ",\"right\":" + right + ",\"type\":" + NUMBER + "}";
+    }
+
+    private static String let(String binder, String value, String body) {
+        return "{\"node\":\"Let\",\"type\":" + NUMBER + ",\"binder\":\"" + binder + "\",\"value\":" + value + ",\"body\":" + body + "}";
+    }
+
+    private static String choice(String condition, String then, String otherwise) {
+        return "{\"node\":\"IfThenElse\",\"type\":" + NUMBER + ",\"condition\":" + condition + ",\"then\":" + then + ",\"else\":"
+                + otherwise + "}";
+    }
+
+    private static String greater(String left, String number) {
+        return "{\"node\":\"Comparison\",\"op\":\"greater\",\"left\":" + left + ",\"right\":" + literal(number) + "}";
+    }
+
+    private static String all(String... parts) {
+        return "{\"node\":\"Compound\",\"quantifier\":\"all\",\"threshold\":0,\"parts\":[" + String.join(",", parts) + "]}";
+    }
+
+    private static String any(String... parts) {
+        return "{\"node\":\"Compound\",\"quantifier\":\"atLeast\",\"threshold\":1,\"parts\":[" + String.join(",", parts) + "]}";
     }
 
     @Test void without_the_property_the_document_builds_and_plays_on_both_branches(@TempDir Path dir)

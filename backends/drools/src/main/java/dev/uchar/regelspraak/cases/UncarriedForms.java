@@ -13,8 +13,10 @@ import dev.uchar.regelspraak.ir.ResolvedRuleGroup;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.transpiler.core.Namen;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -40,21 +42,21 @@ final class UncarriedForms {
             "allocation", "creation-cycle", "uniqueness", "start-point", "day-kind", "function-def", "timeline-member",
             "dimension-cell", "dimension-fold", "time-proportional-part", "temporal-total", "builtin-filter",
             "variable-reference", "unresolved", "temporal-read", "match", "record", "list-family", "invoke",
-            "whole-period", "time-window", "rule-status-check",
+            "whole-period", "time-window", "rule-status-check", "let-in-composite",
             // what ch. 1.5 defines and this backend does not carry yet
             "defaults-group", "quantifier-fold", "set-fold", "if-then-else", "object-creation", "fact-creation",
             // the build with readings
             "reading");
 
     /** The number of slugs of the table of ch. 1.5 at the head of {@link #SLUGS}. */
-    static final int TABLE = 22;
+    static final int TABLE = 23;
 
     /** The first slug of {@link #SLUGS} whose form {@code model} holds, with its defaults groups {@code defaults}, or
      *  {@code reading} where it holds none and {@code readings} asks a build with readings; null where it holds none
      *  and is built without readings. */
     static String first(RegelSpraakModel model, List<PrioritizedDefaults> defaults, boolean readings) {
         Set<String> found = new HashSet<>();
-        Walk w = new Walk(found);
+        Walk w = new Walk(found, Map.of());
         if (!model.allocations.isEmpty()) found.add("allocation");
         Set<String> recursive = new HashSet<>();
         for (ResolvedRuleGroup g : model.ruleGroups)
@@ -98,8 +100,25 @@ final class UncarriedForms {
         return Namen.norm(RegelSpraakModel.formName(name));
     }
 
-    /** The walk over the conditions and expressions of a document that notes the slugs of the forms it meets. */
-    private record Walk(Set<String> found) {
+    /** The walk over the conditions and expressions of a document that notes the slugs of the forms it meets.
+     *  {@code lets} holds the binders of the Lets around, each with whether the place is, within the body of its Let, in
+     *  a member of a composite other than its first or in the filter or the matrix of a quantifier fold: a read there is
+     *  {@code let-in-composite}. */
+    private record Walk(Set<String> found, Map<String, Boolean> lets) {
+
+        /** The walk in the body of a Let, whose binder takes the place of an outer one of the same name. */
+        private Walk binding(String binder) {
+            Map<String, Boolean> inner = new HashMap<>(lets);
+            inner.put(Namen.norm(binder), false);
+            return new Walk(found, inner);
+        }
+
+        /** The walk in a later member of a composite, or in the filter or the matrix of a quantifier fold. */
+        private Walk past() {
+            Map<String, Boolean> inner = new HashMap<>(lets);
+            inner.replaceAll((binder, late) -> true);
+            return new Walk(found, inner);
+        }
 
         void defaultOf(Default d) {
             condition(d.condition());
@@ -113,7 +132,9 @@ final class UncarriedForms {
                 case null -> { }
                 case Expr.Literal x -> { }
                 case Expr.ParameterRef x -> { }
-                case Expr.BinderRef x -> { }
+                case Expr.BinderRef x -> {
+                    if (lets.getOrDefault(Namen.norm(x.name()), false)) found.add("let-in-composite");
+                }
                 case Expr.AttributeReference x -> { }
                 // the bound day of a day-kind definition; any other constant is a value of the session
                 case Expr.Constant c -> {
@@ -137,7 +158,7 @@ final class UncarriedForms {
                 case Expr.PayloadAccess p -> expr(p.base());
                 case Expr.Let l -> {
                     expr(l.value());
-                    expr(l.body());
+                    binding(l.binder()).expr(l.body());
                 }
                 case Expr.FunctionCall f -> function(f);
                 case Expr.InstanceSetUnion u -> {
@@ -197,12 +218,13 @@ final class UncarriedForms {
                 case Condition.FarRoleMembership r -> { }
                 case Condition.IdentityCheck i -> { }
                 case Condition.Compound s -> {
-                    for (Condition m : s.components()) condition(m);
+                    for (int i = 0; i < s.components().size(); i++)
+                        (i == 0 ? this : past()).condition(s.components().get(i));
                 }
                 case Condition.QuantifierFold q -> {
                     found.add("quantifier-fold");
-                    condition(q.filter());
-                    condition(q.test());
+                    past().condition(q.filter());
+                    past().condition(q.test());
                 }
                 case Condition.TimeWindow t -> found.add("time-window");
                 case Condition.RuleStatusCheck r -> found.add("rule-status-check");
