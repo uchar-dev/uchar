@@ -153,8 +153,10 @@ a source is newer than the jar. After the build step no gate builds and no two g
 source changes during the run and no other gate, build or `make gates` runs in the same checkout. The step
 `after-run` checks the first condition: the three builds run again and must be fresh, and none of their products may
 be newer than the end of the build step. A red build, red gate, red `after-run` or missing line exits non-zero.
-Replays run through `scripts/lib/parallel.sh` (one process per two cores, in gate 6 one per core; with its replay flags
-on JVMs) and are judged in corpus order; no gate takes arguments.
+Replays run through `scripts/lib/parallel.sh` (one process per two cores, in gate 6 one per core) and are judged in
+corpus order; those of the Drools backend (gates 8, 12, 13, 17) run in batches of at most 50 to a JVM, with its replay
+flags, and a JVM that ends before each of its replays has left its exit code makes the gate red with the replay it ran;
+no gate takes arguments.
 
 Throughout: "stale-failing" means a list fails on an entry that no longer applies, in both directions where said;
 "reason-carrying" means every entry carries its reason; an empty input set is a failure, never a silent green.
@@ -246,7 +248,8 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
    The Drools leg reads the same from its status line `FAULT EF-### {…}: …` for every case not in its exclusion list,
    whose `EXCLUDE` entry (`name|EXCLUDE DROOLS-###  <reason>`) pins the register code of the refusal, compared with
    the head of the status line by case name with both codes; a `NOFAULT` entry carries none; every entry carries its
-   reason, and the leg needs java and fails without it. `Unresolved` reached in
+   reason, and the leg needs java and fails without it; it replays its cases in batches (`DroolsBackendMain --batch`, a
+   task `--red`), and one case alone is `DroolsRedMain`. `Unresolved` reached in
    evaluation faults with EF-019 (WF-044). An executor that fails a case for a reason of its own stands in the
    divergence list `<case>|<executor>|<CODE>|<CATEGORY> <reason>`, with its `REF-###` or `CLINGO-###` code and the
    category of that code's kind (`REFUSAL`, `LIMIT`); stale-failing in both directions. `scripts/check-exec-codes.sh`,
@@ -316,7 +319,9 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     stale-failing. `EXPECTED_PLAYED` is an equality and catches a newly arrived player. The DRL-text branch is the
     second rendering of the same analysis (a plan per rule, rendered as PatternDSL and as DRL text); per golden its
     status line must equal the exec-model branch's verbatim, with no list or pin of its own, any other line failing
-    by name. The replay runs in two passes, exec-model then DRL text, the second only after the first is green. The
+    by name. The replay runs in two passes, exec-model then DRL text, the second only after the first is green, each in
+    batches (`DroolsBackendMain --batch`), after the self-test of `scripts/lib/parallel.sh`, whose rows hold that no task
+    of a batch is missed. The
     jar is taken fresh or rebuilt (`scripts/lib/drools-jar.sh`), and the backend's JUnit suite runs with
     `mvn -o test` on the same `target/` and must pass with a non-zero, zero-skip count (maintainer decisions
     2026-08-30 and 2026-10-25); surefire runs it in `forkCount` 0.5C JVMs with `reuseForks`
@@ -362,7 +367,8 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     is; a difference is assigned to a field by replaying the differing executor on a copy per field, and the report
     names the fields that move it alone. In those four legs
     the four executors must reproduce the untouched outcome, with no survivor list. The legs run as five
-    processes, the presentation leg's calls through `scripts/lib/parallel.sh`; a Drools run on an untouched golden
+    processes; their replays in the backend run in batches, the untouched documents and the copies, and the two branches,
+    in JVMs of their own, the other calls of the presentation leg through `scripts/lib/parallel.sh`; a Drools run on an untouched golden
     that ends in no status line (`PLAYED`, `FAIL`, `EXCLUDE`, `ERROR`) fails by golden, leg and executor. Floors:
     `EXPECTED_MIN_TWISTS`,
     `EXPECTED_MIN_VOCABULARY_GOLDENS`, `EXPECTED_MIN_VOCABULARY_STRIPPED`, `EXPECTED_MIN_VOCABULARY_ROTATED`,
@@ -422,7 +428,8 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     characteristic that holds; every link; the §9.5 facts — is compared line for line, verbatim; a difference fails
     unless `STATE_DEVIATIONS` names case and branch. The five lists are reason-carrying and stale-failing in both
     directions, and the comparison rule, the tripwire, the object reader, the displaced counter, the end-state
-    comparison and its counter pass rows of their own. Traces run on one process per core. Floors:
+    comparison and its counter pass rows of their own. Traces run on one process per core, the readings
+    and the replays of the backend in batches. Floors:
     `EXPECTED_MIN_TRACED_CASES`, `EXPECTED_MIN_COMPARED_GOLDENS`, `EXPECTED_MIN_COMPARED_CASES`,
     `EXPECTED_MIN_READINGS`, `EXPECTED_MIN_NODE_LINES`, `EXPECTED_MIN_UNREACHED`, `EXPECTED_MIN_CONTRIBUTOR_LINES`,
     `EXPECTED_MIN_TIMELINE_LINES`, `EXPECTED_MIN_UNREACHED_CONTRIBUTORS`, `EXPECTED_MIN_OBJECT_LINES`,
