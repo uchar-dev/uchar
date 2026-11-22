@@ -367,9 +367,10 @@ operatorvolgorde rust, en twee kleine vereenvoudigingen. De kaart blijft in `doi
 
 ### Wat er is
 
-Commits op `card/open-values-in-drools`: `24c48ea31` (de strikte tekst), `2f9b9d38e` (de stapel), `783036b80` (gate 12),
-`1352e2476` (gate 8), `52918633a` (gate 17), `2188683a6` (een update langs een pad), `8a56e11f2` (drie notities van het
-corpus), `bd4ec620b` (wie besliste, onder een open initialisatie).
+Commits op `card/open-values-in-drools`: `620ab3cf9` (de strikte tekst), `522130475` (de stapel), `a3e262584` (gate 12),
+`b70d1aa4e` (gate 8), `6a288667e` (gate 17), `6f7f5599f` (een update langs een pad), `ff9a739e8` (drie notities van het
+corpus), `b5e232e9b` (wie besliste, onder een open initialisatie), `d62e78065` (ref en ch. 1.5: elke initialisatie van een
+stapel sluit) en `6c0246149` (Drools volgt dat).
 
 - **De strikte tekst vangt zelf niets.** Elke grens van de lezing is één functie die haar deel als lambda krijgt:
   `Composite.read`, `ComputeHelpers.emptyTestOverOpen`, `dividedLazily` (en `dividedAbsLazily`), `judge`, `holdsForItself`,
@@ -381,9 +382,13 @@ corpus), `bd4ec620b` (wie besliste, onder een open initialisatie).
   hij beslist en wat hij invoegt waar hij open is (`LeavesOpen`). `Consequence.Value` heeft geen veld `open` meer; de elf
   planregels van deel 1 hebben weer hun oude tekst, op één (`ConditionDeposit`) na.
 - **De stapel.** Een open default is in de eenvoudige vorm een `Decides` met `open` naast de `LeftOpen` van het doel, in de
-  algemene vorm een `Outcome` van de soort `OPEN`. De linkerkant van een lagere default is die van elke stapel. Alleen de
-  initialisatie vraagt naar wat niet open staat. De verzoening "eens" staat onder `not` over een open lid; één regel erbij
+  algemene vorm een `Outcome` van de soort `OPEN`. De linkerkant van een lagere default is die van elke stapel. Alleen een
+  initialisatie vraagt naar wat niet open staat (`closesOverOpen`), ook een tweede in één stapel. De verzoening "eens" staat onder `not` over een open lid; één regel erbij
   (`reconcile-open`) maakt de default, of aan de wortel het doel, open. Een stapel zonder openable lezing houdt zijn regels.
+- **Twee initialisaties in één stapel** (ch. 7.10, blok 4). `closing` in `ref/lib/eval.ml` stopte bij de eerste initialisatie
+  die niet besliste; nu gaat zij verder, en de lezing aan het fixpunt (`ref/lib/reading.ml`, dezelfde wandeling, buiten de
+  genoemde bestanden van het mandaat) met haar. Ch. 1.5 heeft het voorbeeld `WV-1.5-stack-two-initialisations`. Waar de default
+  en de geërfde initialisatie allebei open zijn, beslist de eigen: niets erboven beslist. In Drools verviel de extra wacht.
 - **Een update langs een pad** (open punt 1 van deel 1): `fire` geeft elke bean van de invoer die langs verwijzingen bij een
   bijgewerkte bean uitkomt een update (`Watch.reachingUpdated`). De regels en hun tekst veranderen niet.
 
@@ -425,7 +430,8 @@ De DRL-tekst van elke golden en elk rood document op `977b89a24` naast die van n
 
 Elke golden, elke getuige van ref en elk document van `open-values/` met de eigenschap erbij, elke case als zij is en met elke
 gegeven invoer weggelaten (hoogstens 60 per document): **234 documenten, 5632 runs op de twee weergaven, 4826 met een open
-lid: 0 verschillen met de eindstand van ref**. Behoud: 168 goldens spelen met de eigenschap en elk invoerlid volledig hun
+lid: 0 verschillen met de eindstand van ref** (`stack-two-initialisations` na de wijziging in ref opnieuw: 26 runs, 0
+verschillen). Behoud: 168 goldens spelen met de eigenschap en elk invoerlid volledig hun
 eigen cases op beide weergaven (de twee goldens die de eigenschap zelf dragen, verwachten een open lid en tellen niet mee).
 
 ### De stapel per vorm
@@ -449,14 +455,18 @@ per groep gevraagd te worden, en de verzoening vraagt het over alle groepen. Gee
 
 - **De getuigen van ref**: van de 34 spelen er 27 op beide weergaven (120 cases per weergave), 7 weigeren met hun slug:
   `set-fold` vijf, `object-creation` en `quantifier-fold` elk één. De acht met een stapel spelen nu.
-- **De voorbeelden van ch. 1.5** (`OpenValuesWitnessTest`, 31 tests): 15 documenten `stack-*` uit de Jutterswet, 60 cases die
-  ook in ref spelen: `WV-1.5-stack-first-decides`, `-gives-way`, `-settled-leeg`, `-initialisation`, `-opgave`,
+- **De voorbeelden van ch. 1.5** (`OpenValuesWitnessTest`, 31 tests): 15 documenten `stack-*` uit de Jutterswet, 63 cases die
+  ook in ref spelen: `WV-1.5-stack-first-decides`, `-gives-way`, `-settled-leeg`, `-initialisation`, `-two-initialisations`, `-opgave`,
   `-characteristic`, `-exception-groups`, `-unordered`, `-type-chain`; het deponeren van een default, een groep buiten haar
   venster, een wijziging van de bean tussen twee keer vuren en wie besliste (`decisionsOf`). Vier documenten zijn dat van de
   frontend met een initialisatiedefault erbij, die het dialect alleen naast een opgave schrijft.
-- **Rood eerst**: op `24c48ea31` weigert elk document `stack-*` met DROOLS-370 en `form: defaults-group`. De getuige van de
-  update langs een pad (`TmsRepeatedFireWitnessTest`) geeft op `52918633a` na de wijziging 120 in plaats van 150, op beide
+- **Rood eerst**: op `620ab3cf9` weigert elk document `stack-*` met DROOLS-370 en `form: defaults-group`. De getuige van de
+  update langs een pad (`TmsRepeatedFireWitnessTest`) geeft op `6a288667e` na de wijziging 120 in plaats van 150, op beide
   weergaven en over één en twee links.
+  In ref (`test_ref.ml`) faalden op de code ervoor drie rijen: de eigen initialisatie onder een open default met een geërfde
+  die voorrang geeft (open in plaats van 5), onder een open default en een open geërfde (open in plaats van 5), en hun lezing
+  aan het fixpunt (`DISPLACED` in plaats van `HOLDS`). In Drools faalden op de jar ervoor de twee eerste in
+  `stack-two-initialisations`.
 - **Geen test verzwakt.** Aangepast: de tests die routes, termen en functies van het plan opsommen; de weigertest neemt
   `set-fold` als document (de golden die zij had, speelt); acht corpustests slaan in hun deel met lezingen een document met de
   eigenschap over (`TmsDocuments.hasReadings`), tot deel 3 de lezingen draagt.
@@ -471,7 +481,7 @@ per groep gevraagd te worden, en de verzoening vraagt het over alle groepen. Gee
    dezelfde opmaak.
 5. **Gate 17 krijgt een lijst `READINGS_REFUSED`** (golden, code, reden): een golden die speelt en waarvan de lezingen geweigerd
    worden. Zij faalt zodra de golden gelezen wordt of niet meer speelt; deel 3 maakt haar leeg.
-6. **De tweede initialisatie volgt ref** (open punt 1).
+6. **Ch. 1.5 heeft er een zin bij** die twee initialisaties noemt, met het voorbeeld; de regel zelf stond er.
 7. **De rol `reconcile-open`** (`RuleOrigin.Role`) is nieuw en komt alleen in een document met de eigenschap voor.
 
 ### Voorstellen voor beschermde teksten
@@ -485,28 +495,26 @@ per groep gevraagd te worden, en de verzoening vraagt het over alle groepen. Gee
 
 ### Open punten
 
-1. **Ref tegenover ch. 1.5, twee initialisaties in één stapel** (ch. 7.10, blok 4: de geërfde boven de eigen). Kleinste
-   document: op een Wrakvondst een default "0 indien betwist" en de eigen initialisatie "op 5", op Vondst de
-   initialisatieregel "2 maal zijn gewicht indien zijn gewicht groter is dan 10". Bij gewicht 5 zonder betwist (de default
-   open, de geërfde initialisatie geeft voorrang) maakt ref het bergloon open; ch. 1.5 zegt "it decides where nothing above it
-   decides, also where a default above it is open", dus 5. Waar de geërfde initialisatie open is en de default voorrang
-   geeft, geeft ref 5. Oorzaak: `closing` in `ref/lib/eval.ml` stopt bij de eerste initialisatie die niet beslist. De backend
-   volgt ref (`notAbove`, de lus over een initialisatie erboven); volgt ref de zin, dan vervalt die lus. De golden en de
-   frontend kennen de vorm niet; de getuige `stack-two-initialisations` neemt de drie cases waarin beide lezingen gelijk zijn.
-2. `frontends/regelspraak/grammar/DIVERGENCES.md` r. 4983 zegt dat een executor die een vorm niet draagt het document weigert;
+1. `frontends/regelspraak/grammar/DIVERGENCES.md` r. 4983 zegt dat een executor die een vorm niet draagt het document weigert;
    dat klopt, en noemt Drools niet meer bij naam.
-3. `Reads.readingRulePlan` geeft een leesregel de slots die zijn linkerkant bindt; het slot van `open_invoer` bindt niets en
+2. `Reads.readingRulePlan` geeft een leesregel de slots die zijn linkerkant bindt; het slot van `open_invoer` bindt niets en
    hoort er in deel 3 bij.
-4. De distributie ziet bij haar pin: `insert` zet de global `open_invoer` (een consument die zelf beans invoegt, krijgt een
+3. De distributie ziet bij haar pin: `insert` zet de global `open_invoer` (een consument die zelf beans invoegt, krijgt een
    `IllegalStateException` bij de eerste lege invoer), `fire` geeft beans een update vóór het vuren, en de rol
    `reconcile-open`.
+4. De ASP-encoding (`backends/clingo`): de norm voor twee initialisaties staat nu in ch. 1.5 en het voorbeeld in de suite van
+   ref.
 
 ### Gates
 
-Elk los gedraaid; 8, 12 en 13 op `2188683a6`, waarna alleen de lezing van de besluiten en tests veranderden; de andere op
-`bd4ec620b`.
+Elk los gedraaid, vóór de rebase op `0c27516df`: 8, 12 en 13 op wat nu `6f7f5599f` is, waarna alleen de lezing van de
+besluiten, tests en de wacht van een tweede initialisatie veranderden; 1, 10 en 15 op wat nu `b5e232e9b` is. Gate 5, gate 17 en
+de suite van ref op `6c0246149`. De DRL-tekst van de 170 gedragen goldens, gewoon, strikt en volledig, is vóór en na `6c0246149`
+byte-gelijk.
 
 - 1 `check-self-contained: PASS`
+- 5 `check-oracle: PASS (ref suite 4239 worked examples …; 1211 cases replayed exactly …; preservation with complete knowledge:
+  279 goldens and 782 cases play …)`
 - 8 `check-red: PASS (102 red cases fault observably in ref and clingo …)`; Drools leg 83 fault-pinned (was 82), 19
   not-carried (was 20), 19 EXCLUDE met hun code
 - 10 `check-rgs-codes: PASS — 414 codes, 447 sites …`
@@ -517,5 +525,5 @@ Elk los gedraaid; 8, 12 en 13 op `2188683a6`, waarna alleen de lezing van de bes
 - 17 `check-readings: PASS (ref traced 1211 golden case files … on both branches 385 goldens and 1073 case files compared, 8468
   readings, 27262 node lines …)`, 2 goldens DROOLS-370 (`READINGS_REFUSED`)
 
-De JUnit-suite op `bd4ec620b`: 2021 tests, geen overgeslagen (was 2009). Geen floor veranderde; `EXPECTED_PLAYED` ging van 384
+De JUnit-suite op `6c0246149`: 2024 tests, geen overgeslagen (2009 na deel 1, twaalf van dit deel, drie met `main`). Geen floor veranderde; `EXPECTED_PLAYED` ging van 384
 naar 386 en twee `EXCLUDE`-regels van gate 12 en één van gate 8 vervielen.
