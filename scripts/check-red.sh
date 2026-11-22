@@ -286,7 +286,8 @@ find corpus/red -name 'case*.json' 2>/dev/null | sort > "$list"
 # (`PARAMS EF-### a,b`), written by the table block below; the loop needs it first, so the table is parsed here and
 # the strict row checks stay with the block below
 params_file=$(mktemp) || exit 2
-trap 'rm -f "$list" "$cmp" "$pairs" "$params_file"' EXIT
+replays=''   # the directory of the Drools leg's replays
+trap 'rm -f "$list" "$cmp" "$pairs" "$params_file"; rm -rf ${replays:+"$replays"}' EXIT
 python3 -I - spec/RUNTIME-SEMANTICS.md > "$params_file" <<'PYEOF'
 import re, sys
 for line in open(sys.argv[1], encoding="utf-8").read().split("\n"):
@@ -597,7 +598,6 @@ else
         # against a future edit that forgets to — belt and braces, never the primary reporter
         [ $legfail -eq 1 ] || { echo 'check-red: FAIL — Drools leg: no shaded jar and no verdict printed (script defect)' >&2; status=1; }
     else
-        MAIN=dev.uchar.regelspraak.cases.DroolsRedMain
         excl=$(mktemp) || exit 2
         # <red-case-dir>|<reason the v0 Drools backend does not fault-pin this red form>
         cat > "$excl" <<'EOF'
@@ -647,20 +647,36 @@ PYEOF
         then
             status=1
         fi
+        # The replays, collected and then judged (scripts/lib/parallel.sh): every case in batches of one JVM each, on
+        # one process per two cores, the task keyed by the case's place in the list. A JVM that ends before all its
+        # cases are replayed fails the gate with the case it replayed; a case alone is replayed with
+        # `java -cp <the jar> dev.uchar.regelspraak.cases.DroolsRedMain <ir> <case>`.
+        . scripts/lib/parallel.sh
+        replays=$(mktemp -d) || exit 2
+        place=0
+        while IFS= read -r case; do
+            place=$((place + 1))
+            parallel_batch_task "$replays" "$place" --red "$(dirname "$case")/ir.json" "$case"
+        done < "$list"
+        if ! jvms=$(parallel_jobs 2) || ! parallel_batch "$replays" "$jvms" java $PARALLEL_BATCH_JVM_FLAGS -jar "$JAR" --batch; then
+            echo 'check-red: FAIL — Drools leg: the replays of the red cases failed (the parallel line above says why)' >&2
+            exit 1
+        fi
         d_fault=0
         d_excl=0
         d_excl_codes=0
         d_codes=0
+        place=0
         while IFS= read -r case; do
+            place=$((place + 1))
             name=$(basename "$(dirname "$case")")
-            ir=$(dirname "$case")/ir.json
             reason=$(awk -F'|' -v n="$name" '$1==n {i=index($0,"|"); print substr($0,i+1); exit}' "$excl")
             # DroolsRedMain prints exactly one status line (FAULT|NOFAULT|EXCLUDE|ERROR <detail>) last on
             # stdout; the leg classifies on that STATUS TOKEN, never the bare exit code, so an ERROR (an I/O
             # failure, or a crash while the IR is loaded and the KieBase built) can never be swallowed as a
             # not-carried outcome and a listed reason's category is checked. A crash AFTER the build is a FAULT
             # (head of this leg): a listed case that shows one fails as stale, and a pin may not match it.
-            out=$(java -cp "$JAR" "$MAIN" "$ir" "$case" 2>/dev/null | tail -1)
+            out=$(tail -1 "$replays/$place.out")
             tok=${out%% *}
             if [ -z "$reason" ]; then
                 # a carried case MUST be a FAULT with the pinned code and parameters; any other token

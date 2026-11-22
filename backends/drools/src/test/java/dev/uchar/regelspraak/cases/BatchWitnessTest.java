@@ -38,6 +38,7 @@ class BatchWitnessTest {
 
     // cwd under surefire is the module dir (backends/drools); the corpus is two levels up
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
+    private static final Path RED = Path.of("..", "..", "corpus", "red");
 
     @TempDir Path temp;
     private Path directory;
@@ -66,19 +67,29 @@ class BatchWitnessTest {
         calls.put("usage", List.of("--drl", played.resolve("ir.json").toString()));
         // a path that is none: an exception before the arms of the CLI
         calls.put("no-path", List.of("\0", missed.toString()));
+        for (Path fault : List.of(RED.resolve("clamp-reads-bounds-in-order"), RED.resolve("ambiguous-case-role-key")))
+            calls.put("red." + fault.getFileName(),
+                    List.of("--red", fault.resolve("ir.json").toString(), fault.resolve("case1.json").toString()));
+        calls.put("red.model", List.of("--red", played.resolve("ir.json").toString(), played.resolve("case.json").toString()));
+        calls.put("red.no-file", List.of("--red", temp.resolve("none.json").toString(), missed.toString()));
+        calls.put("red.usage", List.of("--red", missed.toString()));
         List<String> order = new ArrayList<>(calls.keySet());
         for (int turn = 0; turn < 2; turn++) {
             Path files = Files.createDirectory(temp.resolve("turn" + turn));
             Set<Thread> threads = userThreads();
-            Run run = batch(files, order.stream().map(key -> line(key, calls.get(key))).toList(), DroolsBackendMain::run);
+            Run run = batch(files, order.stream().map(key -> line(key, calls.get(key))).toList(), DroolsBackendMain::task);
             assertEquals(0, run.code(), run.err());
             Set<String> tokens = new TreeSet<>();
             for (Map.Entry<String, List<String>> call : calls.entrySet()) {
                 ByteArrayOutputStream alone = new ByteArrayOutputStream();
+                PrintStream out = new PrintStream(alone, true, System.out.charset());
+                List<String> arguments = call.getValue();
+                boolean red = arguments.get(0).equals("--red");
+                if (red) arguments = arguments.subList(1, arguments.size());
                 int code;
                 try {
-                    code = DroolsBackendMain.run(call.getValue().toArray(String[]::new),
-                            new PrintStream(alone, true, System.out.charset()));
+                    code = red ? DroolsRedMain.run(arguments.toArray(String[]::new), out)
+                            : DroolsBackendMain.run(arguments.toArray(String[]::new), out);
                 } catch (InvalidPathException e) {
                     code = 1;
                 }
@@ -89,7 +100,8 @@ class BatchWitnessTest {
                 tokens.add(code + (lines.isEmpty() ? "" : " " + lines.get(lines.size() - 1).split(" ")[0]));
             }
             // every end of a call is among them
-            assertEquals(Set.of("0 PLAYED", "0 READINGS", "1", "1 FAIL", "2 EXCLUDE", "3", "3 ERROR"), tokens);
+            assertEquals(Set.of("0 FAULT", "0 PLAYED", "0 READINGS", "1", "1 FAIL", "1 NOFAULT", "2 EXCLUDE", "3", "3 ERROR"),
+                    tokens);
             Set<Thread> left = userThreads();
             left.removeAll(threads);
             assertEquals(Set.of(), left, "a thread that keeps the JVM alive after the batch");

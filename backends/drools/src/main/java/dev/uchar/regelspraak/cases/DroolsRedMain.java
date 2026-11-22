@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.cases;
 
+import java.io.PrintStream;
 import java.nio.file.Path;
 
 /**
@@ -45,9 +46,14 @@ public final class DroolsRedMain {
     }
 
     public static void main(String[] args) {
+        System.exit(run(args, System.out));
+    }
+
+    /** The CLI without its exit: prints the status line on {@code out} and returns the exit code. */
+    static int run(String[] args, PrintStream out) {
         if (args.length != 2) {
             System.err.println("usage: DroolsRedMain <ir.json> <case.json>");
-            System.exit(3);
+            return 3;
         }
         Path ir = Path.of(args[0]);
         Path c = Path.of(args[1]);
@@ -56,15 +62,15 @@ public final class DroolsRedMain {
             switch (r.status()) {
                 // the fault kind's code at the head of the report, beside the text (RUNTIME-SEMANTICS ch. 5.7b)
                 case "FAULT" -> {
-                    System.out.println("FAULT " + (r.code() == null ? "" : codesWithParams(r) + ": ") + r.detail());
-                    System.exit(0);
+                    out.println("FAULT " + (r.code() == null ? "" : codesWithParams(r) + ": ") + r.detail());
+                    return 0;
                 }
-                case "EXCLUDE" -> { System.out.println("EXCLUDE " + r.droolsCode().id() + ": " + r.detail()); System.exit(2); }
-                default -> { System.out.println("NOFAULT " + r.detail()); System.exit(1); }
+                case "EXCLUDE" -> { out.println("EXCLUDE " + r.droolsCode().id() + ": " + r.detail()); return 2; }
+                default -> { out.println("NOFAULT " + r.detail()); return 1; }
             }
         } catch (RuntimeException e) {
-            System.out.println("ERROR " + e.getClass().getSimpleName() + ": " + e.getMessage());
-            System.exit(3);
+            out.println("ERROR " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            return 3;
         }
     }
 }

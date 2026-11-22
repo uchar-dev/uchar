@@ -41,7 +41,8 @@ import java.util.TreeSet;
  * It compares no expectation: the text is what the trace of the reference interpreter is held to (card
  * ref-trace-and-readings-gate). {@code --readings --drl} reads the DRL-text branch.
  *
- * <p>With {@code --batch <tasks> <directory>} one JVM runs many of these calls, one after the other ({@link #batch}).
+ * <p>With {@code --batch <tasks> <directory>} one JVM runs many of these calls, and of those of {@link DroolsRedMain},
+ * one after the other ({@link #batch}).
  */
 public final class DroolsBackendMain {
     private DroolsBackendMain() {}
@@ -51,7 +52,7 @@ public final class DroolsBackendMain {
 
     public static void main(String[] args) {
         if (args.length > 0 && args[0].equals("--batch")) {
-            if (args.length == 3) System.exit(batch(Path.of(args[1]), Path.of(args[2]), DroolsBackendMain::run, System.err));
+            if (args.length == 3) System.exit(batch(Path.of(args[1]), Path.of(args[2]), DroolsBackendMain::task, System.err));
             System.err.println("usage: DroolsBackendMain --batch <tasks> <directory>");
             System.exit(BATCH_STOPPED);
         }
@@ -93,6 +94,12 @@ public final class DroolsBackendMain {
     /** A call of a CLI without its exit. */
     interface Call {
         int run(String[] args, PrintStream out);
+    }
+
+    /** The call of a task of the batch: one of this CLI or, after {@code --red}, one of {@link DroolsRedMain}. */
+    static int task(String[] args, PrintStream out) {
+        return args[0].equals("--red") ? DroolsRedMain.run(java.util.Arrays.copyOfRange(args, 1, args.length), out)
+                : run(args, out);
     }
 
     /**
@@ -148,8 +155,9 @@ public final class DroolsBackendMain {
             err.println("batch: stopped at the task '" + line + "': " + e);
             return BATCH_STOPPED;
         } catch (Error e) {
-            err.println("batch: the task '" + line + "' ended with an error: " + e);
+            // the sentence last, for who reads the end of the standard error
             e.printStackTrace(err);
+            err.println("batch: the task '" + line + "' ended with an error: " + e);
             return BATCH_STOPPED;
         }
     }

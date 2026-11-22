@@ -47,7 +47,8 @@ isolatie dan nu: een document dat de JVM laat crashen, vastlopen of vollopen, fa
 
 ## May touch
 
-`backends/drools/src/main/java/dev/uchar/regelspraak/cases/DroolsBackendMain.java` en haar tests; `scripts/lib/parallel.sh`, `check-drools.sh`, `check-readings.sh`,
+`backends/drools/src/main/java/dev/uchar/regelspraak/cases/DroolsBackendMain.java` en haar tests; `DroolsRedMain.java` ernaast, alleen haar `main` door een `run` die
+de batch aanroept (gate 8 start die hoofdklasse, niet `DroolsBackendMain`, anders dan deze kaart zei); `scripts/lib/parallel.sh`, `check-drools.sh`, `check-readings.sh`,
 `check-reftype-derivation.sh`, `check-red.sh` (elk in een eigen commit; landt alleen met akkoord van de eigenaar); `CLAUDE.md` als voorstel.
 
 ## Daarna
