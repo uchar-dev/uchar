@@ -71,14 +71,15 @@ volgende bouwdeel). Deze kaart raakt `ref/` en ch. 1.5.
 
 | commit | inhoud |
 |---|---|
-| `41f1df21f` | fout 1: de open stand van een lid staat onder object en lid, het lid met zijn soort (`World.member`: `Attribute`, `Characteristic`, `Relation`); `open_inputs` vraagt de schrijvers per soort; ch. 1.5 "The three states" noemt attribuut en kenmerk van één naam twee leden |
-| `f0b263b66` | fout 2: de grens van een oordeel of waarde (`open_read_boundary`) geeft met de barrière van een `Let` ook de geregistreerde sluiting door; ch. 1.5 "A closure inside a value" |
-| `c089dc027` | de vorm `let-in-composite`: de rij in de tabel van ch. 1.5, de weigering in `refuse_uncarried`, de getuigen; de twee regels en hun voorbeelden uit ch. 1.5, de verwijzingen uit ch. 5.12 |
-| `d8bfceeb2` | ref verkleind: de binding van een `Let` is weer `Later of (unit -> Value.t)`, `judge_cond` vangt bij een voorlopig gelezen lid alleen een fout |
-| `dce71935b` | `written_member`: het lid dat een regel schrijft, op één plaats naar zijn soort |
-| `0c94b54d4` | de berekening van een binder is één waarde met haar eigen grens: elke lezing meldt haar sluiting, en een berekening met een open lezing deponeert niets; ch. 1.5 "A closure inside a value" |
-| `0b32ac9da` | `World.Open_read` draagt het lid met zijn soort; `open_text` zoekt de spelling bij die soort; ch. 5.12 |
-| `e00bf19df` | de drie floors van gate 5, met mandaat van de hoofdsessie voor precies die drie regels |
+| `9dd217a48` | fout 1: de open stand van een lid staat onder object en lid, het lid met zijn soort (`World.member`: `Attribute`, `Characteristic`, `Relation`); `open_inputs` vraagt de schrijvers per soort; ch. 1.5 "The three states" noemt attribuut en kenmerk van één naam twee leden |
+| `6c3e913ee` | fout 2: de grens van een oordeel of waarde (`open_read_boundary`) geeft met de barrière van een `Let` ook de geregistreerde sluiting door; ch. 1.5 "A closure inside a value" |
+| `691c760d8` | de vorm `let-in-composite`: de rij in de tabel van ch. 1.5, de weigering in `refuse_uncarried`, de getuigen; de twee regels en hun voorbeelden uit ch. 1.5, de verwijzingen uit ch. 5.12 |
+| `465ae8024` | ref verkleind: de binding van een `Let` is weer `Later of (unit -> Value.t)`, `judge_cond` vangt bij een voorlopig gelezen lid alleen een fout |
+| `f8c4f94ed` | `written_member`: het lid dat een regel schrijft, op één plaats naar zijn soort |
+| `7d4e7c8f4` | de berekening van een binder is één waarde met haar eigen grens: elke lezing meldt haar sluiting, en een berekening met een open lezing deponeert niets; ch. 1.5 "A closure inside a value" |
+| `1739f19bb` | `World.Open_read` draagt het lid met zijn soort; `open_text` zoekt de spelling bij die soort; ch. 5.12 |
+| `19241c33d` | de drie floors van gate 5, met mandaat van de hoofdsessie voor precies die drie regels |
+| `0a9ef6db0` | de slug in `UncarriedForms` van de Drools-backend, `TABLE` 23, en de vorm in haar wandeling met de grens van ref, met mandaat van de hoofdsessie voor die klasse en `InferFromEmptyRefusalWitnessTest` |
 
 De weigering is een wandeling over het document, zonder evaluatie: per binder van een omsluitende `Let` houdt zij bij of
 de plaats binnen de romp van die `Let` in een later lid van een samenstelling of in een kwantorvouw staat. Een binder met
@@ -122,6 +123,7 @@ Alle in de ref-suite, die gate 5 draait: 4217 voorbeelden (4082 op `main`; floor
 | een afgebroken berekening deponeert niets | `WV-1.5-binder-broken-off-*` | `-open` rood ("0 [uitkering V1 EF-005]", verwacht "0 []") |
 | een open lezing noemt haar lid | `WV-5.12-open-shared-name` | rood (het kenmerk "toeslag" heette "Toeslag") |
 | tabel en code noemen dezelfde vormen | `WV-1.5-uncarried-forms` | groen |
+| Drools noemt de vorm waar ref haar noemt | `InferFromEmptyRefusalWitnessTest`: `the_list_opens_with_the_table_of_the_spec`, `a_let_read_in_a_later_member_of_a_composite_is_named` (zes documenten, en de weigering op beide branches), `a_let_read_in_a_quantifier_fold_is_named` (regels 0, 1 en 2 van de golden; regel 3 is `set-fold`), `a_let_read_elsewhere_is_not_named` (vijf documenten) | de eerste drie rood (22 tegen 23; `if-then-else` en `quantifier-fold` in plaats van `let-in-composite`), de vierde groen |
 
 Twee hulpen van de suite zijn mee: de functie `written` in `WV-1.5-monotone` vraagt de schrijvers per soort lid, en de
 lijst van benoemde sluitingen heeft vier rijen van fout 2 (een volledig gewicht dat weggelaten wordt, en een vouwfilter op
@@ -131,7 +133,7 @@ leeg over een open waarde).
 
 - Norm: de twee regels van ch. 1.5 met hun voorbeelden, 19 regels; in ch. 5.12 de barrière van een voorlopig gelezen lid,
   twee zinsdelen, en haar voorbeeld, 3 regels.
-- Code: `d8bfceeb2` haalt 57 regels uit `ref/lib/eval.ml` en zet er 22 voor terug.
+- Code: `465ae8024` haalt 57 regels uit `ref/lib/eval.ml` en zet er 22 voor terug.
 - Getuigen: `WV-1.5-past-undetermined-barrier` (4 voorbeelden) en `WV-1.5-past-undetermined-binder` (12), omdat hun
   documenten de vorm hebben en nu geweigerd worden; `WV-5.12-open-past-undetermined (barrier)` (1), om dezelfde reden;
   met hen de 23 rijen van `WV-1.5-monotone` en `WV-1.5-preserved` over hun situaties. Zij zijn vervangen door
@@ -139,12 +141,14 @@ leeg over een open waarde).
 
 ### Gates
 
-- Gate 1, 3, 5, 7 en 14 op `e00bf19df`: PASS. Gate 3: 510 golden clean, 657 negative rejected. Gate 5: suite 4217, 1211
+- Gate 1, 3, 5, 7 en 14, op de inhoud van `19241c33d` vóór de rebase op `977b89a24`: PASS. Gate 3: 510 golden clean, 657 negative rejected. Gate 5: suite 4217, 1211
   cases replayed exactly, 279 goldens en 782 cases behouden, 152 goldens geweigerd per vorm (`let-in-composite` 1), 2226
   monotonie-runs, 401 met een sluiting apart. Gate 7: 1169 cases, 42 survivors. Gate 14: 164 checks, 3 goldens.
-- Gate 6 op `dce71935b`: PASS (backend suite 3231 checks, 1169 cases ref = clingo, 12 goldens in het weigerkanaal).
-- Gate 8 op `d8bfceeb2`, met een PATH zonder `mvn`: het ref- en het clingo-been en `check-exec-codes` zonder een rode
+- Gate 6, op de inhoud van `f8c4f94ed`: PASS (backend suite 3231 checks, 1169 cases ref = clingo, 12 goldens in het weigerkanaal).
+- Gate 8, op de inhoud van `465ae8024`, met een PATH zonder `mvn`: het ref- en het clingo-been en `check-exec-codes` zonder een rode
   regel; het Drools-been is niet gedraaid, en dat is de ene FAIL-regel van die run.
+- Na de rebase: de ref-suite (4217) en `InferFromEmptyRefusalWitnessTest` (`Tests run: 9, Failures: 0, Errors: 0,
+  Skipped: 0`) groen; de andere tests van de Drools-backend zijn niet gedraaid.
 
 ### Gate 5: waarom drie getallen verschuiven
 
