@@ -17009,7 +17009,7 @@ let rec first_read (e : expr) =
 (* a place of [refuse_uncarried]'s walk: whether it is in the filter of a fold
    or in a quantifier fold, and the binders of the Lets around it. Of a binder:
    whether its Let is in one itself, and the form a read of it at this place is,
-   if it is one: in a member of a composite other than its first or in a
+   if it is one: in a member of a composite with more than one or in a
    quantifier fold, within the body of its Let, and in the filter of a fold
    within the body of a Let that is in one itself *)
 type let_around = { in_member : bool; read_is : string option }
@@ -17045,7 +17045,7 @@ let refuse_uncarried (doc : document) =
       doc.object_types;
     List.iter (fun (_, (p : parameter)) -> if p.par_granularity <> None then refuse "timeline-member") doc.parameters;
     let module SMap = Uchar_ref.World.SMap in
-    let past p = { p with lets = SMap.map (fun l -> { l with read_is = Some "let-in-composite" }) p.lets } in
+    let beside_others p = { p with lets = SMap.map (fun l -> { l with read_is = Some "let-in-composite" }) p.lets } in
     let filtered p =
       { member = true;
         lets = SMap.map (fun l -> if l.in_member && l.read_is = None then { l with read_is = Some "let-in-filter" } else l) p.lets }
@@ -17111,9 +17111,11 @@ let refuse_uncarried (doc : document) =
       | Predicate { variety = Day_kind_predicate; _ } -> refuse "day-kind"
       | Predicate { operand; _ } -> opt operand
       | Characteristic_check _ | Role_membership _ | Identity_check _ -> ()
-      | Compound { components; _ } -> List.iteri (fun i c -> cond (if i = 0 then p else past p) c) components
+      | Compound { components; _ } ->
+          let p = match components with [ _ ] -> p | _ -> beside_others p in
+          List.iter (cond p) components
       | Quantifier_fold { kv_filter; kv_test; _ } ->
-          List.iter (Option.iter (cond { (past p) with member = true })) [ kv_filter; kv_test ]
+          List.iter (Option.iter (cond { (beside_others p) with member = true })) [ kv_filter; kv_test ]
       | Time_window _ -> refuse "time-window"
       | Rule_status_check _ -> refuse "rule-status-check"
       | Condition_unresolved _ -> refuse "unresolved"

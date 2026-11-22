@@ -20782,9 +20782,9 @@ let () =
   (* WV-1.5-let-in-composite: "de uitkering van een Vondst is, daarbij geldt: g
      is zijn gewicht en de toeslag is zijn vindloon, 10 als ten minste één van
      (alle van): g is groter dan 10, de toeslag is groter dan 5; anders 0" (the
-     condition of a value reads binders, WF-077): a later member reads the
-     toeslag. The body reads g before it as well, and the form of ch. 1.5 is the
-     one named *)
+     condition of a value reads binders, WF-077): the members read g and the
+     toeslag. The body reads g before the toeslag as well, and the form of ch. 1.5
+     is the one named *)
   List.iter
     (fun (name, q, k) ->
       ov_refused ~name
@@ -20801,25 +20801,27 @@ let () =
         "let-in-composite")
     [ ("WV-1.5-let-in-composite (the condition of a choice, at least one)", "atLeast", 1);
       ("WV-1.5-let-in-composite (the condition of a choice, all)", "all", 0) ];
-  (* WV-1.5-closure-of-a-binder-*, WV-1.5-binder-broken-off-*: "… 1 als alle van:
-     t is groter dan 3, DREMPEL is groter dan 5; anders t" and "… anders 0" read
-     the binder in the first member, and the condition of the choice is a
-     composite *)
+  (* a first member that reads the binder alone, beside a member that reads a
+     parameter: "… 1 als alle van: t is groter dan 3, DREMPEL is groter dan 5;
+     anders t", with t a read and with t a division by 0. A composite of that one
+     member is not the form, and the body does not read its binder first, since
+     the condition of the choice is a composite ([first_read]) *)
   List.iter
-    (fun (name, value, otherwise) ->
-      ov_refused ~name
+    (fun (name, value, others, slug) ->
+      ov_refused ~name:("WV-1.5-let-in-composite (" ^ name ^ ")")
         ~ir:
           (ov_doc ~parameters:[ "DREMPEL" ] [ vondst ]
              [ ov_rule ~name:"drempelgewicht" "drempelgewicht"
                  (Some
                     (ov_let "t" value
-                       (ite
-                          (ov_compound "all" 0
-                             [ ov_cmp "greater" (ov_binder "t") (ov_lit "3"); ov_cmp "greater" (ov_param "DREMPEL") (ov_lit "5") ])
-                          (ov_lit "1") otherwise))) ])
-        "let-binder-not-first")
-    [ ("WV-1.5-closure-of-a-binder (the condition of a choice)", ov_attr "gewicht", ov_binder "t");
-      ("WV-1.5-binder-broken-off (the condition of a choice)", ov_bin "plus" (ov_div (ov_attr "gewicht") (ov_lit "0")) (ov_attr "schade"), ov_lit "0") ];
+                       (ite (ov_compound "all" 0 (ov_cmp "greater" (ov_binder "t") (ov_lit "3") :: others)) (ov_lit "1") (ov_binder "t")))) ])
+        slug)
+    (let drempel = [ ov_cmp "greater" (ov_param "DREMPEL") (ov_lit "5") ] in
+     [ ("the first member of the condition of a choice", ov_attr "gewicht", drempel, "let-in-composite");
+       ( "the first member of the condition of a choice, a binder that deposits",
+         ov_bin "plus" (ov_div (ov_attr "gewicht") (ov_lit "0")) (ov_attr "schade"),
+         drempel, "let-in-composite" );
+       ("not: one member as the condition of a choice", ov_attr "gewicht", [], "let-binder-not-first") ]);
   ov_refused ~name:"WV-1.5-uncarried-forms (the table before the own form)"
     ~ir:
       (replace ~tok:{|{"node": "Parameter", "name": "TARIEF", "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}}|}
@@ -21650,10 +21652,10 @@ let ov_medevondsten =
   {|"sourcePath": [{"node": "RoleBinding", "factType": "aanmelding", "role": "aanmeldende jutter"}, {"node": "RoleBinding", "factType": "aanmelding", "role": "vondst"}]|}
 
 (* WV-1.5-let-in-composite: a binder of a Let read in the body in a member of a
-   composite other than its first, at any depth, or in the filter or the test
-   of a quantifier fold is refused by name; without the property each document
-   plays. Over drempel 10 and vondsten of gewicht 20 (schade 3), 5 (schade 3)
-   and 30 (schade 0) *)
+   composite with more than one, at any depth, or in the filter or the test of a
+   quantifier fold is refused by name; without the property each document plays.
+   Over drempel 10 and vondsten of gewicht 20 (schade 3), 5 (schade 3) and 30
+   (schade 0) *)
 let () =
   work @@ fun () ->
   let boven = ov_boven_grens and schade = ov_gt "schade" "1" in
@@ -21676,14 +21678,18 @@ let () =
       let name = "WV-1.5-let-in-composite (" ^ name in
       ov_refused ~name:(name ^ ")") ~ir:(ir filter) "let-in-composite";
       ov_frame ~name:(name ^ ", without the property)") ~ir:(ir ~strict:false filter) ~case_text:(case want) ())
-    [ ("a later member", all [ schade; boven ], "30");
+    [ ("the first member", all [ boven; schade ], "30"); ("the first member, at least one", any [ boven; schade ], "65");
+      ("the first member of a first member", all [ any [ boven; schade ]; schade ], "35");
+      ("one member in a first member", all [ any [ boven ]; schade ], "30");
+      ("the value of a Let in a first member", all [ ov_cmp "greater" of_grens (ov_lit "20"); schade ], "30");
+      ("a later member", all [ schade; boven ], "30");
       ("a later member of a first member", all [ any [ schade; boven ]; schade ], "35");
       ("a first member of a later member", all [ schade; any [ boven; schade ] ], "35");
       ("the value of a Let in a later member", all [ schade; ov_cmp "greater" of_grens (ov_lit "20") ], "30");
       ("the filter of a quantifier fold", medevondsten "none" ~filter:boven (ov_gt "schade" "5"), "65");
       ("the test of a quantifier fold", medevondsten "all" boven, "10") ];
-  (* the first member, at any depth, and a binder of the same name or another
-     bound inside a later member are read as before *)
+  (* an atom and a composite of one member, and a binder of the same name or
+     another bound inside a member are read as before *)
   List.iter
     (fun (name, filter, rows) ->
       List.iter
@@ -21692,12 +21698,12 @@ let () =
             ~name:(Printf.sprintf "WV-1.5-let-in-composite (%s is read, %s)" name row)
             ~ir:(ir filter) ~case_text:(case ~v3 want) ())
         rows)
-    [ ( "the first member", all [ boven; schade ],
-        [ ("given", [ ("gewicht", "30"); ("schade", "0") ], "30"); ("gewicht open", [ ("schade", "0") ], "30");
-          ("schade open", [ ("gewicht", "30") ], "open"); ("a member it leaves out", [ ("gewicht", "8") ], "30") ] );
-      ( "the first member of a first member", all [ any [ boven; schade ]; schade ],
-        [ ("given", [ ("gewicht", "30"); ("schade", "3") ], "65"); ("gewicht open", [ ("schade", "0") ], "35");
-          ("schade open", [ ("gewicht", "30") ], "open") ] );
+    [ ( "an atom", boven,
+        [ ("given", [ ("gewicht", "30") ], "60"); ("gewicht open", [], "open"); ("a member it leaves out", [ ("gewicht", "8") ], "30") ] );
+      ( "one member", all [ boven ],
+        [ ("given", [ ("gewicht", "30") ], "60"); ("gewicht open", [], "open"); ("a member it leaves out", [ ("gewicht", "8") ], "30") ] );
+      ("one member, none", ov_compound "none" 0 [ boven ], [ ("given", [ ("gewicht", "30") ], "15"); ("gewicht open", [], "open") ]);
+      ("one member in one member", any [ all [ boven ] ], [ ("given", [ ("gewicht", "30") ], "60"); ("gewicht open", [], "open") ]);
       ( "a binder of the same name in a later member",
         all [ schade; ov_cmp "greater" (ov_let "grens" (ov_attr "schade") (ov_bin "plus" (ov_binder "grens") (ov_lit "1"))) (ov_lit "3") ],
         [ ("given", [ ("gewicht", "30"); ("schade", "0") ], "35"); ("schade open", [ ("gewicht", "30") ], "open") ] );
@@ -21708,63 +21714,80 @@ let () =
 (* WV-1.5-closure-of-a-binder: a binder whose computation applied a closure
    rests on it at every read. "De grens is de som van het gewicht van zijn
    vondsten waarvan getuigen gevuld is", over a vondst of gewicht 20 with
-   getuigen and one of gewicht 30 without: the filter's first member reads the
-   grens after a closure, so it is undetermined for another form and the second
-   member is read provisionally: what it deposits is dropped, and its fault
-   leaves it undetermined. With the getuigen complete no closure is applied, and
-   the deposit and the fault arise *)
+   getuigen and one of gewicht 30 without: "een Jutter is ruim indien (daarbij
+   geldt …, de grens plus de som van het gewicht van zijn vondsten waarvan het
+   gewicht groter is dan de grens) groter is dan 60" reads 50, after a closure:
+   false for the form itself and undetermined for another, so ruim is open; with
+   the getuigen complete no closure is applied, and it stands not to hold. "…
+   groter is dan 45" holds in both, and the grenstotaal is 50. The same over a
+   binder of the binder, "de maat is de grens plus 1", and over a Let in the value
+   of the Let. The document of ch. 1.5 itself is the fixture let-closure, played
+   below.
+   A member of a composite that reads the grens, where the member beside it
+   deposits (EF-005) or faults (EF-014) over the vondst of gewicht 30 and schade
+   0, is let-in-composite, and so is one that reads the grens as a divisor; without
+   the property the deposit and the fault arise *)
 let () =
   work @@ fun () ->
   let closing = ov_fold ~filter:(ov_test "filled" (ov_attr "getuigen")) "sum" "gewicht" in
-  let quotient = ov_cmp "less" (ov_div (ov_attr "gewicht") (ov_attr "schade")) (ov_lit "3") in
-  let all = ov_compound "all" 0 and any = ov_compound "atLeast" 1 and none = ov_compound "none" 0 in
-  let case ?(v2 = [ ("gewicht", "30"); ("schade", "0") ]) want channel =
-    ov_case
-      (ov_jutter [ ("V1", [ ("gewicht", "20"); ("getuigen", "2"); ("schade", "1"); ("taxatie", "2") ], [], []); ("V2", v2, [], []) ])
-      [ ov_attr_is ~label:"J1" "grenstotaal" want;
-        (if channel then ov_inconsistent ~label:"J1" ~code:"EF-005" "grenstotaal" else ov_consistent) ]
-  in
-  let frame name ?v2 value rows =
-    List.iter
-      (fun (row, complete, want, channel) ->
-        ov_frame
-          ~name:(Printf.sprintf "WV-1.5-closure-of-a-binder (%s, %s)" name row)
-          ~ir:(ov_grens_doc ~complete value) ~case_text:(case ?v2 want channel) ())
-      rows
+  let case ?(v2 = [ ("gewicht", "30"); ("schade", "0") ]) expected =
+    ov_case (ov_jutter [ ("V1", [ ("gewicht", "20"); ("getuigen", "2"); ("schade", "1"); ("taxatie", "2") ], [], []); ("V2", v2, [], []) ])
+      expected
   in
   let direct filter = ov_let "grens" closing (ov_grens_body filter) in
-  frame "a deposit, all" (direct (all [ ov_boven_grens; quotient ]))
-    [ ("the getuigen open", [], "20", false); ("the getuigen complete", [ "getuigen" ], "20", true) ];
-  let under = ov_cmp "less" (ov_attr "gewicht") (ov_binder "grens") in
-  frame "a deposit, at least one" (direct (any [ under; quotient ]))
-    [ ("the getuigen open", [], "20", false); ("the getuigen complete", [ "getuigen" ], "20", true) ];
-  (* a binder computed from the first: "de grens is t plus 1" *)
-  frame "a deposit, a binder of a binder"
-    (ov_let "t" closing (ov_let "grens" (ov_bin "plus" (ov_binder "t") (ov_lit "1")) (ov_grens_body (all [ ov_boven_grens; quotient ]))))
-    [ ("the getuigen open", [], "21", false); ("the getuigen complete", [ "getuigen" ], "21", true) ];
-  frame "a deposit, a Let in the value of a Let"
-    (ov_let "grens" (ov_let "t" closing (ov_bin "plus" (ov_binder "t") (ov_lit "1"))) (ov_grens_body (all [ ov_boven_grens; quotient ])))
-    [ ("the getuigen open", [], "21", false); ("the getuigen complete", [ "getuigen" ], "21", true) ];
-  (* the grens as a divisor that is not reached: the gewicht of the second
-     vondst is settled leeg, so the first member is false for another form as
-     well, and the second member is read *)
-  frame "a read that is not reached" ~v2:[ ("schade", "0"); ("taxatie", "9") ]
+  let of_binder filter = ov_let "t" closing (ov_let "grens" (ov_bin "plus" (ov_binder "t") (ov_lit "1")) (ov_grens_body filter))
+  and in_value filter = ov_let "grens" (ov_let "t" closing (ov_bin "plus" (ov_binder "t") (ov_lit "1"))) (ov_grens_body filter) in
+  let value_is want channel =
+    [ ov_attr_is ~label:"J1" "grenstotaal" want;
+      (if channel then ov_inconsistent ~label:"J1" ~code:"EF-005" "grenstotaal" else ov_consistent) ]
+  in
+  let ruim name value want above =
+    let ir complete limit =
+      ov_doc ~fact_types:[ ov_aanmelding ]
+        [ ov_type "Jutter" [ "grenstotaal" ] [ "ruim" ]; ov_type ~complete "Vondst" [ "gewicht"; "schade"; "getuigen"; "taxatie" ] [] ]
+        [ ov_rule ~ty:"Jutter" ~name:"grenstotaal" "grenstotaal" (Some value);
+          ov_rule ~ty:"Jutter" ~name:"ruim" ~cond:(ov_cmp "greater" value (ov_lit limit)) "ruim" None ]
+    in
+    List.iter
+      (fun (row, complete, limit, state) ->
+        ov_frame
+          ~name:(Printf.sprintf "WV-1.5-closure-of-a-binder (%s, %s)" name row)
+          ~ir:(ir complete limit)
+          ~case_text:(case [ ov_attr_is ~label:"J1" "grenstotaal" want; ov_char_is ~label:"J1" "ruim" state; ov_consistent ])
+          ())
+      [ ("the getuigen open", [], "60", "open"); ("the getuigen complete", [ "getuigen" ], "60", "not");
+        ("the getuigen open, true", [], above, "holds"); ("the getuigen complete, true", [ "getuigen" ], above, "holds") ]
+  in
+  ruim "an atom" (direct ov_boven_grens) "50" "45";
+  ruim "one member" (direct (ov_compound "all" 0 [ ov_boven_grens ])) "50" "45";
+  ruim "a binder of a binder" (of_binder ov_boven_grens) "51" "45";
+  ruim "a Let in the value of a Let" (in_value ov_boven_grens) "51" "45";
+  let quotient = ov_cmp "less" (ov_div (ov_attr "gewicht") (ov_attr "schade")) (ov_lit "3")
+  and under = ov_cmp "less" (ov_attr "gewicht") (ov_binder "grens")
+  and boven_tarief = ov_cmp "less" (ov_attr "gewicht") (ov_param "TARIEF") in
+  let all = ov_compound "all" 0 and any = ov_compound "atLeast" 1 and none = ov_compound "none" 0 in
+  let refused ?parameters ?v2 name value ordinary =
+    let name = Printf.sprintf "WV-1.5-let-in-composite (a binder after a closure, %s)" name in
+    ov_refused ~name ~ir:(ov_grens_doc ?parameters value) "let-in-composite";
+    let ir = ov_grens_doc ~strict:false ?parameters value and name = name ^ ", without the property" in
+    match ordinary with
+    | `Deposits want -> ov_frame ~name ~ir ~case_text:(case ?v2 (value_is want true)) ()
+    | `Faults code -> ov_fault_frame ~name ~ir ~case_text:(case ?v2 [ ov_consistent ]) code
+  in
+  refused "a deposit, all" (direct (all [ ov_boven_grens; quotient ])) (`Deposits "20");
+  refused "a deposit, at least one" (direct (any [ under; quotient ])) (`Deposits "20");
+  refused "a deposit, a binder of a binder" (of_binder (all [ ov_boven_grens; quotient ])) (`Deposits "21");
+  refused "a deposit, a Let in the value of a Let" (in_value (all [ ov_boven_grens; quotient ])) (`Deposits "21");
+  refused "a divisor" ~v2:[ ("schade", "0"); ("taxatie", "9") ]
     (direct
        (any
           [ ov_cmp "greater" (ov_div (ov_attr "gewicht") (ov_binder "grens")) (ov_lit "5");
             ov_cmp "less" (ov_div (ov_attr "taxatie") (ov_attr "schade")) (ov_lit "3") ]))
-    [ ("the getuigen open", [ "gewicht" ], "40", true) ];
-  let boven_tarief = ov_cmp "less" (ov_attr "gewicht") (ov_param "TARIEF") in
+    (`Deposits "40");
   List.iter
-    (fun (name, composite, first, faults_complete) ->
-      let ir complete = ov_grens_doc ~parameters:[ "TARIEF" ] ~complete (direct (composite [ first; boven_tarief ])) in
-      ov_frame ~name:(Printf.sprintf "WV-1.5-closure-of-a-binder (a fault, %s, the getuigen open)" name) ~ir:(ir [])
-        ~case_text:(case "open" false) ();
-      let name = Printf.sprintf "WV-1.5-closure-of-a-binder (a fault, %s, the getuigen complete)" name in
-      match faults_complete with
-      | true -> ov_fault_frame ~name ~ir:(ir [ "getuigen" ]) ~case_text:(case "open" false) "EF-014"
-      | false -> ov_frame ~name ~ir:(ir [ "getuigen" ]) ~case_text:(case "50" false) ())
-    [ ("all", all, ov_boven_grens, true); ("at least one", any, under, true); ("none", none, under, true) ]
+    (fun (name, composite, first) ->
+      refused ~parameters:[ "TARIEF" ] ("a fault, " ^ name) (direct (composite [ first; boven_tarief ])) (`Faults "EF-014"))
+    [ ("all", all, ov_boven_grens); ("at least one", any, under); ("none", none, under) ]
 
 (* a binder under an operator in the filter is the one of its own form subject:
    "… waarvan het gewicht plus de grens groter is dan 12", over a Jutter of
@@ -22204,7 +22227,7 @@ let () =
     [ "absent-link"; "absent-link-path"; "characteristic"; "closed-input"; "comparison"; "composite-filled-test";
       "compound-all"; "compound-any"; "compound-counting"; "compound-none"; "consistency"; "defaults-characteristic";
       "defaults-stack"; "defaults-subtype"; "filled-test"; "filled-test-not-closure"; "initialisation";
-      "input-above-computation"; "input-above-computation-open"; "let"; "marker"; "navigated-read"; "settled-empty";
+      "input-above-computation"; "input-above-computation-open"; "let"; "let-closure"; "marker"; "navigated-read"; "settled-empty";
       "quantifier-fold"; "settled-empty-date"; "settled-empty-stack"; "empty-by-fault"; "listed-fold"; "set-fold";
       "settled-empty-fold"; "fact-creation"; "object-creation" ]
   and refused = [ ("arithmetic", "CLINGO-005", None); ("exact-digits", "CLINGO-046", None) ]
@@ -22265,7 +22288,8 @@ let refused_unkeyed ~name ~ir ~case_text ~form ~read =
    [filter]". What a Jutter gets is his own: the same alone, with his own
    vondsten, and beside the other Jutters, and the same as in ref. In a document
    with inferFromEmpty false every cell is carried, its helpers keyed by the
-   Jutter and the vondst. In an ordinary document a helper is keyed by the
+   Jutter and the vondst, but the composite that reads the grens beside another
+   member, which is let-in-composite. In an ordinary document a helper is keyed by the
    vondst alone, so a cell whose helper would read the grens is refused where
    the session holds more than one Jutter; alone, with no other grens to read,
    the Jutter plays. The drempels are such that the grens of another Jutter
@@ -22312,6 +22336,7 @@ let () =
   let rounded = wrapped "Rounding" {|"mode": "towardZero", "decimals": 0|}
   and clamped = wrapped "Clamp" (Printf.sprintf {|"minimum": %s, "maximum": %s|} (ov_lit "0") (ov_lit "14")) in
   let highest = Printf.sprintf {|{"node": "Aggregation", "kind": "maximum", "arguments": [%s, %s], "type": %s, %s}|} g b ov_num (ov_src "maximum") in
+  let composite = "geen van" in
   let operators =
     [ ("gewicht groter dan de grens", true, ov_cmp "greater" g b); ("gewicht gelijk aan de grens", true, ov_cmp "equal" g b);
       ("gewicht ongelijk aan de grens", true, ov_cmp "notEqual" g b); ("gewicht gedeeld door de grens", true, gt (ov_div g b) "1");
@@ -22321,7 +22346,7 @@ let () =
       ("gewicht maal de grens", false, gt (ov_bin "times" g b) "40"); ("een afronding", false, gt (rounded (ov_bin "plus" g b)) "12");
       ("een grens op de som", false, gt (clamped (ov_bin "plus" g b)) "12");
       ("gewicht plus de grens is gevuld", false, ov_test "filled" (ov_bin "plus" g b));
-      ("geen van", false, ov_compound "none" 0 [ ov_cmp "equal" g b; ov_gt "schade" "5" ]);
+      (composite, false, ov_compound "none" 0 [ ov_cmp "equal" g b; ov_gt "schade" "5" ]);
       ("een Let van een Let", false, gt (ov_let "som" (ov_bin "plus" b g) (ov_bin "plus" (ov_binder "som") (ov_lit "1"))) "13") ]
   and folds = [ ("sum", "gewicht"); ("count", ""); ("maximum", "gewicht") ] in
   List.iter
@@ -22336,6 +22361,10 @@ let () =
               let ir = ov_grens_doc ~strict (ov_let "grens" (ov_attr ~ty:"Jutter" "drempel") (ov_bin "plus" b (ov_fold ~filter kind a))) in
               verifier_clean ~name ~ir;
               let alone = List.map (fun j -> outcome ~strict ~ir [ j ]) jutters in
+              if strict && operator = composite then
+                check (name ^ ": let-in-composite")
+                  (List.for_all (( = ) (Error "CLINGO-049")) (outcome ~strict ~ir jutters :: alone))
+              else
               let each = List.concat_map (function Ok rows -> rows | Error code -> [ ("", "refused: " ^ code) ]) alone in
               let together = outcome ~strict ~ir jutters in
               check
