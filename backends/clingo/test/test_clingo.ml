@@ -19,7 +19,48 @@ open Clingo_backend
 let failures = ref 0
 let total = ref 0
 
+(* THE SUITE IN SHARDS. Every check stands in a unit of work, and the units are
+   numbered from 0 in the order in which the process meets them. Under
+   UCHAR_SUITE_SHARD=k/n the process does the units whose number is k modulo n
+   and writes to the file UCHAR_SUITE_SHARD_LOG a line `RUN <number>` for each,
+   and at the end `TOTAL <units it met>` and `CHECKS <checks it ran>`, from which
+   gate 6 holds that its n processes did every unit once. Without the variables
+   the process does every unit.
+
+   A number stands for the same unit in every process only where meeting the
+   unit does not depend on what another unit found, so code between the units
+   holds no outcome; what stands there runs in every shard, so it is cheap. A
+   unit that takes long is a lower bound on the time of the gate: a block whose
+   rows take seconds makes each row a unit. *)
+let usage_error text =
+  prerr_endline ("test_clingo: " ^ text);
+  exit 2
+
+let shard =
+  match (Sys.getenv_opt "UCHAR_SUITE_SHARD", Sys.getenv_opt "UCHAR_SUITE_SHARD_LOG") with
+  | None, None -> None
+  | Some text, Some log -> (
+      match Scanf.sscanf_opt text "%u/%u%!" (fun k n -> (k, n)) with
+      | Some (k, n) when k < n && text = Printf.sprintf "%u/%u" k n -> Some (k, n, open_out log)
+      | _ -> usage_error (Printf.sprintf "UCHAR_SUITE_SHARD is %S, not k/n with 0 <= k < n" text))
+  | _ -> usage_error "UCHAR_SUITE_SHARD and UCHAR_SUITE_SHARD_LOG are given together, or neither"
+
+let units = ref 0
+let in_unit = ref false
+
+let work f =
+  if !in_unit then usage_error (Printf.sprintf "a unit of work inside unit %d" (!units - 1));
+  let number = !units in
+  incr units;
+  if match shard with Some (k, n, _) -> number mod n = k | None -> true then begin
+    in_unit := true;
+    f ();
+    in_unit := false;
+    Option.iter (fun (_, _, log) -> Printf.fprintf log "RUN %d\n" number) shard
+  end
+
 let check name ok =
+  if not !in_unit then usage_error (Printf.sprintf "the check %S stands in no unit of work" name);
   incr total;
   if not ok then begin
     incr failures;
@@ -256,6 +297,7 @@ let faults name left =
 
 (* the pure-% left operand: translates AND matches ref's pinned value *)
 let () =
+  work @@ fun () ->
   translates "pure-%" pct_unit;
   let doc, case = load pct_unit in
   let env =
@@ -276,6 +318,7 @@ let () =
 (* any other unit on the left, and any %-spelling not provably factor-1,
    keeps faulting loudly *)
 let () =
+  work @@ fun () ->
   faults "km" km_unit;
   faults "%-factor-2" pct_factor_2_unit
 
@@ -293,6 +336,7 @@ let system ~ident units : Ir_v0.Ast.unit_system =
    invariant (§8.1). Afstand: m finest, km ×1000; Termijn: maand finest,
    jaar ×12 (a non-power-of-ten factor). *)
 let () =
+  work @@ fun () ->
   let afstand =
     system ~ident:"Afstand"
       [ eenh ~system:"Afstand" ~canonical_form:"m" "m" (Some (1, 1));
@@ -325,6 +369,7 @@ let () =
 (* a unit system whose sibling factors (2 and 3) share no integer-finest faults —
    never a silent divide-down canonical *)
 let () =
+  work @@ fun () ->
   let broken =
     system ~ident:"Broken"
       [ eenh ~system:"Broken" ~canonical_form:"a" "a" (Some (2, 1));
@@ -341,6 +386,7 @@ let () =
    exactly 3 — a table a double factor could only refuse (a factor written as
    a JSON number is refused at load, in the load table below) *)
 let () =
+  work @@ fun () ->
   let base = eenh ~system:"Exact" ~canonical_form:"base" "base" (Some (1, 1)) in
   let exact = system ~ident:"Exact" [ base; eenh ~system:"Exact" ~canonical_form:"base" "third" (Some (1, 3)) ] in
   match Normalise.(finest_of_units ~where:"unit system \"Exact\"" (plain_units exact)) with
@@ -453,6 +499,7 @@ let duration_case =
 |}
 
 let () =
+  work @@ fun () ->
   let irf = write_temp ".ir.json" duration_doc in
   let casef = write_temp ".case.json" duration_case in
   let doc = Ir_v0.Loader.load_file irf in
@@ -510,6 +557,7 @@ let replace ~tok ~by s =
   Buffer.contents b
 
 let () =
+  work @@ fun () ->
   check "replace fails on a token that does not occur"
     (match replace ~tok:"@GEEN@" ~by:"x" "abc" with
     | (_ : string) -> false
@@ -524,6 +572,7 @@ let ton_mass : Ir_v0.Ast.measure_unit = eenh ~system:"Massa" ~canonical_form:"kg
    It must say yes ACROSS systems and keep saying no to everything that would
    need a multiplication or that names no canonical at all. *)
 let () =
+  work @@ fun () ->
   check "kg@Gewicht and kg@Massa are one quantity (only the system differs)"
     (Normalise.same_quantity kg_weight kg_mass);
   check "same_quantity is symmetric across the system boundary"
@@ -547,6 +596,7 @@ let () =
 (* THE TABLE. The finest is folded over the units of BOTH systems that restate
    into the target, and the ton's factor survives the crossing exactly. *)
 let () =
+  work @@ fun () ->
   let where = "the canonical-kg conversion table (unit systems Gewicht, Massa)" in
   (match Normalise.finest_of_units ~where [ kg_weight; kg_mass; ton_mass ] with
   | finest, to_finest ->
@@ -875,6 +925,7 @@ let ref_report doc (case : Uchar_ref.Case.t) =
   Uchar_ref.Case.check case (Uchar_ref.Eval.evaluate env case.world)
 
 let () =
+  work @@ fun () ->
   let doc, case = cross_load ~mcanon:"kg" ~tonf:"1000" ~beneath:"1000.00" in
   let program =
     match translate doc case with
@@ -904,6 +955,7 @@ let () =
    fence's regression witness: a widening that stopped reading canonical names
    would pass this mutant. *)
 let () =
+  work @@ fun () ->
   let doc, case = cross_load ~mcanon:"kgm" ~tonf:"1000" ~beneath:"1000.00" in
   match translate doc case with
   | (_ : string) ->
@@ -917,6 +969,7 @@ let () =
    restating it would answer the same 1000,00 either way. ref moves to 500,00 and
    the emitted ground integer moves with it. *)
 let () =
+  work @@ fun () ->
   let doc, case = cross_load ~mcanon:"kg" ~tonf:"500" ~beneath:"500.00" in
   (match ref_report doc case with
   | [] -> check "mutant: a 500-kg ton moves ref to ondergewicht = 500,00" true
@@ -1028,6 +1081,7 @@ let unknown_binary_case =
 |}
 
 let () =
+  work @@ fun () ->
   let irf = write_temp ".ir.json" unknown_binary_doc in
   let casef = write_temp ".case.json" unknown_binary_case in
   let doc = Ir_v0.Loader.load_file irf in
@@ -1336,6 +1390,7 @@ let closed_attr_case =
 |}
 
 let () =
+  work @@ fun () ->
   faults_with ~name:"S19 via 1 (subject-dependent fold init over a list parameter)"
     ~ir:plist_init_doc ~case_text:plist_init_case
     ~needle:
@@ -1410,6 +1465,7 @@ let sumfold_case =
 |}
 
 let () =
+  work @@ fun () ->
   faults_with ~name:"a sum-typed operand under the articulated ordering fold"
     ~ir:sumfold_doc ~case_text:sumfold_case
     ~needle:"a value with no numeric scale (today a sum-type or record value) cannot be harmonised"
@@ -1503,6 +1559,7 @@ let dt_duration_lie_case =
 (* the fence is WF-035's refusal of a duration operand that is no number,
    read off the declared type in the sentence the verifier and ref speak *)
 let () =
+  work @@ fun () ->
   let sumtype =
     Ir_v0.Checks.date_duration_operand_refusal
       (Ir_v0.Ast.Sum_type { domain_spec = "meldstatus"; constructor_list = [] })
@@ -1704,6 +1761,7 @@ let translates_with ~name ~ir ~case_text =
       check (name ^ ": translates (unexpected fault: " ^ m ^ ")") false
 
 let () =
+  work @@ fun () ->
   (* the wrong-VALUE form: both types carry 'bewaartarief', so reading it off
      the subject found 99 where the navigated object holds 10 *)
   faults_with ~name:"temporal total, navigated operand (attribute name shared)"
@@ -2032,6 +2090,7 @@ let translates_carrying ~name ~ir ~case_text ~needle =
       check (name ^ ": translates (unexpected fault: " ^ m ^ ")") false
 
 let () =
+  work @@ fun () ->
   (* the carried fold, straight: the operand's annotation names the element
      type, both anchors agree, and the program integrates timelines *)
   let straight =
@@ -2165,6 +2224,7 @@ let () =
    member V1, which supplies an asOfDate-bucket scalar: ref faults EF-037 on
    V1, and so does the program. *)
 let () =
+  work @@ fun () ->
   (* a literal one-shot replacement; this executable links no Str. It FAILS
      LOUDLY when the anchor is gone, so a reformat of [set_fold_doc] above
      cannot silently turn these two rows into something else. *)
@@ -2263,6 +2323,7 @@ let () =
    in BOTH executors, and ref simply replays the document (pinned below).
    So the fault text is pinned here, with the boundary beside it. *)
 let () =
+  work @@ fun () ->
   let straight =
     set_fold_doc ~kind:"total" ~operand_ot:"Vondst" ~rate_unit:(eur mnd_unit)
       ~objective_unit:(eur "null")
@@ -2417,6 +2478,7 @@ let clip_case = clip_case_with ~ctls:(borg_tl ^ ", " ^ aangesteld_tl) ~expected:
 let clip_case_bare = clip_case_with ~ctls:borg_tl ~expected:"0"
 
 let () =
+  work @@ fun () ->
   let needle = {|gedurende over "aangesteld", which is not a temporal characteristic|} in
   (* the bare arm: one non-temporal characteristic IS the whole clip *)
   faults_with ~name:"gedurende clip over a non-temporal characteristic"
@@ -2499,6 +2561,7 @@ let date_clip_doc =
 |}
 
 let () =
+  work @@ fun () ->
   faults_with ~name:"gedurende clip, gelijk-aan over a date timeline" ~ir:date_clip_doc
     ~case_text:
       {|{ "format": "uchar-case-v0", "asOfDate": null,
@@ -2600,6 +2663,7 @@ let dt_case ~attrs ~expected =
     attrs expected
 
 let () =
+  work @@ fun () ->
   let pair_attributes =
     attribute_ref "aanvangstip" {|{ "node": "Date", "precision": "millisecond" }|} ^ ", "
     ^ attribute_ref "sluitingstip" {|{ "node": "Date", "precision": "millisecond" }|}
@@ -2863,6 +2927,7 @@ let loads_case ~name ~case_text ~needle =
   | None, Error m -> check (name ^ ": expected a clean load, got a refusal (" ^ m ^ ")") false
 
 let () =
+  work @@ fun () ->
   let dienstdoend_tl = {|"dienstdoend": [ { "from": "2024-01-01", "to": "2024-07-01" } ]|} in
   loads_case ~name:"a temporal characteristic in the static list"
     ~case_text:(characteristic_delivery_case ~static:{|"dienstdoend"|} ~timelines:"")
@@ -2958,6 +3023,7 @@ let loads_ir_case ~name ~ir ~case_text ~needle =
   | None, Error m -> check (name ^ ": expected a clean load, got a refusal (" ^ m ^ ")") false
 
 let () =
+  work @@ fun () ->
   (* verwijderd-met-reden (M1): "een tijdlijn op een attribuut met granulariteit
      null". TimelineFacet.granularity is a required enum on the uchar-ir-v1
      wire, so a document with a null granularity cannot be written; WF-059's
@@ -3041,6 +3107,7 @@ let characteristic_granularity_case =
   "expected": [ { "kind": "consistent" } ] }|}
 
 let () =
+  work @@ fun () ->
   (* verwijderd-met-reden (M1): "een tijdlijn op een kenmerk met granulariteit
      null". TimelineFacet.granularity is a required enum on the uchar-ir-v1
      wire, so a document with a null granularity cannot be written; WF-059's
@@ -3137,6 +3204,7 @@ let owner_case =
 |}
 
 let () =
+  work @@ fun () ->
   (* the field absent, and the field naming the subject's own type: the same
      answer, and it is the answer ref pins *)
   ref_matches ~name:"WF-100 owner absent" ~ir:(owner_doc ())
@@ -3177,6 +3245,7 @@ let () =
    filter and fail the positive one. A narrowing host on a navigated check is
    refused at translation, in ref's sentence. *)
 let () =
+  work @@ fun () ->
   let corpus rel =
     In_channel.with_open_text (if Sys.file_exists rel then rel else Filename.concat "../../../../.." rel)
       In_channel.input_all
@@ -3326,6 +3395,7 @@ let host_case ~quantity () =
     quantity
 
 let () =
+  work @@ fun () ->
   List.iter
     (fun (ident, holder, quantity) ->
       let ir = host_doc ?holder () and case_text = host_case ~quantity () in
@@ -3380,6 +3450,7 @@ let baken_type =
 let inherits_from parent_node = (Printf.sprintf {|"supertype": "%s", |} parent_node, "")
 
 let () =
+  work @@ fun () ->
   let ir_super = host_doc ~extra_type:baken_type ~sein_own:(inherits_from "Baken")
       ~holder:{|"Baken"|} () in
   let case_super = host_case ~quantity:{|"1"|} () in
@@ -3401,6 +3472,7 @@ let () =
    the verifier's chain walk, which finds a parent by its [ot_ident], stops
    first and the translation faults on the host.) *)
 let () =
+  work @@ fun () ->
   let doc, case =
     load_pair
       ~ir:(host_doc ~extra_type:baken_type ~sein_own:(inherits_from "Baken") ~holder:{|"Baken"|} ())
@@ -3597,6 +3669,7 @@ let gp_own_case =
 |}
 
 let () =
+  work @@ fun () ->
   let both_sides ~name ~ir ~case_text =
     ref_matches ~name ~ir ~case_text;
     clingo_matches ~name ~ir ~case_text
@@ -3922,6 +3995,7 @@ let bp_case =
 }|}
 
 let () =
+  work @@ fun () ->
   (* the document plays as written: the three refusals below are the FIELD's,
      not the model's *)
   clingo_matches ~name:"ch3.4b two-step range plays" ~ir:bp_doc ~case_text:bp_case;
@@ -4261,6 +4335,7 @@ let bp_to_one_case =
 }|}
 
 let () =
+  work @@ fun () ->
   clingo_matches ~name:"ch3.4b a to-one step on the path"
     ~ir:bp_to_one_doc ~case_text:bp_to_one_case
 
@@ -4500,6 +4575,7 @@ let gpv_bound_case ~timeline_state ~grens ~truth =
      else {|{ "kind": "attributeEmpty", "label": "S1", "attribute": "toeslag" }|})
 
 let () =
+  work @@ fun () ->
   (* ch. 3.9, the subject's own attribute as the bound: a leeg bound is a
      leeg side on every day, read with ch. 1.2 — no ordering holds, "=" holds
      on a gap day only, "≠" on a filled day only — and a gap day against a
@@ -4545,6 +4621,7 @@ let () =
     ~grens:(Some "50.01") ~truth:false ()
 
 let () =
+  work @@ fun () ->
   (* THE SCALAR ch. 3.9 TABLE — the four rows the characteristic form pins,
      over a value timeline. `> 40`, year grid. *)
   let table_row ~name ?(test = kv_whole ()) ~timeline_state ~truth () =
@@ -4618,6 +4695,7 @@ let kv_empty ?(variety = "empty") ?(negation = false) ?(year = true) ?(not_flag 
     variety operand negation (if year then "year" else "month") not_flag
 
 let () =
+  work @@ fun () ->
   (* THE ch. 3.9 LEEG/GEVULD TABLE, verbatim: the timelines of rows a-d, the
      five columns leeg, gevuld, niet leeg, niet gevuld and niet gedurende …
      leeg, then the month-grid rows. ref is the control that the rows are
@@ -4658,6 +4736,7 @@ let () =
      frame here can carry it *)
 
 let () =
+  work @@ fun () ->
   (* THE FIVE PINS of the quantifier fold over a whole-period comparison,
      `all`, `> 40`, year grid. *)
   let every ?(ir = kv_doc ()) ?gekeurd ~name ~member_list ~truth () =
@@ -4895,6 +4974,7 @@ let () =
     ~needle:"not kvs"
 
 let () =
+  work @@ fun () ->
   (* the loud flanks. Each names the form it refuses. *)
   let vals = kv_case ~member_list:[ ("S1", whole_year "50") ] ~truth:true () in
   (* The `all` arm carries EVERY matrix [cond_atoms] carries (2026-09-16, card
@@ -5301,6 +5381,7 @@ let arm_heffing_empty_zero =
 let zero_deposit = {|"EF-005") :-|}
 
 let () =
+  work @@ fun () ->
   (* vorm 1 — de §6.5-plek in de NIET-betreden arm. inkomen 40,00 ligt boven de
      drempel 10,00, dus ref speelt de dan-tak en de lege restpost wordt nooit
      gelezen. *)
@@ -5600,6 +5681,7 @@ let cb_zero_empty =
 let closed_zero_division_reason = "a division by a numeric zero in a closed body yields leeg"
 
 let () =
+  work @@ fun () ->
   (* de niet-betreden arm: drempel 0, kindertal 0 — de dan-arm telt 1,00 op en
      de deling door dat nul-kindertal mag het programma niet afbreken *)
   let zero_value = {|{ "number": "0" }|} in
@@ -5716,6 +5798,7 @@ let arm_doc6 =
               (arm_par "basisheffing") arm_ob))
 
 let () =
+  work @@ fun () ->
   let not_taken =
     arm_case ~inkomen:"40" ~parameters:arm_params12
       ~expected_value:
@@ -5732,6 +5815,7 @@ let () =
     ~ir:arm_doc6 ~case_text:not_taken
 
 let () =
+  work @@ fun () ->
   (* de twee lensvarianten: de dan-arm wordt betreden, dus de deling in de
      waarde van z mag niets doen — niet melden (lege deler) en niet afbreken
      (nul-deler). Op de merge-base was dit een luide weigering; ertussenin een
@@ -5963,6 +6047,7 @@ let arm_four ~ident ~ir ~not_taken =
                   ~expected_value:arm_heffing_empty_zero ())
 
 let () =
+  work @@ fun () ->
   (* D1: de niet-betreden arm levert w = 1,00 *)
   arm_four ~ident:"ch10.6 geneste Let tussen Let en tak" ~ir:arm_doc11 ~not_taken:"1";
   (* D2: 1,00 plus de basisheffing 5,00 — en de betreden arm leegt het GEHEEL *)
@@ -5972,6 +6057,7 @@ let () =
     ~not_taken:"0"
 
 let () =
+  work @@ fun () ->
   (* D5 — de geneste waarde leest de buitenste behoefte, dus die behoefte is
      nodig welke arm ook genomen wordt. Er valt niets te verplaatsen: eager
      plaatsing blijft staan EN is exact, in beide executors, in beide
@@ -5990,6 +6076,7 @@ let () =
                   ~expected_value:arm_heffing_empty_zero ())
 
 let () =
+  work @@ fun () ->
   (* D4 — DE LUIDE WEIGERING. Een wikkel tussen de twee Lets met een
      conditie-lezende tussenbinder: de wissel stapt niet over de wikkel, de
      distributie tilt de takknoop niet uit de geneste Let. Eager plaatsing is
@@ -6056,6 +6143,7 @@ let arm_doc18 =
 let arm_doc19 = arm_nested ~body_part:(arm_w_from_z ~then_branch:(branch_binder "z"))
 
 let () =
+  work @@ fun () ->
   (* V1 en V2 krijgen de volle vier hoeken van [arm_four], de reikwijdte-pin
      inbegrepen: de dan-arm levert 0,00 respectievelijk 0,00 plus de
      basisheffing, en de betreden anders-arm leegt het GEHEEL. *)
@@ -6064,6 +6152,7 @@ let () =
   arm_four ~ident:"ch10.6 vangst onder een wikkel" ~ir:arm_doc17 ~not_taken:"5"
 
 let () =
+  work @@ fun () ->
   (* V3 en V4 — de andere kant van de guard, en de reden dat hij een TOETS is
      en geen verplaatsing: hier is de behoefte op beide takken nodig, dus de
      herschrijving moet zich inhouden. Beide executors melden en leggen leeg op
@@ -6156,6 +6245,7 @@ let cb_three ~ident ~lambda_body =
     ~needle:closed_zero_division_reason
 
 let () =
+  work @@ fun () ->
   cb_three ~ident:"ch10.6 gesloten body: geneste Let" ~lambda_body:cb_body_nested;
   cb_three ~ident:"ch10.6 gesloten body: geneste Let die de takconditie draagt"
     ~lambda_body:cb_body_condition
@@ -6207,6 +6297,7 @@ let arm_fold_case expected_value =
     arm_params12 expected_value
 
 let () =
+  work @@ fun () ->
   verifier_clean ~name:"ch10.6 fold body between Let and branch" ~ir:arm_fold;
   let plays = arm_fold_case (arm_val "2") in
   ref_matches ~name:"ch10.6 fold body between Let and branch [ref plays]" ~ir:arm_fold
@@ -6257,6 +6348,7 @@ let agg_body_case_valued ?(inkomen = "40") ?(restpost = "0") value =
 let agg_body_case = agg_body_case_valued "0.00"
 
 let () =
+  work @@ fun () ->
   (* positie 1: de §5.8.2-leegwaarde, een zuivere waardepositie *)
   let empty_fallback_form =
     with_vondsten
@@ -6450,6 +6542,7 @@ let window_empty_case ~attribute_ref =
     attribute_ref
 
 let () =
+  work @@ fun () ->
   let leading =
     window_doc ~kind:"first" ~attribute_ref:"vondstdatum" ~objective:"eerste vondstdag"
   in
@@ -6520,6 +6613,7 @@ let () =
    vertaling. *)
 
 let () =
+  work @@ fun () ->
   let minimum =
     window_doc ~kind:"minimum" ~attribute_ref:"vondstdatum" ~objective:"eerste vondstdag"
   in
@@ -6604,6 +6698,7 @@ let pro_rata_date_base_doc =
   {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"borgtarief","datatype":{"node":"Date","precision":"day"},"timeline":{"node":"TimelineFacet","granularity":"year","count":1}},{"node":"Attribute","name":"borgdeel","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"timeline":{"node":"TimelineFacet","granularity":"month","count":1}}],"characteristics":[{"node":"Characteristic","name":"borgplichtig","kind":"adjectival","timeline":{"node":"TimelineFacet","granularity":"month","count":1}}]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"borgdeel van een jutter","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"borgdeel","subjectType":"Jutter","source":{"snippet":"Het borgdeel van een Jutter"}},"value":{"node":"BuiltinCall","kind":"timeProportionalPart","arguments":[{"node":"AttributeReference","attribute":"borgtarief","subjectType":"Jutter","source":{"snippet":"zijn borgtarief"}}],"filter":{"node":"CharacteristicCheck","characteristic":"borgplichtig","negated":false,"source":{"snippet":"gedurende de tijd dat hij borgplichtig is"}},"granularity":"month","type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"het tijdsevenredig deel per maand van zijn borgtarief gedurende de tijd dat hij borgplichtig is"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
 
 let () =
+  work @@ fun () ->
   faults_with ~name:"WF-091 second line: the own timeline total over a date refuses by name"
     ~ir:timeline_total_date_doc
     ~case_text:
@@ -6708,6 +6803,7 @@ let unresolved_condition_case =
 |}
 
 let () =
+  work @@ fun () ->
   faults_at_solving ~code:("EF-019", []) ~name:"WF-044 an Unresolved rule condition is cited, not swallowed"
     ~ir:unresolved_condition_doc ~case_text:unresolved_condition_case ~needle:"Unresolved condition reached in evaluation"
     ()
@@ -6833,6 +6929,7 @@ let dimension_fold_case =
 |}
 
 let () =
+  work @@ fun () ->
   faults_with ~name:"§5.8.3 the list sum falls to its own, form-naming arm"
     ~ir:(listed_fold_doc ~kind:"sum" ~element_object_type:"null" ())
     ~case_text:listed_fold_case
@@ -6935,6 +7032,7 @@ let sourceless_fold_case =
   "expected": [ { "kind": "consistent" } ] }|}
 
 let () =
+  work @@ fun () ->
   let no_source kind =
     Printf.sprintf
       "a %s aggregation carries elementType \"Vondst\" but no source operand: an instance fold \
@@ -6981,6 +7079,7 @@ let () =
    regel pint de grens: een unie onder een telling die een eigen bron draagt
    is WF-110 (c)'s en houdt die zin. *)
 let () =
+  work @@ fun () ->
   let source_arm kind graph_node =
     Printf.sprintf
       "a %s aggregation carries elementType \"Vondst\" and %s operand: the source of an \
@@ -7190,6 +7289,7 @@ let dk_translates ~name ~ir =
       check (name ^ ": clingo translates (unexpected fault: " ^ m ^ ")") false
 
 let () =
+  work @@ fun () ->
   (* the composite arms the golden does not spell: `all`, `none`, and the three
      counting quantors, each over the bound day *)
   List.iter
@@ -7515,6 +7615,7 @@ let count_key_and_reader program =
               Some (key, String.sub program rest (comma - rest))))
 
 let () =
+  work @@ fun () ->
   let ir = filled_count_doc ~vondst_granularity:"" in
   let irf = write_temp ".ir.json" ir in
   let casef = write_temp ".case.json" filled_count_case in
@@ -7604,6 +7705,7 @@ let counterpart_case =
 |}
 
 let () =
+  work @@ fun () ->
   ref_matches ~name:"U12 a narrowed counterpart counts only its own class"
     ~ir:(counterpart_doc ()) ~case_text:counterpart_case;
   clingo_matches ~name:"U12 a narrowed counterpart counts only its own class"
@@ -7618,6 +7720,7 @@ let () =
    val/3 fact to count, an attribute name is no relation — and answer a
    silent 0 where ref faults, so both refuse by name. *)
 let () =
+  work @@ fun () ->
   let ir = filled_count_doc ~vondst_granularity:"" in
   faults_with ~name:"AANTAL_GEVULDE over a role name refuses (D9)"
     ~ir:
@@ -7678,6 +7781,7 @@ let () =
 
 (* ch. 3.4c's one exclusion, and the pin a red case rests on *)
 let () =
+  work @@ fun () ->
   let ir =
     filled_count_doc
       ~vondst_granularity:
@@ -7783,6 +7887,7 @@ let gemiddelde_kg_case =
 |}
 
 let () =
+  work @@ fun () ->
   let irf = write_temp ".ir.json" gemiddelde_kg_doc in
   let casef = write_temp ".case.json" gemiddelde_kg_case in
   let doc = Ir_v0.Loader.load_file irf in
@@ -7849,6 +7954,7 @@ let num_whole =
   {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }|}
 
 let () =
+  work @@ fun () ->
   let objective =
     {|{ "node": "AttributeReference", "attribute": "vondstpremie", "subjectType": "Vondst",
         "source": { "snippet": "De vondstpremie van een Vondst" } }|}
@@ -7968,6 +8074,7 @@ let clip_case =
 |}
 
 let () =
+  work @@ fun () ->
   let day_number iso =
     match Uchar_ref.Value.date_of_iso iso with Uchar_ref.Value.Date d -> d | _ -> assert false
   in
@@ -8039,6 +8146,7 @@ let () =
    deze vertaling daar stil een heeft/2-feit; ref weigert de vorm bij naam.
    Nu weigeren beide. *)
 let () =
+  work @@ fun () ->
   let ir =
     {|{ "format": "uchar-ir-v1",
   "model": {
@@ -8156,6 +8264,7 @@ let union_case =
 |}
 
 let () =
+  work @@ fun () ->
   let ir = union_doc ~branch_list:(arm_aangemeld ^ ", " ^ arm_geborgen) in
   (* the union count answers 4 over {V1,V2,V3} ∪ {V3,V4}: V3 is in both
      selections and contributes once, so the sum of the parts (5) is a
@@ -8367,6 +8476,7 @@ let empty_frame ~name ~variety ~negation ~nav hits =
   clingo_matches ~name ~ir ~case_text
 
 let () =
+  work @@ fun () ->
   empty_frame ~name:"LEEG, own" ~variety:"empty" ~negation:false ~nav:None [ "S2"; "S4" ];
   empty_frame ~name:"LEEG negated, own" ~variety:"empty" ~negation:true ~nav:None [ "S1"; "S3" ];
   empty_frame ~name:"GEVULD, own (control)" ~variety:"filled" ~negation:false ~nav:None [ "S1"; "S3" ];
@@ -8693,6 +8803,7 @@ let pinned_value ~entry ~name ~ir ~case_text ~answers =
    both Drools branches play both. Maintainer decision 2026-09-23: the
    complement route refuses by name in such a document. *)
 let () =
+  work @@ fun () ->
   let own = empty_ref ~ot:"Schuit" ~attr:"lengte" ~nav:None in
   (* the assertion: niet leeg fails on S2 and S4, leeg on S1 and S3 *)
   List.iter
@@ -8852,6 +8963,7 @@ let () =
    only witnesses. They pin the WHOLE sentence, the reader's reason included,
    in the words ref's suite pins. *)
 let () =
+  work @@ fun () ->
   (* a bound is written where there is one: absent is open *)
   let window_ir starting_at up_to =
     let boundary ident = function None -> "" | Some v -> Printf.sprintf {|, "%s": %s|} ident v in
@@ -9067,6 +9179,7 @@ let pf_heffing ?precondition ?(params = [ "p" ]) value_node =
 
 (* the value positions: J1 inkomen 20,00; the parameter [p] bound to 10,00 *)
 let () =
+  work @@ fun () ->
   let inkomen = pf_a "inkomen" and p = pf_p "p" in
   let pos name value_node ~bound ~silent_rows ~silent =
     pf_position ~name ~ir:(pf_heffing value_node) ~param:"p" ~bound ~silent_rows ~silent ()
@@ -9096,6 +9209,7 @@ let () =
 
 (* the condition positions: heffing 5,00 where the condition holds *)
 let () =
+  work @@ fun () ->
   let inkomen = pf_a "inkomen" and p = pf_p "p" in
   let pos name precondition ~bound ~silent_rows ~silent =
     pf_position ~name ~ir:(pf_heffing ~precondition (pf_l "5")) ~param:"p" ~bound ~silent_rows ~silent ()
@@ -9131,6 +9245,7 @@ let () =
    read before it is reached whether or not the need is leeg — and one read
    after it is not. restpost is leeg on J1 throughout. *)
 let () =
+  work @@ fun () ->
   let p = pf_p "p" and k = pf_b "k" and restpost = pf_a "restpost" in
   pf_position ~name:"Let: a parameter read before the binder"
     ~ir:(pf_heffing (pf_let "k" restpost (pf_bin "plus" p k)))
@@ -9161,6 +9276,7 @@ let () =
 
 (* the lazy frames: [p] unbound, never read by ref — both executors answer *)
 let () =
+  work @@ fun () ->
   let inkomen = pf_a "inkomen" and p = pf_p "p" in
   let lazy_frame name ?(instances = [ pf_j1 ]) ?precondition value_node rows =
     both_answer ~name:("lazy: " ^ name) ~ir:(pf_heffing ?precondition value_node)
@@ -9196,6 +9312,7 @@ let () =
    S1 (lengte 8) and S2 (no lengte), W2 holds S4 (no lengte); the bound
    threshold is 6. *)
 let () =
+  work @@ fun () ->
   let werf =
     pf_ot ~ident:"Werf" ~plural:"Werven"
       [ ("bonus", pf_n0); ("keur", pf_n0) ]
@@ -9266,6 +9383,7 @@ let () =
    one. The fold's facts are keyed by the list alone, so without the
    subject's reach the guard fired wherever the list had an element. *)
 let () =
+  work @@ fun () ->
   let element_list = Printf.sprintf {|{ "node": "ListType", "element": %s }|} pf_n2 in
   let lambda body =
     Printf.sprintf
@@ -9321,6 +9439,7 @@ let () =
 
 (* the temporal positions *)
 let () =
+  work @@ fun () ->
   let day_count =
     {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": [{ "node": "Unit",
       "abbreviation": "dagen" }] }|}
@@ -9469,6 +9588,7 @@ let () =
    justification. Erkend decides basisbedrag, the second default decides its
    own bedrag, the initialisation decides last. *)
 let () =
+  work @@ fun () ->
   let jutter =
     pf_ot ~characteristics:[ "erkend"; "kandidaat" ]
       [ ("basisbedrag", pf_n0); ("kandidaatbedrag", pf_n0); ("waardering", pf_n0) ]
@@ -9543,6 +9663,7 @@ let () =
    initialisation writes and the initialisation writes it again: ref faults on
    its pass budget, and clingo must refuse there too rather than answer. *)
 let () =
+  work @@ fun () ->
   let vondst =
     pf_ot ~ident:"Vondst" ~plural:"Vondsten"
       [ ("gewicht", pf_n2); ("lengte", pf_n2); ("taxatie", pf_n2); ("bergloon", pf_n2);
@@ -9893,6 +10014,7 @@ let () =
 
 (* an allocation's voorwaarde, read per source: 90 over three jutters *)
 let () =
+  work @@ fun () ->
   let veiling =
     pf_ot ~ident:"Strandveiling" ~plural:"Strandveilingen"
       [ ("veilingopbrengst", pf_n0); ("veilingrestant", pf_n0) ]
@@ -9936,6 +10058,7 @@ let () =
    creation fires. A Werf mints one Rapport; its keur reads the rapport's
    bedrag back over the created role. *)
 let () =
+  work @@ fun () ->
   let werf = pf_ot ~ident:"Werf" ~plural:"Werven" [ ("lengte", pf_n2); ("keur", pf_n2) ]
   and report_line = pf_ot ~ident:"Rapport" ~plural:"Rapporten" [ ("bedrag", pf_n2) ] in
   let keuring =
@@ -9993,6 +10116,7 @@ let () =
    reached, in the shared sentence, and the member contributes nothing to
    the fence. *)
 let () =
+  work @@ fun () ->
   let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Jutter","animate":true,"plural":"Jutters","attributes":[{"node":"Attribute","name":"keurlast","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1}}]}}],"characteristics":[]},{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"keurtarief","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1}},{"node":"Unit","abbreviation":"mnd","system":"Keurtijd","canonical":"mnd","factorToCanonical":{"num":1,"den":1},"exponent":-1}]},"plural":"keurtarieven","timeline":{"node":"TimelineFacet","granularity":"month","count":1}},{"node":"Attribute","name":"gewicht","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[{"node":"Characteristic","name":"gekeurd","kind":"adjectival"}]}],"factTypes":[{"node":"FactType","name":"keuring","reciprocal":false,"roles":[{"node":"Role","name":"keurende jutter","objectType":"Jutter","many":false},{"node":"Role","name":"vondst","objectType":"Vondst","plural":"vondsten","many":true}]}],"parameters":[{"node":"Parameter","name":"minimumgewicht","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"domains":[],"unitSystems":[{"node":"UnitSystem","name":"Munt","units":[{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1},"symbol":"€","spellings":["euro","euros"]}]},{"node":"UnitSystem","name":"Keurtijd","units":[{"node":"Unit","abbreviation":"mnd","system":"Keurtijd","canonical":"mnd","factorToCanonical":{"num":1,"den":1},"spellings":["maand"]}]}],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"keurlast van een jutter","versions": [ { "initialisation": false, "presentation": "calculation","target":{"node":"AttributeReference","attribute":"keurlast","subjectType":"Jutter","source":{"snippet":"De keurlast van een Jutter"}},"value":{"node":"Aggregation","kind":"total","arguments":[{"node":"AttributeReference","attribute":"keurtarief","subjectType":"Vondst","source":{"snippet":"het keurtarief van alle vondsten van de Jutter die gekeurd zijn"}}],"elementType":"Vondst","filter":{"node":"Comparison","op":"greater","left":{"node":"AttributeReference","attribute":"gewicht","subjectType":"Vondst","source":{"snippet":"gewicht"}},"right":{"node":"ParameterReference","parameter":"minimumgewicht","source":{"snippet":"het minimumgewicht"}},"source":{"snippet":"zwaarder dan het minimumgewicht"}},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified","unit":[{"node":"Unit","abbreviation":"EUR","system":"Munt","canonical":"EUR","factorToCanonical":{"num":1,"den":1}}]},"source":{"snippet":"het totaal van het keurtarief van alle vondsten van de Jutter die gekeurd zijn"},"sourceRole":{"node":"RoleBinding","factType":"keuring","role":"vondst"}},"validity":{"node":"Validity"} } ]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|} in
   let case_text params rows =
     Printf.sprintf
@@ -10050,6 +10174,7 @@ let () =
    executor's loader refuses the literal first, in WF-084's sentence; built
    past the loader it reaches the reader *)
 let () =
+  work @@ fun () ->
   let ir date_value =
     pf_doc
       ~object_types:[ pf_ot [ ("datum", pf_date); ("heffing", pf_n2) ] ]
@@ -10091,6 +10216,7 @@ let () =
    and ref faults. The same on default 1 (behind a d0 that does not decide),
    and on a characteristic target (besluit true, the exception false). *)
 let () =
+  work @@ fun () ->
   let jutter =
     pf_ot ~characteristics:[ "grondY"; "erkend"; "bevoegd" ]
       [ ("inkomen", pf_n0); ("basisbedrag", pf_n0); ("waardering", pf_n0) ]
@@ -10183,6 +10309,7 @@ let () =
    that reads p first faults. The same with the branch under an operator, and
    with a Match over an enumeration. *)
 let () =
+  work @@ fun () ->
   let p = pf_p "p" and k = pf_b "k" and restpost = pf_a "restpost" in
   let q_gt_0 = pf_cmp "greater" (pf_p "q") (pf_l "0") in
   let two_arms = pf_ite q_gt_0 (pf_bin "plus" p k) (pf_bin "plus" k p) in
@@ -10238,6 +10365,7 @@ let () =
    with a read of a inside a fold filter over an empty range. The controls
    read a (b bound to inkomen, or a non-empty range) and ref faults. *)
 let () =
+  work @@ fun () ->
   let p = pf_p "p" and restpost = pf_a "restpost" and inkomen = pf_a "inkomen" in
   let ab ~a ~b = pf_let "a" a (pf_let "b" b (pf_bin "plus" (pf_b "b") (pf_b "a"))) in
   let doc value_node = pf_doc ~parameters:[ pf_decl "p"; pf_decl "q" ] ~rule_defs:[ pf_rule value_node ] () in
@@ -10309,6 +10437,7 @@ let () =
    takes ascending label order (ch. 5.7a). Werf W1, schuiten S1 (lengte 8)
    and S2 (lengte 3); every matrix reads the unbound p. *)
 let () =
+  work @@ fun () ->
   let werf = pf_ot ~ident:"Werf" ~plural:"Werven" [ ("keur", pf_n0) ]
   and schuit = pf_ot ~ident:"Schuit" ~plural:"Schuiten" [ ("lengte", pf_n0) ] in
   let ligplaats =
@@ -10411,6 +10540,7 @@ let () =
    surely reads k" made the guard wait for k's need. restpost and extra are
    leeg unless a case says otherwise. *)
 let () =
+  work @@ fun () ->
   let p = pf_p "p" and k = pf_b "k" and restpost = pf_a "restpost" in
   let jutter =
     pf_ot
@@ -10563,6 +10693,7 @@ let () =
    With the need leeg the first member's filter reads k, the barrier ends the
    Let and p is never read; with the need filled p is read and ref faults. *)
 let () =
+  work @@ fun () ->
   let werf =
     pf_ot ~ident:"Werf" ~plural:"Werven" [ ("bonus", pf_n0); ("restpost", pf_n0) ]
   and schuit = pf_ot ~ident:"Schuit" ~plural:"Schuiten" [ ("lengte", pf_n0) ] in
@@ -10619,6 +10750,7 @@ let () =
    with the inner one, and x's leeg need then stopped the guard. sh-7b is
    the same document with the inner binder renamed. *)
 let () =
+  work @@ fun () ->
   let p = pf_p "p" and k = pf_b "k" and restpost = pf_a "restpost" in
   let jutter =
     pf_ot [ ("inkomen", pf_n2); ("restpost", pf_n2); ("extra", pf_n2); ("heffing", pf_n2) ]
@@ -10664,6 +10796,7 @@ let () =
    value's param atom, which left the fold underived). Also through a chain
    of Lets over the Match (cl-2) and through a branch inside the arm (cl-3). *)
 let () =
+  work @@ fun () ->
   let constructors =
     Printf.sprintf
       {|"constructors": [ { "name": "Waardevol", "payload": %s }, { "name": "Waardeloos", "payload": null } ]|}
@@ -10780,6 +10913,7 @@ let () =
    reads k. pm-nest puts the same in a quantifier fold over each schuit's
    ladingen inside the set fold's filter. *)
 let () =
+  work @@ fun () ->
   let werf =
     pf_ot ~ident:"Werf" ~plural:"Werven" [ ("bonus", pf_n0); ("restpost", pf_n0) ]
   and schuit = pf_ot ~ident:"Schuit" ~plural:"Schuiten" [ ("lengte", pf_n0) ]
@@ -10911,6 +11045,7 @@ let named_refusal ~by ~ref_plays ~name ~ir ~case_text ~param =
 let order_named = named_refusal ~by:"the quantifier fold" ~ref_plays:false
 
 let () =
+  work @@ fun () ->
   let werf = pf_ot ~ident:"Werf" ~plural:"Werven" [ ("keur", pf_n0) ]
   and schuit = pf_ot ~ident:"Schuit" ~plural:"Schuiten" [ ("lengte", pf_n0) ]
   and haven = pf_ot ~ident:"Haven" ~plural:"Havens" [ ("keur", pf_n0) ] in
@@ -11011,6 +11146,7 @@ let () =
    demand of a Let value read in a matrix. c0 mints a schuit for each Werf, c1
    a werf for each Haven, c2 a schuit for each Droogdok. *)
 let () =
+  work @@ fun () ->
   let haven = pf_ot ~ident:"Haven" ~plural:"Havens" [ ("keur", pf_n0); ("bonus", pf_n0) ]
   and werf =
     pf_ot ~ident:"Werf" ~plural:"Werven"
@@ -11191,6 +11327,7 @@ let () =
    schuiten die k > 0)) in (j plus p)). tr-strat-1: a rule condition that reads
    the range under `all` puts the rule above the creation (ch. 6.3). *)
 let () =
+  work @@ fun () ->
   let n0 = pf_n0 in
   let haven = pf_ot ~ident:"Haven" ~plural:"Havens" [ ("bonus", n0); ("restpost", n0) ]
   and werf = pf_ot ~ident:"Werf" ~plural:"Werven" [ ("bonus", n0); ("restpost", n0) ]
@@ -11518,6 +11655,7 @@ let () =
    6]], p > 0]. r6-strat-sc: an `all` fold over the same range puts the rule
    above the creation (ch. 6.3). *)
 let () =
+  work @@ fun () ->
   let jutter = pf_ot [ ("inkomen", pf_n2); ("a", pf_n2); ("heffing", pf_n2) ] in
   let heffing =
     pf_rule
@@ -11612,6 +11750,7 @@ let () =
    takes the first arm; and keur = p indien het aantal schuiten = 0 does not
    hold. ref reads the fixpoint as clingo does *)
 let () =
+  work @@ fun () ->
   let n0 = pf_n0 in
   let lit v = pf_l ~typ:n0 v in
   let werf = pf_ot ~ident:"Werf" ~plural:"Werven" [ ("keur", n0) ]
@@ -11701,6 +11840,7 @@ let () =
    indien TEN MINSTE 1 [TEN MINSTE 1 schuiten van zijn werf [lengte > 5], p >
    0]. At the fixpoint the rapport's werf has its schuit, so p is not read *)
 let () =
+  work @@ fun () ->
   let n0 = pf_n0 in
   let lit v = pf_l ~typ:n0 v in
   let werf = pf_ot ~ident:"Werf" ~plural:"Werven" [ ("keur", n0) ]
@@ -11768,6 +11908,7 @@ let () =
    assertion (P11); and as the condition of a characteristic assignment
    (P13) *)
 let () =
+  work @@ fun () ->
   let n0 = pf_n0 in
   let lit v = pf_l ~typ:n0 v in
   let werf = pf_ot ~ident:"Werf" ~plural:"Werven" ~characteristics:[ "goed" ] [ ("keur", n0) ]
@@ -11839,6 +11980,7 @@ let () =
    clingo refuses all the same. With the two schuiten in the case, in either
    order, both play. *)
 let () =
+  work @@ fun () ->
   let werf = pf_ot ~ident:"Werf" ~plural:"Werven" [ ("keur", pf_n0) ]
   and schuit = pf_ot ~ident:"Schuit" ~plural:"Schuiten" [ ("lengte", pf_n0) ] in
   let ligplaats =
@@ -11902,6 +12044,7 @@ let () =
    reached: "de dag later is dan de grensdatum" with grensdatum unbound,
    under the condition 1 > 2, where ref never walks a day *)
 let () =
+  work @@ fun () ->
   let ir =
     dk_doc
       ~precondition:
@@ -12026,6 +12169,7 @@ let keurtermijn_case =
     { "kind": "consistent" } ] }|}
 
 let () =
+  work @@ fun () ->
   both_answer ~name:"a quantifier fold stops before a member whose day-kind walk faults (control)"
     ~ir:(keurtermijn_doc ~creation:false) ~case_text:keurtermijn_case;
   pinned_loud ~entry:"V5" ~name:"the same fold in a document with an object creation (kv-dk-creation)"
@@ -12039,6 +12183,7 @@ let () =
    characteristic is no attribute, so no value position reads it — not a
    rule value, not a value fold's set source *)
 let () =
+  work @@ fun () ->
   let persoon = pf_ot ~ident:"Persoon" ~plural:"Personen" [ ("leeftijd", pf_n2) ] in
   let jutter =
     substitute
@@ -12108,6 +12253,7 @@ let () =
    stand with their chapters (ch3.4b, ch3.9a, WF-110 above); the quantifier
    fold's missing range is the one added here. *)
 let () =
+  work @@ fun () ->
   (* the base documents load in the verifier's stance: the reading document
      carries a VariableReference, which an executor refuses at load (WF-034,
      the L5 table's stance split); every row below is a structural refusal,
@@ -12308,6 +12454,7 @@ let () =
    (0.041666666666666664…) makes neither step exact — 1 over it is not 24 —
    so this witness holds only on the rational the wire writes. *)
 let () =
+  work @@ fun () ->
   let dg = {|{ "node": "Unit", "abbreviation": "dg", "system": "Tijdsduur", "canonical": "dg", "factorToCanonical": { "num": 1, "den": 1 } }|} in
   let hour = {|{ "node": "Unit", "abbreviation": "uur", "system": "Tijdsduur", "canonical": "dg", "factorToCanonical": { "num": 1, "den": 24 } }|} in
   let number_value unit = Printf.sprintf {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": [%s] }|} unit in
@@ -12370,6 +12517,7 @@ let () =
    wrongly, and the loader this backend shares with ref and the verifier
    refuses it by name — none is read and dropped. *)
 let () =
+  work @@ fun () ->
   let km = {|{ "node": "Unit", "abbreviation": "km", "system": "Afstand", "canonical": "m", "factorToCanonical": { "num": 1000, "den": 1 } }|} in
   let base =
     Printf.sprintf
@@ -12576,6 +12724,7 @@ let () =
    The base document is first held loading, with every L4 form in it; each
    row twists exactly one form and pins the loader's sentence. *)
 let () =
+  work @@ fun () ->
   let number_value = {|{ "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" }|} in
   let day_number = {|{ "node": "Date", "precision": "day" }|} in
   let rb f r = Printf.sprintf {|{ "node": "RoleBinding", "factType": "%s", "role": "%s" }|} f r in
@@ -12949,6 +13098,7 @@ let () =
    backend then refuse it in WF-028's own sentence — the one the verifier and
    the Drools loader speak — and never in the generic binding sentence. *)
 let () =
+  work @@ fun () ->
   List.iter
     (fun (ident, truth, via, sentence_text) ->
       let doc, case =
@@ -12975,6 +13125,7 @@ let () =
    boundary, one day apart, and refuse a session without a date in one
    sentence, the sibling of evaluationDate's. *)
 let () =
+  work @@ fun () ->
   let ir =
     {|{ "format": "uchar-ir-v1",
   "model": {
@@ -13035,6 +13186,7 @@ let () =
    path; ref and this backend refuse it in that same sentence, where this
    backend used to answer in the aggregation's words for a sourcePath. *)
 let () =
+  work @@ fun () ->
   let ir =
     {|{ "format": "uchar-ir-v1",
   "model": {
@@ -13085,6 +13237,7 @@ let () =
    Werf fixture: both spellings, and none. ref and this backend speak the
    loader's sentences. *)
 let () =
+  work @@ fun () ->
   let doc, case =
     load_pair ~ir:(kv_doc ()) ~case_text:(kv_case ~member_list:[ ("S1", whole_year "50") ] ~truth:true ())
   in
@@ -13120,6 +13273,7 @@ let () =
    voorwaarde, the two places this backend reads a builtin. Until this
    refusal the backend answered both documents with the facet dropped. *)
 let () =
+  work @@ fun () ->
   let sentence_text = "granularity facet on a non-bucketing kind" in
   let rejected ident ir case_text at =
     check (ident ^ ": the verifier refuses with WF-037")
@@ -13167,6 +13321,7 @@ let () =
    sentence. The probe is also refused by the verifier, for other reasons
    (WF-056 on its base and gedurende condition). *)
 let () =
+  work @@ fun () ->
   let ir =
     {|{ "format": "uchar-ir-v1",
   "model": {
@@ -13227,6 +13382,7 @@ let () =
    verifier loads it so that the rule names it in that same sentence. The base
    document is first held loading and read; each row twists one position. *)
 let () =
+  work @@ fun () ->
   let number_value = {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }|} in
   let always = {|{ "node": "Validity" }|} in
   let base =
@@ -13443,6 +13599,7 @@ type l5_row =
   | Empty_predicate of string  (* the field, given null *)
 
 let () =
+  work @@ fun () ->
   let base =
     {|{
   "format": "uchar-ir-v1",
@@ -14254,6 +14411,7 @@ let () =
    directory, and a missing one FAILS: a test that skips when its subject is
    absent is a silent green. *)
 let () =
+  work @@ fun () ->
   let name_table_path = "spec/proposals/v1-naamtabel.json"
   and schema_path = "spec/schema/uchar-ir-v1.schema.json" in
   let rec root_node dir =
@@ -14702,6 +14860,7 @@ let program_holds ~name ~ir ~case_text ~present ~absent =
         (missing = [] && unwanted = [])
 
 let () =
+  work @@ fun () ->
   (* the literal frames declare a tarief attribute they do not read *)
   let unread = rate_number ~decimals:2 in
   (* the RegelSpraak emission: lexeme 0.8750, typed at three decimals, the
@@ -14882,6 +15041,7 @@ let () =
    backend's own refusal of the two builtins (the clingo side of
    corpus/negative/wf038-absolute-value-text and wf038-square-root-text) *)
 let () =
+  work @@ fun () ->
   let body_text = pf_l ~typ:{|{ "node": "Text" }|} "vier" in
   let builtin kind =
     Printf.sprintf
@@ -14908,6 +15068,7 @@ let () =
    corpus/negative/wf038-duration-unknown-unit and
    wf038-absolute-duration-unknown-unit) *)
 let () =
+  work @@ fun () ->
   let vadem =
     {|{ "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified", "unit": [{ "node": "Unit", "abbreviation": "vadem" }] }|}
   in
@@ -14941,6 +15102,7 @@ let () =
    the builtin's own kind; ref's suite holds the same rows as
    WV-3.8-duurvorm. *)
 let () =
+  work @@ fun () ->
   let counted ?u () =
     match u with
     | None -> pf_n0
@@ -15001,6 +15163,7 @@ let () =
    read from [Ir_v0.Checks], compared whole; ref's suite holds the same rows
    as WV-3.8-datumvorm. *)
 let () =
+  work @@ fun () ->
   let extent ?u n =
     pf_l
       ~typ:
@@ -15080,6 +15243,7 @@ let () =
    fold passed vacuously on the rest. Without a wachtplichtig period nothing is
    written and all three pass vacuously, in both executors. *)
 let () =
+  work @@ fun () ->
   let number_value = {|{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}|} in
   let one_member ident facet =
     Printf.sprintf {|{"node":"Attribute","name":"%s","datatype":%s%s}|} ident number_value
@@ -15158,6 +15322,7 @@ let () =
    were refused as "only month and year granularity have a calendar bucket",
    and the multi-period grid and the missing date were answered. *)
 let () =
+  work @@ fun () ->
   let number_value = {|{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}|} in
   let facet g ~count frozen =
     Printf.sprintf {|{"node":"TimelineFacet","granularity":"%s","count":%d%s}|} g count
@@ -15208,6 +15373,7 @@ let () =
    shares with ref), and the asOfDate bucket of a scalar on a variable start
    is refused at translation. The Drools backend speaks the same sentences. *)
 let () =
+  work @@ fun () ->
   let number_value = {|{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}|} in
   let ir ~facet ~timelines ~provisions =
     Printf.sprintf
@@ -15257,6 +15423,7 @@ let () =
    at load, in the verifier's WF-115 sentence, by the loader this backend
    shares with ref. *)
 let () =
+  work @@ fun () ->
   let facet gran frozen =
     Printf.sprintf {|{"node":"TimelineFacet","granularity":"%s","count":1%s}|} gran
       (match frozen with Some v -> Printf.sprintf {|,"fixedStart":"%s"|} v | None -> "")
@@ -15312,6 +15479,7 @@ let () =
    ten decimals — stays a named refusal: ref computes 1/3 exactly, this
    encoding cannot. *)
 let () =
+  work @@ fun () ->
   let doc ?(precondition = "") lit =
     Printf.sprintf
       {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"gewicht","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"nonNegative"}},{"node":"Attribute","name":"strandgeld","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"strandgeld van een vondst","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"strandgeld","subjectType":"Vondst","source":{"snippet":"Het strandgeld van een Vondst"}},"value":{"node":"Binary","op":"times","left":{"node":"AttributeReference","attribute":"gewicht","subjectType":"Vondst","source":{"snippet":"zijn gewicht"}},"right":{"node":"Literal","value":{"number":"%s"},"type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"%s"}},"type":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"},"source":{"snippet":"zijn gewicht maal %s"}}%s,"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
@@ -15356,6 +15524,7 @@ let () =
    the encoding (CLINGO-031), never the fault of the write boundary, which ref
    does not raise. The same quotient as the value itself does not fit, EF-006. *)
 let () =
+  work @@ fun () ->
   let ir value =
     Printf.sprintf
       {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"gewicht","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"herwogen","datatype":{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"herwogen gewicht","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"herwogen","subjectType":"Vondst","source":{"snippet":"Het herwogen van een Vondst"}},"value":%s,"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|}
@@ -15409,6 +15578,7 @@ let () =
    instead of as a value that "does not fit 0 decimals" or a division that
    needs "an explicit rounding", neither of which the declaration says. *)
 let () =
+  work @@ fun () ->
   let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Vondst","animate":false,"plural":"Vondsten","attributes":[{"node":"Attribute","name":"sleepafstand","datatype":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"dubbele sleepafstand","datatype":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"gedeelde sleepafstand","datatype":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"dubbele sleepafstand","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"dubbele sleepafstand","subjectType":"Vondst","source":{"snippet":"De dubbele sleepafstand van een Vondst"}},"value":{"node":"Binary","op":"times","left":{"node":"AttributeReference","attribute":"sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn sleepafstand"}},"right":{"node":"Literal","value":{"number":"2"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"2"}},"type":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"},"source":{"snippet":"zijn sleepafstand maal 2"}},"initialisation":false,"presentation":"calculation"}]},{"node":"Rule","name":"gedeelde sleepafstand","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"gedeelde sleepafstand","subjectType":"Vondst","source":{"snippet":"De gedeelde sleepafstand van een Vondst"}},"value":{"node":"Binary","op":"dividedBy","left":{"node":"AttributeReference","attribute":"sleepafstand","subjectType":"Vondst","source":{"snippet":"zijn sleepafstand"}},"right":{"node":"Literal","value":{"number":"4"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"4"}},"type":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"},"source":{"snippet":"zijn sleepafstand gedeeld door 4"}},"initialisation":false,"presentation":"calculation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|} in
   let case_data input_data duplicate shared =
     Printf.sprintf
@@ -15492,6 +15662,7 @@ let () =
    A parameter of the form takes the decimals of its case value: a rate of
    0,25 makes the product by it two decimals finer than the inkomen. *)
 let () =
+  work @@ fun () ->
   let unbounded = {|{ "node": "Number", "whole": false, "decimals": 0, "sign": "unspecified" }|} in
   let jutter = pf_ot [ ("inkomen", pf_n0); ("deler", pf_n0); ("aandeel", unbounded); ("toeslag", unbounded) ] in
   let share = pf_rule ~objective:"aandeel" (pf_bin ~typ:unbounded "dividedBy" (pf_a "inkomen") (pf_a "deler")) in
@@ -15679,6 +15850,7 @@ let () =
    2025-12-31 and a case on 2026-06-01, where no rule writes the stand
    (stand(W1) and opvolgerbegin(W1) leeg). *)
 let () =
+  work @@ fun () ->
   let number_value = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|} in
   let literal n =
     Printf.sprintf {|{"node": "Literal", "value": {"number": "%d"}, "type": %s, "source": {"snippet": "%d"}}|} n
@@ -15889,6 +16061,7 @@ let () =
    ervaren; refused until that fix); valid from 2025-01-01 it is refused as
    before (ref: 1). Each in every order of its rules. *)
 let () =
+  work @@ fun () ->
   let number_value = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|} in
   let literal n =
     Printf.sprintf {|{"node": "Literal", "value": {"number": "%d"}, "type": %s, "source": {"snippet": "%d"}}|} n
@@ -16076,6 +16249,7 @@ let () =
    here and the runner refuses it (CLINGO-030); ref answers W1 2, W3 2. The fact creation "geef door" under "hij is ervaren" (M3 over
    an M2 attribution) is the carried frame of the off-the-cycle block above. *)
 let () =
+  work @@ fun () ->
   let number_value = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|} in
   let count_value = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}|} in
   let literal n =
@@ -16408,7 +16582,10 @@ let () =
     Printf.sprintf {|{"kind": "attributeValue", "label": "%s", "attribute": "%s", "value": {"number": "%s"}}|} label
       attr w
   and inconsistent rule_def = Printf.sprintf {|{"kind": "inconsistent", "rule": "%s"}|} rule_def in
+  (* each frame is a unit of work: the two chains over three strata take 25 and
+     35 seconds *)
   let plays ~name ~ir ~case_text =
+    work @@ fun () ->
     verifier_clean ~name ~ir;
     ref_matches ~name ~ir ~case_text;
     clingo_matches ~name ~ir ~case_text
@@ -16423,6 +16600,7 @@ let () =
      shared words alone would let it pass (the lens on the card's last
      step). *)
   let budget_op ~name ~ir ~case_text ~creation ~idx ~root =
+    work @@ fun () ->
     verifier_clean ~name ~ir;
     let doc, case = load_pair ~ir ~case_text in
     let repeat n s = String.concat "" (List.init n (fun _ -> s)) in
@@ -16588,6 +16766,7 @@ let () =
     ~ir:(waits_on_link 102) ~case_text:guard_case ~creation:"werf de opvolger" ~idx:0 ~root:"W1";
   (* the clamp: a forged instance with a depth in stratum 1 only, an instance
      of the subject type of "werf de lange keten", of stratum 0 *)
+  work @@ fun () ->
   let name = "ch5.5 creation budget, the clamp on a subject without a depth in the creation's stratum" in
   let doc, case = load_pair ~ir:(lange_chain 5) ~case_text:(case_data [ value_node "W1" "rang" "1" ]) in
   let label = name ^ ": clingo refuses by name" in
@@ -16635,6 +16814,7 @@ let date_with_case ?(expected = "") parts =
     attrs expected
 
 let () =
+  work @@ fun () ->
   let some = List.map Option.some in
   let fires ~name parts ~needle =
     let doc, case = load_pair ~ir:date_with_ir ~case_text:(date_with_case parts) in
@@ -16693,6 +16873,7 @@ let () =
    (the datum-tijd listed fold writes two, the second reading the first's
    result), and the refusal. *)
 let () =
+  work @@ fun () ->
   check "hoist: the variables of an ASP text skip a string"
     (Translate.asp_variables "val(X3,\"Maand X\",A4), fl7_def(X3)" = [ "A4"; "X3" ]);
   let refuses name ~outside atoms =
@@ -16733,6 +16914,7 @@ let () =
    a counting composite in the filter, whose chain of helpers this backend
    does not key: the fence refuses it by name, where ref answers. *)
 let () =
+  work @@ fun () ->
   check "anchor: an aggregate that reads the form subject hoists with it in its head"
     (match
        Translate.element_aggregate_plan ~form:("S", "Vergunning") ~x:"X3" ~outside:[ "S" ]
@@ -16769,6 +16951,7 @@ let () =
    6000000-04-02. ref and Drools answer that year and a case cannot write the
    date, so no golden or red case can hold the refusal; it is pinned here. *)
 let () =
+  work @@ fun () ->
   let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Schuit","animate":false,"plural":"Schuiten","attributes":[{"node":"Attribute","name":"paasjaar","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"paasdag","datatype":{"node":"Date","precision":"day"}}],"characteristics":[]}],"factTypes":[],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"paasdag","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"paasdag","subjectType":"Schuit","source":{"snippet":"De paasdag van een Schuit"}},"value":{"node":"BuiltinCall","kind":"easterSunday","arguments":[{"node":"AttributeReference","attribute":"paasjaar","subjectType":"Schuit","source":{"snippet":"zijn paasjaar"}}],"type":{"node":"Date","precision":"day"},"source":{"snippet":"de eerste paasdag van zijn paasjaar"}},"initialisation":false,"presentation":"equation"}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|} in
   let case_text =
     {|{ "format": "uchar-case-v0", "asOfDate": null,
@@ -16799,6 +16982,7 @@ let () =
    jutterswet-paasdag-voor-jaar-een). The year -2 is the one for which the
    formula names the 31st of February *)
 let () =
+  work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let dir = "corpus/red/jutterswet-paasdag-voor-jaar-een/" in
   List.iter
@@ -16821,6 +17005,7 @@ let () =
    inzetbaar). The golden jutterswet-keurquotient stands in gate 6's refusal
    channel with this code. Until this card the witness read as EF-006. *)
 let () =
+  work @@ fun () ->
   let ir = {|{"format":"uchar-ir-v1","model":{"objectTypes":[{"node":"ObjectType","name":"Ploeg","animate":false,"plural":"Ploegen","attributes":[{"node":"Attribute","name":"wachttal","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[{"node":"Characteristic","name":"inzetbaar","kind":"adjectival"}]},{"node":"ObjectType","name":"Strandwacht","animate":true,"plural":"Strandwachten","attributes":[{"node":"Attribute","name":"keurpunten","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}},{"node":"Attribute","name":"keuringen","datatype":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"}}],"characteristics":[{"node":"Characteristic","name":"gekeurd","kind":"adjectival"}]}],"factTypes":[{"node":"FactType","name":"ploegindeling","reciprocal":false,"roles":[{"node":"Role","name":"ploeg","objectType":"Ploeg","many":false},{"node":"Role","name":"wacht","objectType":"Strandwacht","plural":"wachten","many":true}]}],"parameters":[],"domains":[],"unitSystems":[],"dimensions":[],"timelines":[],"dayKinds":[]},"rules":{"rules":[{"node":"Rule","name":"inzetbaar bij keurgemiddelde","versions":[{"validity":{"node":"Validity"},"target":{"node":"AttributeReference","attribute":"inzetbaar","subjectType":"Ploeg","source":{"snippet":"Een Ploeg is inzetbaar"}},"value":{"node":"Literal","value":{"boolean":true},"type":{"node":"Boolean"},"source":{"snippet":"waar"}},"condition":{"node":"QuantifierFold","quantifier":"all","elementType":"Strandwacht","test":{"node":"Compound","quantifier":"all","threshold":0,"parts":[{"node":"CharacteristicCheck","characteristic":"gekeurd","negated":false,"source":{"snippet":"hij is gekeurd"}},{"node":"Comparison","op":"greater","left":{"node":"Binary","op":"dividedBy","left":{"node":"AttributeReference","attribute":"keurpunten","subjectType":"Strandwacht","source":{"snippet":"zijn keurpunten"}},"right":{"node":"AttributeReference","attribute":"keuringen","subjectType":"Strandwacht","source":{"snippet":"zijn keuringen"}},"type":{"node":"Number","whole":false,"decimals":0,"sign":"unspecified"},"source":{"snippet":"zijn keurpunten gedeeld door zijn keuringen"}},"right":{"node":"Literal","value":{"number":"6"},"type":{"node":"Number","whole":true,"decimals":0,"sign":"unspecified"},"source":{"snippet":"6"}},"source":{"snippet":"zijn keurpunten gedeeld door zijn keuringen is groter dan 6"}}],"source":{"snippet":"hij aan alle volgende voorwaarden voldoet"}},"source":{"snippet":"alle wachten van de Ploeg aan alle volgende voorwaarden voldoen"},"sourceRole":{"node":"RoleBinding","factType":"ploegindeling","role":"wacht"}},"initialisation":false}]}],"dayKindDefinitions":[],"objectCreations":[],"allocations":[],"consistencies":[],"uniquenesses":[],"factCreations":[],"startPointDeterminations":[],"ruleGroups":[]},"diagnostics":[]}|} in
   List.iter
     (fun (variant, case_text) ->
@@ -16840,6 +17025,7 @@ let () =
    and CLINGO-039 in a condition, never the write boundary EF-006, which ref
    does not raise. *)
 let () =
+  work @@ fun () ->
   let number2 = {|{"node":"Number","whole":false,"decimals":2,"sign":"unspecified"}|} in
   let whole = {|{"node":"Number","whole":true,"decimals":0,"sign":"nonNegative"}|} in
   let acc = {|{"node":"BinderRef","name":"acc","source":{"snippet":"het opgetelde deel"}}|} in
@@ -16909,6 +17095,7 @@ let () =
    backend CLINGO-040, both with the parameters fold and attribute. No red
    case can hold it: gate 8 pins an EF code, and the form has none. *)
 let () =
+  work @@ fun () ->
   let number_value = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|} in
   let monthly = {|, "timeline": {"node": "TimelineFacet", "granularity": "month", "count": 1}|} in
   let read one_member type_name =
@@ -16967,6 +17154,7 @@ let () =
    role. Measured before the refusal: the count gave 0 and the quantifier fold
    no dagwaarde, `clingo: PASS`, where ref faulted. *)
 let () =
+  work @@ fun () ->
   let number_value = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|} in
   let daily = {|"timeline": {"node": "TimelineFacet", "granularity": "day", "count": 1}|} in
   let drijvend = {|{"node": "CharacteristicCheck", "characteristic": "drijvend", "negated": false, "source": {"snippet": "drijvend"}}|} in
@@ -17025,6 +17213,7 @@ let () =
    object types, whose deepest atom, has(oc450(…oc0("S1")…),"bereikt"), is
    3070 characters long JSON-escaped. *)
 let () =
+  work @@ fun () ->
   List.iter
     (fun n ->
       let name = Printf.sprintf "the model as clingo prints it, a string of %d characters" n in
@@ -17075,6 +17264,7 @@ let () =
    refuses it by name, where it faulted without a code until the second
    clingo round of 2026-11-06. *)
 let () =
+  work @@ fun () ->
   let number_value = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}|} in
   let ir =
     Printf.sprintf
@@ -17100,6 +17290,7 @@ let () =
    both are a limit of the encoding, also where every part is a text: until
    this card they reached the bottom arm CLINGO-002, which no pin may name. *)
 let () =
+  work @@ fun () ->
   let text_type = {|{"node": "Text"}|} in
   let read one_member =
     Printf.sprintf {|{"node": "AttributeReference", "attribute": "%s", "subjectType": "Jutter", "source": {"snippet": "zijn %s"}}|}
@@ -17204,6 +17395,7 @@ let refuses_without_one_model ~name ~rules ~models =
         (code = Some "CLINGO-030" && params = [ ("models", models) ])
 
 let () =
+  work @@ fun () ->
   refuses_without_one_model ~name:"two characteristics that deny each other (two stable models)"
     ~rules:
       [ unique_model_rule ~name:"open" ~unless:"gesloten"; unique_model_rule ~name:"gesloten" ~unless:"open" ]
@@ -17218,6 +17410,7 @@ let () =
    and the runner reported an UNSAT whose guard it could not name. A program
    the parser refuses is the smallest such run. *)
 let () =
+  work @@ fun () ->
   let label = "diagnostic: a clingo run that ends in an error faults with its exit" in
   match Solve.diagnostic "a(." with
   | ws -> check (label ^ " (diagnosed as [" ^ String.concat "; " ws ^ "])") false
@@ -17288,6 +17481,7 @@ let reciprocal_case =
       "expected": [ { "kind": "attributeEmpty", "label": "A", "attribute": "target" } ] }|}
 
 let () =
+  work @@ fun () ->
   faults_with ~name:"a reciprocal times a quantity by a factor that is no whole number"
     ~ir:(reciprocal_doc ~target_unit:"none" ~value:(reciprocal_binary "times" "per_wk" "dg"))
     ~case_text:reciprocal_case
@@ -17378,6 +17572,7 @@ let factors_case inputs target =
     | None -> {|{ "kind": "attributeEmpty", "label": "A", "attribute": "target" }|})
 
 let () =
+  work @@ fun () ->
   let binary op l r =
     Printf.sprintf
       {|{ "node": "Binary", "op": "%s", "left": %s, "right": %s, "type": { "node": "Number", "whole": false, "decimals": 2, "sign": "unspecified" }, "source": { "snippet": "b" } }|}
@@ -17459,6 +17654,7 @@ let () =
    selections. The goldens of one dimension replay through gate 6. Each frame
    also pins the two expectations that name a cell. *)
 let () =
+  work @@ fun () ->
   let unit_kg =
     {|{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}|}
   in
@@ -17713,6 +17909,7 @@ let () =
    initialisation on one cell, and a characteristic attributed to a cell,
    which this backend refuses by name. *)
 let () =
+  work @@ fun () ->
   let unit_kg =
     {|{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}|}
   in
@@ -17878,6 +18075,7 @@ let gated ir =
    unbound time-dependent parameter faults where the value is evaluated. A
    condition without a timeline on such a rule gates it, as ref plays it. *)
 let () =
+  work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let dir = "ref/test/fixtures/period-arithmetic/" in
   faults_at_solving ~name:"period arithmetic: parameter-unbound" ~ir:(read (dir ^ "parameter-unbound/ir.json"))
@@ -17983,6 +18181,7 @@ let () =
    ref holds the exact value (README [V8]); and a de som van over a set whose
    members bring no timeline, which totals 0 per member *)
 let () =
+  work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let dir = "ref/test/fixtures/partial-unit/" in
   List.iter
@@ -18033,6 +18232,7 @@ let () =
    written under a condition per period, whose cuts lie on case bounds and
    grid walls. *)
 let () =
+  work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let dir = "ref/test/fixtures/conditions-per-period/" in
   let pair f = (read (dir ^ f ^ "/ir.json"), read (dir ^ f ^ "/case.json")) in
@@ -18110,6 +18310,7 @@ let () =
    (ref/test/fixtures/writers-per-day), its worked examples WV-3.11-per-dag-invoer
    and WV-5.7-per-dag-twee-schrijvers-invoer, played in both executors *)
 let () =
+  work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let dir = "ref/test/fixtures/writers-per-day/" in
   List.iter
@@ -18127,6 +18328,7 @@ let () =
    (ref/test/fixtures/empty-dividend-per-period), its worked example
    WV-3.4-empty-dividend-per-period, played in both executors *)
 let () =
+  work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let dir = "ref/test/fixtures/empty-dividend-per-period/" in
   List.iter
@@ -18147,6 +18349,7 @@ let () =
    (ref/test/fixtures/empty-write), its worked example WV-3.11-leeg-beslist-niets,
    played in both executors *)
 let () =
+  work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let dir = "ref/test/fixtures/empty-write/" in
   List.iter
@@ -18172,6 +18375,7 @@ let () =
    an initialisation, an allocation and a creation's member value on a timeline
    target are refused in ref's words *)
 let () =
+  work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let dir = "ref/test/fixtures/writers-stack/" in
   List.iter
@@ -18346,6 +18550,7 @@ let () =
    decides on some day), and the cases of the golden
    jutterswet-opgave-per-periode, played in both executors *)
 let () =
+  work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let dir = "ref/test/fixtures/defaults-per-day/" in
   List.iter
@@ -18380,6 +18585,7 @@ let () =
    which faults where its default is reached on some day, and for the input that
    the initialisation default reads per day (WV-7.11-initialisatie-emmerscalair) *)
 let () =
+  work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let doc = "ref/test/fixtures/defaults-per-day/lazy-consequence/" in
   let ir = read (doc ^ "ir.json") in
@@ -18462,6 +18668,7 @@ let () =
    form. Behind a rule condition that fails, ref does not evaluate it, and
    neither executor faults *)
 let () =
+  work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let pair d = (read (d ^ "/ir.json"), read (d ^ "/case.json")) in
   List.iter
@@ -18514,6 +18721,7 @@ let () =
    omitted, open bounds as they stand — on the documents of three goldens and
    the cases of ref's suite (ref/test/fixtures/canonical-timeline). *)
 let () =
+  work @@ fun () ->
   let c = Model.canonical_timeline in
   let inf = Uchar_ref.Timeline.open_from and sup = Uchar_ref.Timeline.open_to in
   check "canonical timeline: equal neighbours merge, an open bound stays open"
@@ -18561,6 +18769,7 @@ let () =
    ambiguous (EF-018) ref raises wherever the creation is run, also behind a
    condition that does not hold, and so does this backend. *)
 let () =
+  work @@ fun () ->
   let behind_one_above_two ir =
     replace_first ~needle:{|"initialisation": false, "presentation": "calculation",|}
       ~by:
@@ -18703,6 +18912,7 @@ let () =
    over (2026-03-10, 2026-03-11] reads the 11th alone; over (2026-03-10,
    2026-03-12] it reads the 12th; over an empty interval no day. *)
 let () =
+  work @@ fun () ->
   let later =
     Printf.sprintf
       {|{ "node": "Comparison", "op": "later", "left": %s,
@@ -18776,6 +18986,7 @@ let () =
    beside a created 3, where every order reads it; and S1 of 8, which settles
    the fold at itself, so no order reads it and ref plays. *)
 let () =
+  work @@ fun () ->
   let werf = pf_ot ~ident:"Werf" ~plural:"Werven" [ ("keur", pf_n0) ]
   and schuit = pf_ot ~ident:"Schuit" ~plural:"Schuiten" ~grain:[ ("peil", "month") ] [ ("lengte", pf_n0); ("peil", pf_n0) ] in
   let ligplaats =
@@ -18861,6 +19072,7 @@ let () =
    copied whole, and the refusals beside them, on ref's documents
    (ref/test/fixtures/absence-markers) *)
 let () =
+  work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let g = "corpus/golden/jutterswet-afwezigheidsmarkers/" in
   let ir = read (g ^ "ir.json") in
@@ -18941,6 +19153,7 @@ let () =
    744227579, a wrap, and 999 997 975 years named "a year before 0000-03". On
    the document of corpus/red/date-step-outside-range. *)
 let () =
+  work @@ fun () ->
   let ir = In_channel.with_open_bin "corpus/red/date-step-outside-range/ir.json" In_channel.input_all in
   let case attribute count =
     Printf.sprintf
@@ -18974,6 +19187,7 @@ let () =
    number (0,04 for `acc + x`, the else branch for `x > 5,00`) where ref
    answers 42949673. Below the bound each fence must let the value through. *)
 let () =
+  work @@ fun () ->
   let num ~whole ~decimals =
     Printf.sprintf {|{ "node": "Number", "whole": %b, "decimals": %d, "sign": "unspecified" }|} whole decimals
   in
@@ -19073,6 +19287,7 @@ let () =
    program that spells it as a functor is a clingo syntax error, not an
    answer. The translator refuses the name. *)
 let () =
+  work @@ fun () ->
   let read path = In_channel.with_open_bin path In_channel.input_all in
   faults_with ~name:"a constructor named Not"
     ~ir:(replace ~tok:{|"Openstaand"|} ~by:{|"Not"|} (read "corpus/golden/jutterswet-meldtermijnen/ir.json"))
@@ -19117,6 +19332,7 @@ let empty_dividend_case ~attributes ~expected =
     attributes expected
 
 let () =
+  work @@ fun () ->
   let name = "an empty dividend does not read its divisor" in
   verifier_clean ~name ~ir:empty_dividend_doc;
   clingo_matches ~name ~ir:empty_dividend_doc
@@ -19154,6 +19370,7 @@ let without_recursive_groups text =
   |> Yojson.Safe.to_string
 
 let () =
+  work @@ fun () ->
   let read path = In_channel.with_open_bin path In_channel.input_all in
   List.iter
     (fun (golden, case_file) ->
@@ -19253,37 +19470,43 @@ let allocation_case_with_units ~cap_in_ct ~value_factor =
 
 let () =
   let eur = unit_json "EUR" 1 and ct = unit_json "ct" 100 in
-  clingo_matches ~name:"allocation: a maximum in ct compares with a pot in EUR"
-    ~ir:
-      (allocation_with_units
-         [ ("penningbudget", eur); ("onuitgekeerd budget", eur); ("penningtoewijzing", eur); ("penningmaximum", ct) ])
-    ~case_text:(allocation_case_with_units ~cap_in_ct:true ~value_factor:1);
-  clingo_matches ~name:"allocation: a share and a rest in ct are restated from a pot in EUR"
-    ~ir:
-      (allocation_with_units
-         [ ("penningbudget", eur); ("penningmaximum", eur); ("penningtoewijzing", ct); ("onuitgekeerd budget", ct) ])
-    ~case_text:(allocation_case_with_units ~cap_in_ct:false ~value_factor:100);
+  (* each check is a unit of work: the first four take 13 to 33 seconds *)
+  work (fun () ->
+      clingo_matches ~name:"allocation: a maximum in ct compares with a pot in EUR"
+        ~ir:
+          (allocation_with_units
+             [ ("penningbudget", eur); ("onuitgekeerd budget", eur); ("penningtoewijzing", eur); ("penningmaximum", ct) ])
+        ~case_text:(allocation_case_with_units ~cap_in_ct:true ~value_factor:1));
+  work (fun () ->
+      clingo_matches ~name:"allocation: a share and a rest in ct are restated from a pot in EUR"
+        ~ir:
+          (allocation_with_units
+             [ ("penningbudget", eur); ("penningmaximum", eur); ("penningtoewijzing", ct); ("onuitgekeerd budget", ct) ])
+        ~case_text:(allocation_case_with_units ~cap_in_ct:false ~value_factor:100));
   (* a pot of 1800 ct shared into whole euros: 500 ct is 5 EUR, but 433 ct
      does not fit, the evaluation fault of the assignment gate *)
-  faults_at_solving ~code:("EF-006", []) ~name:"allocation: a share restated into a coarser unit that does not fit"
-    ~ir:
-      (allocation_with_units
-         [ ("penningbudget", ct); ("onuitgekeerd budget", ct); ("penningmaximum", ct); ("penningtoewijzing", eur) ])
-    ~case_text:(allocation_case_with_units ~cap_in_ct:false ~value_factor:1)
-    ~needle:"a share does not fit the target scale" ();
+  work (fun () ->
+      faults_at_solving ~code:("EF-006", []) ~name:"allocation: a share restated into a coarser unit that does not fit"
+        ~ir:
+          (allocation_with_units
+             [ ("penningbudget", ct); ("onuitgekeerd budget", ct); ("penningmaximum", ct); ("penningtoewijzing", eur) ])
+        ~case_text:(allocation_case_with_units ~cap_in_ct:false ~value_factor:1)
+        ~needle:"a share does not fit the target scale" ());
   (* the same pot with its shares in ct and its rest of 26 ct in whole euros *)
-  faults_at_solving ~code:("EF-006", []) ~name:"allocation: a rest restated into a coarser unit that does not fit"
-    ~ir:
-      (allocation_with_units
-         [ ("penningbudget", ct); ("onuitgekeerd budget", eur); ("penningmaximum", ct); ("penningtoewijzing", ct) ])
-    ~case_text:(allocation_case_with_units ~cap_in_ct:false ~value_factor:1)
-    ~needle:"the rest, restated into the unit of its target, does not fit" ();
-  faults_with ~name:"allocation: an unrounded restatement is refused"
-    ~ir:
-      (allocation_with_units ~unrounded:true
-         [ ("penningbudget", eur); ("onuitgekeerd budget", eur); ("penningtoewijzing", eur); ("penningmaximum", ct) ])
-    ~case_text:(allocation_case_with_units ~cap_in_ct:true ~value_factor:1)
-    ~needle:"restates a unit without a rounding"
+  work (fun () ->
+      faults_at_solving ~code:("EF-006", []) ~name:"allocation: a rest restated into a coarser unit that does not fit"
+        ~ir:
+          (allocation_with_units
+             [ ("penningbudget", ct); ("onuitgekeerd budget", eur); ("penningmaximum", ct); ("penningtoewijzing", ct) ])
+        ~case_text:(allocation_case_with_units ~cap_in_ct:false ~value_factor:1)
+        ~needle:"the rest, restated into the unit of its target, does not fit" ());
+  work (fun () ->
+      faults_with ~name:"allocation: an unrounded restatement is refused"
+        ~ir:
+          (allocation_with_units ~unrounded:true
+             [ ("penningbudget", eur); ("onuitgekeerd budget", eur); ("penningtoewijzing", eur); ("penningmaximum", ct) ])
+        ~case_text:(allocation_case_with_units ~cap_in_ct:true ~value_factor:1)
+        ~needle:"restates a unit without a rounding")
 
 (* A link belongs to its fact type (RUNTIME-SEMANTICS ch. 5.7a) and a count
    reads the one relation its sourceRole names (ch. 3.4a). Two fact types
@@ -19353,6 +19576,7 @@ let links_per_relation_case ~instances ~aangemeld ~geborgen =
     aangemeld geborgen
 
 let () =
+  work @@ fun () ->
   let jutter = ("J1", "Jutter", "") in
   let vondst label roles = (label, "Vondst", roles) in
   let input_doc = links_per_relation_doc ~berging_many:true ~creation:false in
@@ -19386,6 +19610,7 @@ let () =
    jutterswet-aanmeldquotum without its parameter set; with only J3, whose
    aanmelddatum is leeg, the read is not reached and nothing faults. *)
 let () =
+  work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let dir = "corpus/golden/anchor/jutterswet-aanmeldquotum/" in
   let ir = read (dir ^ "ir.json") in
@@ -19425,6 +19650,7 @@ let () =
    as an ordering. ref's fixture whole-period-date-ordering with a date
    literal as the bound, which this encoding would otherwise fold *)
 let () =
+  work @@ fun () ->
   let open Yojson.Safe.Util in
   let read f = In_channel.with_open_bin f In_channel.input_all in
   let dir = "ref/test/fixtures/whole-period-date-ordering/" in
@@ -19459,6 +19685,7 @@ let () =
    that snippet, and these three cases of jutterswet-deling-in-afwijking turned
    into "the model carries 1 inconsistent fact(s)". *)
 let () =
+  work @@ fun () ->
   let open Yojson.Safe.Util in
   let corpus rel =
     In_channel.with_open_text (if Sys.file_exists rel then rel else Filename.concat "../../../../.." rel)
@@ -19497,6 +19724,7 @@ let () =
    uniqueness at translation, where ref plays the form; every form's rules
    now wait for its window. *)
 let () =
+  work @@ fun () ->
   let golden = "corpus/golden/jutterswet-keurspelling/" in
   let open Yojson.Safe.Util in
   let map_field k f = function
@@ -19522,6 +19750,7 @@ let () =
    own calendar: the whole units of a span, the measure of a span on a grid,
    the periods a fixed start point lays, and the calendar measure of a day. *)
 let () =
+  work @@ fun () ->
   let day s = Scanf.sscanf s "%4d-%2d-%2d" (fun y m d -> Calendar.days_from_civil ~y ~m ~d) in
   let iso z = let y, m, d = Calendar.civil_from_days z in Printf.sprintf "%04d-%02d-%02d" y m d in
   let span (a, b) = Printf.sprintf "[%s, %s)" (iso a) (iso b) in
@@ -19566,6 +19795,7 @@ let () =
    declared factors: with cm = 1/100 m, F(m^2)/F(cm^2) is 10000, F(1/dg)/F(1/wk)
    is 7 with wk = 7 dg, and half a conversion pair faults (WF-092). *)
 let () =
+  work @@ fun () ->
   let atom ?exponent abbr canonical num den =
     Ir_v0.Ast.
       { abbr_text = Some abbr; system = Some "S"; canonical_form = canonical;
@@ -19593,6 +19823,7 @@ let () =
    through [Translate.translate_guarded], plays the case; the golden without the
    property plays the same input with V3 not meldplichtig (case-ordinary.json). *)
 let () =
+  work @@ fun () ->
   let dir = "ref/test/fixtures/infer-from-empty/" in
   let golden = "corpus/golden/jutterswet-meldplicht-flogic/ir.json" in
   let case_text = corpus_file (dir ^ "case.json") and ordinary_case_text = corpus_file (dir ^ "case-ordinary.json") in
@@ -19644,6 +19875,7 @@ let () =
    CLINGO-050, where ref plays (the golden jutterswet-gevuldtoets-soorten is
    the corpus witness). *)
 let () =
+  work @@ fun () ->
   let num2 = {|{"node": "Number", "whole": false, "decimals": 2, "sign": "unspecified"}|} in
   let whole = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}|} in
   let fields = Printf.sprintf {|[{"name": "waarde", "datatype": %s}, {"name": "telling", "datatype": %s}]|} num2 whole in
@@ -20069,6 +20301,7 @@ let ov_uitbetaling = ov_rule ~name:"uitbetaling" "uitbetaling" (Some (ov_bin "pl
    uitbetaling is 3. A characteristic no rule attributes is open where the case
    does not name it *)
 let () =
+  work @@ fun () ->
   let ir strict = ov_doc ~strict [ ov_vondst [ "vindloon"; "bergloon"; "uitbetaling" ] [ "drijfhout" ] ] [ ov_uitbetaling ] in
   ov_frame ~name:"WV-1.5-open-input" ~ir:(ir true)
     ~case_text:(ov_case (ov_v1 [ ("bergloon", "3") ])
@@ -20084,6 +20317,7 @@ let () =
    Strandvondst is input and open, while that of a Strandvondst with taxatie 50
    is settled leeg *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc
       [ ov_vondst [ "taxatie"; "vindloon" ] []; ov_type ~supertype:"Vondst" "Strandvondst" [] [] ]
@@ -20099,6 +20333,7 @@ let () =
    nothing on 1 June 2026, so a Vondst without a taxatie has a settled leeg
    vindloon and an uitbetaling of 3; on 1 June 2031 the vindloon is open *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc [ ov_vondst [ "taxatie"; "vindloon"; "bergloon"; "uitbetaling" ] [] ]
       [ ov_rule ~name:"vindloon" ~validity:{|{"node": "Validity", "from": "2030-01-01"}|} ~cond:(ov_gt "taxatie" "1000") "vindloon"
@@ -20115,6 +20350,7 @@ let () =
    indien zijn vindloon ongelijk is aan 5" holds; without a taxatie beloond is
    open *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc [ ov_vondst [ "taxatie"; "vindloon"; "bergloon"; "uitbetaling" ] [ "beloond" ] ]
       [ ov_vindloon; ov_uitbetaling; ov_rule ~name:"beloond" ~cond:(ov_cmp "notEqual" (ov_attr "vindloon") (ov_lit "5")) "beloond" None ]
@@ -20129,6 +20365,7 @@ let () =
    getuigen", gewicht 10 and getuigen open, has no value and deposits nothing,
    where the document without the property deposits EF-031 *)
 let () =
+  work @@ fun () ->
   let ir strict =
     ov_doc ~strict [ ov_vondst [ "gewicht"; "getuigen"; "aandeel" ] [] ]
       [ ov_rule ~name:"aandeel" "aandeel" (Some (ov_div (ov_attr "gewicht") (ov_attr "getuigen"))) ]
@@ -20144,6 +20381,7 @@ let () =
    "… gedeeld door de vangst, daarbij geldt: de vangst is zijn gewicht plus zijn
    schade", is refused: its body reads the vindloon before the binder *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc [ ov_vondst [ "taxatie"; "vindloon"; "getuigen"; "aandeel" ] [] ]
       [ ov_vindloon; ov_rule ~name:"aandeel" "aandeel" (Some (ov_div (ov_attr "vindloon") (ov_attr "getuigen"))) ]
@@ -20159,6 +20397,7 @@ let () =
    gewicht", the parameter unbound, faults with EF-014 also where the gewicht is
    open; "zijn gewicht maal het TARIEF" has no value there, and no fault *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc [ ov_vondst [ "gewicht"; "schade"; "restgewicht" ] [] ]
       [ ov_rule ~name:"restgewicht" "restgewicht"
@@ -20181,6 +20420,7 @@ let () =
    rows of all, atLeast 1 and none over A and B, the three rows of "niet A",
    and the rows of atLeast 2, atMost 1 and exactly 1 of the spec *)
 let () =
+  work @@ fun () ->
   let parts = [ ("gewicht", "100", "150", "50"); ("schatting", "1000", "2000", "500"); ("lengte", "2", "5", "1") ] in
   let doc cond = ov_doc [ ov_vondst [ "gewicht"; "schatting"; "lengte" ] [ "opvallend"; "zwaar" ] ] [ ov_rule ~name:"opvallend" ~cond "opvallend" None ] in
   let members n = List.filteri (fun i _ -> i < n) parts in
@@ -20229,6 +20469,7 @@ let () =
    is open at 2000; at gewicht 20 the session faults with EF-011; at gewicht 5
    the read stops at the first member *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc [ ov_vondst [ "gewicht"; "taxatie"; "getuigen"; "vrijstelling" ] [] ]
       [ ov_rule ~name:"vrijstelling"
@@ -20262,6 +20503,7 @@ let () =
    with gewicht 5 whatever the taxatie, open without a gewicht, and open with
    gewicht 20 and no taxatie *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc [ ov_vondst [ "gewicht"; "taxatie"; "vindloon" ] [] ]
       [ ov_rule ~name:"vindloon" ~cond:(ov_gt "gewicht" "10") "vindloon" (Some (ov_div (ov_attr "taxatie") (ov_lit "100"))) ]
@@ -20280,6 +20522,7 @@ let () =
    taxatie. The uitbetaling, in either order of the two rules, and "de toeslag
    is 5 indien zijn vindloon groter is dan 5" before both *)
 let () =
+  work @@ fun () ->
   let tweede = ov_rule ~name:"vindloon zwaar" ~cond:(ov_gt "gewicht" "100") "vindloon" (Some (ov_lit "5")) in
   let ir = ov_doc [ ov_vondst [ "taxatie"; "gewicht"; "vindloon" ] [] ] [ ov_vindloon; tweede ] in
   List.iter
@@ -20306,6 +20549,7 @@ let () =
    is open without a taxatie, and so is the uitbetaling; 10 at taxatie 2000 and
    7 at taxatie 50 *)
 let () =
+  work @@ fun () ->
   let ir = ov_doc [ ov_vondst [ "taxatie"; "vindloon"; "bergloon"; "uitbetaling" ] [] ] [ ov_vindloon; ov_uitbetaling ] in
   List.iter
     (fun (attrs, vindloon, uitbetaling) ->
@@ -20318,6 +20562,7 @@ let () =
    is 2 indien hij niet drijfhout is" over a drijfhout the case does not name
    is open, and 2 where the case names it in characteristicsAbsent *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc [ ov_vondst [ "taxatie"; "toeslag"; "drijftoeslag" ] [ "kostbaar"; "drijfhout" ] ]
       [ ov_rule ~name:"kostbaar" ~cond:(ov_gt "taxatie" "1000") "kostbaar" None;
@@ -20343,6 +20588,7 @@ let () =
    indien geen van: zijn taxatie is gevuld": at taxatie 50, at an open taxatie,
    and at a settled leeg one (the session treats the input as complete) *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc [ ov_vondst [ "taxatie"; "bewakingstoeslag" ] [ "getaxeerd"; "ongetaxeerd"; "kostbaar"; "verweesd" ] ]
       [ ov_rule ~name:"getaxeerd" ~cond:(ov_test "filled" (ov_attr "taxatie")) "getaxeerd" None;
@@ -20368,6 +20614,7 @@ let () =
    0; "de schadetoeslag is 3 indien zijn gewicht plus zijn schade gevuld is" is
    open where the gewicht is open *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc [ ov_vondst [ "gewicht"; "getuigen"; "schade"; "getuigentoeslag"; "schadetoeslag" ] [] ]
       [ ov_rule ~name:"getuigentoeslag" ~cond:(ov_test "empty" (ov_bin "dividedBy" (ov_attr "gewicht") (ov_attr "getuigen"))) "getuigentoeslag" (Some (ov_lit "7"));
@@ -20386,6 +20633,7 @@ let () =
    vangst 4 and gemeld named, 5 where the case does not name gemeld; with "… op
    5 indien zijn vangst groter is dan 1" it stays open without a vangst *)
 let () =
+  work @@ fun () ->
   let ir init_cond =
     ov_doc [ ov_vondst [ "vangst"; "strandloon" ] [ "gemeld" ] ]
       [ ov_rule ~name:"strandloon" ~cond:(ov_check "gemeld") "strandloon" (Some (ov_bin "times" (ov_attr "vangst") (ov_lit "2")));
@@ -20401,6 +20649,7 @@ let () =
 (* WV-1.5-consistency: "het gewicht van een Vondst moet groter of gelijk zijn
    aan 0" reports at gewicht −1, and not without a gewicht *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc ~consistencies:[ ov_consistency ~name:"controle gewicht" (ov_cmp "greaterOrEqual" (ov_attr "gewicht") (ov_lit "0")) ]
       [ ov_vondst [ "gewicht" ] [] ] []
@@ -20417,6 +20666,7 @@ let () =
    not name ervaren for the vinder, and "toegewezen indien hij een vinder
    heeft" stands without a bonus *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc ~fact_types:[ ov_vangst ]
       [ ov_type "Jutter" [ "bonus" ] [ "ervaren" ];
@@ -20445,6 +20695,7 @@ let () =
    member complete and bergloon 3, is 3; "de drijftoeslag is 2 indien hij niet
    drijfhout is", with drijfhout complete and not named, is 2 *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc [ ov_vondst [ "vindloon"; "bergloon"; "uitbetaling"; "drijftoeslag" ] [ "drijfhout" ] ]
       [ ov_uitbetaling; ov_rule ~name:"drijftoeslag" ~cond:(ov_check ~negated:true "drijfhout") "drijftoeslag" (Some (ov_lit "2")) ]
@@ -20456,6 +20707,7 @@ let () =
    holds for the vindloon and attributeEmpty does not; with taxatie 50 the
    reverse, and so without the property and without a taxatie *)
 let () =
+  work @@ fun () ->
   let ir strict = ov_doc ~strict [ ov_vondst [ "taxatie"; "vindloon" ] [] ] [ ov_vindloon ] in
   ov_frame ~name:"WV-1.5-case-attribute-open" ~ir:(ir true) ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "vindloon" "open" ]) ();
   ov_frame ~name:"WV-1.5-case-attribute-empty" ~ir:(ir true) ~case_text:(ov_case (ov_v1 [ ("taxatie", "50") ]) [ ov_attr_is "vindloon" "leeg" ]) ();
@@ -20465,6 +20717,7 @@ let () =
    de vangst is zijn gewicht plus zijn schade", whose body reads its binder
    first: 24 at gewicht 10 and schade 2, open with the schade open *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc [ ov_vondst [ "gewicht"; "schade"; "drempelgewicht" ] [] ]
       [ ov_rule ~name:"drempelgewicht" "drempelgewicht"
@@ -20488,6 +20741,7 @@ let ov_refused ~name ~ir slug =
    CLINGO-049 and its slug before anything is translated, and where it holds
    several, with the first of the list *)
 let () =
+  work @@ fun () ->
   let ch15 = Uchar_ref.Eval.uncarried_forms in
   check "WV-1.5-uncarried-forms: the forms of ch. 1.5 head the list, in their order"
     (List.filteri (fun i _ -> i < List.length ch15) Translate.uncarried_forms = ch15);
@@ -20585,6 +20839,7 @@ let ov_stack_base = ov_dflt ~justification:ov_always ~consequence:(ov_bin "times
    that decides decides, a lower one only where it stands of every higher one
    that it gives way, and at the first default that is open the target is open *)
 let () =
+  work @@ fun () ->
   let ir complete =
     ov_doc ~defaults:[ ov_stack ~attribute:"vindloon" [ ov_betwist; ov_stack_base ] ]
       [ ov_type ~complete "Vondst" [ "gewicht"; "vindloon" ] [ "betwist" ] ] []
@@ -20605,6 +20860,7 @@ let () =
    that holds with a settled leeg value gives way; where every default gives
    way the bergloon is settled leeg *)
 let () =
+  work @@ fun () ->
   let gemeld = ov_check "gemeld" in
   let ir complete =
     ov_doc
@@ -20629,6 +20885,7 @@ let () =
    decides, also where a default above it is open; a value the case gives the
    vindloon stands above it *)
 let () =
+  work @@ fun () ->
   let ir ?(init = ov_lit "5") complete =
     ov_doc
       ~defaults:[ ov_stack ~attribute:"vindloon" [ ov_betwist; ov_stack_base; ov_dflt ~init:true ~consequence:init () ] ]
@@ -20652,6 +20909,7 @@ let () =
    gives it no value; declared complete it is settled leeg there and gives way;
    an initialisation closes over an open opgave *)
 let () =
+  work @@ fun () ->
   let opgave = ov_dflt ~justification:ov_always ~consequence:(ov_attr "opgegeven bergloon") () in
   let ir ?(init = []) complete =
     ov_doc ~defaults:[ ov_stack ~attribute:"bergloon" ([ opgave; ov_stack_base ] @ init) ]
@@ -20672,6 +20930,7 @@ let () =
    zijn gewicht groter is dan 2", "de premie is 10 indien hij beloonbaar is"
    and "de wachtpremie is 3 indien hij niet beloonbaar is" *)
 let () =
+  work @@ fun () ->
   let zwaar = ov_gt "gewicht" "2" in
   let ir complete =
     ov_doc
@@ -20702,6 +20961,7 @@ let () =
    that it gives way or decides the same, and beside a member that is open the
    group is open *)
 let () =
+  work @@ fun () ->
   let schade = ov_dflt ~justification:(ov_check "beschadigd") ~consequence:(ov_lit "5") () in
   let exceptions complete =
     ov_doc
@@ -20738,6 +20998,7 @@ let () =
    indien hij betwist is"; on Wrakrecht, a Strandrecht, "zijn grondslag maal 2"
    with the exception "op 55 indien zijn bergingsdiepte groter is dan 20" *)
 let () =
+  work @@ fun () ->
   let ir complete =
     ov_doc
       ~defaults:
@@ -20770,6 +21031,7 @@ let () =
    its own, "op 5". Each decides where nothing above it decides, also where a
    default or an initialisation above it is open *)
 let () =
+  work @@ fun () ->
   let ir complete =
     ov_doc
       ~defaults:
@@ -20798,6 +21060,7 @@ let () =
    complete is settled leeg where the case gives it no value, on an object
    where it is input; where a writer writes it the field changes nothing *)
 let () =
+  work @@ fun () ->
   let ir ?(strict = true) ?(rules = [ ov_uitbetaling ]) ?(types = [ "Vondst" ]) complete =
     ov_doc ~strict
       (List.map
@@ -20852,6 +21115,7 @@ let ov_jutter ?(attrs = []) vs =
    een gewicht groter dan 10 hebben", and "keurder indien al zijn vondsten die
    gemerkt zijn een gewicht groter dan 10 hebben" *)
 let () =
+  work @@ fun () ->
   let zwaar = ov_gt "gewicht" "10" in
   let qs = [ ("alle", "all", 0); ("geen", "none", 0); ("een", "atLeast", 1); ("twee", "atLeast", 2); ("hoogstens een", "atMost", 1); ("precies een", "exactly", 1) ] in
   let ir =
@@ -20885,6 +21149,7 @@ let () =
    another, or beside a filter that is, is read provisionally and deposits
    nothing *)
 let () =
+  work @@ fun () ->
   let test = ov_cmp "greater" (ov_bin "dividedBy" (ov_attr "gewicht") (ov_attr "deelnemers")) (ov_lit "2") in
   let ir ?filter q k =
     ov_doc ~fact_types:[ ov_aanmelding ]
@@ -20929,6 +21194,7 @@ let ov_fold ?filter ?fallback kind a =
    vondstaantal", and "de som … of 0 als die er niet zijn": a member whose
    value is open makes the fold open; a count reads no value *)
 let () =
+  work @@ fun () ->
   let zwaar = ov_gt "gewicht" "10" in
   let folds =
     [ ("totaalgewicht", ov_fold "sum" "gewicht"); ("zwaargewicht", ov_fold ~filter:zwaar "sum" "gewicht");
@@ -20956,6 +21222,7 @@ let () =
    zijn vondsten waarvan het gewicht gevuld is": for the form itself an open
    value is leeg, and for another what the closure gives does not stand *)
 let () =
+  work @@ fun () ->
   let gewogen = ov_fold "filledCount" "gewicht" in
   let ir =
     ov_doc ~fact_types:[ ov_aanmelding ]
@@ -20987,6 +21254,7 @@ let () =
 let ov_ite c t e = Printf.sprintf {|{"node": "IfThenElse", "type": %s, "condition": %s, "then": %s, "else": %s, %s}|} ov_num c t e (ov_src "als")
 
 let () =
+  work @@ fun () ->
   let vindloon =
     ov_let "t" (ov_attr "taxatie") (ov_ite (ov_cmp "greater" (ov_binder "t") (ov_lit "1000")) (ov_lit "10") (ov_attr "gewicht"))
   in
@@ -21029,6 +21297,7 @@ let ov_creation ?cond ~name ~ft ~role assignments =
    vondst heeft": where the condition is undetermined the relation is open on
    the Jutter, and a count, a fold and a role check over it are open reads *)
 let () =
+  work @@ fun () ->
   let vangst = {|"sourceRole": {"node": "RoleBinding", "factType": "vangst", "role": "vondst"}|} in
   let fold kind =
     let arg = if kind = "count" then {|{"node": "AttributeReference", "attribute": "vondsten", "subjectType": "Jutter", "source": {"snippet": "vondsten"}}|} else ov_attr "gewicht" in
@@ -21065,6 +21334,7 @@ let () =
    or open as its value; one no one assigns, the schade, is settled leeg. The
    gewicht of a Vondst the case gives without one is open *)
 let () =
+  work @@ fun () ->
   let proef a = ov_attr ~path:[ ("proefvangst", "proefvondst") ] a in
   let ir =
     ov_doc
@@ -21098,6 +21368,7 @@ let () =
    heeft", over two vondsten: an undetermined condition leaves the relation open
    on the Jutter and on every vondst it could reach *)
 let () =
+  work @@ fun () ->
   let hulp =
     {|{"node": "FactType", "name": "hulp", "reciprocal": false, "roles": [{"node": "Role", "name": "helper", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "hulpvondst", "objectType": "Vondst", "plural": "hulpvondsten", "many": true}]}|}
   in
@@ -21143,6 +21414,7 @@ let ov_jutter_of ?attrs:(a = []) ?chars ?absent label vs =
    vondsten hebben een gewicht groter dan zijn drempel", and the same sum under
    "daarbij geldt: de grens is zijn drempel", added to that grens *)
 let () =
+  work @@ fun () ->
   let jutter a = ov_attr ~ty:"Jutter" a in
   let boven_drempel = ov_cmp "greater" (ov_attr "gewicht") (ov_anchored (jutter "drempel")) in
   let boven_aantal = ov_cmp "greater" (ov_attr "gewicht") (ov_anchored (ov_fold "count" "")) in
@@ -21182,6 +21454,7 @@ let () =
    een gewicht groter dan haar gewicht heeft": on the vondst alone the test is
    not read *)
 let () =
+  work @@ fun () ->
   let all_zwaar = ov_qf "all" 0 (ov_gt "gewicht" "10") in
   let path = {|"sourcePath": [{"node": "RoleBinding", "factType": "aanmelding", "role": "aanmeldende jutter"}, {"node": "RoleBinding", "factType": "aanmelding", "role": "vondst"}]|} in
   let zwaarste =
@@ -21214,6 +21487,7 @@ let () =
    groter dan 10 en gevangen vondsten van de Jutter", over V1 and V2 of the
    one relation and V2 and V3 of the other *)
 let () =
+  work @@ fun () ->
   let branch ?filter ft role =
     Printf.sprintf
       {|{"node": "InstanceSetBranch", "elementType": "Vondst", "sourceRole": {"node": "RoleBinding", "factType": "%s", "role": "%s"}, "filter": %s, %s}|}
@@ -21252,6 +21526,7 @@ let () =
 (* a filter's deposit is dropped with those of the value where the fold is
    open, whichever member makes it so *)
 let () =
+  work @@ fun () ->
   let quotient = ov_div (ov_attr "taxatie") (ov_attr "getuigen") in
   let ir =
     ov_doc ~fact_types:[ ov_aanmelding ]
@@ -21274,6 +21549,7 @@ let () =
 (* a fault of a filter arises where no filter of a member before it is
    undetermined, and no read of the value before the fold is open *)
 let () =
+  work @@ fun () ->
   let filter = ov_cmp "greater" (ov_attr "gewicht") (ov_param "TARIEF") in
   let ir value =
     ov_doc ~fact_types:[ ov_aanmelding ] ~parameters:[ "TARIEF" ]
@@ -21296,6 +21572,7 @@ let () =
    computed value reads an open one is left out, also where the sum would stand
    without it *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc ~fact_types:[ ov_aanmelding ]
       [ ov_type "Jutter" [ "totaal" ] []; ov_type "Vondst" [ "gewicht"; "schade" ] [] ]
@@ -21313,6 +21590,7 @@ let () =
    undetermined member: the program says that it cannot tell. A member that is
    not read raises none *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc
       [ ov_vondst [ "gewicht"; "taxatie" ] [ "zwaar" ] ]
@@ -21338,6 +21616,7 @@ let () =
    undetermined for another, so the second is read, and what it deposits is
    dropped; with the gewicht complete the read stops at the first *)
 let () =
+  work @@ fun () ->
   List.iter
     (fun complete ->
       let ir =
@@ -21376,6 +21655,7 @@ let ov_medevondsten =
    plays. Over drempel 10 and vondsten of gewicht 20 (schade 3), 5 (schade 3)
    and 30 (schade 0) *)
 let () =
+  work @@ fun () ->
   let boven = ov_boven_grens and schade = ov_gt "schade" "1" in
   let any = ov_compound "atLeast" 1 and all = ov_compound "all" 0 in
   let ir ?strict filter = ov_grens_doc ?strict (ov_let "grens" (ov_attr ~ty:"Jutter" "drempel") (ov_grens_body filter)) in
@@ -21434,6 +21714,7 @@ let () =
    leaves it undetermined. With the getuigen complete no closure is applied, and
    the deposit and the fault arise *)
 let () =
+  work @@ fun () ->
   let closing = ov_fold ~filter:(ov_test "filled" (ov_attr "getuigen")) "sum" "gewicht" in
   let quotient = ov_cmp "less" (ov_div (ov_attr "gewicht") (ov_attr "schade")) (ov_lit "3") in
   let all = ov_compound "all" 0 and any = ov_compound "atLeast" 1 and none = ov_compound "none" 0 in
@@ -21490,6 +21771,7 @@ let () =
    drempel 10 with vondsten of 20 and 5 and one of drempel 1 with vondsten of 5
    and 10; so is an anchored read, "… het gewicht min de drempel van de Jutter" *)
 let () =
+  work @@ fun () ->
   let drempel = ov_attr ~ty:"Jutter" "drempel" in
   let case rows =
     ov_case
@@ -21516,6 +21798,7 @@ let () =
    anders t", and "een Jutter is keurig indien (daarbij geldt …) groter is dan 4".
    The test "1 als t gevuld is" is CLINGO-023 in every document *)
 let () =
+  work @@ fun () ->
   let keurgewicht variety =
     ov_let "t"
       (ov_fold ~filter:(ov_test variety (ov_attr "getuigen")) "sum" "gewicht")
@@ -21549,6 +21832,7 @@ let () =
    judgement would stand for the form subject and the inner member alone. A
    filter that does not read it plays *)
 let () =
+  work @@ fun () ->
   let ir ?strict filter =
     let medegewicht =
       Printf.sprintf {|{"node": "Aggregation", "kind": "sum", "arguments": [%s], "elementType": "Vondst", "filter": %s, %s, "type": %s, %s}|}
@@ -21587,6 +21871,7 @@ let ov_strict_corpus rel =
    the einddag of V2 comes from "einddag zonder restant", whose leeg test closes
    over it *)
 let () =
+  work @@ fun () ->
   let ir = ov_strict_corpus "corpus/golden/jutterswet-vergunningketen/ir.json" in
   let vergunning ?(roles = "") label dates =
     Printf.sprintf {|{"label": "%s", "objectType": "Vergunning", "attributes": {%s}, "roles": {%s}, "characteristics": []}|} label
@@ -21609,6 +21894,7 @@ let () =
    hangs on their order, which this encoding does not carry: CLINGO-035, as in
    the document without the property *)
 let () =
+  work @@ fun () ->
   let doc, case =
     load_pair ~ir:(ov_strict_corpus "corpus/golden/jutterswet-werfkeur/ir.json")
       ~case_text:(corpus_file "corpus/golden/jutterswet-werfkeur/case1-kotter-voor-de-sloep.json")
@@ -21631,6 +21917,7 @@ let ov_assign ?(characteristic = false) m v =
    stands not to hold; a member assigned an open value is open also beside a
    rule that fills nothing, and filled beside one that decides *)
 let () =
+  work @@ fun () ->
   let onwaar = {|{"node": "Literal", "value": {"boolean": false}, "type": {"node": "Boolean"}, "source": {"snippet": "onwaar"}}|} in
   let creation =
     Printf.sprintf
@@ -21685,6 +21972,7 @@ let () =
 (* an assignment of a value of a sum type is one boundary as well: filled with
    a constructor, or open *)
 let () =
+  work @@ fun () ->
   let keur =
     Printf.sprintf {|{"node": "SumType", "domain": "keur", "constructors": [{"name": "waarde", "payload": %s}, {"name": "onbekend", "payload": null}]}|} ov_num
   in
@@ -21722,6 +22010,7 @@ let () =
    every vondst are open. Over an open relation a quantifier fold reads no
    member, and what its test would deposit does not arise *)
 let () =
+  work @@ fun () ->
   let fact_type name one many =
     Printf.sprintf
       {|{"node": "FactType", "name": "%s", "reciprocal": false, "roles": [{"node": "Role", "name": "%s", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "%s", "objectType": "Vondst", "plural": "%sen", "many": true}]}|}
@@ -21773,6 +22062,7 @@ let () =
    a fact creation, an object creation, an allocation, a default, which deposits
    where it decides, and a consistency, in an ordinary document *)
 let () =
+  work @@ fun () ->
   let quotient ty a = ov_cmp "greater" (ov_div (ov_attr ~ty a) (ov_attr ~ty "getuigen")) (ov_lit "1") in
   let boven = quotient "Jutter" "drempel" in
   let creation =
@@ -21813,6 +22103,7 @@ let () =
    characteristic toeslag, declared complete and not named, stands not to hold
    beside the attribute toeslag a defaults group writes *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc
       ~defaults:[ ov_stack ~name:"toeslag" ~attribute:"toeslag" [ ov_dflt ~justification:ov_always ~consequence:(ov_attr "gewicht") () ] ]
@@ -21828,6 +22119,7 @@ let () =
    by a defaults group (a rule's target does not tell them apart, WF-022), one
    of them an input member, and an object a creation makes *)
 let () =
+  work @@ fun () ->
   let attribute cond = ov_stack ~name:"toeslagbedrag" ~attribute:"toeslag" [ ov_dflt ~justification:cond ~consequence:(ov_lit "5") () ]
   and characteristic cond = ov_stack ~name:"toeslagkenmerk" ~characteristic:"toeslag" [ ov_dflt ~justification:cond ~decision:true () ] in
   let both a k =
@@ -21868,6 +22160,7 @@ let () =
    on the Strandvondst: false and standing on a Vondst that is no Strandvondst,
    open on a Strandvondst that does not name it, true where it does *)
 let () =
+  work @@ fun () ->
   let ir =
     ov_doc
       [ ov_vondst [ "toeslag" ] []; ov_type ~supertype:"Vondst" "Strandvondst" [] [ "aangespoeld" ] ]
@@ -21885,6 +22178,7 @@ let () =
 (* the model check names what an attribute without a value is: open, or
    settled leeg, in a document with inferFromEmpty false *)
 let () =
+  work @@ fun () ->
   let ir = ov_doc [ ov_vondst [ "taxatie"; "vindloon" ] [] ] [ ov_vindloon ] in
   List.iter
     (fun (attrs, want) ->
@@ -21904,6 +22198,7 @@ let () =
    slug of that form, or by a limit of this encoding in every document. Every
    witness is in exactly one list *)
 let () =
+  work @@ fun () ->
   let dir = "ref/test/fixtures/strict-empty/" in
   let plays =
     [ "absent-link"; "absent-link-path"; "characteristic"; "closed-input"; "comparison"; "composite-filled-test";
@@ -21976,6 +22271,7 @@ let refused_unkeyed ~name ~ir ~case_text ~form ~read =
    the Jutter plays. The drempels are such that the grens of another Jutter
    gives another outcome *)
 let () =
+  work @@ fun () ->
   let jutters =
     [ ("J1", "5", [ ("V1", "20"); ("V2", "5") ]); ("J2", "10", [ ("V3", "5"); ("V4", "10") ]); ("J3", "1", [ ("V5", "30") ]) ]
   in
@@ -22060,6 +22356,7 @@ let () =
    som als de grens groter is dan 3, anders de grens", where the condition of
    the branch is the guard its helpers are written under and reads the grens *)
 let () =
+  work @@ fun () ->
   let filter = ov_cmp "greater" (ov_bin "plus" (ov_attr "gewicht") (ov_binder "grens")) (ov_lit "12") in
   let branch = ov_ite (ov_cmp "greater" (ov_binder "grens") (ov_lit "3")) (ov_fold ~filter "sum" "gewicht") (ov_binder "grens") in
   List.iter
@@ -22082,6 +22379,7 @@ let () =
    vondsten of 10, 20 and 30: the maat is that of the outer vondst, which the
    helper of a test on the inner vondst does not carry *)
 let () =
+  work @@ fun () ->
   let ir filter =
     let medegewicht =
       Printf.sprintf {|{"node": "Aggregation", "kind": "sum", "arguments": [%s], "elementType": "Vondst", "filter": %s, %s, "type": %s, %s}|}
@@ -22120,6 +22418,7 @@ let () =
    other side (leeg for both Jutters, where every vondst would count), and any
    other test leaves the rule unsafe, with one Jutter as with two *)
 let () =
+  work @@ fun () ->
   let number = ov_num in
   let constructors =
     Printf.sprintf {|"constructors": [{"name": "Erkend", "payload": %s}, {"name": "Vervallen", "payload": null}]|} number
@@ -22175,6 +22474,7 @@ let () =
    centen, groter is dan 3,00; Geen: 0". The helper of the product carries the
    pattern, which two Jutters who both watch over a Vondst satisfy *)
 let () =
+  work @@ fun () ->
   let number decimals = Printf.sprintf {|{"node": "Number", "whole": %b, "decimals": %d, "sign": "unspecified"}|} (decimals = 0) decimals in
   let constructors = Printf.sprintf {|"constructors": [{"name": "Vast", "payload": %s}, {"name": "Geen", "payload": null}]|} (number 4) in
   let typ name attrs =
@@ -22221,8 +22521,14 @@ let () =
     ~form:"toezichttotaal" ~read:"binder t"
 
 let () =
-  if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total
+  Option.iter
+    (fun (_, _, log) ->
+      Printf.fprintf log "TOTAL %d\nCHECKS %d\n" !units !total;
+      close_out log)
+    shard;
+  let which = match shard with Some (k, n, _) -> Printf.sprintf "shard %d/%d, " k n | None -> "" in
+  if !failures = 0 then Printf.printf "test_clingo: %s%d checks, 0 failures\n" which !total
   else begin
-    Printf.printf "test_clingo: %d checks, %d FAILURES\n" !total !failures;
+    Printf.printf "test_clingo: %s%d checks, %d FAILURES\n" which !total !failures;
     exit 1
   end
