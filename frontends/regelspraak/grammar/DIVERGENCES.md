@@ -4981,8 +4981,8 @@ what it emits without the extension, which is the measurement above stated as a 
 - The marker may stand on a member with a timeline, and the field is written there; a document with
   `Afleiden uit leeg: nee` and a time-dependent member is refused by every executor (RUNTIME-SEMANTICS ch. 1.5, slug
   `timeline-member`).
-- The ASP backend and the Drools backend refuse a document with `Afleiden uit leeg: nee` (CLINGO-049, DROOLS-370); the
-  reference interpreter reads the field.
+- An executor that does not carry the reading of a form of the document refuses a document with `Afleiden uit leeg: nee`
+  by name (IR-SPEC ch. 2).
 - A scenario document ("Scenariotoetsen") has no syntax of its own for a complete member: the declarations it reads
   carry the marker.
 
