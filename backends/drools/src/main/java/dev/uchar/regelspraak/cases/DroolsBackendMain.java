@@ -2,10 +2,22 @@ package dev.uchar.regelspraak.cases;
 
 import dev.uchar.regelspraak.transpiler.tms.EvaluationFaults;
 
+import java.io.BufferedOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TimeZone;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * The Drools-backend CLI the differential gate (scripts/check-drools.sh) drives, jar-only (decision
@@ -28,11 +40,21 @@ import java.util.List;
  * {@code READINGS <n>}, the cases it read, exit 0; a form it does not carry is the {@code EXCLUDE} line above, exit 2.
  * It compares no expectation: the text is what the trace of the reference interpreter is held to (card
  * ref-trace-and-readings-gate). {@code --readings --drl} reads the DRL-text branch.
+ *
+ * <p>With {@code --batch <tasks> <directory>} one JVM runs many of these calls, one after the other ({@link #batch}).
  */
 public final class DroolsBackendMain {
     private DroolsBackendMain() {}
 
+    /** The exit code of a batch that stopped before its end: a code no call of the CLI ends with. */
+    static final int BATCH_STOPPED = 4;
+
     public static void main(String[] args) {
+        if (args.length > 0 && args[0].equals("--batch")) {
+            if (args.length == 3) System.exit(batch(Path.of(args[1]), Path.of(args[2]), DroolsBackendMain::run, System.err));
+            System.err.println("usage: DroolsBackendMain --batch <tasks> <directory>");
+            System.exit(BATCH_STOPPED);
+        }
         System.exit(run(args, System.out));
     }
 
@@ -66,6 +88,88 @@ public final class DroolsBackendMain {
             out.println("ERROR " + e.getClass().getSimpleName() + ": " + message(e));
             return 3;
         }
+    }
+
+    /** A call of a CLI without its exit. */
+    interface Call {
+        int run(String[] args, PrintStream out);
+    }
+
+    /**
+     * Runs the calls {@code tasks} lists, one after the other. A line is a task: its key, made of letters, digits, '.', '_'
+     * and '-', and the arguments of the call, separated by tabs. Per task {@code <key>.out} in {@code directory} holds what
+     * the call wrote on its standard output, and {@code <key>.rc}, which appears in one move once that file is closed, its
+     * exit code: what a JVM of its own leaves. That holds for a call that throws an exception as well, whose stack trace
+     * goes to the standard error and whose exit code is 1. The standard error of the calls is the one of this JVM.
+     *
+     * <p>The batch stops with a sentence on {@code err} and {@link #BATCH_STOPPED} where a task ends with an {@link Error};
+     * where a task leaves the JVM other than it found it, in a system property, a default locale or the default time zone,
+     * since that could decide the outcome of a later one; and where a line is no task, or a file of a task exists already
+     * or cannot be written. The task it stopped at has no {@code .rc}, nor has one after it. A task that ends the JVM
+     * itself leaves the same files, so whoever runs a batch holds every task to its {@code .rc}.
+     */
+    static int batch(Path tasks, Path directory, Call call, PrintStream err) {
+        String line = "";
+        try {
+            List<String> lines = Files.readAllLines(tasks);
+            if (lines.isEmpty()) throw new IOException("the list of tasks is empty");
+            // the MVEL dialect writes this property on its first use, with the value an absent one gives it there
+            // (Boolean.valueOf in MVELDebugHandler.isDebugMode, its one reader)
+            System.setProperty("mvel.debugger", System.getProperty("mvel.debugger", "false"));
+            Map<String, Object> found = jvmState();
+            for (String next : lines) {
+                line = next;
+                String[] fields = line.split("\t", -1);
+                if (fields.length < 2 || !fields[0].matches("[A-Za-z0-9._-]+")) throw new IOException("the line is no task");
+                Path rc = directory.resolve(fields[0] + ".rc");
+                if (Files.exists(rc)) throw new FileAlreadyExistsException(rc.toString());
+                PrintStream out = new PrintStream(new BufferedOutputStream(Files.newOutputStream(
+                        directory.resolve(fields[0] + ".out"), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)),
+                        false, System.out.charset());
+                int code;
+                try (out) {
+                    code = call.run(java.util.Arrays.copyOfRange(fields, 1, fields.length), out);
+                } catch (RuntimeException e) {
+                    e.printStackTrace(err);
+                    code = 1;
+                }
+                if (out.checkError()) throw new IOException("the output of the task could not be written");
+                String left = difference(found, jvmState());
+                if (!left.isEmpty()) {
+                    err.println("batch: the task '" + line + "' left the JVM other than it found it: " + left);
+                    return BATCH_STOPPED;
+                }
+                Path unfinished = directory.resolve(fields[0] + ".rc.unfinished");
+                Files.writeString(unfinished, code + "\n");
+                Files.move(unfinished, rc, StandardCopyOption.ATOMIC_MOVE);
+            }
+            return 0;
+        } catch (IOException e) {
+            err.println("batch: stopped at the task '" + line + "': " + e);
+            return BATCH_STOPPED;
+        } catch (Error e) {
+            err.println("batch: the task '" + line + "' ended with an error: " + e);
+            e.printStackTrace(err);
+            return BATCH_STOPPED;
+        }
+    }
+
+    /** What a call could leave behind in the JVM for the next one, by name. The time zone first: the JDK determines it on
+     *  its first read and keeps it in a system property. */
+    private static Map<String, Object> jvmState() {
+        Map<String, Object> state = new TreeMap<>();
+        state.put("the default time zone", TimeZone.getDefault());
+        state.put("the default locale", Locale.getDefault());
+        for (Locale.Category c : Locale.Category.values()) state.put("the default locale of " + c, Locale.getDefault(c));
+        System.getProperties().forEach((name, value) -> state.put("the system property " + name, value));
+        return state;
+    }
+
+    private static String difference(Map<String, Object> found, Map<String, Object> left) {
+        TreeSet<String> names = new TreeSet<>(found.keySet());
+        names.addAll(left.keySet());
+        names.removeIf(n -> Objects.equals(found.get(n), left.get(n)));
+        return String.join(", ", names.stream().map(n -> n + " (" + found.get(n) + " to " + left.get(n) + ")").toList());
     }
 
     /** The run of {@code --readings}: the readings of every case, then {@code READINGS <n>}. */
