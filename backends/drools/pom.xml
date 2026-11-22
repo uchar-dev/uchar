@@ -124,6 +124,10 @@
                properties and the environment below reach every JVM. -->
           <forkCount>0.5C</forkCount>
           <reuseForks>true</reuseForks>
+          <!-- A JVM without a cap may take a quarter of the machine's memory. A fork of this suite keeps under 2 GB
+               (1.8 at most, 11 over the eight, measured 2026-11-22), so with the cap a lowering that does not end fails
+               its test with "Java heap space" instead of taking the machine's memory. -->
+          <argLine>-Xmx3g</argLine>
           <!-- the tests assert the Dutch sentences; the backend's own default is English -->
           <systemPropertyVariables>
             <uchar.messages.locale>nl</uchar.messages.locale>
