@@ -1,6 +1,6 @@
 # jutterswet-volledig-gegeven — members whose input is complete
 
-The RegelSpraak marker `(volledig)` (grammar/DIVERGENCES.md, "Volledig gegeven") in a document with
+The RegelSpraak marker `(volledig gegeven)` (grammar/DIVERGENCES.md, "Volledig gegeven") in a document with
 `Afleiden uit leeg: nee`. The frontend writes the marker as `complete: true` on the member's declaration in `ir.json`
 (IR-SPEC ch. 2.2), and on the two attributes an opgave marker generates, `opgegeven bergloon` and `berekende bergloon`;
 gate 10 re-emits `ir.json` from `source.rgs` byte for byte. The document is read as RUNTIME-SEMANTICS ch. 1.5 lays

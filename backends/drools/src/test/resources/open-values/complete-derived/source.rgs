@@ -2,7 +2,7 @@ Afleiden uit leeg: nee
 
 Objecttype de Vondst (mv: Vondsten)
     de taxatie Numeriek (geheel getal);
-    het vindloon Numeriek (geheel getal) (volledig);
+    het vindloon Numeriek (geheel getal) (volledig gegeven);
 
 Objecttype de Strandvondst is een Vondst (mv: Strandvondsten)
 

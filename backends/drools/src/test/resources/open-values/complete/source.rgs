@@ -1,11 +1,11 @@
 Afleiden uit leeg: nee
 
 Objecttype de Vondst (mv: Vondsten)
-    het vindloon Numeriek (geheel getal) (volledig);
+    het vindloon Numeriek (geheel getal) (volledig gegeven);
     het bergloon Numeriek (geheel getal);
     de uitbetaling Numeriek (geheel getal);
     de drijftoeslag Numeriek (geheel getal);
-    is drijfhout kenmerk (bijvoeglijk) (volledig);
+    is drijfhout kenmerk (bijvoeglijk) (volledig gegeven);
 
 Objecttype de Strandvondst is een Vondst (mv: Strandvondsten)
 

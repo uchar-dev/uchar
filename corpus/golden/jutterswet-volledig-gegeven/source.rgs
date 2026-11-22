@@ -3,11 +3,11 @@ Afleiden uit leeg: nee
 Objecttype de Vondst (mv: Vondsten)
     de taxatie Numeriek (geheel getal);
     het gewicht Numeriek (geheel getal);
-    de toeslag Numeriek (geheel getal) (volledig);
+    de toeslag Numeriek (geheel getal) (volledig gegeven);
     de bijslag Numeriek (geheel getal);
     de uitbetaling Numeriek (geheel getal);
     de bijbetaling Numeriek (geheel getal);
-    is drijfhout kenmerk (bijvoeglijk) (volledig);
+    is drijfhout kenmerk (bijvoeglijk) (volledig gegeven);
     is wrakhout kenmerk (bijvoeglijk);
     de drijftoeslag Numeriek (geheel getal);
     de wraktoeslag Numeriek (geheel getal);

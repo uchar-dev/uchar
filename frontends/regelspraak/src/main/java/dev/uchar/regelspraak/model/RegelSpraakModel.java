@@ -979,7 +979,7 @@ public final class RegelSpraakModel {
          *  ZELFSTANDIG one "is een &lt;k&gt;" (so only a ZELFSTANDIG kenmerk binds the EEN-form). */
         public final Map<String, CharacteristicKind> characteristicKinds = new LinkedHashMap<>();
         /** The attributes whose declaration says that their input is complete, by naam: the attributes declared
-         *  "(volledig)" (grammar/DIVERGENCES.md, "Volledig gegeven") and the members 'opgegeven X' and 'berekende X'
+         *  "(volledig gegeven)" (grammar/DIVERGENCES.md, "Volledig gegeven") and the members 'opgegeven X' and 'berekende X'
          *  of a lowered opgave marker (§7). The wire writes {@code complete: true} on each (IR-SPEC ch. 2.2). */
         public final java.util.Set<String> completeAttributes = new java.util.LinkedHashSet<>();
         /** The characteristic analogue of {@link #completeAttributes}. */

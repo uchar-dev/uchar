@@ -10,7 +10,7 @@ Objecttype de Jutter (mv: Jutters) (bezield)
     het jutgewicht Numeriek (geheel getal);
     het keuraantal Numeriek (geheel getal);
     het loon Numeriek (geheel getal);
-    de opgave Numeriek (geheel getal) (volledig);
+    de opgave Numeriek (geheel getal) (volledig gegeven);
 
 Objecttype de Vondst (mv: Vondsten)
     het gewicht (mv: gewichten) Numeriek (geheel getal);

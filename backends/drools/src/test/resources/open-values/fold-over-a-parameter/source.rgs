@@ -12,7 +12,7 @@ Objecttype de Jutter (mv: Jutters) (bezield)
 Objecttype de Vondst (mv: Vondsten)
     het gewicht (mv: gewichten) Numeriek (geheel getal);
     de getuigen Numeriek (geheel getal);
-    is gemerkt kenmerk (bijvoeglijk) (volledig);
+    is gemerkt kenmerk (bijvoeglijk) (volledig gegeven);
 
 Feittype vinding
     de vinder Jutter

@@ -4881,7 +4881,7 @@ line in either file of a chain, RGS-462 in both languages, a value other than `j
 tokens, the scenario route with and without a scope); the golden `jutterswet-afleiden-uit-leeg`, which gate 10
 re-emits and whose cases pin the reading of RUNTIME-SEMANTICS ch. 1.5.
 
-## Volledig gegeven — `(volledig)` on an attribute or a characteristic
+## Volledig gegeven — `(volledig gegeven)` on an attribute or a characteristic
 
 uchar DIALECT EXTENSION (decision of the maintainer, 2026-11-21). In a document with `Afleiden uit leeg: nee` an input
 member the case gives no value, or a characteristic it does not name, is open: nothing stands about it, and what reads
@@ -4899,24 +4899,25 @@ Afleiden uit leeg: nee
 
 Objecttype de Vondst (mv: Vondsten)
     de taxatie Numeriek (geheel getal);
-    de toeslag Numeriek (geheel getal) (volledig);
-    is drijfhout kenmerk (bijvoeglijk) (volledig);
+    de toeslag Numeriek (geheel getal) (volledig gegeven);
+    is drijfhout kenmerk (bijvoeglijk) (volledig gegeven);
 ```
 
-New token: `VOLLEDIG`, `'(volledig)'`, a whole token with its parentheses like the opgave marker (§7). On an attribute
-it stands in the place of the opgave marker, after the optional timeline and the optional absence marking
-("Afwezigheidsmarkeringen") and before the optional `;`: `de opslagkosten Numeriek (geheel getal) voor elke maand (of
-onbekend) (volledig);`. On a characteristic it stands after the optional timeline: `is gemeld kenmerk (bijvoeglijk) voor
-elke maand (volledig);`. The grammar admits it beside the opgave marker on one attribute, before and after it, only so
-that the resolver can refuse the pair with a message of its own (RGS-463, below). The token reserves no word: `volledig`
-keeps lexing as `LOWER_ID` everywhere else, so an attribute, a characteristic or a rule named with it stays readable, and
-a comment or a text literal that contains `(volledig)` is never lexed as the token (witness:
+New token: `VOLLEDIG_GEGEVEN`, the phrase `(volledig gegeven)`, a whole token with its parentheses like the opgave
+marker (§7). On an attribute it stands in the place of the opgave marker, after the optional timeline and the optional
+absence marking ("Afwezigheidsmarkeringen") and before the optional `;`: `de opslagkosten Numeriek (geheel getal) voor
+elke maand (of onbekend) (volledig gegeven);`. On a characteristic it stands after the optional timeline: `is gemeld
+kenmerk (bijvoeglijk) voor elke maand (volledig gegeven);`. The grammar admits it beside the opgave marker on one
+attribute, before and after it, only so that the resolver can refuse the pair with a message of its own (RGS-463,
+below). The token reserves no word: `volledig` and `gegeven` keep lexing as `LOWER_ID` everywhere else, so an
+attribute, a characteristic or a rule named with them stays readable, and a comment or a text literal that contains
+`(volledig gegeven)` is never lexed as the token (witness:
 `CompleteMarkerTest.the_marker_is_one_token_and_reserves_no_word`).
 
-An extension writes a member again word for word (§5, on the extension), and the marker counts as a word: a repeat that
-adds or drops `(volledig)` is not literal and is refused (RGS-009). An extension that adds the opgave marker to a member
-whose declaration carries `(volledig)` writes the two markers in two declarations; the group the opgave generates on the
-type is then a writer of the member, and RGS-464 names it (below).
+An extension writes a member again word for word (§5, on the extension), and the marker counts as a word: a repeat
+that adds or drops `(volledig gegeven)` is not literal and is refused (RGS-009). An extension that adds the opgave
+marker to a member whose declaration carries `(volledig gegeven)` writes the two markers in two declarations; the
+group the opgave generates on the type is then a writer of the member, and RGS-464 names it (below).
 
 ### Inertness — measured, not assumed
 
@@ -4931,8 +4932,9 @@ each of their 16 generated attributes `opgegeven X` and `berekende X`. No diagno
 the new token enters an "expecting {…}" set only at the end of a member declaration, and no measured document has a
 syntax error there. The 8 `ir.json` carry the field; their cases play as before in every executor (gates 5, 6 and 12).
 
-What bounds an unmeasured document is the grammar, as for the opgave marker: the token is admitted only at the end of a
-member declaration, so anywhere else `(volledig)` is a syntax error on its own line, never a different reading.
+What bounds an unmeasured document is the grammar, as for the opgave marker: the token is admitted only at the end of
+a member declaration, so anywhere else `(volledig gegeven)` is a syntax error on its own line, never a different
+reading.
 
 ### Lowering (resolver)
 
@@ -4946,24 +4948,24 @@ is withdrawn because nothing computes X generates no member and puts nothing the
 
 Each is one ERROR at the line of the marked declaration (witness: `CompleteMarkerTest`, every sentence literal):
 
-- RGS-463: `(volledig)` beside `(mag opgegeven worden)` on one attribute, in either order: `attribuut 'bergloon' van
-  Vondst: '(volledig)' staat naast '(mag opgegeven worden)' — het attribuut is dan het doel van een opgave boven zijn
-  berekening en geen invoer, en de opgave die '(mag opgegeven worden)' genereert, is al volledig; schrijf alleen '(mag
-  opgegeven worden)' (dialect, Volledig gegeven)`. The attribute is the target of the generated stack, which writes it,
-  so it is input on no object; the opgave the marker generates carries the field already. The marker then marks
-  nothing.
-- RGS-464: `(volledig)` on a member that a rule or a defaults group writes on the declaring type itself, as
-  RUNTIME-SEMANTICS ch. 1.5 counts a writer: `attribuut 'vindloon' van Vondst: '(volledig)' staat op een lid dat regel
-  'vindloon' op Vondst zelf schrijft — het lid volgt dan op elk object van Vondst zijn schrijvers en is nergens invoer,
-  dus de markering doet niets (RUNTIME-SEMANTICS ch. 1.5); laat '(volledig)' weg, of zet het op de invoerleden die regel
-  'vindloon' leest (dialect, Volledig gegeven)`. The member follows its writers on every object of the type and its
-  subtypes, and the marker would change nothing without a word. The pass runs after the defaults lowering of §4 and the
-  opgave lowering of §7, so a row of a decision table, a defaults group of a tree and the group an opgave generates are
-  writers here as well. A writer on a subtype alone is no reason: on an object outside that subtype the member is input,
-  and the marker closes it there (witness: `CompleteMarkerTest.a_writer_on_a_subtype_alone_is_no_reason`). An allocation
-  and the member assignment of an object creation are no writers in that sense: ch. 1.5 reads a member a creation
-  assigns as input on an object the case gives, and an executor refuses an allocation in a document with the property
-  (slug `allocation`).
+- RGS-463: `(volledig gegeven)` beside `(mag opgegeven worden)` on one attribute, in either order: `attribuut
+  'bergloon' van Vondst: '(volledig gegeven)' staat naast '(mag opgegeven worden)' — het attribuut is dan het doel van
+  een opgave boven zijn berekening en geen invoer, en de opgave die '(mag opgegeven worden)' genereert, is al
+  volledig; schrijf alleen '(mag opgegeven worden)' (dialect, Volledig gegeven)`. The attribute is the target of the
+  generated stack, which writes it, so it is input on no object; the opgave the marker generates carries the field
+  already. The marker then marks nothing.
+- RGS-464: `(volledig gegeven)` on a member that a rule or a defaults group writes on the declaring type itself, as
+  RUNTIME-SEMANTICS ch. 1.5 counts a writer: `attribuut 'vindloon' van Vondst: '(volledig gegeven)' staat op een lid
+  dat regel 'vindloon' op Vondst zelf schrijft — het lid volgt dan op elk object van Vondst zijn schrijvers en is
+  nergens invoer, dus de markering doet niets (RUNTIME-SEMANTICS ch. 1.5); laat '(volledig gegeven)' weg, of zet het
+  op de invoerleden die regel 'vindloon' leest (dialect, Volledig gegeven)`. The member follows its writers on every
+  object of the type and its subtypes, and the marker would change nothing without a word. The pass runs after the
+  defaults lowering of §4 and the opgave lowering of §7, so a row of a decision table, a defaults group of a tree and
+  the group an opgave generates are writers here as well. A writer on a subtype alone is no reason: on an object
+  outside that subtype the member is input, and the marker closes it there (witness:
+  `CompleteMarkerTest.a_writer_on_a_subtype_alone_is_no_reason`). An allocation and the member assignment of an object
+  creation are no writers in that sense: ch. 1.5 reads a member a creation assigns as input on an object the case
+  gives, and an executor refuses an allocation in a document with the property (slug `allocation`).
 
 ### Emission
 
@@ -4973,7 +4975,7 @@ what it emits without the extension, which is the measurement above stated as a 
 
 ### Semantic tokens
 
-`(volledig)` is a `keyword`, one span with its parentheses, as the opgave marker is (witness:
+`(volledig gegeven)` is a `keyword`, one span with its parentheses, as the opgave marker is (witness:
 `CompleteMarkerTest.the_marker_is_a_keyword_span`).
 
 ### Scope / limitations

@@ -571,10 +571,10 @@ public final class DefinitionResolver {
                         : marking.OF_NIET_VAN_TOEPASSING() != null ? List.of("niet van toepassing")
                         : RegelSpraakModel.ABSENCE_MARKERS);
             }
-            // '(volledig)' (grammar/DIVERGENCES.md, "Volledig gegeven"): beside the opgave marker the attribute is the
+            // '(volledig gegeven)' (grammar/DIVERGENCES.md, "Volledig gegeven"): beside the opgave marker the attribute is the
             // target of a stack and no input, and the opgave the marker generates is complete already
-            TerminalNode complete = a.VOLLEDIG() != null ? a.VOLLEDIG()
-                    : a.volledigNaOpgave() != null ? a.volledigNaOpgave().VOLLEDIG() : null;
+            TerminalNode complete = a.VOLLEDIG_GEGEVEN() != null ? a.VOLLEDIG_GEGEVEN()
+                    : a.volledigNaOpgave() != null ? a.volledigNaOpgave().VOLLEDIG_GEGEVEN() : null;
             if (complete != null && a.MAG_OPGEGEVEN_WORDEN() != null)
                 error("RGS-463", params("attribute", name, "objectType", ot.name, "complete", complete.getText(),
                         "opgave", a.MAG_OPGEGEVEN_WORDEN().getText()), complete.getSymbol().getLine());
@@ -641,10 +641,10 @@ public final class DefinitionResolver {
         }
     }
 
-    /** Whether the kenmerk declaration carries '(volledig)' (grammar/DIVERGENCES.md, "Volledig gegeven"). */
+    /** Whether the kenmerk declaration carries '(volledig gegeven)' (grammar/DIVERGENCES.md, "Volledig gegeven"). */
     static boolean completeMarked(KenmerkSpecificatieContext k) {
-        if (k instanceof BijvoeglijkKenmerkContext b) return b.VOLLEDIG() != null;
-        if (k instanceof NaamwoordKenmerkContext n) return n.VOLLEDIG() != null;
+        if (k instanceof BijvoeglijkKenmerkContext b) return b.VOLLEDIG_GEGEVEN() != null;
+        if (k instanceof NaamwoordKenmerkContext n) return n.VOLLEDIG_GEGEVEN() != null;
         return false;
     }
 

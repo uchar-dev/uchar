@@ -3009,7 +3009,7 @@ final class RuleChecker {
         }
     }
 
-    /** '(volledig)' on a member that a rule or a defaults group writes on the declaring type itself, as
+    /** '(volledig gegeven)' on a member that a rule or a defaults group writes on the declaring type itself, as
      *  RUNTIME-SEMANTICS ch. 1.5 counts a writer: the member is input on no object of that type and its subtypes, and
      *  the marker would do nothing without a word. One ERROR per marked member, at its first declaration, naming the
      *  first writer. A writer on a subtype alone is no reason: on an object outside that subtype the member is input.
@@ -3043,7 +3043,7 @@ final class RuleChecker {
                 if (writer != null)
                     error(member.getStart().getLine(), "RGS-464", params("kind",
                             Msg.frontend(attribute ? "PART.member-kind.attribute" : "PART.member-kind.characteristic-kind"),
-                            "name", name, "objectType", t.name, "writer", writer, "complete", "(volledig)"));
+                            "name", name, "objectType", t.name, "writer", writer, "complete", "(volledig gegeven)"));
             }
         }
     }

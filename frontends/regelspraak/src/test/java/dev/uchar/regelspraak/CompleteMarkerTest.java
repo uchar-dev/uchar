@@ -21,9 +21,9 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The marker {@code (volledig)} (grammar/DIVERGENCES.md, "Volledig gegeven"): on an attribute or a characteristic it
+ * The marker {@code (volledig gegeven)} (grammar/DIVERGENCES.md, "Volledig gegeven"): on an attribute or a characteristic it
  * writes {@code complete: true} on the member's declaration (IR-SPEC ch. 2.2), after its timeline; the two attributes
- * an opgave marker generates carry the field always; {@code (volledig)} beside {@code (mag opgegeven worden)} is RGS-463,
+ * an opgave marker generates carry the field always; {@code (volledig gegeven)} beside {@code (mag opgegeven worden)} is RGS-463,
  * and on a member a rule or a defaults group writes on the declaring type itself RGS-464, a writer on a subtype alone
  * no reason; the token reserves no word; and it is a keyword to the semantic tokens. Measured before this card: every
  * document below that writes the marker was a syntax error on it.
@@ -37,9 +37,9 @@ class CompleteMarkerTest {
 
             Objecttype de Vondst (mv: Vondsten)
                 de taxatie Numeriek (geheel getal);
-                de toeslag Numeriek (geheel getal) (volledig);
+                de toeslag Numeriek (geheel getal) (volledig gegeven);
                 de uitbetaling Numeriek (geheel getal);
-                is drijfhout kenmerk (bijvoeglijk) (volledig);
+                is drijfhout kenmerk (bijvoeglijk) (volledig gegeven);
                 de drijftoeslag Numeriek (geheel getal);
 
             Regel uitbetaling
@@ -93,15 +93,15 @@ class CompleteMarkerTest {
         assertEquals(List.of("node", "name", "kind", "complete"),
                 List.copyOf(members(ir).get("Characteristic drijfhout").keySet()));
         // the field is the whole difference: the document without the two markers is the one without the field
-        String without = clean(MODEL.replace(" (volledig)", "")).document();
+        String without = clean(MODEL.replace(" (volledig gegeven)", "")).document();
         assertEquals(without, ir.replaceAll(",\\n\\s*\"complete\": true", ""));
     }
 
     @Test void on_a_time_dependent_member_the_field_stands_after_the_timeline() {
         String ir = clean("""
                 Objecttype de Vondst (mv: Vondsten)
-                    de opslagkosten Numeriek (geheel getal) voor elke maand (volledig);
-                    is gemeld kenmerk (bijvoeglijk) voor elke maand (volledig);
+                    de opslagkosten Numeriek (geheel getal) voor elke maand (volledig gegeven);
+                    is gemeld kenmerk (bijvoeglijk) voor elke maand (volledig gegeven);
                 """).document();
         assertEquals(List.of("Attribute opslagkosten", "Characteristic gemeld"), complete(ir));
         assertEquals(List.of("node", "name", "datatype", "timeline", "complete"),
@@ -113,7 +113,7 @@ class CompleteMarkerTest {
     @Test void the_marker_after_an_absence_marking_stands_on_the_attribute_with_markers() {
         String ir = clean("""
                 Objecttype de Vondst (mv: Vondsten)
-                    de taxatie Numeriek (geheel getal) (of onbekend) (volledig);
+                    de taxatie Numeriek (geheel getal) (of onbekend) (volledig gegeven);
                 """).document();
         assertEquals(List.of("Attribute taxatie"), complete(ir));
     }
@@ -169,16 +169,16 @@ class CompleteMarkerTest {
             """;
 
     @Test void the_marker_beside_the_opgave_marker_is_rgs_463_in_either_order() {
-        for (String markers : List.of("(volledig) (mag opgegeven worden)", "(mag opgegeven worden) (volledig)")) {
+        for (String markers : List.of("(volledig gegeven) (mag opgegeven worden)", "(mag opgegeven worden) (volledig gegeven)")) {
             Diagnostic d = refused(WITH_OPGAVE.formatted(markers), "RGS-463");
             assertEquals(3, d.line(), markers);
-            assertEquals(Map.of("attribute", "bergloon", "objectType", "Vondst", "complete", "(volledig)",
+            assertEquals(Map.of("attribute", "bergloon", "objectType", "Vondst", "complete", "(volledig gegeven)",
                     "opgave", "(mag opgegeven worden)"), d.params());
-            assertEquals("attribuut 'bergloon' van Vondst: '(volledig)' staat naast '(mag opgegeven worden)' — het "
+            assertEquals("attribuut 'bergloon' van Vondst: '(volledig gegeven)' staat naast '(mag opgegeven worden)' — het "
                     + "attribuut is dan het doel van een opgave boven zijn berekening en geen invoer, en de opgave die "
                     + "'(mag opgegeven worden)' genereert, is al volledig; schrijf alleen '(mag opgegeven worden)' "
                     + "(dialect, Volledig gegeven)", d.message(Locale.forLanguageTag("nl")));
-            assertEquals("attribute 'bergloon' of Vondst: '(volledig)' stands beside '(mag opgegeven worden)' — the "
+            assertEquals("attribute 'bergloon' of Vondst: '(volledig gegeven)' stands beside '(mag opgegeven worden)' — the "
                     + "attribute is then the target of an opgave above its computation and no input, and the opgave "
                     + "that '(mag opgegeven worden)' generates is complete already; write '(mag opgegeven worden)' "
                     + "alone (dialect, Volledig gegeven)", d.message(Locale.ENGLISH));
@@ -189,20 +189,20 @@ class CompleteMarkerTest {
         Diagnostic d = refused("""
                 Objecttype de Vondst (mv: Vondsten)
                     de taxatie Numeriek (geheel getal);
-                    het vindloon Numeriek (geheel getal) (volledig);
+                    het vindloon Numeriek (geheel getal) (volledig gegeven);
 
                 Regel vindloon
                     geldig altijd
                         Het vindloon van een Vondst moet gesteld worden op 10 indien zijn taxatie groter is dan 1000.
                 """, "RGS-464");
         assertEquals(3, d.line());
-        assertEquals("attribuut 'vindloon' van Vondst: '(volledig)' staat op een lid dat regel 'vindloon' op Vondst zelf "
+        assertEquals("attribuut 'vindloon' van Vondst: '(volledig gegeven)' staat op een lid dat regel 'vindloon' op Vondst zelf "
                 + "schrijft — het lid volgt dan op elk object van Vondst zijn schrijvers en is nergens invoer, dus de "
-                + "markering doet niets (RUNTIME-SEMANTICS ch. 1.5); laat '(volledig)' weg, of zet het op de invoerleden "
+                + "markering doet niets (RUNTIME-SEMANTICS ch. 1.5); laat '(volledig gegeven)' weg, of zet het op de invoerleden "
                 + "die regel 'vindloon' leest (dialect, Volledig gegeven)", d.message(Locale.forLanguageTag("nl")));
-        assertEquals("attribute 'vindloon' of Vondst: '(volledig)' stands on a member that rule 'vindloon' writes on "
+        assertEquals("attribute 'vindloon' of Vondst: '(volledig gegeven)' stands on a member that rule 'vindloon' writes on "
                 + "Vondst itself — the member then follows its writers on every object of Vondst and is input nowhere, "
-                + "so the marking does nothing (RUNTIME-SEMANTICS ch. 1.5); leave '(volledig)' out, or put it on the "
+                + "so the marking does nothing (RUNTIME-SEMANTICS ch. 1.5); leave '(volledig gegeven)' out, or put it on the "
                 + "input members that rule 'vindloon' reads (dialect, Volledig gegeven)", d.message(Locale.ENGLISH));
     }
 
@@ -210,15 +210,15 @@ class CompleteMarkerTest {
         Diagnostic d = refused("""
                 Objecttype de Vondst (mv: Vondsten)
                     de taxatie Numeriek (geheel getal);
-                    is kostbaar kenmerk (bijvoeglijk) (volledig);
+                    is kostbaar kenmerk (bijvoeglijk) (volledig gegeven);
 
                 Regel kostbaarheid
                     geldig altijd
                         Een Vondst is kostbaar indien zijn taxatie groter is dan 1000.
                 """, "RGS-464");
-        assertEquals("kenmerk 'kostbaar' van Vondst: '(volledig)' staat op een lid dat regel 'kostbaarheid' op Vondst "
+        assertEquals("kenmerk 'kostbaar' van Vondst: '(volledig gegeven)' staat op een lid dat regel 'kostbaarheid' op Vondst "
                 + "zelf schrijft — het lid volgt dan op elk object van Vondst zijn schrijvers en is nergens invoer, dus "
-                + "de markering doet niets (RUNTIME-SEMANTICS ch. 1.5); laat '(volledig)' weg, of zet het op de "
+                + "de markering doet niets (RUNTIME-SEMANTICS ch. 1.5); laat '(volledig gegeven)' weg, of zet het op de "
                 + "invoerleden die regel 'kostbaarheid' leest (dialect, Volledig gegeven)",
                 d.message(Locale.forLanguageTag("nl")));
     }
@@ -227,7 +227,7 @@ class CompleteMarkerTest {
         Diagnostic d = refused("""
                 Objecttype de Vondst (mv: Vondsten)
                     het gewicht Numeriek (geheel getal);
-                    het vindloon Numeriek (geheel getal) (volledig);
+                    het vindloon Numeriek (geheel getal) (volledig gegeven);
                     is betwist kenmerk (bijvoeglijk);
 
                 Regel vindloon
@@ -240,19 +240,19 @@ class CompleteMarkerTest {
                 """, "RGS-464");
         assertEquals(3, d.line());
         String nl = d.message(Locale.forLanguageTag("nl"));
-        assertTrue(nl.startsWith("attribuut 'vindloon' van Vondst: '(volledig)' staat op een lid dat de defaults-groep '"),
+        assertTrue(nl.startsWith("attribuut 'vindloon' van Vondst: '(volledig gegeven)' staat op een lid dat de defaults-groep '"),
                 nl);
         assertTrue(nl.contains("' op Vondst zelf schrijft — "), nl);
     }
 
     /** An extension that writes the marked declaration again with the opgave marker added: the two markers stand in two
      *  declarations, and the group the opgave generates on the type is the writer RGS-464 names. A repeat that adds or
-     *  drops '(volledig)' is not literal (RGS-009). */
+     *  drops '(volledig gegeven)' is not literal (RGS-009). */
     @Test void an_opgave_added_by_an_extension_to_a_complete_attribute_is_rgs_464() {
         String model = """
                 Objecttype de Vondst (mv: Vondsten)
                     het gewicht Numeriek (geheel getal);
-                    het bergloon Numeriek (geheel getal) (volledig);
+                    het bergloon Numeriek (geheel getal) (volledig gegeven);
 
                 Extensie van objecttype de Vondst
                     het bergloon Numeriek (geheel getal) %s;
@@ -261,10 +261,10 @@ class CompleteMarkerTest {
                     geldig altijd
                         Het bergloon van een Vondst moet berekend worden als zijn gewicht maal 2.
                 """;
-        Diagnostic d = refused(model.formatted("(volledig) (mag opgegeven worden)"), "RGS-464");
+        Diagnostic d = refused(model.formatted("(volledig gegeven) (mag opgegeven worden)"), "RGS-464");
         assertEquals(3, d.line());
         String nl = d.message(Locale.forLanguageTag("nl"));
-        assertTrue(nl.startsWith("attribuut 'bergloon' van Vondst: '(volledig)' staat op een lid dat de defaults-groep "
+        assertTrue(nl.startsWith("attribuut 'bergloon' van Vondst: '(volledig gegeven)' staat op een lid dat de defaults-groep "
                 + "'opgave boven berekening bergloon' op Vondst zelf schrijft — "), nl);
         assertTrue(Resolver.resolve(model.formatted("(mag opgegeven worden)")).errors().stream()
                 .anyMatch(e -> e.code().equals("RGS-009") && e.line() == 6), "the repeat that drops the marker");
@@ -275,7 +275,7 @@ class CompleteMarkerTest {
         String ir = clean("""
                 Objecttype de Vondst (mv: Vondsten)
                     de taxatie Numeriek (geheel getal);
-                    het vindloon Numeriek (geheel getal) (volledig);
+                    het vindloon Numeriek (geheel getal) (volledig gegeven);
 
                 Objecttype de Strandvondst is een Vondst (mv: Strandvondsten)
 
@@ -288,13 +288,15 @@ class CompleteMarkerTest {
 
     // ---------------- the token ----------------
 
-    /** The marker is one token with its parentheses: 'volledig' alone stays a name word, in a declaration, a rule name,
-     *  a text and a comment. */
+    /** The marker is one token with its parentheses, the words apart by any white space: 'volledig' and 'gegeven' alone
+     *  stay name words, in parentheses as well, in a declaration, a rule name, a text and a comment. */
     @Test void the_marker_is_one_token_and_reserves_no_word() {
-        assertEquals(List.of("VOLLEDIG"), types("(volledig)"));
-        assertEquals(List.of("LPAREN", "LOWER_ID", "RPAREN"), types("( volledig )"));
-        assertEquals(List.of("LOWER_ID", "LOWER_ID"), types("volledig gewicht"));
-        assertEquals(List.of(), types("// (volledig)"));
+        assertEquals(List.of("VOLLEDIG_GEGEVEN"), types("(volledig gegeven)"));
+        assertEquals(List.of("VOLLEDIG_GEGEVEN"), types("(volledig\n    gegeven)"));
+        assertEquals(List.of("LPAREN", "LOWER_ID", "RPAREN"), types("(volledig)"));
+        assertEquals(List.of("LPAREN", "LOWER_ID", "RPAREN"), types("(gegeven)"));
+        assertEquals(List.of("LOWER_ID", "LOWER_ID"), types("volledig gegeven"));
+        assertEquals(List.of(), types("// (volledig gegeven)"));
         String ir = clean("""
                 Objecttype de Vondst (mv: Vondsten)
                     het volledig gewicht Numeriek (geheel getal);
@@ -307,7 +309,7 @@ class CompleteMarkerTest {
 
                 Regel omschrijving
                     geldig altijd
-                        De omschrijving van een Vondst moet gesteld worden op "(volledig)".
+                        De omschrijving van een Vondst moet gesteld worden op "(volledig gegeven)".
                 """).document();
         assertEquals(List.of(), complete(ir));
         assertTrue(members(ir).containsKey("Attribute volledig gewicht"));
@@ -330,7 +332,7 @@ class CompleteMarkerTest {
         SemanticTokens.Document d = Resolver.tokens(files);
         SemanticTokensCheck.check(files, d);
         assertTrue(d.diagnostics().isEmpty(), () -> d.diagnostics().toString());
-        List<Span> markers = d.files().get(0).spans().stream().filter(s -> s.text().equals("(volledig)")).toList();
+        List<Span> markers = d.files().get(0).spans().stream().filter(s -> s.text().equals("(volledig gegeven)")).toList();
         assertEquals(2, markers.size(), () -> d.files().get(0).spans().toString());
         assertTrue(markers.stream().allMatch(s -> s.kind() == Kind.KEYWORD && !s.declaration() && s.declaredAt() == null));
         assertEquals(List.of(5, 7), markers.stream().map(Span::line).toList());

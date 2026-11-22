@@ -2,7 +2,7 @@ Afleiden uit leeg: nee
 
 Objecttype de Vondst (mv: Vondsten)
     het gewicht Numeriek (geheel getal);
-    het opgegeven bergloon Numeriek (geheel getal) (volledig);
+    het opgegeven bergloon Numeriek (geheel getal) (volledig gegeven);
     het bergloon Numeriek (geheel getal);
 
 Regel bergloon
