@@ -20786,13 +20786,11 @@ let () =
       ("the inherited", settled, [], [ ("gewicht", "20") ], "40");
       ("the own below one that gives way", settled, [], [ ("gewicht", "5") ], "5");
       ("the own below one that is open", settled, [], [], "5");
+      ("the own under an open default, below one that gives way", [], [], [ ("gewicht", "5") ], "5");
+      ("the own under an open default, below one that is open", [], [], [], "5");
       ("the default", [], [ "betwist" ], [], "0");
       ("input under an open default", [], [], [ ("gewicht", "5"); ("bergloon", "7") ], "open");
-      ("input", settled, [], [ ("gewicht", "5"); ("bergloon", "7") ], "7") ];
-  List.iter
-    (fun (row, attrs, want) -> clingo_matches ~name:(name row) ~ir:(ir []) ~case_text:(case [] attrs want))
-    [ ("the own under an open default, below one that gives way", [ ("gewicht", "5") ], "5");
-      ("the own under an open default, below one that is open", [], "5") ]
+      ("input", settled, [], [ ("gewicht", "5"); ("bergloon", "7") ], "7") ]
 
 (* WV-1.5-complete-*: a member whose declaration says that its input is
    complete is settled leeg where the case gives it no value, on an object
