@@ -1808,7 +1808,7 @@ let map_outcome f = function Decides x -> Decides (f x) | Fills_nothing -> Fills
 
 (* a writer that leaves [member] of [label] open, on the world and change flag
    it has after giving back what it wrote *)
-let left_open ~label ~member ((w : World.t), changed) = (World.leave_open w ~label ~member, changed)
+let left_open ~label member ((w : World.t), changed) = (World.leave_open w ~label member, changed)
 
 (* The verdict of a condition at a position that reads one truth value. In a
    document without open input every judgement is two-valued and equal for
@@ -4861,7 +4861,13 @@ let run_rule ?only env world (r : resolved_rule) =
             (* the rule does not decide on [self]: what it wrote is given back,
                and where it does not stand that it fills nothing its target is
                open (ch. 1.5) *)
-            let undecided () = left_open ~label:self.label ~member (release ()) in
+            let undecided () =
+              left_open ~label:self.label
+                (match r.rr_presentation with
+                | Some Characteristic_attribution -> World.characteristic attr
+                | _ -> World.attribute member)
+                (release ())
+            in
             (* the rule decides where its condition is established true for
                itself; where it is established false for another form, it
                stands that the rule fills nothing (ch. 1.5) *)
@@ -4869,7 +4875,7 @@ let run_rule ?only env world (r : resolved_rule) =
                leaves open closes over that writer (ch. 1.5): whatever it comes
                to rests on the closure *)
             if r.rr_presentation = Some Initialisation && (not blocked)
-               && World.open_beside_initialisation w ~label:self.label ~member
+               && World.open_beside_initialisation w ~label:self.label ~attr:member
             then incr closures_applied;
             let judged =
               if blocked then established false
@@ -5342,7 +5348,8 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
                            one, leaves the characteristic open on the object
                            made (ch. 1.5) *)
                         match open_read_boundary ~err (fun err -> eval_expr env read self ~err e) with
-                        | Error _ | Ok ((Value.Bool false | Value.Empty), Some _) -> World.leave_open w ~label ~member:m
+                        | Error _ | Ok ((Value.Bool false | Value.Empty), Some _) ->
+                            World.leave_open w ~label (World.characteristic m)
                         | Ok (Value.Bool true, _) -> fst (World.set_char w ~label ~char:m)
                         | Ok ((Value.Bool false | Value.Empty), None) -> w
                         | Ok (v, _) ->
@@ -5373,7 +5380,7 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
                     match value_outcome ~err (fun err -> eval_expr env read self ~err (req "MemberAssignment.value" t.to_value)) with
                     | Decides v -> fst (World.write_attr w ~label ~attr:member ~decl:(attr_decl env ~otype:created ~attr:m) v)
                     | Fills_nothing -> w
-                    | Leaves_open -> World.leave_open w ~label ~member)
+                    | Leaves_open -> World.leave_open w ~label (World.attribute member))
                 w oc.assignments
             in
             let w =
@@ -5794,7 +5801,9 @@ let run_defaults_group ?only env world ~world0 ~owner
          is open (ch. 1.5) *)
       | Left_open ->
           left_open ~label:self.label
-            ~member:(match l0.pd_characteristic with Some k -> k | None -> req "defaults attribute" l0.pd_attribute)
+            (match l0.pd_characteristic with
+            | Some k -> World.characteristic k
+            | None -> World.attribute (req "defaults attribute" l0.pd_attribute))
             (release ())
       | Conflict rule ->
           (* over-determination (ch. 7.2/7.9): no write, one channel fact —
@@ -6318,18 +6327,21 @@ let instance_depth env world0 (o : Ir_v0.Checks.instance_order) =
    a document without it has no open member, and nothing in the evaluation
    tells it from another. *)
 let open_inputs env ~closed_inputs (world : World.t) =
-  if env.doc.infer_from_empty || closed_inputs then World.Key.empty
+  if env.doc.infer_from_empty || closed_inputs then World.Member.empty
   else
-    let written ~otype member =
+    let written ~otype (m : World.member) =
       List.exists
         (fun (r : resolved_rule) ->
           match target_member env r.objective with
-          | Some (ot, a, _) -> norm a = norm member && isa env otype ot
+          | Some (ot, a, _) ->
+              (if r.rr_presentation = Some Characteristic_attribution then World.characteristic a else World.attribute a) = m
+              && isa env otype ot
           | None -> false)
         env.doc.resolved_rules
       || List.exists
            (fun (l : prioritized_defaults) ->
-             List.exists (fun t -> norm t = norm member) (Option.to_list l.pd_attribute @ Option.to_list l.pd_characteristic)
+             (Option.map World.attribute l.pd_attribute = Some m
+             || Option.map World.characteristic l.pd_characteristic = Some m)
              && isa env otype l.pd_subject)
            env.doc.prioritized_defaults
     in
@@ -6337,14 +6349,13 @@ let open_inputs env ~closed_inputs (world : World.t) =
       (fun label (i : World.instance) acc ->
         (* the effective type: a member inherited from a supertype carries its field *)
         let ot = object_type env i.otype in
-        let member acc name ~given ~complete =
-          if given || complete || written ~otype:i.otype name then acc
-          else World.Key.add (label, norm name) () acc
+        let member acc m ~given ~complete =
+          if given || complete || written ~otype:i.otype m then acc else World.Member.add (label, m) () acc
         in
         let acc =
           List.fold_left
             (fun acc (a, _) ->
-              member acc a
+              member acc (World.attribute a)
                 ~given:(World.attr i a <> Value.Empty || World.timeline i a <> None)
                 ~complete:(List.mem a ot.attribute_complete))
             acc ot.attributes
@@ -6352,12 +6363,12 @@ let open_inputs env ~closed_inputs (world : World.t) =
         List.fold_left
           (fun acc -> function
             | Some k ->
-                member acc k
+                member acc (World.characteristic k)
                   ~given:(World.has_char i k || World.char_periods i k <> None)
                   ~complete:(List.mem k ot.characteristic_complete)
             | None -> acc)
           acc ot.characteristics)
-      world.World.instances World.Key.empty
+      world.World.instances World.Member.empty
 
 let evaluate ?(closed_inputs = false) env world =
   refuse_uncarried env.doc;

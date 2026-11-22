@@ -36,6 +36,15 @@ type error_fact = { rule : string; subject : string; codes : string list }
 (* an evaluation fault as data: the fields of Value.Fault *)
 type fault = { fault_code : string option; fault_params : (string * string) list; fault_text : string }
 
+(* A member of an object as its open state names it (RUNTIME-SEMANTICS ch.
+   1.5): an attribute, a cell among them, a characteristic, or the relation
+   over a role of a fact type by its link key ([link_key]). An attribute and a
+   characteristic of one name are two members (WF-002) *)
+type member = Attribute of string | Characteristic of string | Relation of string
+
+let attribute name = Attribute (norm name)
+let characteristic name = Characteristic (norm name)
+
 (* What the last evaluation of one form on one subject came to
    (RUNTIME-SEMANTICS ch. 5.7): the §9.5 deposits it made, as (rule, subject,
    code), or the fault that ended it. [at] is the subject's label, "" for a
@@ -47,8 +56,8 @@ type outcome = {
   at : string;
   deposits : (string * string * string option) list;
   fault : fault option;
-  opened : (string * string) list;
-      (* the members, as (label, norm member), that this evaluation left open
+  opened : (string * member) list;
+      (* the members, as (label, member), that this evaluation left open
          (RUNTIME-SEMANTICS ch. 1.5): the form wrote no value there and it
          does not stand that it fills nothing. Empty in a document without
          open input *)
@@ -61,6 +70,13 @@ type outcome = {
 
 module Key = Map.Make (struct
   type t = string * string
+
+  let compare = compare
+end)
+
+(* by (label, member) *)
+module Member = Map.Make (struct
+  type t = string * member
 
   let compare = compare
 end)
@@ -123,14 +139,14 @@ type t = {
          segments; on a day no writer decides, what it held before; and on a day
          on which that is leeg too, the initialisation's value (RUNTIME-SEMANTICS
          ch. 3.11, 5.7 and 7.8 per day) *)
-  open_input : unit Key.t;
-      (* by (label, norm member): the input members the case leaves without a
+  open_input : unit Member.t;
+      (* the input members the case leaves without a
          value and that are open in this session (RUNTIME-SEMANTICS ch. 1.5),
          set once before the evaluation (Eval.open_inputs) *)
-  opening : (string * string) list;
+  opening : (string * member) list;
       (* the members the evaluation under way leaves open, newest first;
          [close_evaluation] ends it *)
-  opened : unit Key.t;
+  opened : unit Member.t;
       (* the members a standing outcome leaves open: the union of their
          [opened] *)
   stated_absent : unit Key.t;
@@ -143,7 +159,7 @@ type t = {
 let empty =
   { instances = SMap.empty; order = []; channel = []; outcomes = []; evaluating = []; owners = Key.empty;
     holders = Key.empty; mints = SMap.empty; written = Key.empty; char_writes = Key.empty; parts = Key.empty;
-    open_input = Key.empty; opening = []; opened = Key.empty; stated_absent = Key.empty }
+    open_input = Member.empty; opening = []; opened = Member.empty; stated_absent = Key.empty }
 
 let add_instance w inst =
   if SMap.mem inst.label w.instances then
@@ -201,9 +217,9 @@ exception Open_read of { label : string; member : string }
    nothing (ch. 7.8), and giving another input could make the writer decide.
    A value counts as present with a timeline as well *)
 let attr_open w (i : instance) name =
-  let key = (i.label, norm name) in
-  if attr i name = Value.Empty && timeline i name = None then Key.mem key w.open_input || Key.mem key w.opened
-  else Key.mem key w.opened && not (Key.mem key w.owners)
+  let m = (i.label, attribute name) in
+  if attr i name = Value.Empty && timeline i name = None then Member.mem m w.open_input || Member.mem m w.opened
+  else Member.mem m w.opened && not (Key.mem (i.label, norm name) w.owners)
 
 (* A characteristic that holds is never open: a writer can only grant it. One
    that does not hold is open where it is open input and the case does not
@@ -211,9 +227,9 @@ let attr_open w (i : instance) name =
    beside that writer the statement of the case stands no more than an input
    value does *)
 let char_open w (i : instance) name =
-  let key = (i.label, norm name) in
+  let m = (i.label, characteristic name) in
   (not (has_char i name))
-  && ((Key.mem key w.open_input && not (Key.mem key w.stated_absent)) || Key.mem key w.opened)
+  && ((Member.mem m w.open_input && not (Key.mem (i.label, norm name) w.stated_absent)) || Member.mem m w.opened)
 
 (* The value of [name] on [i] as an evaluation reads it: the value, leeg where
    it is settled leeg, and [Open_read] where it is open *)
@@ -244,8 +260,8 @@ let read_char_periods w i name =
 
 (* The evaluation under way leaves [member] of [label] open: it writes no value
    there, and it does not stand that it fills nothing *)
-let leave_open w ~label ~member =
-  let m = (label, norm member) in
+let leave_open w ~label member =
+  let m = (label, member) in
   if List.mem m w.opening then w else { w with opening = m :: w.opening }
 
 (* the key the links over one role of one fact type are stored under. A link
@@ -270,9 +286,8 @@ let role_spelling (r : Ir_v0.Ast.role_ref) =
 
 (* Whether the relation over [role] of [fact_type] is open on [i]: a creation
    whose condition is undetermined could link [i] there (RUNTIME-SEMANTICS
-   ch. 1.5). The mark is kept with the members a standing outcome leaves open,
-   under the link key, which no member name spells *)
-let links_open w (i : instance) ~fact_type role = Key.mem (i.label, link_key ~fact_type role) w.opened
+   ch. 1.5). The mark is kept with the members a standing outcome leaves open *)
+let links_open w (i : instance) ~fact_type role = Member.mem (i.label, Relation (link_key ~fact_type role)) w.opened
 
 (* The labels linked to [i] over [role] of [fact_type] as an evaluation reads
    them: the links that stand, and [Open_read] where the relation is open on
@@ -283,9 +298,7 @@ let read_links w (i : instance) ~fact_type role =
 
 (* The evaluation under way leaves the relation over [role] of [fact_type] open
    on [label]: it does not stand which links a creation lays there *)
-let leave_links_open w ~label ~fact_type role =
-  let m = (label, link_key ~fact_type role) in
-  if List.mem m w.opening then w else { w with opening = m :: w.opening }
+let leave_links_open w ~label ~fact_type role = leave_open w ~label (Relation (link_key ~fact_type role))
 
 (* The evaluation under way leaves [m] open again, as the standing outcome of
    its form holds it: what a creation left open on the object it made stays
@@ -677,7 +690,9 @@ let channel_of outcomes =
 
 (* the members the outcomes leave open *)
 let opened_of outcomes =
-  List.fold_left (fun acc (o : outcome) -> List.fold_left (fun acc m -> Key.add m () acc) acc o.opened) Key.empty outcomes
+  List.fold_left
+    (fun acc (o : outcome) -> List.fold_left (fun acc m -> Member.add m () acc) acc o.opened)
+    Member.empty outcomes
 
 (* the evaluation of [form] on [at] came to [deposits] or [fault], leaving
    [opened] open, with or without a [closure]: this replaces its earlier
@@ -722,11 +737,12 @@ let fault_evaluation w ~form ~at fault =
    open value (ch. 1.5) *)
 let closures w = List.filter_map (fun o -> if o.closure then Some (o.form, o.at) else None) w.outcomes
 
-(* whether [member] of [label] is open but for what an initialisation wrote
-   there: open input, or left open by a standing outcome (ch. 1.5) *)
-let open_beside_initialisation w ~label ~member =
-  let key = (label, norm member) in
-  Key.mem key w.open_input || Key.mem key w.opened
+(* whether the attribute [attr] of [label] is open but for what an
+   initialisation wrote there: open input, or left open by a standing outcome
+   (ch. 1.5) *)
+let open_beside_initialisation w ~label ~attr =
+  let m = (label, attribute attr) in
+  Member.mem m w.open_input || Member.mem m w.opened
 
 (* the faults that stand, in an order the order of the rules does not move *)
 let standing_faults w =

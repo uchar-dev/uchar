@@ -496,6 +496,14 @@ een Vondst is zijn vindloon plus zijn bergloon", with bergloon 3 and no
 vindloon, which no rule writes: the vindloon is open; without the property it
 is leeg and the uitbetaling is 3. A characteristic drijfhout that no rule
 attributes is open where the case does not name it, and holds where it does.
+An attribute and a characteristic of one name (WF-002) are two members, each
+with its own writers and its own state. Example (WV-1.5-shared-name-*): on a
+Vondst with an attribute toeslag, "de toeslag is 5 indien hij gemerkt is", and
+a characteristic toeslag, "een Vondst is toeslag indien hij getuigd is", a
+case that does not name gemerkt, with getuigd complete (below), leaves the
+attribute open, and the characteristic stands not to hold; with the attribute
+written and no writer for the characteristic, the characteristic is input,
+open where the case does not name it.
 Whether a member is input is asked per object (WV-1.5-input-per-object): with
 "het vindloon van een Strandvondst is 10 indien zijn taxatie groter is dan
 1000", the vindloon of a Vondst that is no Strandvondst is input, and open

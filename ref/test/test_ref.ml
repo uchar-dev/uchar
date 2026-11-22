@@ -16628,6 +16628,68 @@ let () =
   row "links-nothing" ~chars:[ "gemeld" ] "0 not";
   row "open" "open open"
 
+(* WV-1.5-shared-name-*: an attribute and a characteristic of one type may
+   share a name (WF-002) and are two members, each with a state of its own. A Vondst has an attribute toeslag and a characteristic toeslag. Both
+   written by a defaults group, "de toeslag is 5 indien hij gemerkt is" and
+   "een Vondst is toeslag indien hij getuigd is", and so by two rules: where
+   the case does not name gemerkt and getuigd is complete, the attribute is
+   open and the characteristic stands not to hold; with the two conditions
+   exchanged the attribute is settled leeg and the characteristic open. With
+   only the attribute written, "de toeslag is 5 indien zijn taxatie groter is
+   dan 1000", the characteristic is an input member: open where the case does
+   not name it, whatever the taxatie; with only the characteristic written,
+   the attribute is. An object a creation makes, "een Jutter heeft een
+   proefvondst met toeslag gelijk aan zijn ervaring", without an ervaring: its
+   attribute toeslag is open, and its characteristic stands not to hold, since
+   an object made has no input a case can give *)
+let () =
+  let states label w = ov_attr w label "toeslag" ^ " " ^ ov_char w label "toeslag" in
+  let row name ?(label = "V1") doc input want =
+    let id = "shared-name-" ^ name in
+    ov_row ("WV-1.5-" ^ id) (fun () -> ov_run id doc input) (states label) want
+  in
+  let getuigd_complete = ov_complete [ "getuigd" ] in
+  let stacks attribute_if characteristic_if =
+    getuigd_complete
+      (ov_doc
+         ~defaults:
+           [ ov_stack ~name:"toeslagbedrag" ~attribute:"toeslag"
+               [ ov_dflt ~justification:(ov_check attribute_if) ~consequence:(ov_lit "5") () ];
+             ov_stack ~characteristic:"toeslag" [ ov_dflt ~justification:(ov_check characteristic_if) ~decision:true () ] ]
+         [ ov_vondst [ "toeslag" ] [ "toeslag"; "gemerkt"; "getuigd" ] ] [])
+  and rules attribute_if characteristic_if =
+    getuigd_complete
+      (ov_doc [ ov_vondst [ "toeslag" ] [ "toeslag"; "gemerkt"; "getuigd" ] ]
+         [ ov_calc ~name:"toeslagbedrag" ~cond:(ov_check attribute_if) "toeslag" (ov_lit "5");
+           ov_attribution "toeslag" (ov_check characteristic_if) ])
+  in
+  List.iter
+    (fun (how, doc) ->
+      let row name = row (how ^ "-" ^ name) in
+      row "attribute-open" (doc "gemerkt" "getuigd") (ov_v1 []) "open not";
+      row "attribute-filled" (doc "gemerkt" "getuigd") (ov_v1 ~chars:[ "gemerkt" ] []) "5 not";
+      row "characteristic-open" (doc "getuigd" "gemerkt") (ov_v1 []) "leeg open";
+      row "characteristic-holds" (doc "getuigd" "gemerkt") (ov_v1 ~chars:[ "gemerkt" ] []) "leeg holds")
+    [ ("stacks", stacks); ("rules", rules) ];
+  let attribute =
+    ov_doc [ ov_vondst [ "taxatie"; "toeslag" ] [ "toeslag" ] ] [ ov_calc ~cond:(ov_cmp Greater "taxatie" "1000") "toeslag" (ov_lit "5") ]
+  and characteristic =
+    ov_doc [ ov_vondst [ "taxatie"; "toeslag" ] [ "toeslag" ] ] [ ov_attribution "toeslag" (ov_cmp Greater "taxatie" "1000") ]
+  in
+  row "input-characteristic-open" attribute (ov_v1 [ ("taxatie", "50") ]) "leeg open";
+  row "input-characteristic-beside-a-value" attribute (ov_v1 [ ("taxatie", "2000") ]) "5 open";
+  row "input-characteristic-named" attribute (ov_v1 ~chars:[ "toeslag" ] [ ("taxatie", "50") ]) "leeg holds";
+  row "input-attribute-open" characteristic (ov_v1 [ ("taxatie", "50") ]) "open not";
+  row "input-attribute-beside-a-mark" characteristic (ov_v1 [ ("taxatie", "2000") ]) "open holds";
+  row "input-attribute-given" characteristic (ov_v1 [ ("taxatie", "50"); ("toeslag", "3") ]) "3 not";
+  let creation =
+    { (ov_jdoc ~jutter:[ "ervaring" ] ~vondst:[ "toeslag" ] ~vchars:[ "toeslag" ] []) with
+      object_creations = [ ov_proefvondst [ ("toeslag", aref "ervaring" "Jutter") ] ] }
+  in
+  row "object-made" ~label:"oc0::J1" creation
+    [ { ov_label = "J1"; ov_type = "Jutter"; ov_attrs = []; ov_chars = []; ov_links = [] } ]
+    "open not"
+
 (* WV-1.5-creation-cycle-refused: a creation in a recursive group (ch. 6) is
    refused by name: a read on the cycle would answer to the absence of a mark,
    and the outcome would depend on the order of the rounds *)
@@ -17369,19 +17431,20 @@ let () =
       (("past-undetermined-filter-later-not", "V1 gemerkt"), [ "V1 gemerkt not" ]) ]
   in
   let used = ref [] in
-  let written (doc : Ir_v0.Ast.document) (i : ov_input) member =
+  let written (doc : Ir_v0.Ast.document) (i : ov_input) ~characteristic member =
+    let named m = Ir_v0.Checks.norm m = Ir_v0.Checks.norm member in
     List.exists
       (fun (r : Ir_v0.Ast.resolved_rule) ->
         match r.objective with
         | Some (Attribute_reference { attribute_ref = Some a; object_type = Some t; _ }) ->
-            Ir_v0.Checks.norm a = Ir_v0.Checks.norm member && Eval.isa (env_of doc) i.ov_type t
+            named a
+            && (r.rr_presentation = Some Characteristic_attribution) = characteristic
+            && Eval.isa (env_of doc) i.ov_type t
         | _ -> false)
       doc.resolved_rules
     || List.exists
          (fun (l : Ir_v0.Ast.prioritized_defaults) ->
-           List.exists
-             (fun t -> Ir_v0.Checks.norm t = Ir_v0.Checks.norm member)
-             (Option.to_list l.pd_attribute @ Option.to_list l.pd_characteristic)
+           Option.fold ~none:false ~some:named (if characteristic then l.pd_characteristic else l.pd_attribute)
            && Eval.isa (env_of doc) i.ov_type l.pd_subject)
          doc.prioritized_defaults
   in
@@ -17402,13 +17465,13 @@ let () =
           let others = List.filter (fun (o : ov_input) -> o.ov_label <> i.ov_label) sc.sc_input in
           List.iter
             (fun (a, v) ->
-              if not (written sc.sc_doc i a) then
+              if not (written sc.sc_doc i ~characteristic:false a) then
                 without (i.ov_label ^ "." ^ a)
                   ({ i with ov_attrs = List.filter (fun (a', v') -> (a', v') <> (a, v)) i.ov_attrs } :: others))
             i.ov_attrs;
           List.iter
             (fun k ->
-              if not (written sc.sc_doc i k) then
+              if not (written sc.sc_doc i ~characteristic:true k) then
                 without (i.ov_label ^ " " ^ k) ({ i with ov_chars = List.filter (( <> ) k) i.ov_chars } :: others))
             i.ov_chars)
         sc.sc_input)
