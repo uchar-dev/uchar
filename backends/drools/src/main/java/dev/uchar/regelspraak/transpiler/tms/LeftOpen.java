@@ -7,11 +7,11 @@ import java.util.Objects;
 /**
  * A writer that leaves {@code member} of {@code subject} open (RUNTIME-SEMANTICS ch. 1.5, "A rule"): on that object it
  * neither decides nor stands to fill nothing, since its condition is neither true for itself nor false for another, or
- * its value has an open read. Inserted logically by the writer, its rule for the open outcome or its consequence, so it
- * goes when what it rested on changes. The standing of the member reads it: a {@link Value} fills the member, else this
- * fact leaves it open, else the input stands ({@code TmsTranspiler#attributeStateRules},
- * {@code #characteristicStateRules}). {@code writer} is the name of the writer's form, so two writers that leave one
- * member open stand as two facts.
+ * its value has an open read. Inserted logically by the writer, its rule of the open outcome
+ * ({@code TmsTranspiler#openRule}) or its consequence, so it goes when what it rested on changes. The standing of the
+ * member reads it: a {@link Value} or a {@link HasCharacteristic} fills the member, else this fact leaves it open, else
+ * the input stands. {@code writer} is the name of the writer's form, so two writers that leave one member open stand as
+ * two facts.
  *
  * <p>Keyed and compared as {@link Value} is: the member on its declaring type, the subject by identity.
  */

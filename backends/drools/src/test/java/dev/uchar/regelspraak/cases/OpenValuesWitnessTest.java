@@ -90,6 +90,20 @@ class OpenValuesWitnessTest {
         assertEquals(1, play("filled-test", "closed"));
     }
 
+    /** WV-1.5-complete-*: a member declared complete, an attribute and a characteristic, is settled leeg without a value
+     *  on the objects where it is input, those of a subtype among them; on an object where a rule writes it, it follows
+     *  the rule as without the field. */
+    @Test void wv_1_5_complete() throws Exception {
+        assertEquals(2, play("complete", "case"));
+        assertEquals(1, play("complete-derived", "case"));
+    }
+
+    /** WV-1.5-instance-ordered: an instance-ordered part reaches its fixpoint per object, the leeg test of the
+     *  predecessor's member a closure over an open one. */
+    @Test void wv_1_5_instance_ordered() throws Exception {
+        assertEquals(2, play("instance-ordered", "case"));
+    }
+
     /** WV-1.5-settled-operand, WV-1.5-derived-*, WV-1.5-negation, WV-1.5-input-beside-a-writer, WV-1.5-case-*: a
      *  derived member follows its writer; what stands computes as ch. 1.2–1.4; a negated characteristic check is open
      *  where the characteristic is; a value the case gives a derived member stands only where its writer fills
@@ -189,6 +203,36 @@ class OpenValuesWitnessTest {
         assertEquals(2, play("outside-the-window", "case"));
     }
 
+    /** A value a consumer puts on a bean between two fires fills an input that is not complete, and one it takes away
+     *  leaves it open again: the standing reads the bean beside the {@code OpenInput} that {@code insert} stated once. */
+    @Test void a_value_on_the_bean_between_two_fires() throws Exception {
+        Path dir = FIXTURES.resolve("open-input");
+        JsonNode json = JSON.readTree(Files.readString(dir.resolve("case1-vindloon-open.json")));
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values())
+            CaseRunner.forMeasurement(dir.resolve("ir.json"), branch).withSession(json, (build, session, labels) -> {
+                Object v1 = labels.get("V1");
+                org.kie.api.runtime.rule.FactHandle handle = session.getFactHandle(v1);
+                assertEquals("uitbetaling open", uitbetaling(build, session), branch::name);
+                CaseRunner.call(v1, "setVindloon", java.math.BigDecimal.class, java.math.BigDecimal.valueOf(4));
+                session.update(handle, v1);
+                assertEquals("uitbetaling 7", uitbetaling(build, session), branch::name);
+                CaseRunner.call(v1, "setVindloon", java.math.BigDecimal.class, null);
+                session.update(handle, v1);
+                assertEquals("uitbetaling open", uitbetaling(build, session), branch::name);
+                return null;
+            });
+    }
+
+    /** The uitbetaling of the one object of {@code session} after a fire, its value or open. */
+    private static String uitbetaling(DroolsBackend.Build build, org.kie.api.runtime.KieSession session) {
+        assertNull(DroolsBackend.fire(build, session).noFixpoint());
+        dev.uchar.regelspraak.transpiler.tms.Fixpoint fp = DroolsBackend.fixpointOf(build, session);
+        List<String> out = new ArrayList<>();
+        for (var v : fp.values()) if (v.attribute().equals("uitbetaling")) out.add("uitbetaling " + v.value());
+        for (var o : fp.open()) if (o.member().equals("uitbetaling")) out.add("uitbetaling open");
+        return String.join(", ", out);
+    }
+
     /** Every fixture is played by a test above, and every case file of it under a prefix the tests play. */
     @Test void every_fixture_is_played() throws Exception {
         List<String> names = new ArrayList<>();
@@ -196,8 +240,9 @@ class OpenValuesWitnessTest {
             s.filter(Files::isDirectory).forEach(p -> names.add(p.getFileName().toString()));
         }
         names.sort(null);
-        assertEquals(List.of("boundary-after", "boundary-before", "composite-tables", "consistency", "derived",
-                "filled-test", "initialisation", "initialisation-condition", "input-per-object", "link",
+        assertEquals(List.of("boundary-after", "boundary-before", "complete", "complete-derived", "composite-tables",
+                "consistency", "derived", "filled-test", "initialisation", "initialisation-condition", "input-per-object",
+                "instance-ordered", "link",
                 "no-open-without-the-property", "open-input", "outside-the-window", "past-undetermined-deposit",
                 "past-undetermined-fault", "reach", "reach-without-the-property", "read-for-another", "rule",
                 "two-writers"), names);

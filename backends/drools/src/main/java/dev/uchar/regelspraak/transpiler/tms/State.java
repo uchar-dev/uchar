@@ -5,10 +5,13 @@ import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import java.util.Objects;
 
 /**
- * The standing of one derived attribute on one object, total: at the fixpoint there is exactly one per (object,
- * attribute), carrying the value of the {@link Value} a rule derived where there is one, and otherwise the value the
- * case input put on the bean, leeg included. A condition or a value reads a derived attribute through this fact, as
- * a positive pattern, so its read is bound in the left-hand side and truth maintenance follows it. The two sources
+ * The standing of one attribute on one object, total: at the fixpoint there is exactly one per (object, attribute) a
+ * rule reads through it, a derived attribute or one that can be open, carrying the value of the {@link Value} a rule
+ * derived where there is one, and otherwise the value the case input put on the bean, leeg included; where the attribute
+ * is open on the object (RUNTIME-SEMANTICS ch. 1.5), its {@link OpenMember}: no {@link Value} stands, and a writer leaves
+ * it open ({@link LeftOpen}), or its input is not complete ({@link OpenInput}) and the bean holds none. A condition or
+ * a value reads the attribute through this fact, as
+ * a positive pattern, so its read is bound in the left-hand side and truth maintenance follows it. The first two sources
  * give the defaults reading of the case input without a rule of their own: a writer that decides replaces the input,
  * and one that computes leeg writes nothing and leaves the input standing (RUNTIME-SEMANTICS ch. 7.8).
  *

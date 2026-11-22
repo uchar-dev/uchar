@@ -1120,9 +1120,8 @@ public final class IrLoader {
     /** A member's statement that its input is complete, {@code complete} (IR-SPEC ch. 2.2): written {@code true} or
      *  not at all, refused in the OCaml loader's sentence otherwise. Read before the member's key set, so that a
      *  {@code null} is named in that sentence as well, and not as an optional field written as null. Read into the model as the
-     *  frontend holds it; what it means is the reading of RUNTIME-SEMANTICS ch. 1.5, which this backend does not
-     *  carry: it refuses a document with {@code inferFromEmpty: false}, and without that property the field changes
-     *  no outcome. */
+     *  frontend holds it; what it means is the reading of RUNTIME-SEMANTICS ch. 1.5 of a document with
+     *  {@code inferFromEmpty: false}; without that property the field changes no outcome. */
     private static boolean complete(JsonNode member, String path) {
         JsonNode v = member.get("complete");
         if (v == null) return false;

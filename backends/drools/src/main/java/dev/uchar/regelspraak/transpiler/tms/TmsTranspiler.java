@@ -328,7 +328,8 @@ public final class TmsTranspiler {
      *  through is the bean property of the declared spelling, which the key does not carry. */
     private final Map<ElementKey, Member> derived = new LinkedHashMap<>();
     /** The members a lowered rule reads through their standing, on its subject or at the end of a path: the derived
-     *  ones, and every attribute on a timeline ({@link Reads#timeline}). Each gets its standing rules. */
+     *  ones, those that can be open ({@link OpenableMembers}), and every attribute on a timeline ({@link Reads#timeline}).
+     *  Each gets its standing rules. */
     private final Map<ElementKey, Member> read = new LinkedHashMap<>();
     /** The onwaar standings outside a narrowing host that the lowered rules read ({@link Reads#narrowed}). */
     private final Map<String, Outside> outsideStandings = new LinkedHashMap<>();
@@ -7733,9 +7734,9 @@ public final class TmsTranspiler {
 
     /**
      * The reads of one rule, each bound once in its left-hand side and numbered in the order they are met: a member of
-     * the subject that no form writes off the subject's bean pattern, over a path through the reference fields read in
-     * the same binding; a derived member of the subject off its standing; a derived member over a path off its
-     * {@link PathState}; a parameter through a declaration of its own. The numbers are the indices of the value arrays
+     * the subject that no form writes and that cannot be open off the subject's bean pattern, over a path through the
+     * reference fields read in the same binding; any other member of the subject off its standing, and over a path off
+     * its {@link PathState}; a parameter through a declaration of its own. The numbers are the indices of the value arrays
      * the condition's test and the consequence receive. The standings and path standings a rule reads are registered
      * with the transpiler only when the rule lowers ({@link #recorder}).
      *
@@ -8954,8 +8955,8 @@ public final class TmsTranspiler {
     }
 
     /**
-     * The three generic rules that keep one {@link CharacteristicState} per object of the declaring type: waar from the input,
-     * waar from a derivation, onwaar when neither holds. The onwaar rule carries the branch's only negation over a
+     * The generic rules that keep one {@link CharacteristicState} per object of the declaring type: waar from the input,
+     * waar from a derivation, onwaar when neither holds. The onwaar rule carries the negation over a
      * characteristic, {@code not HasCharacteristic}, and reads the input in its left-hand side, so a derivation that appears
      * later retracts the onwaar standing and every conclusion that read it. When both sources hold, the two waar
      * standings are equal, and truth maintenance keeps them as one fact with a justification each. The input is read
@@ -8964,7 +8965,8 @@ public final class TmsTranspiler {
      *
      * <p>A characteristic that can be open (RUNTIME-SEMANTICS ch. 1.5, {@link OpenableMembers}) has a third standing,
      * where neither holds: open where a writer leaves it open ({@link LeftOpen}) and where its input is not complete
-     * ({@link OpenInput}), each a rule where that can be, and the onwaar rule stands under a {@code not} over both.
+     * ({@link OpenInput}), each a rule under the same negation, built where that can be, and the onwaar rule stands under
+     * a {@code not} over both facts.
      */
     private List<RulePlan> characteristicStateRules(Member member) {
         ElementKey key = member.key();
@@ -9049,8 +9051,8 @@ public final class TmsTranspiler {
      * no {@link Value} stands, open where a writer leaves it open ({@link LeftOpen}), whatever its input, which then
      * stands no more than the writer's leeg would (ch. 7.8); and where its input is not complete ({@link OpenInput}),
      * which is only where no form writes it on the object, the input where the bean holds one and else open. Each is a
-     * rule where that can be, and the input rule stands under a {@code not} over both. The bean's value is read beside
-     * the {@link OpenInput}, so a value a consumer puts there between two fires fills the member.
+     * rule, built where that can be, and the input rule stands under a {@code not} over both facts. The bean's value is
+     * read beside the {@link OpenInput}, so a value a consumer puts there between two fires fills the member.
      *
      * <p>The input timeline of a member on a timeline stands in the form a {@link Value} carries one,
      * {@code List<Period>} ({@link Period#list}), so every standing of the member holds one representation, except

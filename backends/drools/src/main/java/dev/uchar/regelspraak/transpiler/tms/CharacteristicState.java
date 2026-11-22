@@ -6,10 +6,11 @@ import java.util.Objects;
 
 /**
  * The standing of one characteristic on one object, total: at the fixpoint there is exactly one per (object,
- * characteristic) a rule reads, in one of the three states of RUNTIME-SEMANTICS ch. 1.5. {@code holds} is
- * {@code Boolean.TRUE} where the case input sets the characteristic or a {@link HasCharacteristic} for it exists,
- * the {@link OpenMember} of the characteristic where neither holds and a writer leaves it open ({@link LeftOpen}) or
- * the input of an input characteristic is not complete ({@link OpenInput}), and {@code Boolean.FALSE} otherwise. A
+ * characteristic) a rule reads through it, a derived characteristic or one that can be open. {@code holds} is
+ * {@code Boolean.TRUE} where the case input sets the characteristic or a {@link HasCharacteristic} for it exists;
+ * the {@link OpenMember} of the characteristic where neither holds and it is open on the object (RUNTIME-SEMANTICS
+ * ch. 1.5): a writer leaves it open ({@link LeftOpen}) or its input is not complete ({@link OpenInput}); and
+ * {@code Boolean.FALSE} otherwise. A
  * condition reads the characteristic through this fact, as a positive pattern, whichever polarity it tests, so the
  * negations over a characteristic sit in the generic rules that derive the false and the open standing
  * ({@code not HasCharacteristic}), and a check in a condition, negated or inside a composite, is a predicate over a

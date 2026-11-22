@@ -1,0 +1,33 @@
+Afleiden uit leeg: nee
+
+Eenheidsysteem Tijd
+    de dag dg
+
+Objecttype de Vergunning (mv: Vergunningen)
+    de stopdag Datum in dagen;
+    de basiseinddag Datum in dagen;
+    de einddag Datum in dagen;
+    het restant Numeriek (geheel getal) met eenheid dg;
+
+Feittype vorige vergunning
+    de vergunning Vergunning
+    de vorige vergunning Vergunning
+Eén vergunning heeft één vorige vergunning
+
+Regel restant
+    geldig altijd
+        Het restant van een Vergunning moet berekend worden als de tijdsduur van zijn stopdag tot zijn einddag in hele dagen
+        indien hij aan alle volgende voorwaarden voldoet:
+        - zijn stopdag is gevuld
+        - zijn einddag is gevuld
+        - zijn stopdag is eerder dan zijn einddag.
+
+Regel einddag
+    geldig altijd
+        De einddag van een Vergunning moet berekend worden als zijn basiseinddag plus het restant van de vorige vergunning van de Vergunning
+        indien het restant van de vorige vergunning van de Vergunning gevuld is.
+
+Regel einddag zonder restant
+    geldig altijd
+        De einddag van een Vergunning moet gesteld worden op zijn basiseinddag
+        indien het restant van de vorige vergunning van de Vergunning leeg is.

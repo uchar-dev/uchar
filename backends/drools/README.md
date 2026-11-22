@@ -59,12 +59,16 @@ before the KieBase is built: the KieBase keeps one rule per name, so the second 
 marker would say so. The analysis refuses it in the words of Drools' DRL compiler, on both branches in one sentence:
 "exec-model: Duplicate rule name: actief — …" (witness `DuplicateRuleNameWitnessTest`). A document that carries
 `inferFromEmpty: false` — the choice that nothing follows from an empty value, which RegelSpraak writes as
-`Afleiden uit leeg: nee` — is refused by the build on both branches, with and without readings, before a bean is
-generated, with DROOLS-370 and `form=document` (`EXCLUDE DROOLS-370: …`): this backend reads an empty value as
-RUNTIME-SEMANTICS ch. 1.2–1.4 does, so an answer on such a document would be a wrong answer without a word. The loader
-reads the property into the model (`RegelSpraakModel.inferFromEmpty()`) and refuses no document for it, so the rule
-graph reads such a document as any other; every other value of the property is a `DocumentError` at `/inferFromEmpty`
-(witnesses `InferFromEmptyLoaderWitnessTest`, `InferFromEmptyRefusalWitnessTest`).
+`Afleiden uit leeg: nee` — is built with the reading of RUNTIME-SEMANTICS ch. 1.5 (below, "Open values"). One that holds
+a form whose reading this backend does not carry is refused on both branches, before a bean is generated, with
+DROOLS-370 and the slug of the form (`EXCLUDE DROOLS-370: …`), since an answer in the reading of ch. 1.2–1.4 would be a
+wrong answer without a word. `UncarriedForms` is the one place that lists those forms, in the order by which the first
+a document holds is named: the table "Forms without the reading" of ch. 1.5; the forms whose reading ch. 1.5 defines
+and this backend does not carry, `defaults-group`, `quantifier-fold`, `set-fold`, `if-then-else`, `object-creation` and
+`fact-creation`; and `reading`, the build with readings. The loader reads the property into the model
+(`RegelSpraakModel.inferFromEmpty()`) and refuses no document for it, so the rule graph reads such a document as any
+other; every other value of the property is a `DocumentError` at `/inferFromEmpty` (witnesses
+`InferFromEmptyLoaderWitnessTest`, `InferFromEmptyRefusalWitnessTest`).
 
 **A session in four calls.** The replay makes them for every case (`CaseRunner`), so the gate fires a session as a
 consumer does.
@@ -83,9 +87,12 @@ consumer does.
    attribute's grid that holds the evaluation date (RUNTIME-SEMANTICS ch. 8.4), and `lijst(holder, role, members)`
    where the order of a to-many list is not the order of the beans, `role` being the role the holder plays, the name
    of the reference field each member holds toward it, and `link(factType, first, second)` for every link of a relation
-   both of whose roles are to-many, which no bean holds, `first` filling the role the fact type declares first.
-   `insert` states the facts the branch reads from these (`BucketInput`, `ListPlace`, `RelationLink` of phase 0), so a
-   consumer states no fact class of the branch itself.
+   both of whose roles are to-many, which no bean holds, `first` filling the role the fact type declares first, and
+   `characteristicAbsent(bean, characteristic)` for a characteristic the input states not to hold
+   (`characteristicsAbsent`, ch. 1.5), which the truth value on a bean cannot tell from one the input does not name;
+   `closedInputs()` treats every input member of the session as complete. `insert` states the facts the branch reads
+   from these (`BucketInput`, `ListPlace`, `RelationLink` of phase 0, `OpenInput`), so a consumer states no fact class
+   of the branch itself.
    `CaseInput.of(build, case)` makes that `Input` from a `uchar-case-v0` case, as the replay makes it for every
    case: it reads `asOfDate` and `input.instances` onto fresh beans, sets the attributes, characteristics and role
    links (RUNTIME-SEMANTICS ch. 5.7a: the written role by name, else by the type pair; on a one-to-one relation the
@@ -128,7 +135,8 @@ consumer does.
    expected)` compares the `expected` of a `uchar-case-v0` case with the session and returns a
    `DroolsBackend.Comparison`: per expectation a `ScenarioResult.ExpectationResult`, the diagnostic of the
    scenario report, and `pass()`; `cellValue` and `cellEmpty` read one cell of a dimensioned attribute, and
-   `attributeValue` or `attributeEmpty` on one is a defect of the case. `label` is a function as above, and an expectation names the bean to which it gives
+   `attributeValue` or `attributeEmpty` on one is a defect of the case; `attributeOpen` and `characteristicOpen` hold
+   where the member is open (ch. 1.5), where no other expectation on it holds. `label` is a function as above, and an expectation names the bean to which it gives
    the expectation's label, so the labels may be the ids of a request rather than those of a case file. It reads the
    beans, which carry the fixpoint only after `setDerivedValues`, and refuses a session that was not written back,
    one whose fixpoint carries evaluation faults, what `fixpointOf` refuses, a label given to two beans, an expectation on a
@@ -147,7 +155,8 @@ consumer does.
 `fixpointOf` reads what stands at the fixpoint without writing anything, as a `Fixpoint` (`transpiler/tms`): per object the
 derived attribute values in the form the bean field takes them (a timeline as the bean model's `Segment`s, a leeg as
 null), the derived characteristics, the objects the creations made with the creation and its subject, the links they
-laid with the fact type and both roles, the evaluation faults that stand, as data, and the §9.5 deposits.
+laid with the fact type and both roles, the evaluation faults that stand, as data, the §9.5 deposits, and the members
+that are open (`Fixpoint.open`, ch. 1.5), of which the bean shows only what the input put there.
 `setDerivedValues` writes exactly that on the beans, read by the same code: each value and characteristic, and each
 link a creation laid on the reference fields that hold it, so that a consumer that reads the beans reaches a made
 object as it reaches one of the input. Then it closes the session with a stated mark, and `fire` refuses it from then
@@ -409,12 +418,43 @@ branch writes no bean and calls no `update`. Every read a derived value depends 
 left-hand side, and a consequence computes only from bound variables, so truth maintenance withdraws whatever rested
 on a read that changed. A read of a derived member goes through a total standing fact, exactly one per object and
 member (`CharacteristicState`, `State`, and `PathState` for a read one role away), which carries the derivation or else the
-input; a read of an input member or of a role binds the bean, except a relation a form creates (below), and a
-parameter is read through its `ParameterState`. A
+input; a read of an input member that cannot be open (below) or of a role binds the bean, except a relation a form
+creates (below), and a parameter is read through its `ParameterState`. A
 condition is a predicate over bound values; the negations sit in the generic standing rules, in the guard of an
 initialisation and in the control facts of a defaults group. The KieBase runs in `EqualityBehaviorOption.EQUALITY`,
 where a stated fact takes over an equal logical one; equal logical facts merge into one fact with a justification per
 rule, which rests on the `equals` and `hashCode` of the fact classes, the subject compared by identity.
+
+**Open values.** In a document that infers nothing from an empty value a member of an object is filled, settled leeg or
+open (RUNTIME-SEMANTICS ch. 1.5). The analysis computes once which members can be open (`OpenableMembers`, the one place
+of the lowering that reads `inferFromEmpty`): an input member that holds one value, on the objects of a type on which no
+form writes it, unless its declaration says that its input is complete; and every member a form writes that reads such
+a member, through any number of forms. In any other document there is none, and the analysis builds nothing of what
+follows; nor does it, in a document with the property, for a member outside that set.
+
+A member that can be open is read through its standing, input or derived, whose third state is the `OpenMember` of the
+member on that object, in place of a value or a truth value. Two facts open it: `LeftOpen(subject, member, writer)`,
+inserted logically by a writer that neither decides nor stands to fill nothing, and `OpenInput(subject, member)`, stated
+by `insert` for an input member that is not complete. The standing rules take the `Value` or `HasCharacteristic` of a
+writer first, then a `LeftOpen`, then the input; an input that is not complete is open where the bean holds no value,
+or does not hold the characteristic. Settled leeg is the absence of all of these, per object, so no rule brings the
+writers of a member together, and a standing derived before a writer left the member open is withdrawn as any other.
+
+An evaluation reads such a member through `ComputeHelpers.read`, which breaks it off with an `OpenRead` where the member
+is open; the operators of the production runtime see no open value. The break is caught at the boundary of one atomic
+condition or one value, and what the probe heard within it is dropped: at a member of a composite, at the operand of a
+test on leeg or gevuld (`Term.ClosureOverOpen`, a closure), at the test of a rule, and in the consequence that computes
+a value, which then inserts the `LeftOpen` of its form. A condition whose judgement stands for the form itself and for
+another answers; any other throws `Undetermined`, which carries the truth for the form itself. `Composite` is the one
+reading of a composite, in every document: it counts the members for the form itself and for another by Kleene's table,
+stops where the judgement for another stands, and reads a member after one that is undetermined for another
+provisionally (ch. 1.5); where nothing is open that is the stop of ch. 5.10. `Reads.conditionTest` is the one place where
+a condition becomes the test of a rule: it asks that the condition decides, that it leaves its writer undecided, that
+it faults or that it deposits. The second is asked by a rule of its own beside the rule of the form,
+`<rule>: laat open`, which the analysis builds only where the judgement can be undetermined; a form fills nothing where
+no test of it holds. A consistency tests `none` over its assertion where that can be undetermined. Witnesses
+`OpenableMembersWitnessTest`, `OpenValuesWitnessTest` (the examples of ch. 1.5) and `OpenValuesRefWitnessTest` (the
+witnesses of the reference interpreter).
 
 **Initialisations, consistencies, defaults.** An initialisation fires where the target is empty in the input on the
 bean and no other writer holds a `Value` on it; its guard excludes its own write, since a guard that counted its own
