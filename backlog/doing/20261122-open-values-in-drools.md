@@ -535,3 +535,178 @@ goldens (gewoon 20 187, strikt 22 351 niet-lege regels, +10,7%; met een stapel +
 393 gewone documenten met dezelfde tekst). Een tweede lezer (Google Neon, alleen lezen, effort high) vond geen openstaand
 punt: de melding over twee initialisaties was al hersteld (`6c0246149`), de andere vormen weigert de analyse of sluit de
 verifier uit (WF-050, WF-075). De kaart blijft in `doing` tot het laatste deel.
+
+## Result van deel 2b: de vouwen en de kwantorvouw
+
+### Wat er is
+
+Commits op `card/open-values-in-drools`: `844e34299` (de vouwen en de kwantorvouw) en `ed453f529` (de volgorde: een filter of
+toets die kan falen of deponeren boven een open lid, besluit van de hoofdsessie tijdens de bouw).
+
+- **Een vouw over open leden.** De bijdrageregel van een lid blijft één regel. Wat het lid de vouw geeft en niet vaststaat, voegt
+  zij logisch in als `FoldOpen(vouw, onderwerp, lid, own, lezing)`: `own` leeg waar het filter onbepaald is of de waarde open,
+  waar of onwaar waar een sluiting het besliste. Is het lid vast, dan is er alleen de `Contribution` van elke vouw. Kan het filter
+  onbepaald zijn, dan vraagt de toets en rekent de consequentie zijn oordeel zoals een schrijver dat van zijn voorwaarde doet
+  (`Consequence.FilteredContribution`, `ComputeHelpers.judge`).
+- **De eigenaar** heeft er één accumulate bij, alleen waar een lid open kan zijn, die de `FoldOpen`-feiten van de vouw opsomt. De
+  telling van de bijdragen gaat erdoor (`ComputeHelpers.standingCount`), na de fouten van het filter en vóór de terugval: een
+  onbepaald lid is daar een open lezing, een sluiting wordt gemeld aan de grens eromheen.
+- **De grens van een sluiting** (`Boundary`) is één per waarde (`valued`), per toets op leeg en gevuld en per atomaire voorwaarde
+  waarin een vouw sluiten kan (`StaticFunction.ATOM`, om de vergelijking heen en om geen operator). Een voorwaarde die sloot,
+  staat voor de vorm zelf en niet voor een ander; een waarde die leeg is na een sluiting laat haar doel open en deponeert wat zij
+  deponeerde (zoals ref: de evaluatie is niet afgebroken).
+- **De kwantorvouw** zonder filter of met een filter dat vaststaat, met een toets die niet kan falen of deponeren: Kleene over de
+  leden waarop de toets vaststaat (geteld door de accumulate van elke kwantorvouw) en de `FoldOpen`-feiten van de andere
+  (`ComputeHelpers.quantifierVerdictOverOpen`).
+- **De volgorde.** Waar een filter kan falen of onbepaald zijn, neemt de regel van de `FilterFault` een lid van beide soorten,
+  met de `OpenRead` als fout van het onbepaalde lid (`TestItem.Role.BREAKS_OFF`): de eigenaar werpt de eerste in de volgorde, zoals
+  ref. Een open waarde komt na elk filter. Waar een toets kan falen of deponeren, draagt de `MemberTest` ook een open lezing of een
+  oordeel dat niet staat, en `quantifierRead` leest de leden met `Composite`, dus met de voorlopige leden van ch. 1.5; dat is in elk
+  document de ene lezing van een kwantorvouw op volgorde. Geen nieuw feit en geen tweede lezing.
+- **De weigering**: `UncarriedForms` heeft drie slugs van de analyse achteraan (`quantifier-fold`, `set-fold`, `anchored-read`);
+  zij weigert de vorm waar zij haar verlaagt, met dezelfde code, want of een deel een openable lid leest en kan falen, weet
+  alleen zij. Elke andere slug komt vóór deze drie en weigert vóór de bouw, zoals nu.
+- **Niet geraakt**: de productieruntime, `Contribution`, `exactSum`, `count`, de plannen en de tekst van een gewoon document.
+
+### Per onderdeel
+
+| onderdeel | uitkomst |
+|---|---|
+| som, totaal, aantal, minimum, maximum, eerste, laatste, gevuld-telling over leden die open kunnen zijn | gedragen |
+| lijstvouw over zulke vouwen; een terugval die vaststaat | gedragen |
+| filter dat een openable lid leest, ook op gevuld of leeg, en ook waar het kan falen of deponeren (een deling, een macht, een parameter, de rekendatum, datumrekening); een geankerde lezing van een afgeleid lid | gedragen |
+| unie van instantieverzamelingen | gedragen |
+| vouw over een afgeleid lid, over een vouw, langs een pad, in een stapel, een initialisatie, een `Let`, een consistentieregel | gedragen |
+| kwantorvouw zonder filter of met een vast filter; een toets die sluit, faalt of deponeert; een vouw in haar toets | gedragen |
+| een vouw die open kan zijn in een filter; een terugval die een openable lid leest | geweigerd, `set-fold` |
+| kwantorvouw met een filter dat een openable lid leest | geweigerd, `quantifier-fold` |
+| geankerde lezing van openable invoer | geweigerd, `anchored-read` |
+| `IfThenElse`, objectcreatie, feitcreatie | geweigerd, `if-then-else`, `object-creation`, `fact-creation` |
+
+Van de goldens met de eigenschap erbij weigeren er drie met `set-fold` (een vouw in het filter), drie met `quantifier-fold` en vier
+met `anchored-read`. `jutterswet-loodsgrens` (een toets tegen een parameter) wordt gedragen.
+
+### De omvang
+
+Niet-lege regels, `rule`s en functies van de DRL-tekst, over de 227 goldens die de backend draagt (168 na deel 2a; de twee goldens
+die de eigenschap zelf dragen niet meegerekend):
+
+| | regels | `rule`s | functies |
+|---|---|---|---|
+| 227 goldens, gewoon | 30 059 | 1516 | 1470 |
+| strikt | 32 991 (+9,8%) | 1739 (+14,7%) | 1547 (+5,2%) |
+| strikt, elke declaratie volledig | 30 059 | 1516 | 1470 |
+| de 59 nieuwe, gewoon | 10 082 | 541 | 516 |
+| strikt | 10 898 (+8,1%) | 598 (+10,5%) | 538 (+4,3%) |
+| de 168 van eerder, gewoon en strikt | 19 977 en 22 093 (+10,6%) | 975 en 1141 | 954 en 1009 |
+
+De grootste groei van één nieuwe golden is +64,5% (`jutterswet-sluitsom`, 31 naar 51 regels), daarna +34,1%
+(`jutterswet-zwaarste-weging`, 314 naar 421).
+
+**Bouwtijd** van de vijf goldens met de meeste vouwen (`jutterswet-zinkende-jutter`, `-vroegste-vondst`, `-sluitdag-gemeld`,
+`-schouwploeg`, `-redderkeur`), mediaan van vijf in één warme JVM, `-Xmx3g`, gewoon naar strikt: exec-model 12 naar 13 ms (+5%),
+DRL-tekst 178 naar 227 ms (+27%); de hoogste van één golden op de DRL-tekst +34%.
+
+### Een document zonder de eigenschap verandert niet
+
+De DRL-tekst van elke golden en elk rood document op `977b89a24` (de tekst van `0a79d621d`) naast die van nu, zonder en met
+lezingen: **1014 teksten van 507 documenten byte-gelijk, 0 andere** (90 ervan een weigering of fout van de analyse). Van de 388
+pins veranderen er twee, die van de goldens met de eigenschap: het oordeel heet er `Object` en `valued`/`decided` nemen de sonde
+mee; het aantal regels blijft gelijk.
+
+### Buiten de gates gemeten (eenmalig, programma's in de werkmap)
+
+- Elke golden, elke getuige van ref en elk document van `open-values/` met de eigenschap erbij, elke case als zij is en met elke
+  gegeven invoer weggelaten (hoogstens 60 per document): **309 documenten, 7790 runs op de twee weergaven, 6794 met een open lid:
+  0 verschillen met de eindstand van ref**.
+- De 77 daarvan met een vouw, elke case veertig keer met een willekeurig deel van de invoer weggelaten, soms ook parameters en de
+  rekendatum: **15 200 runs, 12 528 met een open lid, 176 fouten, 0 verschillen**. De dertien documenten waar de volgorde zichtbaar
+  is (een parameter, een deling, een macht, de rekendatum of datumrekening in filter of toets), elke case tachtig keer: **8640 runs,
+  186 fouten, 0 verschillen**. Een fout van ref is hier een fout van de backend en geen andere afloop.
+- Behoud: 227 goldens spelen met de eigenschap en elk invoerlid volledig hun eigen cases op beide weergaven (de twee goldens die
+  de eigenschap zelf dragen, verwachten een open lid en tellen niet mee).
+
+### Acceptance
+
+- **De getuigen van ref**: van de 34 spelen er 31 op beide weergaven (137 cases per weergave); drie weigeren met hun slug:
+  `fact-creation`, `object-creation` en `quantifier-fold` (haar regel met een filter op een open kenmerk). `empty-by-fault`,
+  `listed-fold`, `set-fold` en `settled-empty-fold` spelen nu.
+- **De voorbeelden van ch. 1.5** (`OpenValuesWitnessTest`, 42 tests): twaalf documenten, 80 cases en 10 rode cases die ook in ref
+  spelen: `set-fold` (`WV-1.5-set-fold*`), `closure-in-a-value` (`WV-1.5-closure-in-a-value`, de gevuld-telling),
+  `fold-in-a-binder` (`WV-1.5-closure-before-a-barrier` en `-reached` over een vouw), `quantifier-fold`
+  (`WV-1.5-quantifier-fold-*` zonder filter), `fold-chain` (`-open-passes-on`), `fold-subtype` (`-input-per-object`),
+  `past-undetermined-fold` (`WV-1.5-past-undetermined-fold`, de deling, ook in een vouwfilter); een wijziging van de bean van een
+  lid tussen twee keer vuren; en de volgorde:
+  - `fold-over-a-parameter`: de grens tegen een parameter in een kwantorvouw zonder filter en in een vouwfilter; EF-014 zonder een
+    onbepaald lid ervoor (fout) en met een onbepaald lid ervoor (open);
+  - `fold-over-the-date`: de rekendatum, EF-011 op dezelfde twee manieren;
+  - `fold-value-after-filters`: een open waarde van een eerder lid tegenover een filterfout van een later lid: ref leest elk filter
+    vóór elke waarde en faalt (EF-014), de backend ook;
+  - `fold-over-a-union`: een onbepaald filter van de eerste selectie tegenover een fout van de tweede;
+  - `fold-in-a-date-stack`: "de eerste van de maand van alle ladingen … die aan alle volgende voorwaarden voldoen: hij heeft geen
+    overlading; zijn maand is later dan de sluitdatum van de Schuit min de wachttijd van de Schuit" als consequentie van een default en
+    als operand in de rechtvaardiging van een andere van dezelfde stapel, met de sluitdatum afgeleid: alles gevuld, overlading open
+    vóór en na een lid dat telt, maand open, sluitdatum open en vaststaand leeg, en EF-007 met en zonder een onbepaald lid ervoor
+    (de wachttijd is een volledig lid in plaats van het vaste "1 mnd", omdat een kalendermaand van een casedatum niet buiten bereik
+    komt). De geankerde lezing leest het onderwerp van de regel: haar `State` is gejoind op `$vouwonderwerp`.
+  Zes documenten zijn dat van de frontend met een deel van een van hun vormen elders, waar het dialect dat niet schrijft.
+  `WV-1.5-closure-of-a-binder-*` en `-closure-before-a-fault` hebben een `IfThenElse` en zijn geweigerd.
+- **Elke smalle slug heeft een getuige** (`InferFromEmptyRefusalWitnessTest`): per vorm een document dat weigert, op beide
+  weergaven, met de regel in de zin, en hetzelfde document met volledige invoer, dat bouwt; en zeven goldens met een deling, een
+  macht of een parameter in filter of toets bouwen met de eigenschap.
+- **Rood eerst**: op de jar van `6c0246149` weigeren de zes eerste documenten met `set-fold` (drie) en `quantifier-fold` (drie); op
+  die van `844e34299` de zes van de volgorde (vier met `set-fold`, twee met `quantifier-fold`).
+- **Geen test verzwakt.** Aangepast: de opsommingen van routes, vormen en vouwinvoer (`RouteWitnessTest`, `FormsPlan`,
+  `FoldPlanWitnessTest`), één cast (`PeriodArithmeticTest`), de getuige van de weigertest (`object-creation` in plaats van
+  `set-fold`, die speelt) en `a_let_read_in_a_quantifier_fold_is_named`, waarvan het document met een gewone vouw geen slug van
+  `UncarriedForms` meer heeft.
+
+### Voorlopige besluiten
+
+1. **Eén feit `FoldOpen` in plaats van `FoldOpen` en `FoldClosure`**: zij verschillen in één veld (`own`), en de eigenaar heeft zo
+   één patroon erbij in plaats van twee. Het draagt de open lezing, die deel 3 nodig heeft; de volgorde van de leden niet.
+2. **De grens is een object per thread** (`Boundary`), geopend in `valued`, `emptyTestOverOpen` en `atom`: een sluiting gebeurt
+   diep in een term, en een waarde kan haar niet dragen zonder een omhulsel om elke operator.
+3. **`judge` geeft het oordeel** (waar, onwaar of de `Undetermined` met zijn waarheid voor de vorm zelf) in plaats van drie
+   uitkomsten: een filter en een toets hebben het paar nodig, een schrijver leest er dezelfde drie uitkomsten uit.
+4. **Een lege waarde na een sluiting deponeert wat zij deponeerde**, zoals ref (`value_outcome`): de grens gaf haar deponeringen
+   door, en het doel blijft open. Een default deponeert alleen waar hij beslist, ook in ref.
+5. **Een filter dat onbepaald kan zijn en kan falen, voegt voor een onbepaald lid beide feiten in** (`FoldOpen` en `FilterFault`): de
+   tweede gaat voor, de eerste is dan overbodig en verandert geen uitkomst. Eén bijdrageregel blijft zo voor elke vouw gelijk.
+
+### Voorstellen voor beschermde teksten
+
+- `spec/CONSTRUCTS.md` rij 48: "Drools reads it for rules, initialisations, consistency rules, conditions, defaults groups, folds
+  over a set and quantifier folds without a timeline, a creation or an IfThenElse, and refuses any other form by its slug
+  (DROOLS-370), among them a quantifier fold whose filter, and a fold whose filter holds a fold, that can be open; its build with
+  readings refuses every such document."
+- `CLAUDE.md`: geen alinea van een gate verandert.
+
+### Open punten
+
+1. **Een kwantorvouw met een filter dat een openable lid leest** kan met dezelfde middelen: elk filter vóór elke toets, met de toets
+   van een lid voorlopig waar een filter niet vaststaat (ch. 1.5). Drie goldens weigeren hierop.
+2. **Een vouw genest in een filter en een geankerde lezing van open invoer** weigeren door een toets in de analyse. De eerste speelt zonder
+   verdere code (de bijdrageregel leest de geneste vouw als elke regel): in een proef buiten de repo, zonder die toets, spelen twee
+   van de drie goldens met 0 verschillen op 128 runs en weigert de derde op `anchored-read`. De tweede vraagt het onderwerp van de
+   vorm als slot.
+3. Voor deel 3: de lezing van een open vouw (`Aggregation undetermined open …`) en van een kwantorvouw noemt het eerste lid in de
+   volgorde; `FoldOpen` draagt de lezing en geen plaats. Een knoop `ATOM` en `STANDING_COUNT` heeft geen eigen IR-knoop.
+
+### Gates
+
+Elk los gedraaid op `ed453f529`; daarna veranderde geen code.
+
+- 1 `check-self-contained: PASS`
+- 8 `check-red: PASS (102 red cases fault observably in ref and clingo …)`; Drools leg 83 fault-pinned, 19 not-carried, 19 EXCLUDE
+  met hun code
+- 10 `check-rgs-codes: PASS — 414 codes, 447 sites …`
+- 12 `check-drools: PASS`: played 386, DRL-text branch 386, JUnit 2039 tests; `check-drools-codes: PASS — 371 codes …`
+- 13 `check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens …)`
+- 15 `check-graph: PASS`
+- 17 `check-readings: PASS (ref traced 1211 golden case files … on both branches 385 goldens and 1073 case files compared, 8468
+  readings, 27262 node lines …)`, 2 goldens DROOLS-370
+
+De JUnit-suite: 2039 tests, geen overgeslagen (was 2024). Geen floor, lijst of verwachting van een gate veranderde. De diff van
+`backends/drools/src/main`: 15 bestanden, 565 regels erbij en 159 eraf (`TmsTranspiler` 151, `ComputeHelpers` 116, `DrlRendering`
+70, `PatternDslRendering` 50, `FoldOpen` 47 en `Boundary` 38 nieuw).
