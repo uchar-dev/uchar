@@ -306,7 +306,6 @@ EXPECTED_CHANNEL=(
   "anchor/jutterswet-vondstdossier|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "closed-runtime-division-by-zero|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a red case until card zero-division-channel (2026-10-19), excluded in check-red.sh on the same refusal"
   "jutterswet-aanspraakherziening|EXCLUDE DROOLS-002|loader Refusal: functionDefs"
-  "jutterswet-afleiden-uit-leeg|EXCLUDE DROOLS-370|build refusal: the document carries inferFromEmpty false (RegelSpraak 'Afleiden uit leeg: nee') and a defaults group, a form for which this backend does not carry the reading of RUNTIME-SEMANTICS ch. 1.5 in which a member can be open (form: defaults-group), so the build refuses it on both branches before anything is built (InferFromEmptyRefusalWitnessTest); ref plays the four cases, clingo refuses with CLINGO-049"
   "jutterswet-dossierrecht-catala|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-dossierspelling|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-grens-per-jutter|EXCLUDE DROOLS-193|transpiler SKIP: a BinderRef of a Let over a fold, in the filter or the matrix of that fold: the contribution rules of the fold compute the filter and the matrix per element and do not bind the value of the Let. Measured 2026-11-06 (cards clingo-let-binder-tussen-onderwerpen and clingo-let-binder-vergelijking-over-eenheden) in both branches, same sentence; ref and the ASP backend answer the golden, so its pins are a ref = clingo pair"
@@ -331,7 +330,6 @@ EXPECTED_CHANNEL=(
   "jutterswet-vaarwaterspelling|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
   "jutterswet-vaarwatertoeslag-catala|EXCLUDE DROOLS-021|loader Refusal: Expr:Match"
   "jutterswet-vangstwaardering|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
-  "jutterswet-volledig-gegeven|EXCLUDE DROOLS-370|build refusal: the document carries inferFromEmpty false (RegelSpraak 'Afleiden uit leeg: nee'), with members declared complete (RegelSpraak '(volledig)'), and a defaults group, a form for which this backend does not carry the reading of RUNTIME-SEMANTICS ch. 1.5 in which a member can be open (form: defaults-group), so the build refuses it on both branches before anything is built (InferFromEmptyRefusalWitnessTest); ref plays the six cases, clingo refuses with CLINGO-049"
   "jutterswet-waarderingsinvoer|EXCLUDE DROOLS-009|loader Refusal: Datatype:StructType"
   "jutterswet-werfkeur|EXCLUDE DROOLS-259|transpiler SKIP: a quantifier fold over the relation ligplaats, which creations write, with a member condition that can fail (it reads the evaluation date the case does not carry): the branch keeps no place for a created link, and RUNTIME-SEMANTICS ch. 5.7a orders the members, which decides whether the stop comes before the fault; both branches refuse, where ref plays both cases and clingo refuses with CLINGO-035 (card created-member-order, 2026-11-11)"
   "synth3-armlichaam|EXCLUDE DROOLS-008|loader Refusal: Datatype:ListType — a closed lambda body needs a list-typed fold operand (WF-069/WF-070), which the v0 loader does not carry; the form itself is pinned by ref and clingo"
@@ -1646,7 +1644,9 @@ EXPECTED_CHANNEL=(
 # sum-typed target that passes on the members of its sum type, scalar and per day (RUNTIME-SEMANTICS ch. 9.5; PLAYED 10).
 # 384 with jutterswet-gevuldtoets-soorten: the leeg and gevuld tests on an enumeration, a text, a boolean and an attribute
 # with absence markers, whose markers are values, also over a role (RUNTIME-SEMANTICS ch. 1.2, 9.5; PLAYED 3).
-EXPECTED_PLAYED=384
+# 386 with jutterswet-afleiden-uit-leeg and jutterswet-volledig-gegeven: two documents with inferFromEmpty false, the
+# reading of RUNTIME-SEMANTICS ch. 1.5 in which a member can be open, each with a defaults group (PLAYED 6 and 6).
+EXPECTED_PLAYED=386
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
