@@ -1,0 +1,63 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "5"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "keurgrens": {
+        "number": "10"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "kundig"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "J1",
+      "characteristic": "eenmaal"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "zwaaraantal"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

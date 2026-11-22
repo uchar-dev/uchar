@@ -97,6 +97,9 @@ public enum Route {
     IS_EVALUATION_FAULT(ComputeHelpers.class, "isEvaluationFault"),
     /** An exception caught in an evaluation as its outcome where it is an evaluation fault; any other passes on. */
     CAUGHT(ComputeHelpers.class, "caught"),
+    /** As {@link #CAUGHT}, in the evaluation of a condition that can be undetermined: an open read and a judgement that does
+     *  not stand are outcomes as well ({@link Consequence.Input.MemberTest}). */
+    ENDED(ComputeHelpers.class, "ended"),
     /** An evaluation fault named after the rule it ran in, as a fault carries it. */
     DESIGNATE(ComputeHelpers.class, "designate"),
     /** The evaluation fault of a sentence, thrown ({@link Term.Fail}). */
@@ -150,6 +153,9 @@ public enum Route {
     DECIDES(ComputeHelpers.class, "decides"),
     /** Whether a condition whose judgement can be undetermined faults ({@link TestItem#open}). */
     FAULTED(ComputeHelpers.class, "faulted"),
+    /** What breaks off the evaluation of a condition that can be undetermined ({@link TestItem.Role#BREAKS_OFF},
+     *  {@link Consequence.FilterFault}). */
+    BROKEN_OFF(ComputeHelpers.class, "brokenOff"),
     /** Whether a condition whose judgement can be undetermined deposits ({@link TestItem#open}). */
     DEPOSITED(ComputeHelpers.class, "deposited"),
     /** The outcome of a value that can read an open value: the value, the evaluation fault, or that it does not stand

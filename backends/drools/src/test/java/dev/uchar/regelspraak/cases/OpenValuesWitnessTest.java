@@ -23,8 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * stand in {@code src/test/resources/open-values/<name>/}, written in RegelSpraak ({@code source.rgs}) and taken to the
  * wire by the frontend ({@code ir.json}), but the four of a stack with an initialisation, which the dialect writes only
  * beside an opgave and which stand as the frontend's document with that default added, {@code quantifier-fold}, with
- * a consistency rule over a quantifier fold added, and {@code fold-subtype}, with a fold as the left side of the matrix of
- * one; their cases carry the expectations of the spec's example, and the reference
+ * a consistency rule over a quantifier fold added, and {@code fold-subtype}, {@code past-undetermined-fold},
+ * {@code fold-over-a-union} and {@code fold-in-a-date-stack}, with a part of one of their forms put in another, where the
+ * dialect does not write it; their cases carry the expectations of the spec's example, and the reference
  * interpreter plays every one of them ({@code runner}, {@code runner --closed-inputs} for a case named
  * {@code closed*}), so a case here is the outcome of ref beside that of this backend. Every case plays on both branches
  * and must meet its expectations there; a case named {@code closed*} plays in a session that treats every input
@@ -313,6 +314,45 @@ class OpenValuesWitnessTest {
         assertEquals(6, play("fold-subtype", "case"));
     }
 
+    /** WV-1.5-past-undetermined-fold, and the same in the filter of a fold over a set: a member of a quantifier fold read past
+     *  one undetermined decides it, its deposit dropped; a fold over a set that an undetermined filter or an open value breaks
+     *  off deposits nothing of its filters. */
+    @Test void wv_1_5_past_undetermined_fold() throws Exception {
+        assertEquals(7, play("past-undetermined-fold", "case"));
+    }
+
+    /** A filter and a matrix over a parameter (EF-014) and over the evaluation date (EF-011): with one bound the fold is as
+     *  over a literal; without one the first member in fold order that reads it faults, and one that is undetermined before
+     *  it breaks the fold off, or leaves the member after it undetermined in a quantifier fold. */
+    @Test void a_fold_over_what_a_session_may_not_bind() throws Exception {
+        assertEquals(6, play("fold-over-a-parameter", "case"));
+        assertEquals(2, play("fold-over-a-parameter", "red"));
+        assertEquals(4, play("fold-over-the-date", "case"));
+        assertEquals(2, play("fold-over-the-date", "red"));
+    }
+
+    /** The filters of every member of a fold over a set are read before a value: a filter that faults on a later member
+     *  faults where the value of an earlier one is open. */
+    @Test void the_filters_of_a_fold_come_before_its_values() throws Exception {
+        assertEquals(5, play("fold-value-after-filters", "case"));
+        assertEquals(1, play("fold-value-after-filters", "red"));
+    }
+
+    /** The filters of a union are read selection by selection: one that is undetermined in the first comes before a fault of
+     *  the second, and a fault of an earlier member of the second before one undetermined after it. */
+    @Test void the_filters_of_a_union_are_read_per_selection() throws Exception {
+        assertEquals(5, play("fold-over-a-union", "case"));
+        assertEquals(2, play("fold-over-a-union", "red"));
+    }
+
+    /** The first date of a set under "all of" a negated derived characteristic of the member and a date calculation over an
+     *  anchored derived date of the subject, which can be open and can fault (EF-007), as the consequence of one default and
+     *  in the justification of another of the same stack. */
+    @Test void a_fold_over_dates_in_a_stack() throws Exception {
+        assertEquals(16, play("fold-in-a-date-stack", "case"));
+        assertEquals(3, play("fold-in-a-date-stack", "red"));
+    }
+
     /** A value a consumer puts on a bean between two fires fills an input that is not complete, and one it takes away
      *  leaves it open again: a read takes the bean beside the {@code OpenInput} that {@code insert} stated once, also of
      *  a bean a path reaches. */
@@ -409,10 +449,11 @@ class OpenValuesWitnessTest {
         }
         names.sort(null);
         assertEquals(List.of("boundary-after", "boundary-before", "closure-in-a-value", "complete", "complete-derived",
-                "composite-tables", "consistency", "derived", "filled-test", "fold-chain", "fold-in-a-binder", "fold-subtype",
-                "initialisation", "initialisation-condition", "input-per-object", "instance-ordered", "link",
+                "composite-tables", "consistency", "derived", "filled-test", "fold-chain", "fold-in-a-binder",
+                "fold-in-a-date-stack", "fold-over-a-parameter", "fold-over-a-union", "fold-over-the-date", "fold-subtype",
+                "fold-value-after-filters", "initialisation", "initialisation-condition", "input-per-object", "instance-ordered", "link",
                 "no-open-without-the-property", "open-input", "outside-the-window", "past-undetermined-deposit",
-                "past-undetermined-fault", "quantifier-fold", "reach", "reach-without-the-property", "read-for-another", "rule",
+                "past-undetermined-fault", "past-undetermined-fold", "quantifier-fold", "reach", "reach-without-the-property", "read-for-another", "rule",
                 "set-fold", "stack-characteristic", "stack-deposit", "stack-exception-groups",
                 "stack-exception-groups-initialisation", "stack-exception-groups-nested",
                 "stack-first-decides", "stack-gives-way", "stack-initialisation", "stack-initialisation-value",

@@ -726,6 +726,18 @@ public final class ComputeHelpers {
         }
     }
 
+    /** What breaks off the evaluation of {@code condition}, whose judgement can be undetermined, before it stands for the form
+     *  itself: an evaluation fault, or the open read that left it undetermined; null where it does stand for it. */
+    public static RuntimeException brokenOff(Callable<Boolean> condition) {
+        try {
+            call(condition);
+            return null;
+        } catch (RuntimeException e) {
+            if (e instanceof Undetermined u) return u.own() == null ? new OpenRead(u.read()) : null;
+            return e instanceof OpenRead ? e : caught(e);
+        }
+    }
+
     /** Whether evaluating {@code condition}, whose judgement can be undetermined, deposits to {@code depositFlag}, the fresh
      *  probe of the test: an open read breaks off the one atomic condition it is, so that the probe drops what it heard;
      *  what was deposited before an undetermined judgement or an evaluation fault stays heard; any other exception passes
@@ -949,10 +961,10 @@ public final class ComputeHelpers {
     /**
      * The matrix of a quantifier fold read as the reference interpreter reads it, over the {@link MemberTest} of each
      * contributor, the list {@code contributions} over the count {@code countOf} (RUNTIME-SEMANTICS ch. 3.9a, 5.10): in the
-     * contributors' order, with the stop triggers of ch. 5.10 tested before each contributor, the empty prefix
-     * included. A contributor that is reached deposits where its matrix deposited, heard by {@code depositFlag}, the probe of
-     * the reading rule or nothing, and faults where its matrix faulted; one that is not reached does neither. Over no
-     * contributor the accumulate's list is not read.
+     * contributors' order, as a composite reads its members ({@link Composite}), with the stop tested before each
+     * contributor, the empty prefix included. A contributor that is reached deposits where its matrix deposited, heard by
+     * {@code depositFlag}, the probe of the reading rule or nothing, and faults where its matrix faulted; one that is not
+     * reached does neither. Over no contributor the accumulate's list is not read.
      */
     public static boolean quantifierRead(Object countOf, Object contributions, Condition.Quantifier kw, int threshold,
                                         Object depositFlag) {
@@ -960,16 +972,12 @@ public final class ComputeHelpers {
         List<MemberTest> members = new ArrayList<>(list.size());
         for (Object b : list) members.add((MemberTest) b);
         members.sort(null);
-        int n = members.size(), touch = 0;
-        for (int k = 0; k < n; k++) {
-            Boolean fixed = established(kw, threshold, touch, k, n - k);
-            if (fixed != null) return fixed;
-            MemberTest member = members.get(k);
-            if (member.deposited()) DepositFlag.report(depositFlag, member.codes());
-            if (member.fault() != null) throw member.fault();
-            if (member.holds()) touch++;
+        Composite reading = new Composite(kw, threshold, members.size(), depositFlag);
+        for (MemberTest member : members) {
+            if (reading.stands()) break;
+            reading.read(() -> member.replayed(depositFlag));
         }
-        return endVerdict(kw, threshold, touch, n);
+        return reading.verdict();
     }
 
     /** A test of the §9.5 channel (RUNTIME-SEMANTICS ch. 5.6): whether {@code inconsistent}, the standing of a form's
@@ -1370,6 +1378,13 @@ public final class ComputeHelpers {
     public static RuntimeException caught(RuntimeException e) {
         if (!ComputeFault.isEvaluationFault(e)) throw e;
         return e;
+    }
+
+    /** {@code e}, caught in the evaluation of a condition whose judgement can be undetermined, where the evaluation ends in
+     *  it: an evaluation fault ({@link #caught}), an open read or a judgement that does not stand; any other exception
+     *  passes on as it is. */
+    public static RuntimeException ended(RuntimeException e) {
+        return e instanceof OpenRead || e instanceof Undetermined ? e : caught(e);
     }
 
     /** The evaluation fault {@code fault} named after the rule {@code rule} it ran in, as the {@link Fault} of a form

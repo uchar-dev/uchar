@@ -1,0 +1,237 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "zwaaraantal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "zwaargewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gemerkte gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "kundig",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "eenmaal",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "plural": "gewichten"
+          },
+          {
+            "node": "Attribute",
+            "name": "getuigen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gemerkt",
+            "kind": "adjectival",
+            "complete": true
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vinding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "keurgrens",
+        "datatype": {
+          "node": "Number",
+          "whole": true,
+          "decimals": 0,
+          "sign": "unspecified"
+        }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "gemerkte gewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gemerkte gewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het gemerkte gewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn getuigen is groter dan de keurgrens"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "atLeast",
+                "threshold": 1,
+                "parts": [
+                  {
+                    "node": "CharacteristicCheck",
+                    "characteristic": "gemerkt",
+                    "negated": false,
+                    "source": {
+                      "snippet": "hij is gemerkt"
+                    }
+                  },
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "getuigen",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn getuigen"
+                      }
+                    },
+                    "right": {
+                      "node": "ParameterReference",
+                      "parameter": "keurgrens",
+                      "source": {
+                        "snippet": "de keurgrens"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn getuigen is groter dan de keurgrens"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn getuigen is groter dan de keurgrens"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn getuigen is groter dan de keurgrens"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

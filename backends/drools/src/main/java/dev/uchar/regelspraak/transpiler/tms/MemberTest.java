@@ -6,7 +6,8 @@ import java.util.Objects;
 /**
  * The matrix of a quantifier fold evaluated for one contributor, the value of that contributor's {@link Contribution}
  * where the matrix can fault or deposit (RUNTIME-SEMANTICS ch. 3.9a): whether it holds ({@code holds}), or the
- * evaluation fault it raised ({@code fault}, unnamed: the form that reads the fold names it), and whether its
+ * evaluation fault it raised ({@code fault}, unnamed: the form that reads the fold names it), or where it can be
+ * undetermined (ch. 1.5) the {@link OpenRead} or the {@link Undetermined} it ended in, and whether its
  * evaluation reached a place that deposits ({@code deposited}: a division of a filled dividend by a leeg divisor or
  * the square root of a negative number), with the EF codes of what it deposited ({@code codes}, RUNTIME-SEMANTICS
  * ch. 5.7b; none for the square root). It is no outcome by itself. The reference interpreter reads the matrix in
@@ -47,6 +48,14 @@ public final class MemberTest implements Comparable<MemberTest> {
 
     /** The fault the matrix raised for the contributor, unnamed; null where it answered. */
     public RuntimeException fault() { return fault; }
+
+    /** The matrix read for the contributor, as the evaluation of it went: its deposit heard by {@code depositFlag}, a probe
+     *  or nothing, then its fault raised, or else its truth. */
+    boolean replayed(Object depositFlag) {
+        if (deposited) DepositFlag.report(depositFlag, codes);
+        if (fault != null) throw fault;
+        return holds;
+    }
 
     public boolean deposited() { return deposited; }
 

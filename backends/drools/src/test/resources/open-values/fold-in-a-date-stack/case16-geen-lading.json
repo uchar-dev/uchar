@@ -1,0 +1,41 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Schuit",
+        "attributes": {
+          "melddatum": {
+            "date": "2026-03-15"
+          },
+          "klachten": {
+            "number": "1"
+          },
+          "wachttijd": {
+            "number": "1"
+          },
+          "toetsdatum": {
+            "date": "2030-01-01"
+          }
+        },
+        "roles": {
+          "lading": []
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "schone maand"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

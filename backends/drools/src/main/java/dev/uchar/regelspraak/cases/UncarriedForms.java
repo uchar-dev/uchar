@@ -29,15 +29,13 @@ import java.util.Set;
  * readings)}), which reads no such document yet. A document whose forms are all outside the list is built and played
  * with the reading of ch. 1.5.
  *
- * <p>The last three slugs depend on what the parts of a form can read and how their evaluation can end, which the analysis
- * knows ({@code TmsTranspiler}); it refuses the form where it lowers it, with the same code, so a document that holds a form
- * before them in the list is refused by that:
+ * <p>The last three slugs depend on what the parts of a form can read, which the analysis knows ({@code TmsTranspiler}); it
+ * refuses the form where it lowers it, with the same code, so a document that holds a form before them in the list is
+ * refused by that:
  * <ul>
- *   <li>{@code quantifier-fold}: a quantifier fold whose filter reads a member that can be open, or whose matrix reads one
- *       and can fault or deposit;</li>
- *   <li>{@code set-fold}: a fold over a set whose filter reads a member that can be open and can fault or deposit, or
- *       holds a fold that can be open; the same over the filters of an instance-set union together; and a sum whose fallback
- *       reads a member that can be open;</li>
+ *   <li>{@code quantifier-fold}: a quantifier fold whose filter reads a member that can be open;</li>
+ *   <li>{@code set-fold}: a fold over a set whose filter holds a fold that can be open, and a sum whose fallback reads a
+ *       member that can be open;</li>
  *   <li>{@code anchored-read}: an anchored read of an input member that can be open (IR-SPEC ch. 4.1a).</li>
  * </ul>
  *

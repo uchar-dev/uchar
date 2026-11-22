@@ -1,0 +1,588 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Schuit",
+        "animate": false,
+        "plural": "Schuiten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "melddatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "klachten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "sluitdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "toetsdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            },
+            "complete": true
+          },
+          {
+            "node": "Attribute",
+            "name": "wachttijd",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified",
+              "unit": [
+                {
+                  "node": "Unit",
+                  "abbreviation": "mnd",
+                  "system": "Tijd",
+                  "canonical": "mnd",
+                  "factorToCanonical": {
+                    "num": 1,
+                    "den": 1
+                  }
+                }
+              ]
+            },
+            "complete": true
+          },
+          {
+            "node": "Attribute",
+            "name": "hulpdatum",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "schone maand",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Lading in-een-maand",
+        "animate": false,
+        "plural": "Ladingen in-een-maand",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "maand",
+            "datatype": {
+              "node": "Date",
+              "precision": "day"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "overlading",
+            "kind": "possessive"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "lading in-een-maand",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "schuit",
+            "objectType": "Schuit",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "lading",
+            "objectType": "Lading in-een-maand",
+            "plural": "ladingen",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [
+      {
+        "node": "UnitSystem",
+        "name": "Tijd",
+        "units": [
+          {
+            "node": "Unit",
+            "abbreviation": "dg",
+            "system": "Tijd",
+            "canonical": "dg",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "dag"
+            ]
+          },
+          {
+            "node": "Unit",
+            "abbreviation": "mnd",
+            "system": "Tijd",
+            "canonical": "mnd",
+            "factorToCanonical": {
+              "num": 1,
+              "den": 1
+            },
+            "spellings": [
+              "maand"
+            ]
+          }
+        ]
+      }
+    ],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "overlading",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "overlading",
+              "subjectType": "Lading in-een-maand",
+              "source": {
+                "snippet": "Een Lading in-een-maand heeft de overlading"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Lading in-een-maand",
+                "source": {
+                  "snippet": "zijn gewicht"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "100"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "100"
+                }
+              },
+              "source": {
+                "snippet": "zijn gewicht groter is dan 100"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "sluitdatum",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "sluitdatum",
+              "subjectType": "Schuit",
+              "source": {
+                "snippet": "De sluitdatum van een Schuit"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "melddatum",
+              "subjectType": "Schuit",
+              "source": {
+                "snippet": "zijn melddatum"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "klachten",
+                "subjectType": "Schuit",
+                "source": {
+                  "snippet": "zijn klachten"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "0"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "0"
+                }
+              },
+              "source": {
+                "snippet": "zijn klachten groter zijn dan 0"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "schone maand",
+        "subject": "Schuit",
+        "attribute": "schone maand",
+        "defaults": [
+          {
+            "node": "Default",
+            "name": "toets",
+            "justification": {
+              "node": "Comparison",
+              "op": "later",
+              "left": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "Aggregation",
+                  "kind": "first",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "maand",
+                      "subjectType": "Lading in-een-maand",
+                      "source": {
+                        "snippet": "de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand is later dan de sluitdatum van de Schuit min de wachttijd van de Schuit"
+                      }
+                    }
+                  ],
+                  "elementType": "Lading in-een-maand",
+                  "filter": {
+                    "node": "Compound",
+                    "quantifier": "all",
+                    "threshold": 0,
+                    "parts": [
+                      {
+                        "node": "CharacteristicCheck",
+                        "characteristic": "overlading",
+                        "negated": true,
+                        "source": {
+                          "snippet": "hij heeft geen overlading"
+                        }
+                      },
+                      {
+                        "node": "Comparison",
+                        "op": "later",
+                        "left": {
+                          "node": "AttributeReference",
+                          "attribute": "maand",
+                          "subjectType": "Lading in-een-maand",
+                          "source": {
+                            "snippet": "zijn maand"
+                          }
+                        },
+                        "right": {
+                          "node": "Binary",
+                          "op": "minus",
+                          "left": {
+                            "node": "AttributeReference",
+                            "attribute": "sluitdatum",
+                            "subjectType": "Schuit",
+                            "anchor": "form",
+                            "source": {
+                              "snippet": "de sluitdatum van de Schuit"
+                            }
+                          },
+                          "right": {
+                            "node": "AttributeReference",
+                            "attribute": "wachttijd",
+                            "subjectType": "Schuit",
+                            "anchor": "form",
+                            "source": {
+                              "snippet": "de wachttijd van de Schuit"
+                            }
+                          },
+                          "type": {
+                            "node": "Date",
+                            "precision": "day"
+                          },
+                          "source": {
+                            "snippet": "de sluitdatum van de Schuit min de wachttijd van de Schuit"
+                          }
+                        },
+                        "source": {
+                          "snippet": "zijn maand is later dan de sluitdatum van de Schuit min de wachttijd van de Schuit"
+                        }
+                      }
+                    ],
+                    "source": {
+                      "snippet": "aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand is later dan de sluitdatum van de Schuit min de wachttijd van de Schuit"
+                    }
+                  },
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "lading in-een-maand",
+                    "role": "lading"
+                  },
+                  "type": {
+                    "node": "Date",
+                    "precision": "day"
+                  },
+                  "source": {
+                    "snippet": "de eerste van de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand is later dan de sluitdatum van de Schuit min de wachttijd van de Schuit"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "1"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified",
+                    "unit": [
+                      {
+                        "node": "Unit",
+                        "abbreviation": "mnd",
+                        "system": "Tijd",
+                        "canonical": "mnd",
+                        "factorToCanonical": {
+                          "num": 1,
+                          "den": 1
+                        }
+                      }
+                    ]
+                  },
+                  "source": {
+                    "snippet": "1 mnd"
+                  }
+                },
+                "type": {
+                  "node": "Date",
+                  "precision": "day"
+                },
+                "source": {
+                  "snippet": "zijn melddatum plus 1 mnd"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "toetsdatum",
+                "subjectType": "Schuit",
+                "source": {
+                  "snippet": "zijn toetsdatum"
+                }
+              },
+              "source": {
+                "snippet": "zijn melddatum later is dan zijn toetsdatum"
+              }
+            },
+            "consequence": {
+              "node": "AttributeReference",
+              "attribute": "toetsdatum",
+              "subjectType": "Schuit",
+              "source": {
+                "snippet": "zijn toetsdatum"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "name": "schone maand",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Aggregation",
+              "kind": "first",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "maand",
+                  "subjectType": "Lading in-een-maand",
+                  "source": {
+                    "snippet": "de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand is later dan de sluitdatum van de Schuit min de wachttijd van de Schuit"
+                  }
+                }
+              ],
+              "elementType": "Lading in-een-maand",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "all",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "CharacteristicCheck",
+                    "characteristic": "overlading",
+                    "negated": true,
+                    "source": {
+                      "snippet": "hij heeft geen overlading"
+                    }
+                  },
+                  {
+                    "node": "Comparison",
+                    "op": "later",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "maand",
+                      "subjectType": "Lading in-een-maand",
+                      "source": {
+                        "snippet": "zijn maand"
+                      }
+                    },
+                    "right": {
+                      "node": "Binary",
+                      "op": "minus",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "sluitdatum",
+                        "subjectType": "Schuit",
+                        "anchor": "form",
+                        "source": {
+                          "snippet": "de sluitdatum van de Schuit"
+                        }
+                      },
+                      "right": {
+                        "node": "AttributeReference",
+                        "attribute": "wachttijd",
+                        "subjectType": "Schuit",
+                        "anchor": "form",
+                        "source": {
+                          "snippet": "de wachttijd van de Schuit"
+                        }
+                      },
+                      "type": {
+                        "node": "Date",
+                        "precision": "day"
+                      },
+                      "source": {
+                        "snippet": "de sluitdatum van de Schuit min de wachttijd van de Schuit"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn maand is later dan de sluitdatum van de Schuit min de wachttijd van de Schuit"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand is later dan de sluitdatum van de Schuit min de wachttijd van de Schuit"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "lading in-een-maand",
+                "role": "lading"
+              },
+              "type": {
+                "node": "Date",
+                "precision": "day"
+              },
+              "source": {
+                "snippet": "de eerste van de maand van alle ladingen van de Schuit die aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand is later dan de sluitdatum van de Schuit min de wachttijd van de Schuit"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

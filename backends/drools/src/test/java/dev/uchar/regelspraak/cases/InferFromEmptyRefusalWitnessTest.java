@@ -31,8 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * form ({@code UncarriedForms}): on both branches, with and without readings, before anything is built, and the CLI
  * reports it in the status line {@code EXCLUDE DROOLS-370: <sentence>}. The fixture is the witness {@code object-creation}
  * of the reference interpreter; the same document without
- * the property builds and plays. The forms the analysis refuses where it lowers them, a fold outside the narrow bound this
- * backend carries, each have a document here, beside its neighbour that is carried. The list opens with the table "Forms without the reading" of ch. 1.5, in its
+ * the property builds and plays. The forms the analysis refuses where it lowers them each have a document here, beside its
+ * neighbour that is carried. The list opens with the table "Forms without the reading" of ch. 1.5, in its
  * order, and the build with readings refuses a document whose forms this backend carries with the slug
  * {@code reading}.
  */
@@ -162,12 +162,9 @@ class InferFromEmptyRefusalWitnessTest {
         assertEquals(null, first(grens(3)));
     }
 
-    /** {@code set-fold}: a fold over a set whose filter reads a member that can be open and divides, of one selection and of
-     *  a union whose other selection reads one; one whose filter holds a fold that can be open; and a sum whose fallback
-     *  reads a member that can be open. Where every input is complete, nothing can be open, and the document is carried. */
+    /** {@code set-fold}: a fold over a set whose filter holds a fold that can be open, and a sum whose fallback reads a
+     *  member that can be open. Where every input is complete, nothing can be open, and the document is carried. */
     @Test void a_fold_over_a_set_outside_the_bound_is_refused() throws Exception {
-        refused("set-fold", "zware vondsten", golden("fold-filter-divides-by-zero"));
-        refused("set-fold", "unietelling", golden("jutterswet-kwantorvouw-en-unie"));
         refused("set-fold", "eerste schone maand vanaf de eindmaand", golden("fold-filter-inner-fold-via-element-role"));
         ObjectNode fallback = fixture("set-fold");
         ObjectNode sum = (ObjectNode) fallback.at("/rules/rules/7/versions/0/value");
@@ -176,18 +173,18 @@ class InferFromEmptyRefusalWitnessTest {
         refused("set-fold", "aangemeld gewicht", fallback);
     }
 
-    /** {@code quantifier-fold}: one whose filter reads a member that can be open, and one whose matrix reads one and
-     *  divides. A filter that stands, over the same matrix without the division, is carried ({@code OpenValuesWitnessTest}). */
-    @Test void a_quantifier_fold_outside_the_bound_is_refused() throws Exception {
+    /** {@code quantifier-fold}: one whose filter reads a member that can be open. */
+    @Test void a_quantifier_fold_under_a_filter_that_can_be_open_is_refused() throws Exception {
         refused("quantifier-fold", "keurig bij sterkte", golden("jutterswet-vuurtoren"));
-        ObjectNode divides = fixture("quantifier-fold");
-        ObjectNode matrix = (ObjectNode) divides.at("/rules/rules/0/versions/0/condition/test");
-        ObjectNode division = JSON.createObjectNode();
-        division.put("node", "Binary").put("op", "dividedBy").set("left", matrix.get("left").deepCopy());
-        division.set("right", ((ObjectNode) matrix.get("left")).deepCopy().put("attribute", "schade"));
-        division.set("type", JSON.readTree(NUMBER));
-        matrix.set("left", division);
-        refused("quantifier-fold", "kundig", divides);
+    }
+
+    /** A filter and a matrix that can fault or deposit over a member that can be open are carried: a division, a power, a
+     *  parameter, in a fold over a set, a union and a quantifier fold. */
+    @Test void a_fold_whose_order_shows_is_carried() throws Exception {
+        for (String name : List.of("fold-filter-divides-by-zero", "jutterswet-filterwacht", "jutterswet-macht-van-nul",
+                "jutterswet-kwantorvouw-en-unie", "jutterswet-vouwfilter-buiten-de-beurt", "jutterswet-keurgemiddelde",
+                "jutterswet-loodsgrens"))
+            for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) DroolsBackend.build(golden(name), branch, false);
     }
 
     /** {@code anchored-read}: an anchored read of an input member that can be open, in the filter of a fold. */

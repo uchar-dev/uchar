@@ -66,13 +66,11 @@ wrong answer without a word. `UncarriedForms` is the one place that lists those 
 a document holds is named: the table "Forms without the reading" of ch. 1.5; the forms whose reading ch. 1.5 defines
 and this backend does not carry, `defaults-group` (groups without an order between them of which one has an
 initialisation), `if-then-else`, `object-creation` and `fact-creation`; and `reading`, the
-build with readings. Those are refused before a bean is generated. The last three slugs depend on what a part can read
-and how its evaluation can end, and the analysis refuses them where it lowers the form, so after the others:
-`quantifier-fold`, whose filter reads a member that can be open, or whose matrix reads one and can fault or deposit;
-`set-fold`, a fold over a set whose filter reads a member that can be open and can fault or deposit or holds a fold that
-can be open, the same over the selections of a union together, and a sum whose fallback reads a member that can be open;
-and `anchored-read`, an anchored read of an input member that can be open. A read of a parameter and of the evaluation
-date can fault. The loader reads the property into the model
+build with readings. Those are refused before a bean is generated. The last three slugs depend on what a part can read,
+and the analysis refuses them where it lowers the form, so after the others: `quantifier-fold`, whose filter reads a
+member that can be open; `set-fold`, a fold over a set whose filter holds a fold that can be open, and a sum whose
+fallback reads a member that can be open; and `anchored-read`, an anchored read of an input member that can be open. The
+loader reads the property into the model
 (`RegelSpraakModel.inferFromEmpty()`) and refuses no document for it, so the rule graph reads such a document as any
 other; every other value of the property is a `DocumentError` at `/inferFromEmpty` (witnesses
 `InferFromEmptyLoaderWitnessTest`, `InferFromEmptyRefusalWitnessTest`).
@@ -497,8 +495,13 @@ undetermined member is an open read there, and a closure is told to the boundary
 and one per atomic condition in which a fold can close (`StaticFunction.ATOM`). A condition that closed stands for the
 form itself alone, and a value that is leeg after a closure leaves its target open and deposits as it stands. A quantifier
 fold counts by Kleene's table over the contributors on which the matrix stands and the `FoldOpen` facts of the others
-(`ComputeHelpers.quantifierVerdictOverOpen`): a matrix that can neither fault nor deposit shows no order. A fold none of
-whose members can be open is lowered as any fold.
+(`ComputeHelpers.quantifierVerdictOverOpen`): a matrix that can neither fault nor deposit shows no order. Where the order
+shows, the facts that carry it carry the open members too. A matrix that can fault or deposit gives a `MemberTest` of how it
+ended, an open read or a judgement that does not stand among them, and `Composite` reads them in the order of their
+places, provisionally after one that is undetermined for another. A filter that can fault and be undetermined gives a
+`FilterFault` for a member of either, whose fault is the `OpenRead` where it is undetermined, so that the reading rule
+meets the first of both; a value that is open comes after every filter. A fold none of whose members can be open is
+lowered as any fold.
 
 Witnesses `OpenableMembersWitnessTest`, `OpenValuesWitnessTest` (the examples of ch. 1.5), `OpenValuesRefWitnessTest` (the
 witnesses of the reference interpreter) and `InferFromEmptyRefusalWitnessTest` (what is refused, each beside a document that

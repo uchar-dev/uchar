@@ -276,7 +276,7 @@ final class PatternDslRendering {
                 String what = "the filter of " + x.fold();
                 yield consequenceItem(x.subject(), x.slots(), x.size(), (drools, carrier, w) ->
                         insert(drools, x.insertion(), new FilterDeposit(x.fold(), carrier, w[x.member()],
-                                depositCodesAgain(filter, x.depositFlag(), w, false, what))));
+                                depositCodesAgain(filter, x.depositFlag(), w, x.open(), what))));
             }
             case Consequence.FilterFault x -> filterFault(x);
             case Consequence.MemberFault x -> consequenceItem(x.subject(), memberFaultSlots(x),
@@ -363,8 +363,7 @@ final class PatternDslRendering {
                     try {
                         holds = matrix.test(w);
                     } catch (RuntimeException e) {
-                        if (!ComputeHelpers.isEvaluationFault(e)) throw e;
-                        fault = e;
+                        fault = t.open() ? ComputeHelpers.ended(e) : ComputeHelpers.caught(e);
                     }
                     insert(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()],
                             new MemberTest(place, holds, fault, ComputeHelpers.reported(s),
@@ -414,7 +413,8 @@ final class PatternDslRendering {
     private RuleItemBuilder<?> filterFault(Consequence.FilterFault g) {
         Predicate<Object[]> filter = ClosureRendering.test(g.filter());
         return consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) -> {
-            RuntimeException fault = ClosureRendering.fault(filter, w);
+            RuntimeException fault = g.open() ? ComputeHelpers.brokenOff(() -> filter.test(w))
+                    : ClosureRendering.fault(filter, w);
             if (fault == null)
                 throw new IllegalStateException("the filter of " + g.fold() + " failed in the test and not in the consequence,"
                         + " over the same bound values");

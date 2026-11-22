@@ -1,0 +1,21 @@
+Afleiden uit leeg: nee
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het aantal Numeriek (geheel getal);
+    is actueel kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    het jaartal (mv: jaartallen) Numeriek (geheel getal);
+
+Feittype vinding
+    de vinder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
+
+Regel aantal
+    geldig altijd
+        Het aantal van een Jutter moet berekend worden als het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn jaartal is gelijk aan het Rekenjaar.
+
+Regel actueel
+    geldig altijd
+        Een Jutter is actueel indien het jaartal van ten minste 1 van de vondsten van de Jutter gelijk is aan het Rekenjaar.

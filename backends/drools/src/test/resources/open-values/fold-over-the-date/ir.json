@@ -1,0 +1,256 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "aantal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "actueel",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "jaartal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "plural": "jaartallen"
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vinding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "aantal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondsten",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn jaartal is gelijk aan het Rekenjaar"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "equal",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "jaartal",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn jaartal"
+                      }
+                    },
+                    "right": {
+                      "node": "ContextValue",
+                      "name": "evaluationYear",
+                      "type": {
+                        "node": "Number",
+                        "whole": true,
+                        "decimals": 0,
+                        "sign": "unspecified"
+                      },
+                      "source": {
+                        "snippet": "het Rekenjaar"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn jaartal is gelijk aan het Rekenjaar"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: zijn jaartal is gelijk aan het Rekenjaar"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn jaartal is gelijk aan het Rekenjaar"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "actueel",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "actueel",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is actueel"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "elementType": "Vondst",
+              "test": {
+                "node": "Comparison",
+                "op": "equal",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "jaartal",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het jaartal van ten minste 1 van de vondsten van de Jutter"
+                  }
+                },
+                "right": {
+                  "node": "ContextValue",
+                  "name": "evaluationYear",
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "het Rekenjaar"
+                  }
+                },
+                "source": {
+                  "snippet": "het jaartal van ten minste 1 van de vondsten van de Jutter gelijk is aan het Rekenjaar"
+                }
+              },
+              "source": {
+                "snippet": "het jaartal van ten minste 1 van de vondsten van de Jutter gelijk is aan het Rekenjaar"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

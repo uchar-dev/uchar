@@ -435,10 +435,11 @@ public sealed interface Consequence {
 
         /** The test of the member by the matrix of a quantifier fold, the condition {@code matrix}, which can fault or
          *  deposit, as a {@code MemberTest}: the member's {@code place} in the order of the members, then the verdict or
-         *  the evaluation fault of the matrix, and whether the probe the consequence puts in slot {@code depositFlag} (-1:
+         *  the evaluation fault of the matrix, or where {@code open}, so that it can be undetermined (RUNTIME-SEMANTICS
+         *  ch. 1.5), how it ended instead; and whether the probe the consequence puts in slot {@code depositFlag} (-1:
          *  none, the matrix deposits nothing) heard a place that deposits. The place comes first, so a member without a
          *  place breaks the contract before the matrix is evaluated. */
-        record MemberTest(Term matrix, int depositFlag, FoldPlace place) implements Input {
+        record MemberTest(Term matrix, int depositFlag, FoldPlace place, boolean open) implements Input {
             public MemberTest {
                 if (place.reason() != PlaceReason.QUANTIFIER)
                     throw new IllegalArgumentException("the place of a member test is that of the quantifier, not "
@@ -451,9 +452,9 @@ public sealed interface Consequence {
      *  {@code FilterDeposit} on the fold's subject, the object {@code subject} binds; the test of the rule found it.
      *  The consequence evaluates the condition {@code filter} again over the value array of {@code size} slots with the
      *  bound values at {@code slots} and a fresh probe in slot {@code depositFlag}, and the fact carries the codes the
-     *  probe heard, as {@link ConditionDeposit} does. */
+     *  probe heard, as {@link ConditionDeposit} does, {@code open} as there. */
     record FilterDeposit(String subject, String fold, int member, Term filter, int depositFlag, List<Integer> slots,
-                         int size, Insertion insertion) implements Consequence {
+                         int size, boolean open, Insertion insertion) implements Consequence {
         public FilterDeposit {
             slots = List.copyOf(slots);
         }
@@ -464,10 +465,11 @@ public sealed interface Consequence {
      * fold's subject, the object {@code subject} binds: the condition {@code filter}, evaluated again over the value
      * array of {@code size} slots with the bound values at {@code slots}, gives its evaluation fault, which the test
      * of the rule found, so that it answering here is a broken contract; then the member's {@code place} in the fold's
-     * order.
+     * order. Where {@code open}, the filter can be undetermined (RUNTIME-SEMANTICS ch. 1.5), and the open read that leaves
+     * it so is the fault of such a member ({@link TestItem.Role#BREAKS_OFF}).
      */
     record FilterFault(String subject, String fold, int member, Term filter, FoldPlace place, List<Integer> slots,
-                      int size, Insertion insertion) implements Consequence {
+                      int size, boolean open, Insertion insertion) implements Consequence {
         public FilterFault {
             slots = List.copyOf(slots);
             if (place.reason() != PlaceReason.FILTER_FAULT)

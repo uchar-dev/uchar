@@ -21,7 +21,8 @@ public record TestItem(String id, Role role, Term test, int depositFlag, List<In
         if ((role == Role.DEPOSIT) != (depositFlag >= 0))
             throw new IllegalArgumentException("only a deposit test has a probe, and it always does: " + role
                     + " with probe " + depositFlag);
-        if ((role == Role.ACTS || role == Role.ACTS_WITHOUT_FAULT) && !open || role == Role.VORM && open)
+        if ((role == Role.ACTS || role == Role.ACTS_WITHOUT_FAULT || role == Role.BREAKS_OFF) && !open
+                || role == Role.VORM && open)
             throw new IllegalArgumentException("a writer acts on a condition that can be undetermined, and a test a form"
                     + " composes itself always stands: " + role + (open ? " open" : " established"));
     }
@@ -51,6 +52,9 @@ public record TestItem(String id, Role role, Term test, int depositFlag, List<In
         ACTS_WITHOUT_FAULT,
         /** The evaluation of the condition faults: the test of the rule that inserts the fault. */
         FAULT,
+        /** The evaluation of the condition faults or leaves it undetermined for the form itself (ch. 1.5): the test of the
+         *  rule of a filter that can do both ({@link Consequence.FilterFault}). */
+        BREAKS_OFF,
         /** The evaluation of the condition reaches a place that deposits (§6.5, §6.6): the test puts a fresh probe in
          *  slot {@code depositFlag}, evaluates the condition, and holds where the probe heard a place; a fault after it leaves
          *  the deposit heard. */

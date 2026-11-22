@@ -159,6 +159,7 @@ final class ClosureRendering {
             case ACTS -> w -> ComputeHelpers.acts(ComputeHelpers.judge(() -> test.test(w), false));
             case ACTS_WITHOUT_FAULT -> w -> ComputeHelpers.acts(ComputeHelpers.judge(() -> test.test(w), true));
             case FAULT -> open ? w -> ComputeHelpers.faulted(() -> test.test(w)) : w -> fault(test, w) != null;
+            case BREAKS_OFF -> w -> ComputeHelpers.brokenOff(() -> test.test(w)) != null;
             case DEPOSIT -> {
                 int depositFlag = t.depositFlag();
                 yield w -> {

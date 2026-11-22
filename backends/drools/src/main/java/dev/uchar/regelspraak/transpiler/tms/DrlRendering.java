@@ -945,6 +945,7 @@ final class DrlRendering {
                             : returning(t.test(), c, "    ");
                 }
                 case ACTS, ACTS_WITHOUT_FAULT -> throw new IllegalStateException("a test of an outcome is its own");
+                case BREAKS_OFF -> "    return " + route(Route.BROKEN_OFF) + "(" + lambda(t.test(), c) + ") != null;\n";
                 case FAULT -> t.open() ? "    return " + route(Route.FAULTED) + "(() -> " + bool(t.test(), c) + ");\n"
                         : tryCatch("        boolean uitkomst = " + bool(t.test(), c) + ";\n        return false;\n",
                                 caught + "        return true;\n");
@@ -1400,7 +1401,7 @@ final class DrlRendering {
                 case Consequence.FilteredContribution x -> filteredContribution(x, b);
                 case Consequence.FilterDeposit x -> insert(b, "    ", x.insertion(), "new "
                         + typeName(FilterDeposit.class) + "(" + str(x.fold()) + ", " + x.subject() + ", "
-                        + variable(x.member()) + ", " + depositCodesAgain(x.filter(), x.depositFlag(), x.slots(), false,
+                        + variable(x.member()) + ", " + depositCodesAgain(x.filter(), x.depositFlag(), x.slots(), x.open(),
                                 "the filter of " + x.fold()) + ")");
                 case Consequence.FilterFault x -> filterFault(x, b);
                 case Consequence.MemberFault x -> insert(b, "    ", x.insertion(), "new " + typeName(MemberFault.class) + "("
@@ -1626,7 +1627,7 @@ final class DrlRendering {
                     String body = "    java.util.List plaats = " + foldPlace(l.place(), x.fold(), x.member(), c)
                             + ";\n    Boolean waar = null;\n    RuntimeException fout = null;\n"
                             + tryCatch("        waar = Boolean.valueOf(" + bool(l.matrix(), c) + ");\n",
-                                    "        fout = " + route(Route.CAUGHT) + "(e);\n")
+                                    "        fout = " + route(l.open() ? Route.ENDED : Route.CAUGHT) + "(e);\n")
                             + "    return new " + typeName(MemberTest.class) + "(plaats, waar, fout, "
                             + route(Route.REPORTED) + "(" + (l.depositFlag() < 0 ? "null" : DEPOSIT_FLAG) + "), "
                             + route(Route.DEPOSIT_CODES) + "(" + (l.depositFlag() < 0 ? "null" : DEPOSIT_FLAG) + "));\n";
@@ -1943,9 +1944,9 @@ final class DrlRendering {
             int place = reserveer();
             String name = name("fout", place);
             Context c = context(x.slots(), -1, null, x.filter());
-            String t = bool(x.filter(), c);
-            fill(place, x.filter().source(), "RuntimeException " + name + "(" + c.declaration() + ")",
-                    tryCatch("        boolean uitkomst = " + t + ";\n        return null;\n",
+            fill(place, x.filter().source(), "RuntimeException " + name + "(" + c.declaration() + ")", x.open()
+                    ? "    return " + route(Route.BROKEN_OFF) + "(" + lambda(x.filter(), c) + ");\n"
+                    : tryCatch("        boolean uitkomst = " + bool(x.filter(), c) + ";\n        return null;\n",
                             "        return " + route(Route.CAUGHT) + "(e);\n"));
             b.append("    RuntimeException f = ").append(name).append("(").append(c.arguments()).append(");\n");
             b.append("    if (f == null) {\n        ").append(route(Route.CONTRACT_BREACH)).append("(")

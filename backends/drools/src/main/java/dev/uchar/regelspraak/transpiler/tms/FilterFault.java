@@ -14,7 +14,9 @@ import java.util.Objects;
  * its condition up to the member after which a composite's verdict stands (RUNTIME-SEMANTICS ch. 5.10), and only there
  * does the fault happen (ch. 1.4, point 4; ch. 3.8). The rule that reads the fold therefore binds these facts beside
  * the contributions, and where its own evaluation reaches the fold while one stands, that evaluation faults as the same
- * fault in it would; the {@link Fault} is that rule's, justified by its activation.
+ * fault in it would; the {@link Fault} is that rule's, justified by its activation. Where the filter can be undetermined
+ * too (ch. 1.5), a member on which it is has such a fact as well, whose fault is the {@link OpenRead} that left it so: that
+ * rule then meets the first of both in fold order, as the reference interpreter does.
  *
  * <p>{@code place} is the member's place in the fold order (RUNTIME-SEMANTICS ch. 5.11: the filter per member, members
  * in fold order): the number of the selection of an instance-set union, 0 for any other fold, and then, per to-many
@@ -45,7 +47,7 @@ public final class FilterFault implements Comparable<FilterFault> {
         this.place = List.copyOf(place);
         if (this.place.isEmpty()) throw new IllegalArgumentException("a place in the fold order begins with the selection");
         // the fault named after the fold: a division's sentence carries the dividend, which the exception does not expose
-        this.sentence = ComputeFault.designate(fault, fold).getMessage();
+        this.sentence = (fault instanceof OpenRead ? fault : ComputeFault.designate(fault, fold)).getMessage();
     }
 
     public String fold() { return fold; }
