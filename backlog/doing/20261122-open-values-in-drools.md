@@ -824,3 +824,166 @@ Elk los gedraaid op `1222cdd28`; daarna veranderde geen code.
   readings, 27572 node lines …)`, 65 onbepaald, 79 open leden
 
 De JUnit-suite: 2050 tests, geen overgeslagen (was 2039). Geen verwachting, pin of bestaande vloer van een gate veranderde.
+
+## Result van deel 4: de laatste vormen, behoud als getuige, de staart
+
+### Wat er is
+
+Commits op `card/open-values-in-drools`: `46629ae1d` (de kwantorvouw onder een open filter, de geankerde lezing), `98ebb1f41`
+(behoud als getuige) en `4335bfab7` (de boodschap van DROOLS-370, de javadoc, de README).
+
+- **De kwantorvouw onder een filter dat open kan zijn** leest per lid één `MemberTest`, in elke kwantorvouw van zo'n filter, ook waar de
+  toets kan falen noch deponeren. De bijdrageregel blijft één regel (`Consequence.FilteredContribution` met een `MemberTest`): zij vraagt
+  of het filter voor een ander niet onwaar is (`ACTS`), en het `MemberTest` draagt het oordeel van het filter naast hoe de toets
+  eindigde, en het lid. Geen nieuw feit en geen nieuwe regel. `Composite.read(filter, toets)` telt het lid voor de vorm zelf en voor een
+  ander naar Kleenes tabel van ch. 1.5 en noemt per stand de lezing van het filter waar dat onbepaald is en anders die van de toets.
+  Staat een filter van de vouw niet vast, ook dat van een later lid, dan leest `Composite` elke toets voorlopig (`past`).
+- **Wat een filter doet.** Een onbepaald filter breekt een kwantorvouw niet af, dus de regel van de `FilterFault` neemt hier alleen fouten
+  (`filterFaultRule(…, breaksOff)`); een fout van een filter is de fout van de vouw, ook na een filter dat open is, en de eerste in de
+  volgorde telt. Een deponering van een filter staat naast een ander dat open is. Een lid met een vaststaand onwaar filter geeft niets.
+- **De plaats.** Kan de toets falen of deponeren, dan heeft een lid zijn plaats zoals elders. Kan hij dat niet, dan bindt alleen een build met
+  lezingen haar; een lid langs twee routes heeft dan een toets per route en wordt op zijn eerste plaats gelezen (`MemberTest.inOrder`).
+- **De geankerde lezing van open invoer**: `Reads.own` onder `atForm` geeft `READ_INPUT` het onderwerp van de vorm, het slot dat de
+  identiteitstoets heeft. Een geankerde knoop in een vouw per lid van een andere vouw blijft geweigerd (DROOLS-293), in elk document.
+- **De lezing**: de bijdragers van zo'n vouw zijn de leden waarvan het filter niet vaststaand onwaar is, elk met de waarheid van zijn toets,
+  met hun positie; `SessionReaders.contributors` herspeelt ze met dezelfde `Composite`.
+- **De weigering**: `UncarriedForms` heeft `quantifier-fold` en `anchored-read` niet meer; van de analyse is alleen `set-fold` over (een som
+  met een terugval die open kan zijn).
+- **Behoud** (`CompleteInputPreservationWitnessTest`): elke golden zonder de eigenschap, met `inferFromEmpty: false` erbij, speelt haar eigen
+  cases op beide weergaven in een sessie die elke invoer volledig acht: 237 goldens en 691 cases per weergave; 153 goldens weigeren met
+  DROOLS-370, en elke andere weigering is die van de golden zonder de eigenschap. 13,9 s alleen, in één JVM.
+- **De teksten**: DROOLS-370 zegt "een lezing waarin niets volgt uit een waarde die open is, niet gevuld en niet vaststaand leeg"; de javadoc zegt
+  "een document met `inferFromEmpty: false`"; "Open values" in de README is één beschrijving, met de vier begrippen vooraan en
+  wat geweigerd blijft aan het eind. De zin van `IrLoader` bij een verkeerde waarde blijft: zij is de zin van de OCaml-loader.
+- **Niet geraakt**: de productieruntime, `FoldOpen`, de plannen en de tekst van een gewoon document en van een strikt document dat al
+  gedragen werd.
+
+### Gemeten (eenmalig, programma's in de werkmap)
+
+Elke regel die gate 17 vergelijkt en de eindstand, op beide weergaven, tegen `runner --trace`; van elke run de eindstand van de build met lezingen
+gelijk aan die van de build zonder; van een fout ook de EF-codes.
+
+| wat | documenten | runs | leesregels (per weergave) | fouten | verschillen |
+|---|---|---|---|---|---|
+| elke golden, getuige en elk document van `open-values/` met de eigenschap, elke case als zij is en met elke invoer weggelaten | 318 | 8364 | 140 426 | 8 | 0 |
+| dezelfde, willekeurig deel van invoer, parameters en rekendatum weggelaten | 318 | 11 872 | 139 774 | 130 | 0 |
+| de zes eigen documenten, elke invoer weggelaten | 6 | 394 | 2284 | 0 | 0 |
+| willekeurige kwantorvouwen: kwantor × filter × toets (open, sluiting, deponering, fout, geankerd, genest), in een samengestelde voorwaarde en in een vouwfilter; een ruit met een filter dat deponeert | 39 en 71 | 7200 en 11 600 | 215 685 en 291 075 | 1136 en 2602 | 0 |
+| één kwantorvouw per document, met filters die met twee codes falen, ook naast een deponering en vóór en na een filter dat open is | 123 | 14 560 | 85 433 | 2876 | 0 |
+
+In de vierde rij samen: 22 422 onbepaalde kwantorvouwen, 24 217 onbepaalde bijdragen, 7601 sluitingen, 150 knopen of bijdragen met een fout in een
+voorlopig gelezen toets. In de vijfde zijn de codes van elke fout gelijk aan die van ref (EF-011 en EF-014, 1404 cases); een document met meer
+vormen kan in de backend meer codes geven, omdat ref na de eerste ophoudt. De meting ziet drie ingebrachte fouten: zonder `past` 110
+verschillen, zonder de waarheid van de toets onder een open filter 864, met de lezing van het filter waar die van de toets hoort 220.
+
+De gevallen van de tweede lezer staan in de getuigen: een filter dat open is of een sluiting over een toets die sluit, deponeert of faalt, onder
+`all`, `none`, `atLeast`, `atMost` en `exactly` (`open-readings/reading-quantifier-filter`); twee filterfouten met verschillende codes en
+een fout vóór en na een open filter (`quantifier-fold-filter-faults`); beslist vóór het eerste lid over een toets die faalt
+(`quantifier-fold-matrix-faults`); twee routes onder `atLeast 2` en `exactly 1` met een filterdeponering, met en zonder lezingen
+(`quantifier-fold-two-routes`). Een drempel 0 bestaat niet (WF-041).
+
+### Een document zonder de eigenschap, en wat al gedragen werd
+
+De DRL-tekst van elke golden en elk rood document, zonder en met lezingen, naast die van deel 3: alle gelijk (510 documenten, de 388 pins onder
+hen). Van de 1032 teksten van strikte documenten zijn er 1006 gelijk; de 26 andere zijn van dertien documenten waarvan de backend een
+regel weigerde.
+
+### De omvang
+
+Niet-lege regels, `rule`s en functies van de DRL-tekst, over de 234 goldens die met lezingen gebouwd worden (de twee met de eigenschap zelf niet
+meegerekend):
+
+| | zonder lezingen | met lezingen |
+|---|---|---|
+| gewoon | 32 903, 1627, 1674 | 46 152, 2599, 2681 |
+| strikt | 36 056 (+9,6%), 1859 (+14,3%), 1757 (+5,0%) | 51 985 (+12,6%), 2831 (+8,9%), 3061 (+14,2%) |
+| de 8 nieuwe, gewoon | 2732, 109, 198 | 3380, 153, 242 |
+| strikt | 2745 (+0,5%), 116 (+6,4%), 208 (+5,1%) | 3777 (+11,7%), 160 (+4,6%), 330 (+36,4%) |
+
+De grootste groei van een nieuwe is +27,6% (`jutterswet-vuurtoren`, 145 naar 185 regels); vier krimpen, omdat een toets die niet kan falen of
+een oordeel dat `ComputeHelpers.judge` geeft zijn try en catch niet in de tekst heeft. **Bouwtijd** van de vijf grootste nieuwe (`anchor-forms`,
+`fold-filter-nested-aggregate`, `jutterswet-zwaarste-vondst`, `fold-filter-subject-two-spellings`, `anchor-once-per-member`), mediaan van vijf in
+één warme JVM, gewoon naar strikt: exec-model 12 naar 12 ms, DRL-tekst 233 naar 275 ms (+18%), de hoogste +31%.
+
+### Acceptance
+
+- **Getuigen** (`OpenValuesWitnessTest`): `quantifier-fold-filter` (`WV-1.5-quantifier-fold-*`, keurder; 11 cases), `past-undetermined-filter`
+  (`WV-1.5-past-undetermined-filter`; 8), `quantifier-fold-matrix-faults` (4 en 1 rode), `quantifier-fold-filter-faults` (3 en 4 rode),
+  `quantifier-fold-two-routes` (5), `anchored-read` (8), met de hand gerekende verwachtingen die ref ook speelt; een wijziging van de bean
+  van het onderwerp van de vorm tussen twee keer vuren. `WV-1.5-past-undetermined-fold` stond er.
+- **De lezing** (`OpenReadingsWitnessTest`): `WV-5.12-open-quantifier-fold` met het filter, op de getuige van ref zelf en woord voor woord de regel
+  van ch. 5.12; de zes documenten; `reading-quantifier-filter`, vijf kwantoren maal vijf paren van filter en toets.
+- **De getuigen van ref**: 32 van de 34 spelen (144 cases per weergave); `object-creation` en `fact-creation` weigeren.
+- **Rood eerst**: op de jar van deel 3 weigeren de zes documenten met `form: quantifier-fold` (vijf) en `form: anchored-read`; de
+  behoudstest is rood in een sessie die haar invoer niet volledig acht (148 goldens).
+- **Geen test verzwakt.** Vervallen: de twee tests die `quantifier-fold` en `anchored-read` als weigering vroegen (hun goldens staan nu in de test
+  van de gedragen documenten); de zin van DROOLS-370 in `InferFromEmptyRefusalWitnessTest` volgt de nieuwe tekst.
+
+### Voorlopige besluiten
+
+1. Een kwantorvouw onder een open filter leest `MemberTest`s in plaats van `FoldOpen`s: de lezing noemt per bijdrager de waarheid van de toets,
+   en een lid kan voor zichzelf door zijn toets en voor een ander door zijn filter onbepaald zijn (ontwerpnotitie, akkoord).
+2. De zin van `IrLoader` bij een verkeerde waarde van `inferFromEmpty` blijft die van de OCaml-loader en ref.
+3. De behoudstest staat op de build zonder lezingen, met `Input.closedInputs`; elke andere weigering dan DROOLS-370 moet die van de golden zonder
+   de eigenschap zijn (strenger dan een lijst van codes).
+
+### Voorstellen voor beschermde teksten
+
+- `spec/CONSTRUCTS.md` rij 48: "… and refuses a document with another form by its slug (`DROOLS-370`), a sum whose fallback can be open
+  (`set-fold`) among them; its build with readings …" (de twee andere slugs vervallen). Gate 12: geen tekst.
+- `CLAUDE.md`: geen alinea van een gate verandert.
+
+### Voor de pin van de distributie
+
+Elke wijziging van de publieke API van `backends/drools` sinds `4b9c58943~1`, met wat een afnemer doet.
+
+| wat | een afnemer |
+|---|---|
+| `Input.characteristicAbsent(bean, kenmerk)` nieuw | geeft door wat een gebruiker uitdrukkelijk "nee" zegt; alleen onder `inferFromEmpty: false` van belang (een boolean op de bean zegt dat niet) |
+| `Input.closedInputs()` nieuw | niet nodig; een meting |
+| `EndState.EndObject.open` (component erbij, `List<EndState.Open>`) | toont deze leden als "nog niet bekend"; wie alleen `members` leest, toont een open lid als leeg, en dat is het niet. Constructor: een argument erbij |
+| `EndState.Open(characteristic, name, given)` nieuw | `given` is invoer naast een schrijver die open is; zij staat niet, dus niet als uitkomst tonen |
+| `Fixpoint.open` (component erbij, `List<Fixpoint.OpenValue>`) | hetzelfde per afgeleid fixpunt; constructor: een argument erbij |
+| `Fixpoint.OpenValue(object, member, characteristic)` nieuw | het lid van een open lezing |
+| `ConditionReading.Status.OPEN` nieuw | een `switch` zonder default compileert niet meer; `OPEN` is geen `FAILS`: de vorm laat haar doel open |
+| `NodeReading.closure` en `.open` (componenten erbij), `.undetermined()` | vraag `undetermined()` vóór `value()`: een null is leeg én staat vast, tenzij de knoop onbepaald is; `closure()` is een waarheid voor de vorm zelf die een andere invoer kan veranderen |
+| `Contributor.undetermined` (component erbij) | `value()` null met `undetermined()` is geen onwaar |
+| `CharacteristicState.holds()` geeft `Object` (was `boolean`) | een feit van de sessie; een lezer van feiten vergelijkt met `Boolean.TRUE`, of leest `Fixpoint` |
+| `Decides.open` (component erbij), `Outcome.Kind.OPEN`, `RuleOrigin.Role.RECONCILE_OPEN` nieuw | een lezer van de regels van een stapel (de rolnaam in de JSON) kent één rol erbij |
+| `TmsTranspiler.openableMembers()`, `OpenableMembers` nieuw | zegt vóór een sessie welke leden open kunnen zijn |
+| `LeftOpen`, `OpenInput`, `OpenMember`, `OpenRead`, `FoldOpen`, `Undetermined`, `Composite` nieuw | feiten en seinen van de sessie; een afnemer leest ze niet |
+| `Watch.reachingUpdated()`, `ProducerConsumer.wireNavigation(model, navigaties, geankerd)` nieuw | geen werk; de bestaande overloads blijven |
+| de DRL-tekst van zo'n document vraagt de global `open_invoer` | `DroolsBackend.insert` zet haar; wie zelf invoegt, roept `insert` aan |
+| DROOLS-370 met `form` een slug van `UncarriedForms` (was altijd `document`), in een vorm die de analyse weigert achter "transpiler SKIP: regel: … — " | toon de zin; de slug is de vorm |
+| DROOLS-371 (`insert`: `characteristicAbsent` op een vreemde bean, een niet-gedeclareerd kenmerk of een dat geldt), DROOLS-372 (een lid dat open kan zijn zonder `ListPlace`) nieuw | contractbreuken van de afnemer |
+| DROOLS-318 ook voor een vouw die open kan zijn, in een build met lezingen | de build zonder lezingen speelt |
+| casevorm: `characteristicsAbsent`, `attributeOpen`, `characteristicOpen`; EF-047 (kenmerk in beide lijsten); `PART.value.open` "openstaand" | een scenariolezer geeft ze door |
+
+**"Open" aan een gebruiker tonen.** Welke uitkomst ontbreekt: de leden in `EndState.EndObject.open`. Welke invoer haar openhoudt: de lezingen van
+de vormen die dat lid schrijven (`ConditionReading` met status `OPEN`, en bij een stapel de default die `OPEN` is) noemen per onbepaalde knoop
+`NodeReading.open()`, object en lid; is dat lid zelf afgeleid, dan volgt men zijn vormen, tot een lid dat geen vorm schrijft: dat is de vraag
+aan de gebruiker. Een knoop noemt de eerste open lezing die de evaluatie tegenkwam, dus na een antwoord kan een volgende vraag komen. Zegt
+een gebruiker "geen" of "nee", dan staat dat alleen vast bij een lid dat `(volledig gegeven)` is of, voor een kenmerk, met
+`Input.characteristicAbsent`; een attribuut zonder waarde dat niet volledig is, blijft open. Een uitkomst met `closure()` in haar lezing staat, maar
+kan door een gegeven invoer veranderen.
+
+### Open punten
+
+1. Blijft geweigerd: creaties, `IfThenElse`, ongeordende groepen met een initialisatie, een terugval die open kan zijn, en met lezingen een vouw
+   die open kan zijn over een relatie met twee to-many rollen.
+2. Een kwantorvouw waarvan de toets kan falen of deponeren, over een pad met twee routes, blijft geweigerd (`QUANTIFIER_MEMBER_TWO_ROUTES`), in elk
+   document; `MemberTest` draagt het lid nu alleen onder een open filter, en met het lid in elk `MemberTest` vervalt die weigering.
+
+### Gates
+
+Elk los gedraaid op `4335bfab7`; daarna veranderde geen code.
+
+- 1 `check-self-contained: PASS`
+- 8 `check-red: PASS (102 red cases fault observably in ref and clingo …)`
+- 12 `check-drools: PASS`: played 386, DRL-text branch 386, JUnit 2055 tests; `check-drools-codes: PASS — 372 codes …`
+- 13 `check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens …)`
+- 15 `check-graph: PASS`
+- 17 `check-readings: PASS (ref traced 1211 golden case files … on both branches 387 goldens and 1085 case files compared, 8587
+  readings, 27572 node lines …)`
+
+De JUnit-suite: 2055 tests, geen overgeslagen (was 2050). Geen pin, vloer, lijst of verwachting van een gate veranderde.
