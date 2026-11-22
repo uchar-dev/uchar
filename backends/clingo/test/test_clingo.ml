@@ -20460,8 +20460,8 @@ let () =
 
 (* the refusal (RUNTIME-SEMANTICS ch. 1.5, "Forms without the reading"): the
    slugs of the table, in its order, are the first of this encoding's list, as
-   ref lists them; every slug after them names a form ref carries and this
-   encoding does not yet. A document that holds such a form is refused with
+   ref lists them; the slug after them names the form ref carries and this
+   encoding does not. A document that holds such a form is refused with
    CLINGO-049 and its slug before anything is translated, and where it holds
    several, with the first of the list *)
 let () =
@@ -20504,37 +20504,12 @@ let () =
     ov_rule ~name:"vindloon" "vindloon"
       (Some (ov_let "g" (ov_attr "gewicht") (ite (ov_cmp "greater" (ov_binder "g") (ov_lit "0")) (ov_lit "1") (ov_lit "0"))))
   in
-  (* where a document holds several, the first of the list: a Let that reads
-     something before its binder before a union of instance sets, and a
-     parameter with a timeline, a form of the table, before the own forms *)
+  (* where a document holds several, the first of the list: a parameter with a
+     timeline, a form of the table, before the own form *)
   let not_first =
     ov_rule ~name:"drempelgewicht" "drempelgewicht"
       (Some (ov_let "k" (ov_attr "schade") (ov_bin "plus" (ov_attr "gewicht") (ov_binder "k"))))
   in
-  (* the golden of the union, its document with the property; with the Let
-     above and the attributes it reads on the Vondst *)
-  let union ~with_let =
-    let open Yojson.Safe in
-    let doc = from_string (corpus_file "corpus/golden/jutterswet-vondstunie/ir.json") in
-    let rec map = function
-      | `Assoc kv when List.assoc_opt "name" kv = Some (`String "Vondst") && List.mem_assoc "attributes" kv && with_let ->
-          `Assoc
-            (List.map
-               (fun (k, v) ->
-                 if k = "attributes" then
-                   (k, `List (List.map (fun a -> from_string (Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s}|} a ov_num)) [ "gewicht"; "schade"; "drempelgewicht" ]))
-                 else (k, v))
-               kv)
-      | `Assoc kv -> `Assoc (List.map (fun (k, v) -> if k = "rules" && with_let then (k, match v with `List rs -> `List (rs @ [ from_string not_first ]) | v -> map v) else (k, map v)) kv)
-      | `List l -> `List (List.map map l)
-      | j -> j
-    in
-    match map doc with
-    | `Assoc (format :: rest) -> to_string (`Assoc (format :: ("inferFromEmpty", `Bool false) :: rest))
-    | _ -> invalid_arg "union"
-  in
-  refused ~name:"instance-set-union" ~ir:(union ~with_let:false) "instance-set-union";
-  refused ~name:"WV-1.5-uncarried-forms (own forms in their order)" ~ir:(union ~with_let:true) "let-binder-not-first";
   (* WV-1.5-past-undetermined-barrier, WV-1.5-past-undetermined-binder: "de
      uitkering van een Vondst is, daarbij geldt: g is zijn gewicht en de
      toeslag is zijn vindloon, 10 als ten minste één van (alle van): g is
@@ -20555,7 +20530,7 @@ let () =
                              (ov_lit "10") (ov_lit "0"))))) ])
         "let-binder-not-first")
     [ ("WV-1.5-past-undetermined-barrier", "atLeast", 1); ("WV-1.5-past-undetermined-binder", "all", 0) ];
-  refused ~name:"WV-1.5-uncarried-forms (the table before own forms)"
+  refused ~name:"WV-1.5-uncarried-forms (the table before the own form)"
     ~ir:
       (replace ~tok:{|{"node": "Parameter", "name": "TARIEF", "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}}|}
          ~by:{|{"node": "Parameter", "name": "TARIEF", "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}, "timeline": {"node": "TimelineFacet", "granularity": "month", "count": 1}}|}
@@ -21167,6 +21142,44 @@ let () =
                ov_char_is ~label:"V2" "zwaarste" z2; ov_char_is ~label:"V3" "zwaarste" "holds" ])
         ())
     [ ("20 and 5", [ ("gewicht", "5") ], ("0", "holds", "not")); ("20 and open", [], ("open", "open", "open")) ]
+
+(* the count of a union of instance sets (ch. 3.4d) reads the filter of each
+   selection as a fold does: "het aantal aangemelde vondsten met een gewicht
+   groter dan 10 en gevangen vondsten van de Jutter", over V1 and V2 of the
+   one relation and V2 and V3 of the other *)
+let () =
+  let branch ?filter ft role =
+    Printf.sprintf
+      {|{"node": "InstanceSetBranch", "elementType": "Vondst", "sourceRole": {"node": "RoleBinding", "factType": "%s", "role": "%s"}, "filter": %s, %s}|}
+      ft role (Option.value filter ~default:"null") (ov_src "selectie")
+  in
+  let union ?filter () =
+    Printf.sprintf
+      {|{"node": "Aggregation", "kind": "count", "arguments": [{"node": "InstanceSetUnion", "branches": [%s, %s], %s}], "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}, %s}|}
+      (branch ~filter:(ov_gt "gewicht" "10") "aanmelding" "vondst")
+      (branch ?filter "vangst" "gevangen vondst") (ov_src "unie") (ov_src "aantal")
+  in
+  let vangst =
+    {|{"node": "FactType", "name": "vangst", "reciprocal": false, "roles": [{"node": "Role", "name": "vanger", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "gevangen vondst", "objectType": "Vondst", "plural": "gevangen vondsten", "many": true}]}|}
+  in
+  let ir =
+    ov_doc ~fact_types:[ ov_aanmelding; vangst ]
+      [ ov_type "Jutter" [ "tal"; "gevuldtal" ] []; ov_type "Vondst" [ "gewicht" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"tal" "tal" (Some (union ()));
+        ov_rule ~ty:"Jutter" ~name:"gevuldtal" "gevuldtal" (Some (union ~filter:(ov_test "filled" (ov_attr "gewicht")) ())) ]
+  in
+  List.iter
+    (fun (name, v1, v3, (tal, gevuldtal)) ->
+      ov_frame ~name:("WV-1.5-set-fold (a union of instance sets, " ^ name ^ ")") ~ir
+        ~case_text:
+          (ov_case
+             [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1"; "V2" ]); ("gevangen vondsten", [ "V2"; "V3" ]) ] "J1" [];
+               ov_obj "V1" v1; ov_obj "V2" [ ("gewicht", "20") ]; ov_obj "V3" v3 ]
+             [ ov_attr_is ~label:"J1" "tal" tal; ov_attr_is ~label:"J1" "gevuldtal" gevuldtal ])
+        ())
+    [ ("every gewicht given", [ ("gewicht", "5") ], [ ("gewicht", "1") ], ("2", "2"));
+      ("a filter open", [], [ ("gewicht", "1") ], ("open", "open"));
+      ("a member without a filter open", [ ("gewicht", "11") ], [], ("3", "2")) ]
 
 (* --- what the filter of a fold deposits, faults and closes over ----------- *)
 

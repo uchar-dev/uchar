@@ -467,32 +467,64 @@ spec bug.
   read as RUNTIME-SEMANTICS ch. 1.5 lays down. A member is filled
   (`val/3`, `has/2`), settled leeg (`settled/2`, `hasnot/2`) or open,
   which is the absence of all of them. Settled leeg is derived
-  positively: for an input member from the case (`characteristicsAbsent`,
-  and every input member the session treats as complete, the runner's
-  `--closed-inputs`); for a member a rule writes, per concrete type,
-  from its writers, each of which states where it fills nothing
-  (`wnil<i>/1`: its condition is false for another form, its value is
-  settled leeg, or the date lies outside its window). The case's value
-  of such a member stands where each computing rule fills nothing
-  (`wnila/2`). An expression and an atomic condition are translated as
-  in any other document, each as one boundary (`ob<n>/1`) that holds
-  where a read the evaluation reaches does not stand (`stands/2`): a
-  divisor only past a filled dividend, the body of a Let only past its
-  binder. A value, a judgement and a §9.5 deposit arise only outside
-  it, and a fault after an open read within it does not. A condition is
-  judged as a pair, for the form itself and for another form, each side
-  established true or false, a composite by Kleene's strong table over
-  its members; a test on leeg or gevuld closes over an open value for
-  the form itself. A rule decides on its own judgement, and fills
-  nothing where its judgement for another form is false; an
-  initialisation also writes beside a writer that leaves the target
-  open, and the ch. 7.7 desugaring is not applied. Every other form is
-  refused before translation with CLINGO-049 and the slug of the form
-  (`Translate.uncarried_forms`): the slugs of the table of ch. 1.5, in
-  its order, and after them `let-binder-not-first` (a Let whose body
-  reads something before its binder, the form of [S1] and [L3]),
-  `defaults-group`, `quantifier-fold`, `set-fold`, `if-then-else`,
-  `object-creation` and `fact-creation`.
+  positively: for an input member from the case (a member whose
+  declaration says `complete`, `characteristicsAbsent`, and every input
+  member where the session treats it as complete, the runner's
+  `--closed-inputs`); for a member a rule or a defaults group writes, per
+  concrete type, from its writers, each of which states where it fills
+  nothing (`wnil<i>/1`, `grp<g>_nil/1`: its condition is false for
+  another form, its value is settled leeg, or the date lies outside its
+  window). The case's value of such a member stands where each computing
+  rule fills nothing (`wnila/2`).
+  - *A value and an atomic condition* are translated as in any other
+    document, each as one boundary (`ob<n>`) that holds where a read the
+    evaluation reaches does not stand (`stands/2`): a divisor only past a
+    filled dividend, the body of a Let only past its binder, the chosen
+    branch of an IfThenElse only past its condition. A value, a judgement
+    and a §9.5 deposit arise only outside it, and a fault after an open
+    read within it does not. A closure inside it (a filled-value count, a
+    filter on gevuld) sets `oc<n>` beside it: what it gives stands for
+    the form itself only.
+  - *A condition* is judged as a pair (`judge`), for the form itself and
+    for another form, each side established true or false: a composite by
+    Kleene's strong table over its members, a quantifier fold by the same
+    table over the members of its range. A test on leeg or gevuld closes
+    over an open value for the form itself. A member read after one that
+    does not stand is read provisionally: its deposits and its faults
+    wait for the gate that says it is read as ch. 5.10 reads it
+    (`member_gate`), and a fault leaves the member undetermined. A limit
+    of this encoding in such a member fires (`limit_gate`): it is no
+    fault of the member, and the program does not answer.
+  - *A filter or a quantifier test* can read the form subject (a form
+    anchor, an identity check, a binder of an enclosing Let), so a
+    judgement and a boundary there hold of the pair of form subject and
+    member (`judged_at`).
+  - *A fold over a set* reads the filter of every member and then its
+    value (`fold_reads`); a filter that is undetermined or a value that
+    is open is an open read of the fold's boundary, and the fold counts
+    the members its filter holds of for the value itself. What a filter
+    deposits waits until the fold's boundary reaches no open value, and a
+    fault of it until no filter of a member before it is undetermined.
+  - *A stack* reads each default with three outcomes: it decides, it
+    stands that it gives way (`<chain>_gw<n>`), or it is open, and a
+    default is reached where every higher one gave way. The
+    initialisation of a stack closes over the first default that is
+    open. Exception groups and the members of an unordered group decide
+    beside members that stand. The ch. 7.7 desugaring is not applied: an
+    initialisation beside a computation is read natively, as a closure
+    over the writers of its target.
+  - *A creation* whose condition is undetermined leaves the relation it
+    would lay open (`ropen/2`) on the subject, and for a fact creation on
+    what it could reach; every read over an open relation is an open
+    read. An object made has the states its assignments give its
+    members; one an open value is assigned to is open (`aopen/2`,
+    `kopen/2`) where no writer decides.
+
+  Every other form is refused before translation with CLINGO-049 and the
+  slug of the form (`Translate.uncarried_forms`): the slugs of the table
+  of ch. 1.5, in its order, and after them `let-binder-not-first`, a Let
+  whose body reads something before its binder, the form of [S1] and
+  [L3].
 - Constructs outside the corpus-exercised subset fault the translator —
   fail fast, never a silent SKIP.
 

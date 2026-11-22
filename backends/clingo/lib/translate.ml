@@ -5730,7 +5730,12 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
             rest);
       ctx.fresh <- ctx.fresh + 1;
       let p = Printf.sprintf "union%d" ctx.fresh in
-      let base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot) in
+      (* in a document with inferFromEmpty false a filter's judgement inside a
+         member holds of the pair of form subject and member *)
+      let key, base =
+        if ctx.strict then judged_at ctx ~subject ~subject_ot
+        else (subject, [ Printf.sprintf "isa(%s,%s)" subject (str subject_ot) ])
+      in
       List.iter
         (fun (b : instance_set_branch) ->
           let el =
@@ -5748,16 +5753,19 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           in
           let fatoms =
             match b.isb_filter with
+            | filter when ctx.strict ->
+                fold_reads ctx ~subject ~subject_ot ~el ~kind:Count ~call_arguments:[] ~filter ~source_role:(Some rb)
+                  ~source_path:None bx
             | None -> []
             | Some c ->
                 with_member_reach ctx ~subject ~subject_ot ~join:(fun () -> join) (fun () ->
                     cond_atoms ctx ~subject:bx ~subject_ot:el c)
           in
-          emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" p subject bx) ~body:((base :: join) @ fatoms))
+          emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" p key bx) ~body:(base @ join @ fatoms))
         branches;
       let v = fresh ctx "C" in
       let x = Printf.sprintf "X%s" v in
-      ( [ Printf.sprintf "%s = #count { %s : %s(%s,%s) }" v x p subject x ], v, 1 )
+      ( [ Printf.sprintf "%s = #count { %s : %s(%s,%s) }" v x p key x ], v, 1 )
   (* the two shapes WF-110 refuses that still reach a TRANSLATOR arm, named
      rather than left to the bottom sentence below (which describes the
      position and identifies no construct). Both are ill-formed input: the
@@ -14061,15 +14069,19 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
   (* in a document with inferFromEmpty false: a hop of the chain crosses a
      relation that is open (ch. 1.5, "A creation") *)
   let chain_open =
-    ctx.fresh <- ctx.fresh + (if ctx.strict then 1 else 0);
-    Printf.sprintf "fco%d(%s)" ctx.fresh subject
+    if ctx.strict then begin
+      ctx.fresh <- ctx.fresh + 1;
+      emit ctx "#defined fco%d/1." ctx.fresh;
+      Some (Printf.sprintf "fco%d(%s)" ctx.fresh subject)
+    end
+    else None
   in
-  if ctx.strict then emit ctx "#defined fco%d/1." ctx.fresh;
   let hop (atoms, cur) rb =
     let v = fresh ctx "H" in
     let rel = bound_role_term ctx.doc rb in
-    if ctx.strict then
-      head_body ctx chain_open ((at_anchor :: atoms) @ [ Printf.sprintf "ropen(%s,%s)" cur rel ]);
+    Option.iter
+      (fun crossed -> head_body ctx crossed ((at_anchor :: atoms) @ [ Printf.sprintf "ropen(%s,%s)" cur rel ]))
+      chain_open;
     (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur rel v ], v)
   in
   let mids =
@@ -14085,7 +14097,7 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
     | _ -> ([], None)
   in
   let body =
-    (at_anchor :: cond_anchor) @ chain @ cond_target @ if ctx.strict then [ "not " ^ chain_open ] else []
+    (at_anchor :: cond_anchor) @ chain @ cond_target @ List.map (( ^ ) "not ") (Option.to_list chain_open)
   in
   let objective = role_term ~fact_type:ftn objective_role and anchor = role_term ~fact_type:ftn anchor_role in
   head_body ctx (Printf.sprintf "role(%s,%s,%s)" subject objective target) body;
@@ -14094,20 +14106,21 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
      condition is undetermined, on the anchor and on every object the chain
      reaches; where the chain is open under a condition that is not false, on
      the anchor and on every object of the target type *)
-  if ctx.strict then begin
-    let open_on ~anchor_body ~target_body =
-      head_body ctx (Printf.sprintf "ropen(%s,%s)" subject objective) (at_anchor :: anchor_body);
-      head_body ctx (Printf.sprintf "ropen(%s,%s)" target anchor) (at_anchor :: target_body)
-    in
-    Option.iter (fun u -> open_on ~anchor_body:u ~target_body:(u @ chain)) open_anchor;
-    Option.iter (fun u -> open_on ~anchor_body:(chain @ u) ~target_body:(chain @ u)) open_target;
-    let target_type = req "the target type of a fact creation (the declared filler of its targetRole)" fc.fc_target in
-    List.iter
-      (fun not_false ->
-        let open_chain = not_false @ [ chain_open ] in
-        open_on ~anchor_body:open_chain ~target_body:(open_chain @ [ Printf.sprintf "isa(%s,%s)" target (str target_type) ]))
-      (cond_anchor :: Option.to_list open_anchor)
-  end;
+  let open_on ~anchor_body ~target_body =
+    head_body ctx (Printf.sprintf "ropen(%s,%s)" subject objective) (at_anchor :: anchor_body);
+    head_body ctx (Printf.sprintf "ropen(%s,%s)" target anchor) (at_anchor :: target_body)
+  in
+  Option.iter (fun u -> open_on ~anchor_body:u ~target_body:(u @ chain)) open_anchor;
+  Option.iter (fun u -> open_on ~anchor_body:(chain @ u) ~target_body:(chain @ u)) open_target;
+  Option.iter
+    (fun crossed ->
+      let target_type = req "the target type of a fact creation (the declared filler of its targetRole)" fc.fc_target in
+      List.iter
+        (fun not_false ->
+          let anchor_body = not_false @ [ crossed ] in
+          open_on ~anchor_body ~target_body:(anchor_body @ [ Printf.sprintf "isa(%s,%s)" target (str target_type) ]))
+        (cond_anchor :: Option.to_list open_anchor))
+    chain_open;
   (* a second distinct filler on a to-one end faults in ref/
      (World.add_link, ch. 5.5); a viol/2 witness plus the global
      integrity constraint makes clingo fail identically (UNSAT) instead
@@ -16720,14 +16733,15 @@ let refuse_functor_collisions (doc : document) =
 (* inferFromEmpty false (IR-SPEC ch. 2) asks for the reading that infers
    nothing from an empty value (RUNTIME-SEMANTICS ch. 1.5). This translation
    carries it for a rule (an equation, a calculation, a characteristic
-   attribution, an initialisation), a consistency rule, and a condition or an
-   expression without a timeline. Every other form would be read as ch.
-   1.2-1.4 lay down, and its model would answer what the document excludes. A
-   document with the property that holds one is refused by name before
-   anything is translated, the form named by its slug: the forms of ch. 1.5,
-   "Forms without the reading", by its slugs and in its order, and after them
-   the forms the reference interpreter carries and this translation does not
-   yet. Where the document holds several, the first of this list is named. *)
+   attribution, an initialisation), a defaults group, a creation off a cycle,
+   a consistency rule, and a condition or an expression without a timeline.
+   Every other form would be read as ch. 1.2-1.4 lay down, and its model would
+   answer what the document excludes. A document with the property that holds
+   one is refused by name before anything is translated, the form named by its
+   slug: the forms of ch. 1.5, "Forms without the reading", by its slugs and
+   in its order, and after them the form the reference interpreter carries and
+   this translation does not. Where the document holds several, the first of
+   this list is named. *)
 let uncarried_forms =
   [ "allocation"; "creation-cycle"; "uniqueness"; "start-point"; "day-kind"; "function-def"; "timeline-member";
     "dimension-cell"; "dimension-fold"; "time-proportional-part"; "temporal-total"; "builtin-filter";
@@ -16736,10 +16750,7 @@ let uncarried_forms =
     (* a Let whose body reads something before its binder: the lowering keeps
        the binder's value beside every read of the body, so a read its first
        read of the binder does not reach would count (README [S1], [L3]) *)
-    "let-binder-not-first";
-    (* the union of instance sets (ch. 3.4d), whose members are read by no
-       join of one range *)
-    "instance-set-union" ]
+    "let-binder-not-first" ]
 
 (* what the evaluation of an expression reads first, in the order of ch.
    5.11: nothing, the binder [b], or something else *)
@@ -16819,13 +16830,13 @@ let refuse_uncarried (doc : document) =
               List.iter expr call_arguments;
               opt empty_fallback
           | Count when (match call_arguments with [ Instance_set_union _ ] -> filter = None | _ -> false) ->
-              refuse "instance-set-union"
+              List.iter expr call_arguments
           | Sum_function | Total | Count | Filled_count -> refuse "temporal-total"
           | _ when filter <> None || grain <> None -> refuse "builtin-filter"
           | Minimum | Maximum | First | Last | Square_root | Absolute_value | Concatenation | Duration
           | Absolute_duration | Easter_sunday | Year_of | Month_of | Day_of | Date_with | Date_time_with ->
               List.iter expr call_arguments)
-      | Instance_set_union _ -> refuse "instance-set-union"
+      | Instance_set_union { branches; _ } -> List.iter (fun (b : instance_set_branch) -> Option.iter cond b.isb_filter) branches
       | Dimension_cell_read _ -> refuse "dimension-cell"
       | Variable_reference _ -> refuse "variable-reference"
       | Expr_unresolved _ -> refuse "unresolved"
