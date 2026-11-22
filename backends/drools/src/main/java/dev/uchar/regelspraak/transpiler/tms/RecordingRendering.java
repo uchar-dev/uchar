@@ -16,10 +16,10 @@ import java.util.function.Supplier;
  * {@code DrlRendering}: an evaluation over a rule's value array that records, per node of the term, whether the
  * evaluation reached it and what it found, a value or an evaluation fault ({@code TmsTranspiler#readingsOf}, card
  * fixpoint-readings). It evaluates as the rendering into closures does, node for node: the same functions of the plan
- * ({@link ClosureRendering#implementation}), the same stop rule of a composite ({@link ComputeHelpers#established},
- * {@link ComputeHelpers#endVerdict}), the same order (RUNTIME-SEMANTICS ch. 5.10, 5.11), a {@code Let} by need
- * (ch. 10.6) and exactly the branch a choice takes (ch. 10.2). It decides nothing either. A probe in the value array is
- * the caller's, which fills each probe slot with a fresh probe and reads none: a reading deposits nothing.
+ * ({@link ClosureRendering#implementation}), the same reading of a composite ({@link Composite}), the same order
+ * (RUNTIME-SEMANTICS ch. 5.10, 5.11), a {@code Let} by need (ch. 10.6) and exactly the branch a choice takes
+ * (ch. 10.2). It decides nothing either. A probe in the value array is the caller's, which fills each probe slot with a
+ * fresh probe and reads none: a reading deposits nothing.
  */
 final class RecordingRendering {
 
@@ -67,6 +67,15 @@ final class RecordingRendering {
             case Term.Binder b -> ((Need) w[b.slot()]).read();
             case Term.Let l -> let(l, w);
             case Term.Choice k -> test(k.condition(), w) ? value(k.then(), w) : value(k.otherwise(), w);
+            case Term.ClosureOverOpen o -> {
+                Object flag = o.depositFlag() < 0 ? null : w[o.depositFlag()];
+                Object mark = ComputeHelpers.mark(flag);
+                try {
+                    yield value(o.value(), w);
+                } catch (RuntimeException e) {
+                    yield ComputeHelpers.closed(e, flag, mark);
+                }
+            }
             case Term.Call a -> {
                 Object[] x = new Object[a.arguments().size()];
                 for (int i = 0; i < x.length; i++) x[i] = value(a.arguments().get(i), w);
@@ -129,17 +138,21 @@ final class RecordingRendering {
         };
     }
 
-    /** A composite: its members read in order, the stop triggers of ch. 5.10 tested before each, as
-     *  {@link ClosureRendering} reads them, so a member after the stop is not reached. */
+    /** A composite: its members read in order and counted by its reading, as {@link ClosureRendering} reads them, so a
+     *  member after the stop is not reached. */
     private boolean compound(Term.Compound s, Object[] w) {
-        Condition.Quantifier kw = s.quantifier();
-        int threshold = s.threshold(), n = s.members().size(), touch = 0;
-        for (int i = 0; i < n; i++) {
-            Boolean fixed = ComputeHelpers.established(kw, threshold, touch, i, n - i);
-            if (fixed != null) return fixed;
-            if (test(s.members().get(i), w)) touch++;
+        int n = s.members().size();
+        Composite reading = ComputeHelpers.composite(s.quantifier(), s.threshold(), n,
+                s.depositFlag() < 0 ? null : w[s.depositFlag()]);
+        for (int i = 0; i < n && !reading.stands(); i++) {
+            if (i < s.openFrom()) reading.read(test(s.members().get(i), w));
+            else try {
+                reading.read(test(s.members().get(i), w));
+            } catch (RuntimeException e) {
+                reading.read(e);
+            }
         }
-        return ComputeHelpers.endVerdict(kw, threshold, touch, n);
+        return reading.verdict();
     }
 
     /** A {@code Let} by need, as {@link ClosureRendering} evaluates it: the body over a copy of the value array with the

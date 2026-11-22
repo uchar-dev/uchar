@@ -8,23 +8,16 @@ import dev.uchar.regelspraak.transpiler.tms.Value;
 
 // hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn grootgetal is gelijk aan zijn bedrag
 function boolean toets_gelijktekenVanEenRandwacht(Object $ploegomvang, Object $grootgetal, Object $bedrag) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "=="));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($grootgetal, $bedrag, "==")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($grootgetal, $bedrag, "=="));
+    return lezing.verdict();
 }
 
 // 1
@@ -54,23 +47,16 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - zijn grootgetal is groter dan zijn bedrag
 function boolean toets_ordetekenVanEenRandwacht(Object $ploegomvang, Object $grootgetal, Object $bedrag) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "=="));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($grootgetal, $bedrag, ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($grootgetal, $bedrag, ">"));
+    return lezing.verdict();
 }
 
 // 1

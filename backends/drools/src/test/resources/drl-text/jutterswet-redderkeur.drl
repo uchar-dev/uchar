@@ -96,23 +96,16 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn dienstjaren groter zijn dan 5 - hij gediplomeerd is
 function boolean matrix_paraatBijPloegkeurBijdrageAanVouw0(Object $onderwerp, Object $dienstjaren, Object $gediplomeerd) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($dienstjaren, new java.math.BigDecimal("5"), ">")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($dienstjaren, new java.math.BigDecimal("5"), ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.characteristic($gediplomeerd, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.characteristic($gediplomeerd, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "paraat bij ploegkeur: bijdrage aan vouw 0"
@@ -126,44 +119,30 @@ end
 
 // hij aan ten minste 1 van de volgende voorwaarden voldoet: - zijn conditie groter is dan 7 - hij aan alle volgende voorwaarden voldoet: - hij gediplomeerd is - zijn dienstjaren groter zijn dan 2
 function boolean matrix_geoefendBijPloegkeurBijdrageAanVouw1(Object $onderwerp, Object $conditie, Object $gediplomeerd, Object $dienstjaren) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($conditie, new java.math.BigDecimal("7"), ">")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($conditie, new java.math.BigDecimal("7"), ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (samengesteld_geoefendBijPloegkeurBijdrageAanVouw1($onderwerp, $conditie, $gediplomeerd, $dienstjaren)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(samengesteld_geoefendBijPloegkeurBijdrageAanVouw1($onderwerp, $conditie, $gediplomeerd, $dienstjaren));
+    return lezing.verdict();
 }
 
 // hij aan alle volgende voorwaarden voldoet: - hij gediplomeerd is - zijn dienstjaren groter zijn dan 2
 function boolean samengesteld_geoefendBijPloegkeurBijdrageAanVouw1(Object $onderwerp, Object $conditie, Object $gediplomeerd, Object $dienstjaren) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($gediplomeerd, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($gediplomeerd, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($dienstjaren, new java.math.BigDecimal("2"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($dienstjaren, new java.math.BigDecimal("2"), ">"));
+    return lezing.verdict();
 }
 
 rule "geoefend bij ploegkeur: bijdrage aan vouw 1"
@@ -177,23 +156,16 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn dienstjaren groter zijn dan 5 - hij gediplomeerd is
 function boolean matrix_stilBijPloegkeurBijdrageAanVouw2(Object $onderwerp, Object $dienstjaren, Object $gediplomeerd) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($dienstjaren, new java.math.BigDecimal("5"), ">")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($dienstjaren, new java.math.BigDecimal("5"), ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.characteristic($gediplomeerd, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.characteristic($gediplomeerd, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "stil bij ploegkeur: bijdrage aan vouw 2"
@@ -207,30 +179,20 @@ end
 
 // hij aan ten hoogste 1 van de volgende voorwaarden voldoet: - hij gediplomeerd is - zijn conditie groter is dan 7 - zijn dienstjaren groter zijn dan 5
 function boolean matrix_wisselendBijPloegkeurBijdrageAanVouw3(Object $onderwerp, Object $gediplomeerd, Object $conditie, Object $dienstjaren) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($gediplomeerd, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($gediplomeerd, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($conditie, new java.math.BigDecimal("7"), ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($conditie, new java.math.BigDecimal("7"), ">")) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($dienstjaren, new java.math.BigDecimal("5"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 3);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($dienstjaren, new java.math.BigDecimal("5"), ">"));
+    return lezing.verdict();
 }
 
 rule "wisselend bij ploegkeur: bijdrage aan vouw 3"

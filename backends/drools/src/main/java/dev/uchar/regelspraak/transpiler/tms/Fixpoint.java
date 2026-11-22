@@ -33,9 +33,12 @@ import java.util.Objects;
  *                        reports them: by the name of the form, then by the sentence
  * @param inconsistencies the §9.5 deposits, the beans of the generated class {@code Inconsistentie}, each with its rule
  *                        and its subject, by the rule, then by the name of the subject, then by the EF codes
+ * @param open            every member that is open at the fixpoint (RUNTIME-SEMANTICS ch. 1.5), in a document that
+ *                        infers nothing from an empty value; in no particular order. Such a member has no value and
+ *                        does not hold: the bean shows what the input put there, which does not stand
  */
 public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> characteristics, List<MadeObject> objects,
-                      List<MadeLink> links, List<Fault> faults, List<Object> inconsistencies) {
+                      List<MadeLink> links, List<Fault> faults, List<Object> inconsistencies, List<OpenValue> open) {
 
     public Fixpoint {
         values = List.copyOf(values);
@@ -44,6 +47,17 @@ public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> ch
         links = List.copyOf(links);
         faults = List.copyOf(faults);
         inconsistencies = List.copyOf(inconsistencies);
+        open = List.copyOf(open);
+    }
+
+    /** Member {@code member} of {@code object}, a characteristic where {@code characteristic}, named as the model
+     *  declares it, open at the fixpoint: no writer decides it, and a writer leaves it open or its input is not complete
+     *  and absent (RUNTIME-SEMANTICS ch. 1.5). */
+    public record OpenValue(Object object, String member, boolean characteristic) {
+        public OpenValue {
+            Objects.requireNonNull(object, "object");
+            Objects.requireNonNull(member, "member");
+        }
     }
 
     /**

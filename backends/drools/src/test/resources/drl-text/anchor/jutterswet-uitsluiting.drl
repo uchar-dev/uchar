@@ -23,30 +23,20 @@ end
 
 // de weigering is herroepen maar de herroeping is vervallen
 function boolean toets_defaultsKJutterUitgeslotenDefault0(Object $vergunningGeweigerd, Object $weigeringHerroepen, Object $herroepingVervallen) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($vergunningGeweigerd, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($vergunningGeweigerd, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.characteristic($weigeringHerroepen, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($weigeringHerroepen, Boolean.TRUE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.characteristic($herroepingVervallen, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(ComputeHelpers.characteristic($herroepingVervallen, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "defaults K:Jutter.uitgesloten: default 0"
@@ -64,23 +54,16 @@ end
 
 // de weigering is herroepen
 function boolean toets_defaultsKJutterUitgeslotenDefault1(Object $vergunningGeweigerd, Object $weigeringHerroepen) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($vergunningGeweigerd, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($vergunningGeweigerd, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.characteristic($weigeringHerroepen, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.characteristic($weigeringHerroepen, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "defaults K:Jutter.uitgesloten: default 1"

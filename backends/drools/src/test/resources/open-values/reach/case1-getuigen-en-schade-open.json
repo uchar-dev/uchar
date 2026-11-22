@@ -1,0 +1,54 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "50"
+          },
+          "gewicht": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "aandeel"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vindaandeel",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "drempelgewicht",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "restgewicht"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

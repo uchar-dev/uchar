@@ -21,12 +21,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * A document that carries {@code inferFromEmpty: false} is refused by the build, {@link DroolsBackend#build}, with
- * DROOLS-370 and the parameter {@code form=document}: on both branches, with and without readings, before anything is
- * built, and the CLI reports it in the status line {@code EXCLUDE DROOLS-370: <sentence>}. This backend reads an empty
- * value as RUNTIME-SEMANTICS ch. 1.2–1.4 does, so an answer on such a document would be a wrong answer without a word.
- * The same document without the property builds and plays, so the property alone is refused. The fixture is the golden
- * {@code jutterswet-afleiden-uit-leeg}; the case below lives in the test's own directory.
+ * A document that carries {@code inferFromEmpty: false} and holds a form whose reading of RUNTIME-SEMANTICS ch. 1.5 this
+ * backend does not carry is refused by the build, {@link DroolsBackend#build}, with DROOLS-370 and the slug of that
+ * form ({@code UncarriedForms}): on both branches, with and without readings, before anything is built, and the CLI
+ * reports it in the status line {@code EXCLUDE DROOLS-370: <sentence>}. The fixture is the golden
+ * {@code jutterswet-afleiden-uit-leeg}, whose defaults group comes first of its forms in that list; the same document
+ * without the property builds and plays. The list opens with the table "Forms without the reading" of ch. 1.5, in its
+ * order, and the build with readings refuses a document whose forms this backend carries with the slug
+ * {@code reading}.
  */
 class InferFromEmptyRefusalWitnessTest {
 
@@ -68,7 +70,7 @@ class InferFromEmptyRefusalWitnessTest {
     }
 
     private static String sentence() {
-        return DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "document").text();
+        return DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "defaults-group").text();
     }
 
     @Test void the_build_refuses_the_document_on_both_branches_with_and_without_readings() throws Exception {
@@ -92,11 +94,37 @@ class InferFromEmptyRefusalWitnessTest {
     }
 
     @Test void the_sentence_in_both_languages() {
-        var reason = DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "document");
+        var reason = DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "defaults-group");
         assertEquals("the document carries inferFromEmpty false, a reading in which nothing follows from an empty "
-                + "value, and this backend does not carry that reading (form: document)", reason.text(Locale.ENGLISH));
+                + "value, and this backend does not carry that reading (form: defaults-group)", reason.text(Locale.ENGLISH));
         assertEquals("het document draagt inferFromEmpty false, een lezing waarin uit een lege waarde niets volgt, en "
-                + "deze backend draagt die lezing niet (vorm: document)", reason.text(Locale.forLanguageTag("nl")));
+                + "deze backend draagt die lezing niet (vorm: defaults-group)", reason.text(Locale.forLanguageTag("nl")));
+    }
+
+    /** The build with readings refuses a document with the property whose forms this backend carries, with the slug
+     *  {@code reading}, on both branches; the build without readings builds it. */
+    @Test void the_build_with_readings_refuses_a_carried_document() throws Exception {
+        Path ir = Path.of("src", "test", "resources", "open-values", "derived", "ir.json");
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(ir, branch, true),
+                    branch::name);
+            assertEquals(DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "reading").text(), e.getMessage());
+            DroolsBackend.build(ir, branch, false);
+        }
+    }
+
+    /** WV-1.5-uncarried-forms: the list opens with the table "Forms without the reading" of RUNTIME-SEMANTICS ch. 1.5,
+     *  read from the spec, in its order; the slugs after it are this backend's own and none is in the table. */
+    @Test void the_list_opens_with_the_table_of_the_spec() throws Exception {
+        String spec = Files.readString(Path.of("..", "..", "spec", "RUNTIME-SEMANTICS.md"));
+        int start = spec.indexOf("**Forms without the reading.**"), end = spec.indexOf("The suite holds this table", start);
+        List<String> table = new ArrayList<>();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?m)^\\| `([a-z-]+)` \\|").matcher(spec.substring(start, end));
+        while (m.find()) table.add(m.group(1));
+        assertEquals(UncarriedForms.TABLE, table.size());
+        assertEquals(table, UncarriedForms.SLUGS.subList(0, UncarriedForms.TABLE));
+        for (String own : UncarriedForms.SLUGS.subList(UncarriedForms.TABLE, UncarriedForms.SLUGS.size()))
+            assertEquals(false, table.contains(own), own);
     }
 
     @Test void without_the_property_the_document_builds_and_plays_on_both_branches(@TempDir Path dir)

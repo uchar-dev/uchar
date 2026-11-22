@@ -54,18 +54,31 @@ public sealed interface Consequence {
      * evaluation faults, an evaluation fault (RUNTIME-SEMANTICS ch. 5.2), it inserts that fault under {@code fault} in
      * place of the value and of a deposit; otherwise the deposit first ({@code deposit}: the rule's probe, which
      * hears only the places the evaluation of the value reaches, so a probe of the condition alone hears nothing here;
-     * null where the rule has no probe).
+     * null where the rule has no probe). Where {@code open}, the value reads a member that can be open, and where its
+     * evaluation reads an open value (ch. 1.5) the consequence inserts that {@code writer} leaves {@code target} open
+     * ({@link LeftOpen}), and no value and no deposit.
      */
     record Value(String subject, ElementKey target, String writer, Term value, List<Integer> slots,
-                  int size, boolean collapse, boolean writesEmpty, Deposit deposit, FaultName fault,
+                  int size, boolean collapse, boolean writesEmpty, Deposit deposit, FaultName fault, boolean open,
                   Insertion insertion) implements Consequence {
         public Value {
             slots = List.copyOf(slots);
+        }
+
+        /** A value that reads no member that can be open. */
+        public Value(String subject, ElementKey target, String writer, Term value, List<Integer> slots, int size,
+                     boolean collapse, boolean writesEmpty, Deposit deposit, FaultName fault, Insertion insertion) {
+            this(subject, target, writer, value, slots, size, collapse, writesEmpty, deposit, fault, false, insertion);
         }
     }
 
     /** The characteristic {@code characteristic} of the object {@code subject} binds. */
     record Characteristic(String subject, ElementKey characteristic, Insertion insertion) implements Consequence {}
+
+    /** The writer {@code writer} leaves {@code member} of the object {@code subject} binds open (RUNTIME-SEMANTICS ch.
+     *  1.5, "A rule"): the {@code LeftOpen} fact of the rule of that outcome. A {@link Value} inserts the same fact in
+     *  place of the value where the value has an open read. */
+    record LeftOpen(String subject, ElementKey member, String writer, Insertion insertion) implements Consequence {}
 
     /**
      * The fault of a condition, evaluated again over the value array of {@code size} slots with the bound values at
@@ -100,10 +113,11 @@ public sealed interface Consequence {
      * array of {@code size} slots with the bound values at {@code slots} and a fresh probe in slot {@code depositFlag},
      * and the inconsistency carries the codes the probe heard (RUNTIME-SEMANTICS ch. 5.6, 5.7b). The codes are not
      * known when the plan is made: one division deposits EF-031 over a leeg divisor and EF-005 over a numeric zero. A
-     * probe that hears nothing here is a broken contract.
+     * probe that hears nothing here is a broken contract. Where {@code open}, the condition reads a member that can be
+     * open, as {@link TestItem#open} says it.
      */
     record ConditionDeposit(String subject, String form, Term condition, int depositFlag, List<Integer> slots, int size,
-                            Insertion insertion) implements Consequence {
+                            boolean open, Insertion insertion) implements Consequence {
         public ConditionDeposit {
             slots = List.copyOf(slots);
         }
@@ -163,7 +177,8 @@ public sealed interface Consequence {
     /**
      * The standing of characteristic {@code characteristic} on the object {@code subject} binds, {@code waar} or onwaar:
      * waar from the input or from a derivation ({@code source}), onwaar where neither holds. Where both hold, the two
-     * waar standings are equal facts, which truth maintenance keeps as one with a justification each.
+     * waar standings are equal facts, which truth maintenance keeps as one with a justification each. The third state of
+     * a characteristic that can be open is {@link OpenStanding}.
      */
     record InsertCharacteristicState(String subject, ElementKey characteristic, StateSource source, boolean holds, Insertion insertion)
             implements Consequence {
@@ -175,6 +190,11 @@ public sealed interface Consequence {
         }
     }
 
+    /** The open standing of {@code member} on the object {@code subject} binds (RUNTIME-SEMANTICS ch. 1.5): a
+     *  {@code State} or a {@code CharacteristicState} that carries the {@code OpenMember} of the member on that object
+     *  in place of a value or a truth value. */
+    record OpenStanding(String subject, ElementKey member, Insertion insertion) implements Consequence {}
+
     /**
      * The standing of attribute {@code attribute} on the object {@code subject} binds: the value in slot
      * {@code value} of the value array, from {@code source}, a derivation's value or the input on the bean. Where
@@ -182,11 +202,15 @@ public sealed interface Consequence {
      * ({@code BucketScalar}, RUNTIME-SEMANTICS ch. 8.4), which the consequence takes from the bound timeline. Where
      * {@code cell} is not null, the standing is that of a cell of a dimensioned attribute (RUNTIME-SEMANTICS ch. 5.8c),
      * and its input the entry of the key {@code cell} in the bound map of the attribute's cells, leeg where the map or
-     * the entry is absent.
+     * the entry is absent. Where {@code incomplete}, the input is not complete (ch. 1.5, "Complete input"): where the
+     * bean holds no value, the standing carries the {@code OpenMember} of the attribute on that object.
      */
     record State(String subject, ElementKey attribute, StateSource source, int value, boolean bucketScalar,
-                 List<String> cell, Insertion insertion) implements Consequence {
+                 List<String> cell, boolean incomplete, Insertion insertion) implements Consequence {
         public State {
+            if (incomplete && (source != StateSource.INPUT || bucketScalar || cell != null))
+                throw new IllegalArgumentException("only the input of an attribute that holds one value is incomplete, not "
+                        + source + (bucketScalar ? " as a bucket scalar" : "") + (cell != null ? " of a cell" : ""));
             if (source != StateSource.INPUT && source != StateSource.DERIVATION || bucketScalar && source != StateSource.INPUT)
                 throw new IllegalArgumentException("a standing comes from the input or a derivation, and only the input"
                         + " stands as a bucket scalar, not " + source + (bucketScalar ? " as a bucket scalar" : ""));
@@ -194,6 +218,12 @@ public sealed interface Consequence {
                 throw new IllegalArgumentException("only the input of a cell takes it from the map, not " + source
                         + (bucketScalar ? " as a bucket scalar" : ""));
             cell = cell == null ? null : List.copyOf(cell);
+        }
+
+        /** A standing that cannot be open. */
+        public State(String subject, ElementKey attribute, StateSource source, int value, boolean bucketScalar,
+                     List<String> cell, Insertion insertion) {
+            this(subject, attribute, source, value, bucketScalar, cell, false, insertion);
         }
     }
 

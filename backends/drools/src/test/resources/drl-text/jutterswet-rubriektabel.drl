@@ -8,23 +8,16 @@ import dev.uchar.regelspraak.transpiler.tms.Value;
 
 // ten minste één van: soort 'zeewier', soort 'wrakhout'
 function boolean toets_rubriekBijOrganischeSoort(Object $soort) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.textEqual($soort, "zeewier", Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.textEqual($soort, "zeewier", Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.textEqual($soort, "wrakhout", Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(ComputeHelpers.textEqual($soort, "wrakhout", Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "rubriek bij organische soort"
@@ -42,23 +35,16 @@ end
 
 // alle van: soort niet 'zeewier', soort niet 'wrakhout'
 function boolean toets_rubriekBijOverigeSoort(Object $soort) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.textEqual($soort, "zeewier", Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.textEqual($soort, "zeewier", Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.textEqual($soort, "wrakhout", Boolean.FALSE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.textEqual($soort, "wrakhout", Boolean.FALSE));
+    return lezing.verdict();
 }
 
 rule "rubriek bij overige soort"
@@ -76,30 +62,20 @@ end
 
 // ten minste twee van: gekeurd, geborgen, stuks vanaf 10
 function boolean toets_weegplichtBijDubbeleBorging(Object $gekeurd, Object $geborgen, Object $stuks) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($gekeurd, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($gekeurd, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.characteristic($geborgen, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($geborgen, Boolean.TRUE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($stuks, new java.math.BigDecimal("10"), ">=")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 3);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($stuks, new java.math.BigDecimal("10"), ">="));
+    return lezing.verdict();
 }
 
 rule "weegplicht bij dubbele borging"

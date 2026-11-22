@@ -1,0 +1,73 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S1",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "taxatie": {
+            "number": "50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S2",
+        "objectType": "Strandvondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "S3",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "taxatie": {
+            "number": "2000"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "S2",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S3",
+      "attribute": "vindloon",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

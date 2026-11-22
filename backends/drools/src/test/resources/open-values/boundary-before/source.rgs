@@ -1,0 +1,11 @@
+Afleiden uit leeg: nee
+
+Parameter het TARIEF : Numeriek (geheel getal)
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    de vrachtprijs Numeriek (geheel getal);
+
+Regel vrachtprijs
+    geldig altijd
+        De vrachtprijs van een Vondst moet berekend worden als het TARIEF maal zijn gewicht.

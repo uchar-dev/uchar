@@ -172,23 +172,16 @@ function java.util.List plaats_inzetbaarBijKeurgemiddeldeBijdrageAanVouw0(Object
 
 // hij aan alle volgende voorwaarden voldoet
 function boolean samengesteld_inzetbaarBijKeurgemiddeldeBijdrageAanVouw0(Object $onderwerp, Object $gekeurd, Object $keurpunten, Object $keuringen, Object $lijstplaatsen_plaats_3, Object $plaats_plaats_4, Object sonde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($gekeurd, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($gekeurd, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($keurpunten, $keuringen, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("6"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($keurpunten, $keuringen, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("6"), ">"));
+    return lezing.verdict();
 }
 
 rule "inzetbaar bij keurgemiddelde: bijdrage aan vouw 0"

@@ -1,0 +1,35 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    de toeslag Numeriek (geheel getal);
+    de taxatie Numeriek (geheel getal);
+    het vindloon Numeriek (geheel getal);
+    het bergloon Numeriek (geheel getal);
+    de uitbetaling Numeriek (geheel getal);
+    de bewakingstoeslag Numeriek (geheel getal);
+    is kostbaar kenmerk (bijvoeglijk);
+    is beloond kenmerk (bijvoeglijk);
+
+Regel toeslag
+    geldig altijd
+        De toeslag van een Vondst moet gesteld worden op 5 indien zijn vindloon groter is dan 5.
+
+Regel vindloon
+    geldig altijd
+        Het vindloon van een Vondst moet gesteld worden op 10 indien zijn taxatie groter is dan 1000.
+
+Regel uitbetaling
+    geldig altijd
+        De uitbetaling van een Vondst moet berekend worden als zijn vindloon plus zijn bergloon.
+
+Regel beloond
+    geldig altijd
+        Een Vondst is beloond indien zijn vindloon ongelijk is aan 5.
+
+Regel kostbaarheid
+    geldig altijd
+        Een Vondst is kostbaar indien zijn taxatie groter is dan 1000.
+
+Regel bewakingstoeslag
+    geldig altijd
+        De bewakingstoeslag van een Vondst moet gesteld worden op 5 indien hij niet kostbaar is.

@@ -7,65 +7,44 @@ import dev.uchar.regelspraak.transpiler.tms.Value;
 
 // hij aan alle volgende voorwaarden voldoet: • er voldoet aan tenminste één van de volgende voorwaarden: •• zijn soort gelijk is aan "touw" •• zijn soort gelijk is aan "glas" • er voldoet aan tenminste één van de volgende voorwaarden: •• zijn strook gelijk is aan "noord" •• zijn strook gelijk is aan "zuid"
 function boolean toets_vondstpremie1(Object $soort, Object $strook) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (samengesteld1_vondstpremie1($soort, $strook)) {
-        raak++;
+    lezing.read(samengesteld1_vondstpremie1($soort, $strook));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (samengesteld2_vondstpremie1($soort, $strook)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(samengesteld2_vondstpremie1($soort, $strook));
+    return lezing.verdict();
 }
 
 // er voldoet aan tenminste één van de volgende voorwaarden: •• zijn soort gelijk is aan "touw" •• zijn soort gelijk is aan "glas"
 function boolean samengesteld1_vondstpremie1(Object $soort, Object $strook) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.textEqual($soort, "touw", Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.textEqual($soort, "touw", Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.textEqual($soort, "glas", Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(ComputeHelpers.textEqual($soort, "glas", Boolean.TRUE));
+    return lezing.verdict();
 }
 
 // er voldoet aan tenminste één van de volgende voorwaarden: •• zijn strook gelijk is aan "noord" •• zijn strook gelijk is aan "zuid"
 function boolean samengesteld2_vondstpremie1(Object $soort, Object $strook) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.textEqual($strook, "noord", Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.textEqual($strook, "noord", Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.textEqual($strook, "zuid", Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(ComputeHelpers.textEqual($strook, "zuid", Boolean.TRUE));
+    return lezing.verdict();
 }
 
 // 10
@@ -95,23 +74,16 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: • zijn soort gelijk is aan "hout" • zijn strook gelijk is aan "noord"
 function boolean toets_vondstpremie2(Object $soort, Object $strook) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.textEqual($soort, "hout", Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.textEqual($soort, "hout", Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.textEqual($strook, "noord", Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.textEqual($strook, "noord", Boolean.TRUE));
+    return lezing.verdict();
 }
 
 // 3

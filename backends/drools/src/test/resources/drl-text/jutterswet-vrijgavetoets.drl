@@ -7,23 +7,16 @@ import dev.uchar.regelspraak.transpiler.tms.Value;
 
 // geen van: geclaimd, bezwaren boven 0
 function boolean toets_vrijgaveZonderBeletsel(Object $geclaimd, Object $bezwaren) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($geclaimd, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($geclaimd, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($bezwaren, new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($bezwaren, new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 rule "vrijgave zonder beletsel"
@@ -41,23 +34,16 @@ end
 
 // ten minste één van: geclaimd, bezwaren boven 0
 function boolean toets_aanhoudingBijBeletsel(Object $geclaimd, Object $bezwaren) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($geclaimd, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($geclaimd, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($bezwaren, new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($bezwaren, new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 rule "aanhouding bij beletsel"

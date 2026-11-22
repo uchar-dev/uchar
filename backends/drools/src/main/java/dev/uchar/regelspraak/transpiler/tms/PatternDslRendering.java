@@ -171,6 +171,8 @@ final class PatternDslRendering {
             case Consequence.Value x -> value(x);
             case Consequence.Characteristic x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                     insert(drools, x.insertion(), new HasCharacteristic(a[0], x.characteristic())));
+            case Consequence.LeftOpen x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
+                    insert(drools, x.insertion(), new LeftOpen(a[0], x.member(), x.writer())));
             case Consequence.TestFault x -> testFault(x);
             case Consequence.Fault x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                     insert(drools, x.insertion(), new Fault(a[0], x.fault().form(),
@@ -182,7 +184,7 @@ final class PatternDslRendering {
                 String what = "the condition of \"" + x.form() + "\"";
                 yield consequenceItem(x.subject(), x.slots(), x.size(), (drools, subject, w) ->
                         insert(drools, x.insertion(), ComputeHelpers.inconsistency(x.form(), subject,
-                                depositCodesAgain(condition, x.depositFlag(), w, what))));
+                                depositCodesAgain(condition, x.depositFlag(), w, x.open(), what))));
             }
             case Consequence.WritersUnion x -> x.input() < 0
                     ? new VariadicConsequence(new Variable[]{known(x.subject()), variable(x.values())}, (drools, a) ->
@@ -201,10 +203,16 @@ final class PatternDslRendering {
                     insert(drools, x.insertion(), new EvaluationDate((LocalDate) a[0])));
             case Consequence.InsertCharacteristicState x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                     insert(drools, x.insertion(), new CharacteristicState(a[0], x.characteristic(), x.holds())));
+            case Consequence.OpenStanding x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) -> {
+                OpenMember open = ComputeHelpers.open(a[0], x.member());
+                insert(drools, x.insertion(), x.member().characteristic()
+                        ? new CharacteristicState(a[0], x.member(), open) : new State(a[0], x.member(), open));
+            });
             case Consequence.State x -> new VariadicConsequence(new Variable[]{known(x.subject()), variable(x.value())},
                     (drools, a) -> insert(drools, x.insertion(), new State(a[0], x.attribute(),
                             x.bucketScalar() ? ComputeHelpers.bucketScalarOf(a[1])
-                                    : x.cell() != null ? ComputeHelpers.cell(a[1], x.cell()) : a[1])));
+                                    : x.cell() != null ? ComputeHelpers.cell(a[1], x.cell())
+                                    : x.incomplete() ? ComputeHelpers.incompleteInput(a[1], a[0], x.attribute()) : a[1])));
             case Consequence.InsertPathState x -> x.source() == Consequence.StateSource.MISSING_LINK
                     ? new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                             insert(drools, x.insertion(), new PathState(a[0], x.path(), x.member(), null, null)))
@@ -228,7 +236,7 @@ final class PatternDslRendering {
                 String what = "the filter of " + x.fold();
                 yield consequenceItem(x.subject(), x.slots(), x.size(), (drools, carrier, w) ->
                         insert(drools, x.insertion(), new FilterDeposit(x.fold(), carrier, w[x.member()],
-                                depositCodesAgain(filter, x.depositFlag(), w, what))));
+                                depositCodesAgain(filter, x.depositFlag(), w, false, what))));
             }
             case Consequence.FilterFault x -> filterFault(x);
             case Consequence.MemberFault x -> consequenceItem(x.subject(), memberFaultSlots(x),
@@ -327,17 +335,13 @@ final class PatternDslRendering {
     }
 
     /** The codes of the deposit of {@code condition}, which the test of the rule found: the condition evaluated again
-     *  over the bound values {@code w} with a fresh probe in slot {@code depositFlag}, an evaluation fault leaving what
-     *  the probe heard before it ({@link TestItem.Role#DEPOSIT}); a probe that heard nothing is a broken contract of
-     *  {@code what}. */
-    private static List<String> depositCodesAgain(Predicate<Object[]> condition, int depositFlag, Object[] w, String what) {
+     *  over the bound values {@code w} with a fresh probe in slot {@code depositFlag}, as the test evaluated it
+     *  ({@link ClosureRendering#heard}); a probe that heard nothing is a broken contract of {@code what}. */
+    private static List<String> depositCodesAgain(Predicate<Object[]> condition, int depositFlag, Object[] w, boolean open,
+                                                  String what) {
         Object s = ComputeHelpers.depositFlag();
         w[depositFlag] = s;
-        try {
-            condition.test(w);
-        } catch (RuntimeException e) {
-            if (!ComputeHelpers.isEvaluationFault(e)) throw e;
-        }
+        ClosureRendering.heard(condition, w, s, open);
         if (!ComputeHelpers.reported(s))
             throw new IllegalStateException(what + " deposited in the test and not in the consequence, over the same bound"
                     + " values");
@@ -421,9 +425,11 @@ final class PatternDslRendering {
                 v = value.of(w);
                 if (g.collapse()) v = ComputeHelpers.collapse(v);
             } catch (RuntimeException e) {
-                if (!ComputeHelpers.isEvaluationFault(e)) throw e;
-                insert(drools, g.insertion(),
-                        new Fault(subject, g.fault().form(), ComputeHelpers.designate(e, g.fault().rule())));
+                RuntimeException thrown = g.open() ? ComputeHelpers.caughtOpen(e) : ComputeHelpers.caught(e);
+                // an open read breaks the value off, and what it deposited is dropped (RUNTIME-SEMANTICS ch. 1.5)
+                insert(drools, g.insertion(), ComputeHelpers.isOpen(thrown)
+                        ? new LeftOpen(subject, g.target(), g.writer())
+                        : new Fault(subject, g.fault().form(), ComputeHelpers.designate(thrown, g.fault().rule())));
                 return;
             }
             if (ComputeHelpers.reported(s))
@@ -877,6 +883,10 @@ final class PatternDslRendering {
         field(CharacteristicState.class, "holds", CharacteristicState::holds);
         field(HasCharacteristic.class, "subject", HasCharacteristic::subject);
         field(HasCharacteristic.class, "characteristic", HasCharacteristic::characteristic);
+        field(LeftOpen.class, "subject", LeftOpen::subject);
+        field(LeftOpen.class, "member", LeftOpen::member);
+        field(OpenInput.class, "subject", OpenInput::subject);
+        field(OpenInput.class, "member", OpenInput::member);
         field(BucketInput.class, "subject", BucketInput::subject);
         field(BucketInput.class, "attribute", BucketInput::attribute);
         field(PathState.class, "subject", PathState::subject);

@@ -71,23 +71,16 @@ function boolean beta_keurlastVanEenJutterLidfoutInVouw0(Object eigen, Object an
 }
 
 function boolean toets_keurlastVanEenJutterLidfoutInVouw0(Object $gekeurd, Object $tijdlijn_3) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($gekeurd, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($gekeurd, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.bucketScalar($tijdlijn_3, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.bucketScalar($tijdlijn_3, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 function java.util.List plaats_keurlastVanEenJutterLidfoutInVouw0(Object $onderwerp, Object $lijstplaatsen_plaats_7, Object $plaats_plaats_8) {
@@ -111,23 +104,16 @@ function boolean beta_keurlastVanEenJutterLidfoutInVouw0OverEenOpenSegment(Objec
 }
 
 function boolean toets_keurlastVanEenJutterLidfoutInVouw0OverEenOpenSegment(Object $gekeurd, Object $tijdlijn_3) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($gekeurd, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($gekeurd, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (PeriodArithmetic.openNonZero($tijdlijn_3)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(PeriodArithmetic.openNonZero($tijdlijn_3));
+    return lezing.verdict();
 }
 
 function java.util.List plaats_keurlastVanEenJutterLidfoutInVouw0OverEenOpenSegment(Object $onderwerp, Object $lijstplaatsen_plaats_17, Object $plaats_plaats_18) {

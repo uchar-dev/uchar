@@ -167,7 +167,7 @@ class RulePlanWitnessTest {
                         + " Const 0, Const bergingsaandeel, Const null), slots=[], size=3, collapse=false,"
                         + " writesEmpty=false, deposit=Deposit[depositFlag=2, form=bergingsaandeel van een jutter],"
                         + " fault=FaultName[form=bergingsaandeel van een jutter, rule=bergingsaandeel van een jutter],"
-                        + " insertion=LOGICAL]",
+                        + " open=false, insertion=LOGICAL]",
                 "    value 0 Call source '1'",
                 "    value 0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
                         + " unit=null] source '1'",
@@ -259,7 +259,7 @@ class RulePlanWitnessTest {
                 "  consequence ConditionDeposit [subject=$onderwerp, form=bergingsaandeel van een jutter,"
                         + " condition=Compound ALLE 0(RS_AGG_COMPARE(Read 0, Const 0, Const !=),"
                         + " RS_AGG_COMPARE(RS_ROUNDING(Division DIVIDED probe 2 (Read 1, Read 0), Const 0, Const FLOOR),"
-                        + " Const 0, Const >)), depositFlag=2, slots=[0, 1], size=3, insertion=LOGICAL]",
+                        + " Const 0, Const >)), depositFlag=2, slots=[0, 1], size=3, open=false, insertion=LOGICAL]",
                 "    condition 0 Compound source 'hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is"
                         + " ongelijk aan 0 - het aandeel is groter dan 0'",
                 "    condition 0.0 Call source 'zijn ploegomvang is ongelijk aan 0'",
@@ -295,7 +295,7 @@ class RulePlanWitnessTest {
                         + " value=FIT_TARGET(RS_PLUS(Read 0, Const 25), Const 0, Const vensterheffing, Const null),"
                         + " slots=[0], size=1, collapse=false, writesEmpty=false, deposit=null,"
                         + " fault=FaultName[form=vensterheffing in 2026, rule=vensterheffing in 2026],"
-                        + " insertion=LOGICAL]",
+                        + " open=false, insertion=LOGICAL]",
                 "    value 0 Call source 'de meldwaarde van de Vondstmelding vermeerderd met 25'",
                 "    value 0.0 Call source 'de meldwaarde van de Vondstmelding vermeerderd met 25'",
                 "    value 0.0.0 SlotValue source 'de meldwaarde van de Vondstmelding'",
@@ -321,7 +321,7 @@ class RulePlanWitnessTest {
                         + " value=FIT_TARGET(RS_PLUS(Read 0, Const 40), Const 0, Const overgangsheffing, Const null),"
                         + " slots=[0], size=1, collapse=false, writesEmpty=false, deposit=null,"
                         + " fault=FaultName[form=overgangsheffing tot en met 2025, rule=overgangsheffing tot en met"
-                        + " 2025], insertion=LOGICAL]",
+                        + " 2025], open=false, insertion=LOGICAL]",
                 "    value 0 Call source 'de meldwaarde van de Vondstmelding vermeerderd met 40'",
                 "    value 0.0 Call source 'de meldwaarde van de Vondstmelding vermeerderd met 40'",
                 "    value 0.0.0 SlotValue source 'de meldwaarde van de Vondstmelding'",
@@ -365,7 +365,7 @@ class RulePlanWitnessTest {
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=bergingszaak, name=status,"
                         + " characteristic=false], writer=vrijgave zonder beletsel, value=Const vrijgegeven, slots=[],"
                         + " size=2, collapse=false, writesEmpty=false, deposit=null, fault=FaultName[form=vrijgave"
-                        + " zonder beletsel, rule=vrijgave zonder beletsel], insertion=LOGICAL]",
+                        + " zonder beletsel, rule=vrijgave zonder beletsel], open=false, insertion=LOGICAL]",
                 "    value 0 Const String type Text[] source ''vrijgegeven''",
                 "rule aanhouding bij beletsel | form aanhouding bij beletsel | group null",
                 "  readings [0 INPUT $geclaimd (eigen ElementKey[objectType=bergingszaak, name=geclaimd,"
@@ -387,7 +387,7 @@ class RulePlanWitnessTest {
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=bergingszaak, name=status,"
                         + " characteristic=false], writer=aanhouding bij beletsel, value=Const aangehouden, slots=[],"
                         + " size=2, collapse=false, writesEmpty=false, deposit=null, fault=FaultName[form=aanhouding"
-                        + " bij beletsel, rule=aanhouding bij beletsel], insertion=LOGICAL]",
+                        + " bij beletsel, rule=aanhouding bij beletsel], open=false, insertion=LOGICAL]",
                 "    value 0 Const String type Text[] source ''aangehouden''",
                 "rule schrijvers Bergingszaak.status: verschil | form null | group null",
                 "  readings [0 VALUES $waarden (waarden)]",
@@ -417,7 +417,7 @@ class RulePlanWitnessTest {
                         + " value=FIT_TARGET(RS_TIMES(Read 0, Const 2), Const 2, Const uitkering, Const null),"
                         + " slots=[0], size=1, collapse=false, writesEmpty=false, deposit=null,"
                         + " fault=FaultName[form=uitkering van een strandrecht, rule=uitkering van een strandrecht],"
-                        + " insertion=LOGICAL]",
+                        + " open=false, insertion=LOGICAL]",
                 "    value 0 Call source 'zijn grondslag maal 2'",
                 "    value 0.0 Call source 'zijn grondslag maal 2'",
                 "    value 0.0.0 SlotValue source 'zijn grondslag'",
@@ -450,7 +450,7 @@ class RulePlanWitnessTest {
                         + " characteristic=false], writer=standaardbergloon, value=FIT_TARGET(RS_TIMES(Const 2, Read"
                         + " 0), Const 2, Const bergloon, Const null), slots=[0], size=1, collapse=false,"
                         + " writesEmpty=false, deposit=null, fault=FaultName[form=standaardbergloon,"
-                        + " rule=standaardbergloon], insertion=LOGICAL]",
+                        + " rule=standaardbergloon], open=false, insertion=LOGICAL]",
                 "    value 0 Call source '2 maal zijn gewicht'",
                 "    value 0.0 Call source '2 maal zijn gewicht'",
                 "    value 0.0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
@@ -483,7 +483,7 @@ class RulePlanWitnessTest {
                         + " characteristic=false], writer=standaardbergloon, value=FIT_TARGET(RS_TIMES(Const 2, Read"
                         + " 0), Const 2, Const bergloon, Const null), slots=[0], size=1, collapse=false,"
                         + " writesEmpty=false, deposit=null, fault=FaultName[form=standaardbergloon,"
-                        + " rule=standaardbergloon], insertion=LOGICAL]",
+                        + " rule=standaardbergloon], open=false, insertion=LOGICAL]",
                 "    value 0 Call source '2 maal zijn gewicht'",
                 "    value 0.0 Call source '2 maal zijn gewicht'",
                 "    value 0.0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
@@ -506,7 +506,7 @@ class RulePlanWitnessTest {
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
                         + " characteristic=false], writer=zwaar bergloon, value=FIT_TARGET(RS_TIMES(Const 2, Read 0),"
                         + " Const 2, Const bergloon, Const null), slots=[0], size=1, collapse=false, writesEmpty=false,"
-                        + " deposit=null, fault=FaultName[form=zwaar bergloon, rule=zwaar bergloon], insertion=LOGICAL]",
+                        + " deposit=null, fault=FaultName[form=zwaar bergloon, rule=zwaar bergloon], open=false, insertion=LOGICAL]",
                 "    value 0 Call source '2 maal zijn gewicht'",
                 "    value 0.0 Call source '2 maal zijn gewicht'",
                 "    value 0.0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"
@@ -529,7 +529,7 @@ class RulePlanWitnessTest {
                 "  consequence Value [subject=$onderwerp, target=ElementKey[objectType=vondst, name=bergloon,"
                         + " characteristic=false], writer=licht bergloon, value=FIT_TARGET(RS_TIMES(Const 2, Read 0),"
                         + " Const 2, Const bergloon, Const null), slots=[0], size=1, collapse=false, writesEmpty=false,"
-                        + " deposit=null, fault=FaultName[form=licht bergloon, rule=licht bergloon], insertion=LOGICAL]",
+                        + " deposit=null, fault=FaultName[form=licht bergloon, rule=licht bergloon], open=false, insertion=LOGICAL]",
                 "    value 0 Call source '2 maal zijn gewicht'",
                 "    value 0.0 Call source '2 maal zijn gewicht'",
                 "    value 0.0.0 Const BigDecimal type Numeric[wholeNumber=true, decimals=0, sign=ONBEPAALD,"

@@ -86,23 +86,16 @@ end
 // hij aan alle volgende voorwaarden voldoet: - hij is actief - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0
 function boolean toets_drukte(Object $actief, Object $aantal_vouw_46, Object $eerste_filterfout_vouw_51, Object $filterdeponeringen_vouw_55) {
     try {
-        int raak = 0;
-        Boolean vast;
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-        if (vast != null) {
-            return vast;
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
-            raak++;
+        lezing.read(ComputeHelpers.characteristic($actief, Boolean.TRUE));
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-        if (vast != null) {
-            return vast;
-        }
-        if (RegelSpraakRuntime.rsAggVergelijk(vouwlezing_drukte($actief, $aantal_vouw_46, $eerste_filterfout_vouw_51, $filterdeponeringen_vouw_55), new java.math.BigDecimal("0"), ">")) {
-            raak++;
-        }
-        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+        lezing.read(RegelSpraakRuntime.rsAggVergelijk(vouwlezing_drukte($actief, $aantal_vouw_46, $eerste_filterfout_vouw_51, $filterdeponeringen_vouw_55), new java.math.BigDecimal("0"), ">"));
+        return lezing.verdict();
     } catch (RuntimeException e) {
         ComputeHelpers.caught(e);
         return false;
@@ -142,23 +135,16 @@ function boolean toets_drukteFoutInDeVoorwaarde(Object $actief, Object $aantal_v
 
 // hij aan alle volgende voorwaarden voldoet: - hij is actief - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0
 function boolean samengesteld1_drukteFoutInDeVoorwaarde(Object $actief, Object $aantal_vouw_60, Object $eerste_filterfout_vouw_65, Object $filterdeponeringen_vouw_69) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(vouwlezing1_drukteFoutInDeVoorwaarde($actief, $aantal_vouw_60, $eerste_filterfout_vouw_65, $filterdeponeringen_vouw_69), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(vouwlezing1_drukteFoutInDeVoorwaarde($actief, $aantal_vouw_60, $eerste_filterfout_vouw_65, $filterdeponeringen_vouw_69), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 // het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
@@ -181,23 +167,16 @@ function Object fout_drukteFoutInDeVoorwaarde(Object $actief, Object $aantal_vou
 
 // hij aan alle volgende voorwaarden voldoet: - hij is actief - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0
 function boolean samengesteld2_drukteFoutInDeVoorwaarde(Object $actief, Object $aantal_vouw_60, Object $eerste_filterfout_vouw_65, Object $filterdeponeringen_vouw_69) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(vouwlezing2_drukteFoutInDeVoorwaarde($actief, $aantal_vouw_60, $eerste_filterfout_vouw_65, $filterdeponeringen_vouw_69), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(vouwlezing2_drukteFoutInDeVoorwaarde($actief, $aantal_vouw_60, $eerste_filterfout_vouw_65, $filterdeponeringen_vouw_69), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 // het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
@@ -236,23 +215,16 @@ function boolean toets_drukteDeponeringInDeVoorwaarde(Object $actief, Object $aa
 
 // hij aan alle volgende voorwaarden voldoet: - hij is actief - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0
 function boolean samengesteld1_drukteDeponeringInDeVoorwaarde(Object $actief, Object $aantal_vouw_74, Object $eerste_filterfout_vouw_79, Object $filterdeponeringen_vouw_83, Object sonde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(vouwlezing1_drukteDeponeringInDeVoorwaarde($actief, $aantal_vouw_74, $eerste_filterfout_vouw_79, $filterdeponeringen_vouw_83, sonde), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(vouwlezing1_drukteDeponeringInDeVoorwaarde($actief, $aantal_vouw_74, $eerste_filterfout_vouw_79, $filterdeponeringen_vouw_83, sonde), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 // het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
@@ -279,23 +251,16 @@ function java.util.List deponering_drukteDeponeringInDeVoorwaarde(Object $actief
 
 // hij aan alle volgende voorwaarden voldoet: - hij is actief - het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is groter dan 0
 function boolean samengesteld2_drukteDeponeringInDeVoorwaarde(Object $actief, Object $aantal_vouw_74, Object $eerste_filterfout_vouw_79, Object $filterdeponeringen_vouw_83, Object sonde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(vouwlezing2_drukteDeponeringInDeVoorwaarde($actief, $aantal_vouw_74, $eerste_filterfout_vouw_79, $filterdeponeringen_vouw_83, sonde), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(vouwlezing2_drukteDeponeringInDeVoorwaarde($actief, $aantal_vouw_74, $eerste_filterfout_vouw_79, $filterdeponeringen_vouw_83, sonde), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 // het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2

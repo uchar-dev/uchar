@@ -42,6 +42,7 @@ final class TermTree {
             case Term.QuantifierRead k -> "QuantifierRead " + k.function() + " " + k.quantifier() + " " + k.threshold()
                     + " probe " + k.depositFlag() + " (" + tree(k.count()) + ", " + tree(k.contributions()) + ")";
             case Term.WithoutFault z -> "WithoutFault(" + tree(z.condition()) + ")";
+            case Term.ClosureOverOpen o -> "ClosureOverOpen probe " + o.depositFlag() + " (" + tree(o.value()) + ")";
         };
     }
 
@@ -82,6 +83,7 @@ final class TermTree {
             case Term.Compound s -> s.members();
             case Term.QuantifierRead k -> List.of(k.count(), k.contributions());
             case Term.WithoutFault z -> List.of(z.condition());
+            case Term.ClosureOverOpen o -> List.of(o.value());
         };
     }
 

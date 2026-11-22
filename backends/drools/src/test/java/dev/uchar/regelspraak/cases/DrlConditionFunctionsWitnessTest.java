@@ -61,30 +61,20 @@ class DrlConditionFunctionsWitnessTest {
                 "regel | roept [toets_defaultsKJutterUitgeslotenDefault000]"), table(b.drl(), p));
         assertEquals(sentence + "\n"
                 + "function boolean toets_defaultsKJutterUitgeslotenDefault000(Object $vergunningGeweigerd, Object $weigeringHerroepen, Object $herroepingVervallen) {\n"
-                + "    int raak = 0;\n"
-                + "    Boolean vast;\n"
-                + "    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);\n"
-                + "    if (vast != null) {\n"
-                + "        return vast;\n"
+                + "    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);\n"
+                + "    if (lezing.stands()) {\n"
+                + "        return lezing.verdict();\n"
                 + "    }\n"
-                + "    if (ComputeHelpers.characteristic($vergunningGeweigerd, Boolean.TRUE)) {\n"
-                + "        raak++;\n"
+                + "    lezing.read(ComputeHelpers.characteristic($vergunningGeweigerd, Boolean.TRUE));\n"
+                + "    if (lezing.stands()) {\n"
+                + "        return lezing.verdict();\n"
                 + "    }\n"
-                + "    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);\n"
-                + "    if (vast != null) {\n"
-                + "        return vast;\n"
+                + "    lezing.read(ComputeHelpers.characteristic($weigeringHerroepen, Boolean.TRUE));\n"
+                + "    if (lezing.stands()) {\n"
+                + "        return lezing.verdict();\n"
                 + "    }\n"
-                + "    if (ComputeHelpers.characteristic($weigeringHerroepen, Boolean.TRUE)) {\n"
-                + "        raak++;\n"
-                + "    }\n"
-                + "    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);\n"
-                + "    if (vast != null) {\n"
-                + "        return vast;\n"
-                + "    }\n"
-                + "    if (ComputeHelpers.characteristic($herroepingVervallen, Boolean.TRUE)) {\n"
-                + "        raak++;\n"
-                + "    }\n"
-                + "    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);\n"
+                + "    lezing.read(ComputeHelpers.characteristic($herroepingVervallen, Boolean.TRUE));\n"
+                + "    return lezing.verdict();\n"
                 + "}\n\n", function(b, p, "toets_defaultsKJutterUitgeslotenDefault000"));
 
         // VORM: the participation of a key of a uniqueness, a composite of the form without a sentence
@@ -94,7 +84,7 @@ class DrlConditionFunctionsWitnessTest {
                 "toets_eenmaligKaveletiketSleutelVanKavel1 | - | roept []",
                 "componenten_eenmaligKaveletiketSleutelVanKavel1 | - | roept []",
                 "regel | roept [toets_eenmaligKaveletiketSleutelVanKavel1, componenten_eenmaligKaveletiketSleutelVanKavel1]"), table(b.drl(), p));
-        assertTrue(function(b, p, "toets_eenmaligKaveletiketSleutelVanKavel1").contains("ComputeHelpers.established("), function(b, p, "toets_eenmaligKaveletiketSleutelVanKavel1"));
+        assertTrue(function(b, p, "toets_eenmaligKaveletiketSleutelVanKavel1").contains("ComputeHelpers.composite("), function(b, p, "toets_eenmaligKaveletiketSleutelVanKavel1"));
 
         // WITHOUT_FAULT: the body of the composite within the try
         b = build("fold-filter-divides-by-zero");
@@ -113,24 +103,17 @@ class DrlConditionFunctionsWitnessTest {
                 + "function boolean toets_drukte(Object $actief, Object $aantal_vouw_46, Object $eerste_filterfout_vouw_51,"
                 + " Object $filterdeponeringen_vouw_55) {\n"
                 + "    try {\n"
-                + "        int raak = 0;\n"
-                + "        Boolean vast;\n"
-                + "        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);\n"
-                + "        if (vast != null) {\n"
-                + "            return vast;\n"
+                + "        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);\n"
+                + "        if (lezing.stands()) {\n"
+                + "            return lezing.verdict();\n"
                 + "        }\n"
-                + "        if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {\n"
-                + "            raak++;\n"
+                + "        lezing.read(ComputeHelpers.characteristic($actief, Boolean.TRUE));\n"
+                + "        if (lezing.stands()) {\n"
+                + "            return lezing.verdict();\n"
                 + "        }\n"
-                + "        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);\n"
-                + "        if (vast != null) {\n"
-                + "            return vast;\n"
-                + "        }\n"
-                + "        if (RegelSpraakRuntime.rsAggVergelijk(vouwlezing_drukte(" + parameters + "), new java.math.BigDecimal(\"0\"),"
-                + " \">\")) {\n"
-                + "            raak++;\n"
-                + "        }\n"
-                + "        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);\n"
+                + "        lezing.read(RegelSpraakRuntime.rsAggVergelijk(vouwlezing_drukte(" + parameters + "), new java.math.BigDecimal(\"0\"),"
+                + " \">\"));\n"
+                + "        return lezing.verdict();\n"
                 + "    } catch (RuntimeException e) {\n"
                 + "        ComputeHelpers.caught(e);\n"
                 + "        return false;\n"
@@ -234,7 +217,7 @@ class DrlConditionFunctionsWitnessTest {
                 "toets_ongemerktAantalBijdrageAanVouw0Selectie0 | // aan geen van de volgende voorwaarden voldoen: gemerkt zijn | roept []",
                 "regel | roept [toets_ongemerktAantalBijdrageAanVouw0Selectie0]"), table(b.drl(), p));
         assertTrue(function(b, p, "toets_ongemerktAantalBijdrageAanVouw0Selectie0").contains(
-                "return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1);"),
+                "var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 1, null);"),
                 function(b, p, "toets_ongemerktAantalBijdrageAanVouw0Selectie0"));
     }
 
@@ -281,7 +264,7 @@ class DrlConditionFunctionsWitnessTest {
                 assertEquals(sentence + "\nfunction boolean " + name + "(Object $lid) {\n"
                         + "    return ComputeHelpers.characteristic($lid, Boolean.TRUE);\n}\n\n", test, q[0] + " " + q[1]);
             else
-                assertTrue(test.contains("ComputeHelpers.established("), q[0] + " " + q[1] + ":\n" + test);
+                assertTrue(test.contains("ComputeHelpers.composite("), q[0] + " " + q[1] + ":\n" + test);
         }
         // the text means what the plan means: a Jutter with the member and one without, on both branches
         List<String> expectations = new ArrayList<>();
@@ -345,47 +328,36 @@ class DrlConditionFunctionsWitnessTest {
                                 compound("the", 0, List.of(check("b", false)), "aan beide voldoet")),
                                 "aan beide voldoet"))));
         DroolsBackend.Build b = DroolsBackend.build(document, DroolsBackend.Branch.DRL_TEXT);
-        String established = "ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, ";
-        String end = "ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2)";
+        String reading = "    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2,"
+                + " null);\n";
+        String stands = "    if (lezing.stands()) {\n        return lezing.verdict();\n    }\n";
+        String end = "    return lezing.verdict();\n";
         assertEquals("// aan alle voorwaarden voldoet\n"
                 + "function boolean toets_genest(Object $a, Object $b) {\n"
-                + "    int raak = 0;\n"
-                + "    Boolean vast;\n"
-                + "    vast = " + established + "0, 2);\n"
-                + "    if (vast != null) {\n        return vast;\n    }\n"
-                + "    if (ComputeHelpers.characteristic($a, Boolean.TRUE)) {\n        raak++;\n    }\n"
-                + "    vast = " + established + "1, 1);\n"
-                + "    if (vast != null) {\n        return vast;\n    }\n"
+                + reading + stands
+                + "    lezing.read(ComputeHelpers.characteristic($a, Boolean.TRUE));\n"
+                + stands
                 + "    // aan de voorwaarde b voldoet\n"
-                + "    if (ComputeHelpers.characteristic($b, Boolean.TRUE)) {\n        raak++;\n    }\n"
-                + "    return " + end + ";\n"
+                + "    lezing.read(ComputeHelpers.characteristic($b, Boolean.TRUE));\n"
+                + end
                 + "}\n\n", function(b, piece(b, "genest"), "toets_genest"));
         assertEquals("// aan de volgende voorwaarde voldoet\n"
                 + "function boolean toets_omhuld(Object $a, Object $b) {\n"
                 + "    // aan a en b voldoet\n"
-                + "    int raak = 0;\n"
-                + "    Boolean vast;\n"
-                + "    vast = " + established + "0, 2);\n"
-                + "    if (vast != null) {\n        return vast;\n    }\n"
-                + "    if (ComputeHelpers.characteristic($a, Boolean.TRUE)) {\n        raak++;\n    }\n"
-                + "    vast = " + established + "1, 1);\n"
-                + "    if (vast != null) {\n        return vast;\n    }\n"
-                + "    if (ComputeHelpers.characteristic($b, Boolean.TRUE)) {\n        raak++;\n    }\n"
-                + "    return " + end + ";\n"
+                + reading + stands
+                + "    lezing.read(ComputeHelpers.characteristic($a, Boolean.TRUE));\n"
+                + stands
+                + "    lezing.read(ComputeHelpers.characteristic($b, Boolean.TRUE));\n"
+                + end
                 + "}\n\n", function(b, piece(b, "omhuld"), "toets_omhuld"));
         assertEquals("// aan a en altijd voldoet\n"
                 + "function boolean toets_leeg(Object $a) {\n"
-                + "    int raak = 0;\n"
-                + "    Boolean vast;\n"
-                + "    vast = " + established + "0, 2);\n"
-                + "    if (vast != null) {\n        return vast;\n    }\n"
-                + "    if (ComputeHelpers.characteristic($a, Boolean.TRUE)) {\n        raak++;\n    }\n"
-                + "    vast = " + established + "1, 1);\n"
-                + "    if (vast != null) {\n        return vast;\n    }\n"
+                + reading + stands
+                + "    lezing.read(ComputeHelpers.characteristic($a, Boolean.TRUE));\n"
+                + stands
                 + "    // altijd\n"
-                + "    if (ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 0, 0)) {\n"
-                + "        raak++;\n    }\n"
-                + "    return " + end + ";\n"
+                + "    lezing.read(ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 0, 0));\n"
+                + end
                 + "}\n\n", function(b, piece(b, "leeg"), "toets_leeg"));
         String gelijk = function(b, piece(b, "gelijk"), "toets_gelijk");
         assertEquals(1, gelijk.split("aan beide voldoet", -1).length - 1, gelijk);

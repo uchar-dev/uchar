@@ -9,23 +9,16 @@ import dev.uchar.regelspraak.transpiler.tms.Value;
 // hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
 function boolean toets_geentekenVanEenWacht(Object $ploegomvang, Object $vangstwaarde) {
     try {
-        int raak = 0;
-        Boolean vast;
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
-        if (vast != null) {
-            return vast;
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
-            raak++;
+        lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "=="));
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
-        if (vast != null) {
-            return vast;
-        }
-        if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
-            raak++;
-        }
-        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+        lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">"));
+        return lezing.verdict();
     } catch (RuntimeException e) {
         ComputeHelpers.caught(e);
         return false;
@@ -74,23 +67,16 @@ function boolean toets_geentekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomvan
 
 // hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
 function boolean samengesteld1_geentekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "=="));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 // hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
@@ -105,23 +91,16 @@ function Object fout_geentekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomvang,
 
 // hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
 function boolean samengesteld2_geentekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "=="));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 rule "geenteken van een wacht: fout in de voorwaarde"
@@ -149,23 +128,16 @@ function boolean toets_geentekenVanEenWachtDeponeringInDeVoorwaarde(Object $ploe
 
 // hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
 function boolean samengesteld1_geentekenVanEenWachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "=="));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 // hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
@@ -183,23 +155,16 @@ function java.util.List deponering_geentekenVanEenWachtDeponeringInDeVoorwaarde(
 
 // hij aan geen van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
 function boolean samengesteld2_geentekenVanEenWachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "=="));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 rule "geenteken van een wacht: deponering in de voorwaarde"
@@ -214,23 +179,16 @@ end
 // hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
 function boolean toets_minstetekenVanEenWacht(Object $ploegomvang, Object $vangstwaarde) {
     try {
-        int raak = 0;
-        Boolean vast;
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-        if (vast != null) {
-            return vast;
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
-            raak++;
+        lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "=="));
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-        if (vast != null) {
-            return vast;
-        }
-        if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
-            raak++;
-        }
-        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+        lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">"));
+        return lezing.verdict();
     } catch (RuntimeException e) {
         ComputeHelpers.caught(e);
         return false;
@@ -279,23 +237,16 @@ function boolean toets_minstetekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomv
 
 // hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
 function boolean samengesteld1_minstetekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "=="));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 // hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
@@ -310,23 +261,16 @@ function Object fout_minstetekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomvan
 
 // hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
 function boolean samengesteld2_minstetekenVanEenWachtFoutInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "=="));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, null), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 rule "minsteteken van een wacht: fout in de voorwaarde"
@@ -354,23 +298,16 @@ function boolean toets_minstetekenVanEenWachtDeponeringInDeVoorwaarde(Object $pl
 
 // hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
 function boolean samengesteld1_minstetekenVanEenWachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "=="));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 // hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
@@ -388,23 +325,16 @@ function java.util.List deponering_minstetekenVanEenWachtDeponeringInDeVoorwaard
 
 // hij aan ten minste één van de volgende voorwaarden voldoet: - zijn ploegomvang is gelijk aan 0 - het aandeel is groter dan 0
 function boolean samengesteld2_minstetekenVanEenWachtDeponeringInDeVoorwaarde(Object $ploegomvang, Object $vangstwaarde, Object sonde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "==")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "=="));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsAfronding(ComputeHelpers.divided($vangstwaarde, $ploegomvang, sonde), Integer.valueOf(0), java.math.RoundingMode.FLOOR), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 rule "minsteteken van een wacht: deponering in de voorwaarde"

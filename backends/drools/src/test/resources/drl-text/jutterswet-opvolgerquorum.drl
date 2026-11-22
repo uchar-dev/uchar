@@ -44,30 +44,20 @@ function boolean beta_estafetteWerfEenOpvolger(Object eigen, Object ander) {
 
 // de rang van de Wachter is kleiner dan 5, ten minste 1 opvolger van de Wachter heeft een rang groter dan 3 en alle ploegleden van de Wachter hebben een merk groter dan 1
 function boolean toets_estafetteWerfEenOpvolger(Object $rang, Object $aantal_vouw_19, Object $vouw_vouw_21, Object $aantal_vouw_28, Object $vouw_vouw_30) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($rang, new java.math.BigDecimal("5"), "<")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($rang, new java.math.BigDecimal("5"), "<"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.quantifierVerdict($aantal_vouw_19, $vouw_vouw_21, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1)));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.quantifierVerdict($aantal_vouw_19, $vouw_vouw_21, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1))) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.quantifierVerdict($aantal_vouw_28, $vouw_vouw_30, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0))) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(ComputeHelpers.quantifierVerdict($aantal_vouw_28, $vouw_vouw_30, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0)));
+    return lezing.verdict();
 }
 
 // de rang van de Wachter plus 1

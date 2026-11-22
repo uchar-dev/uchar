@@ -64,23 +64,16 @@ end
 // aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand
 function boolean toets_eersteSchoneMaandVanafDeEindmaandBijdrageAanVouw0(Object $overlading, Object $maand, Object $aantal_vouw_8, Object $vouw_vouw_10) {
     try {
-        int raak = 0;
-        Boolean vast;
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-        if (vast != null) {
-            return vast;
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        if (ComputeHelpers.characteristic($overlading, Boolean.FALSE)) {
-            raak++;
+        lezing.read(ComputeHelpers.characteristic($overlading, Boolean.FALSE));
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-        if (vast != null) {
-            return vast;
-        }
-        if (ComputeHelpers.dateCompare(ComputeHelpers.dateStep($maand, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE), ComputeHelpers.foldValue($aantal_vouw_8, $vouw_vouw_10, null), dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
-            raak++;
-        }
-        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+        lezing.read(ComputeHelpers.dateCompare(ComputeHelpers.dateStep($maand, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE), ComputeHelpers.foldValue($aantal_vouw_8, $vouw_vouw_10, null), dev.uchar.regelspraak.ir.Condition.Operator.LATER));
+        return lezing.verdict();
     } catch (RuntimeException e) {
         ComputeHelpers.caught(e);
         return false;
@@ -119,23 +112,16 @@ function boolean toets_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0(Object
 
 // aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand
 function boolean samengesteld1_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0(Object $overlading, Object $maand, Object $aantal_vouw_24, Object $vouw_vouw_26) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($overlading, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($overlading, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.dateCompare(ComputeHelpers.dateStep($maand, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE), ComputeHelpers.foldValue($aantal_vouw_24, $vouw_vouw_26, null), dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.dateCompare(ComputeHelpers.dateStep($maand, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE), ComputeHelpers.foldValue($aantal_vouw_24, $vouw_vouw_26, null), dev.uchar.regelspraak.ir.Condition.Operator.LATER));
+    return lezing.verdict();
 }
 
 // aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand
@@ -150,23 +136,16 @@ function RuntimeException fout_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw
 
 // aan alle volgende voorwaarden voldoen: - hij heeft geen overlading - zijn maand plus 1 mnd is later dan de laatste van de einddag van alle klachten van de schuit van de Lading in-een-maand
 function boolean samengesteld2_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0(Object $lijstplaatsen_plaats_15, Object $plaats_plaats_16, Object $overlading, Object $maand, Object $aantal_vouw_24, Object $vouw_vouw_26, Object $onderwerp) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($overlading, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($overlading, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.dateCompare(ComputeHelpers.dateStep($maand, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE), ComputeHelpers.foldValue($aantal_vouw_24, $vouw_vouw_26, null), dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.dateCompare(ComputeHelpers.dateStep($maand, new java.math.BigDecimal("1"), "MONTHS", Boolean.TRUE), ComputeHelpers.foldValue($aantal_vouw_24, $vouw_vouw_26, null), dev.uchar.regelspraak.ir.Condition.Operator.LATER));
+    return lezing.verdict();
 }
 
 function java.util.List plaats_eersteSchoneMaandVanafDeEindmaandFilterfoutInVouw0(Object $onderwerp, Object $lijstplaatsen_plaats_15, Object $plaats_plaats_16) {

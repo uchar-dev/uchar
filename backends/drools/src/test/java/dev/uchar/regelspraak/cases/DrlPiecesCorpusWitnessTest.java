@@ -69,8 +69,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>every function does work of its own (card drl-no-passthrough-functions, acceptance (a)): its body is not only
  *       the return of the call of another function of its piece; it is not the function of a composite over no member
  *       whose verdict is true, nor of a composite over one member whose verdict is that member's, the verdicts being
- *       those of {@code ComputeHelpers.established} and {@code endVerdict}, which a composite calls; and the locals
- *       {@code raak} and {@code vast} of a composite stand only where they are read ({@link #ownWork}). Measured on
+ *       those of {@code ComputeHelpers.established} and {@code endVerdict}, the table a composite reads by; and the
+ *       local {@code lezing} of a composite stands only where members are read ({@link #ownWork}). Measured on
  *       {@code ce2566f3}, before that card, per build: 180 functions that only returned such a call (176 tests and 4
  *       matrices, each over its composite), 58 functions of a composite over no member, each with a {@code vast} it
  *       did not read, and 69 of a composite over one member that gives its verdict.</li>
@@ -166,7 +166,7 @@ class DrlPiecesCorpusWitnessTest {
     /** The kinds of the functions of the text, the word of what a function computes, the first part of its name. */
     static final Set<String> KINDS = Set.of("afloop", "beta", "binder", "componenten", "conflict", "creatie",
             "deling", "deponering", "fout", "kwantorlezing", "let", "lezing", "lidtoets", "lijst", "matrix", "pad", "plaats",
-            "samengesteld", "toets", "vouwlezing", "waarde", "zonderfout");
+            "samengesteld", "sluiting", "toets", "vouwlezing", "waarde", "zonderfout");
 
     /** The line that opens a rule: {@code rule} and its name as a DRL string literal. */
     private static final Pattern RULE_HEADER = Pattern.compile("^rule \"((?:[^\"\\\\]|\\\\.)*)\"$", Pattern.MULTILINE);
@@ -186,10 +186,10 @@ class DrlPiecesCorpusWitnessTest {
     private static final Set<String> WORDS = words();
     /** A line that returns a call: the name called and the text after its opening parenthesis up to the {@code ;}. */
     private static final Pattern RETURNED_CALL = Pattern.compile("\\s*return ([\\p{L}_][\\p{L}\\p{N}_]*)\\((.*);");
-    /** The verdict of a composite once its members are read: quantifier, threshold, hits and number of members. */
-    private static final Pattern END_VERDICT = Pattern.compile("ComputeHelpers\\.endVerdict\\("
-            + "dev\\.uchar\\.regelspraak\\.ir\\.Condition\\.Quantifier\\.([A-Z_]+), (-?[0-9]+), ([a-z0-9]+),"
-            + " ([0-9]+)\\)");
+    /** The reading of a composite: quantifier, threshold and number of members. */
+    private static final Pattern COMPOSITE = Pattern.compile("var lezing = ComputeHelpers\\.composite\\("
+            + "dev\\.uchar\\.regelspraak\\.ir\\.Condition\\.Quantifier\\.([A-Z_]+), (-?[0-9]+), ([0-9]+),"
+            + " [a-z]+\\);");
     /** The return of the verdict of a composite over no member. */
     private static final Pattern VERDICT_OVER_NONE = Pattern.compile("\\s*return ComputeHelpers\\.endVerdict\\("
             + "dev\\.uchar\\.regelspraak\\.ir\\.Condition\\.Quantifier\\.([A-Z_]+), (-?[0-9]+), [a-z0-9]+, 0\\);");
@@ -489,9 +489,9 @@ class DrlPiecesCorpusWitnessTest {
      * The checks of card drl-no-passthrough-functions on {@code function}, a function of a piece whose functions are
      * {@code ownFunctions}, read off its text: it does more than return the call of another function of its rule; it is
      * not the function of a composite over no member whose verdict is true, nor of a composite over one member whose
-     * verdict is that member's; and the locals {@code raak} and {@code vast} of a composite stand only where they are
-     * read. The verdicts are those of {@link ComputeHelpers#established} and {@link ComputeHelpers#endVerdict}, the
-     * runtime's own, which the evaluation of a composite calls. And the check of card drl-no-trivial-value-functions:
+     * verdict is that member's; and the local {@code lezing} of a composite stands only where members are read. The
+     * verdicts are those of {@link ComputeHelpers#established} and {@link ComputeHelpers#endVerdict}, the table the
+     * evaluation of a composite reads by. And the check of card drl-no-trivial-value-functions:
      * a function {@code name} of a kind of {@link #VALUE_KINDS} does more than return, within or without the standard
      * {@code try}, a constant, one of its parameters or {@code ComputeHelpers.collapse} of one of them.
      */
@@ -537,10 +537,10 @@ class DrlPiecesCorpusWitnessTest {
             differences.add(where + ": is de functie van een samengestelde voorwaarde zonder leden met oordeel true");
         }
         String all = String.join("\n", code);
-        Matcher end = END_VERDICT.matcher(all);
-        if (end.find() && end.group(4).equals("1")) {
-            Condition.Quantifier q = Condition.Quantifier.valueOf(end.group(1));
-            int threshold = Integer.parseInt(end.group(2));
+        Matcher composite = COMPOSITE.matcher(all);
+        if (composite.find() && composite.group(3).equals("1")) {
+            Condition.Quantifier q = Condition.Quantifier.valueOf(composite.group(1));
+            int threshold = Integer.parseInt(composite.group(2));
             boolean memberVerdict = ComputeHelpers.established(q, threshold, 0, 0, 1) == null
                     && !ComputeHelpers.endVerdict(q, threshold, 0, 1) && ComputeHelpers.endVerdict(q, threshold, 1, 1);
             if (memberVerdict) {
@@ -550,13 +550,10 @@ class DrlPiecesCorpusWitnessTest {
                         + " oordeel geeft (" + q + " " + threshold + ")");
             }
         }
-        boolean raakUnread = code.stream().anyMatch(l -> l.strip().equals("int raak = 0;"))
-                && code.stream().filter(l -> l.contains("raak")).count() < 2;
-        boolean vastUnread = code.stream().anyMatch(l -> l.strip().equals("Boolean vast;"))
-                && code.stream().noneMatch(l -> l.contains("vast != null"));
-        if (raakUnread || vastUnread) {
+        if (code.stream().anyMatch(l -> l.strip().startsWith("var lezing = "))
+                && code.stream().noneMatch(l -> l.contains("lezing.read("))) {
             counts.merge("functies met een local die niet gelezen wordt" + suffix, 1, Integer::sum);
-            differences.add(where + ": declareert " + (raakUnread ? "raak" : "vast") + " en leest het niet");
+            differences.add(where + ": declareert lezing en leest geen lid");
         }
     }
 

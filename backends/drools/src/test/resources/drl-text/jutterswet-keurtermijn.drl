@@ -132,23 +132,16 @@ function java.util.List plaats_inzetbaarBijKeurtermijnBijdrageAanVouw0(Object $o
 
 // hij aan alle volgende voorwaarden voldoet
 function boolean samengesteld_inzetbaarBijKeurtermijnBijdrageAanVouw0(Object $onderwerp, Object $gekeurd, Object $keurdatum, Object $keurtermijn, Object $rekendatumwaarde_4, Object $lijstplaatsen_plaats_3, Object $plaats_plaats_4, java.util.function.Predicate rsDagsoort_Keurdag) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($gekeurd, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($gekeurd, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.dateCompare(ComputeHelpers.dayKindStep($keurdatum, $keurtermijn, rsDagsoort_Keurdag, Boolean.TRUE), ComputeHelpers.required($rekendatumwaarde_4, "the evaluationDate context value needs an evaluation date; the case carries asOfDate null"), dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.dateCompare(ComputeHelpers.dayKindStep($keurdatum, $keurtermijn, rsDagsoort_Keurdag, Boolean.TRUE), ComputeHelpers.required($rekendatumwaarde_4, "the evaluationDate context value needs an evaluation date; the case carries asOfDate null"), dev.uchar.regelspraak.ir.Condition.Operator.LATER));
+    return lezing.verdict();
 }
 
 rule "inzetbaar bij keurtermijn: bijdrage aan vouw 0"

@@ -410,6 +410,19 @@ public final class CaseRunner {
         return build(irPath, branch).runCase("case", c);
     }
 
+    /** The same comparator seam for the cases {@code cases} of one document, the verdict of each in its place, on one
+     *  build, in sessions that treat every input member as complete where {@code closedInputs}
+     *  ({@link Input#closedInputs}, RUNTIME-SEMANTICS ch. 1.5, "Complete input"), as the reference interpreter's
+     *  {@code runner --closed-inputs}. Package-private, no production caller. */
+    static List<String> playCases(Path irPath, List<JsonNode> cases, DroolsBackend.Branch branch, boolean closedInputs)
+            throws java.io.IOException {
+        CaseRunner runner = build(irPath, branch);
+        runner.closedInputs = closedInputs;
+        List<String> out = new ArrayList<>();
+        for (JsonNode c : cases) out.add(runner.runCase("case", c));
+        return out;
+    }
+
     /** The measuring seam of the harnesses and witnesses in the test tree, first made for the trial of card
      *  drools-logische-afleiding (acceptance (e)): a runner of {@code irPath} on {@code branch} whose KieBase is built
      *  once, so that a harness in the test tree can fire one case many times and time the fire alone. The replay
@@ -448,7 +461,9 @@ public final class CaseRunner {
         try {
             CaseInput input = readInput(c);
             input.setGlobals(session);
-            DroolsBackend.insert(backendBuild, session, input.inputData());
+            Input data = input.inputData();
+            if (closedInputs) data.closedInputs();
+            DroolsBackend.insert(backendBuild, session, data);
             return measurement.meet(backendBuild, session, java.util.Collections.unmodifiableMap(labelToBean));
         } finally {
             session.dispose();
@@ -632,6 +647,16 @@ public final class CaseRunner {
      *  report, the seam and the write-back. */
     private final Map<String, Object> labelToBean = new LinkedHashMap<>();
     private final Map<String, ObjectType> labelType = new LinkedHashMap<>();
+    /** Whether the sessions of this runner treat every input member as complete ({@link Input#closedInputs}). */
+    private boolean closedInputs;
+    /** The members open at the fixpoint per bean, by their kind and declared name, as {@link Fixpoint#open} gives them:
+     *  what the comparison reads them by. */
+    private final Map<Object, java.util.Set<String>> open = new java.util.IdentityHashMap<>();
+
+    /** Whether {@code member}, its kind and declared name, of {@code bean} is open at the fixpoint. */
+    private boolean open(Object bean, String member) {
+        return open.getOrDefault(bean, java.util.Set.of()).contains(member);
+    }
 
     private String runCase(String name, JsonNode c) {
         return runCase(name, c, null);
@@ -1017,11 +1042,15 @@ public final class CaseRunner {
      *  runner reads no case input, so a session the caller filled itself compares as one of the replay. */
     static DroolsBackend.Comparison comparison(DroolsBackend.Build build,
                                                    Map<String, Object> perLabel, Map<String, ObjectType> types,
-                                                   List<Object> inconsistencies, JsonNode expectations) {
+                                                   List<Object> inconsistencies, List<Fixpoint.OpenValue> open,
+                                                   JsonNode expectations) {
         CaseRunner r = new CaseRunner(build.model(), build.kieBase(), build.beanLoader(), build.dayKindGlobals());
         r.backendBuild = build;
         r.labelToBean.putAll(perLabel);
         r.labelType.putAll(types);
+        for (Fixpoint.OpenValue o : open)
+            r.open.computeIfAbsent(o.object(), k -> new java.util.HashSet<>())
+                    .add((o.characteristic() ? "characteristic " : "attribute ") + o.member());
         List<ScenarioResult.ExpectationResult> out = new ArrayList<>();
         List<String> mis = new ArrayList<>();
         int position = 0;
@@ -1051,16 +1080,18 @@ public final class CaseRunner {
 
     /** The fields each kind of expectation reads by name, beside its {@code kind}; a missing {@code value} is the value
      *  reader's refusal ({@link #typed}). */
-    private static final Map<String, List<String>> EXPECTATION_FIELDS = Map.of(
-            "attributeValue", List.of("label", "attribute"),
-            "attributeEmpty", List.of("label", "attribute"),
-            "characteristicPresent", List.of("label", "characteristic"),
-            "characteristicAbsent", List.of("label", "characteristic"),
-            "attributeTimeline", List.of("label", "attribute", "timeline"),
-            "cellValue", List.of("label", "attribute", "labels"),
-            "cellEmpty", List.of("label", "attribute", "labels"),
-            "consistent", List.of(),
-            "inconsistent", List.of());
+    private static final Map<String, List<String>> EXPECTATION_FIELDS = Map.ofEntries(
+            Map.entry("attributeValue", List.of("label", "attribute")),
+            Map.entry("attributeEmpty", List.of("label", "attribute")),
+            Map.entry("attributeOpen", List.of("label", "attribute")),
+            Map.entry("characteristicPresent", List.of("label", "characteristic")),
+            Map.entry("characteristicAbsent", List.of("label", "characteristic")),
+            Map.entry("characteristicOpen", List.of("label", "characteristic")),
+            Map.entry("attributeTimeline", List.of("label", "attribute", "timeline")),
+            Map.entry("cellValue", List.of("label", "attribute", "labels")),
+            Map.entry("cellEmpty", List.of("label", "attribute", "labels")),
+            Map.entry("consistent", List.of()),
+            Map.entry("inconsistent", List.of()));
 
     /** Holds expectation {@code v}, at position {@code at}, to the fields its kind reads, as ref's case reader holds it
      *  at load: a missing field is a defect of the case, named, where the comparison would read a null. A kind
@@ -1073,10 +1104,12 @@ public final class CaseRunner {
     private String compare(JsonNode v, List<Object> inconsistencies) {
         String kind = v.get("kind").asText();
         return switch (kind) {
-            case "attributeValue" -> attribute(v, false);
-            case "attributeEmpty" -> attribute(v, true);
-            case "characteristicPresent" -> characteristic(v, true);
-            case "characteristicAbsent" -> characteristic(v, false);
+            case "attributeValue" -> attribute(v, false, false);
+            case "attributeEmpty" -> attribute(v, true, false);
+            case "attributeOpen" -> attribute(v, false, true);
+            case "characteristicPresent" -> characteristic(v, true, false);
+            case "characteristicAbsent" -> characteristic(v, false, false);
+            case "characteristicOpen" -> characteristic(v, false, true);
             case "consistent" -> consistency(inconsistencies, false, v);
             case "inconsistent" -> consistency(inconsistencies, true, v);
             case "attributeTimeline" -> timeline(v);
@@ -1086,7 +1119,11 @@ public final class CaseRunner {
         };
     }
 
-    private String attribute(JsonNode v, boolean emptyExpected) {
+    /** The read-back of an attribute: its value or leeg, as the bean holds it after the write-back, where the member
+     *  is not open at the fixpoint, and open where it is ({@link Fixpoint#open}, RUNTIME-SEMANTICS ch. 1.5). An open
+     *  member has no value and is not leeg, whatever the bean holds; in a document without the property no member is
+     *  open. */
+    private String attribute(JsonNode v, boolean emptyExpected, boolean openExpected) {
         String label = v.get("label").asText();
         ObjectType ot = typeOfLabel(v, label);
         String attr = attributeName(ot, v.get("attribute").asText());
@@ -1102,6 +1139,13 @@ public final class CaseRunner {
             throw new IllegalArgumentException(v.get("kind").asText() + " on the time-dependent attribute '" + attr
                     + "' of " + label + ", whose value is a timeline: an expectation on it is an attributeTimeline");
         Object actual = invokeGetter(labelToBean.get(label), Namen.getter(attr));
+        boolean isOpen = open(labelToBean.get(label), "attribute " + attr);
+        if (openExpected)
+            return isOpen ? null : Msg.drools("PART.mismatch.attribute", "attribute", attr, "expected",
+                    Msg.drools("PART.value.open").text(), "actual", render(actual)).text();
+        if (isOpen)
+            return Msg.drools("PART.mismatch.attribute", "attribute", attr, "expected", emptyExpected ? render(null)
+                    : render(valueToArg(v.get("value"), attr)), "actual", Msg.drools("PART.value.open").text()).text();
         if (emptyExpected)
             return actual == null ? null : Msg.drools("PART.mismatch.empty-expected", "actual", actual).text();
         typed(v.get("value"), ot.attribute(attr), "expected " + label + "." + attr);
@@ -1242,7 +1286,9 @@ public final class CaseRunner {
         return bound == null ? open : bound.toString();
     }
 
-    private String characteristic(JsonNode v, boolean presentExpected) {
+    /** The read-back of a characteristic: whether it holds, as the bean holds it after the write-back, where it is not
+     *  open at the fixpoint, and open where it is ({@link Fixpoint#open}, RUNTIME-SEMANTICS ch. 1.5). */
+    private String characteristic(JsonNode v, boolean presentExpected, boolean openExpected) {
         ObjectType ot = typeOfLabel(v, v.get("label").asText());
         String characteristic = characteristicName(ot, v.get("characteristic").asText());
         // a CASE defect: a time-dependent characteristic holds per period and has no standing of its own
@@ -1252,11 +1298,13 @@ public final class CaseRunner {
                     + characteristic + "' of " + v.get("label").asText() + ", which holds per period and has no"
                     + " standing of its own");
         ownField(ot, characteristic, true, "reads");
-        Object read = invokeGetter(labelToBean.get(v.get("label").asText()), Namen.getter(characteristic));
-        boolean present = Boolean.TRUE.equals(read);
-        return present == presentExpected ? null
-                : Msg.drools("PART.mismatch.characteristic", "characteristic", v.get("characteristic").asText(),
-                        "expected", presence(presentExpected), "actual", presence(present)).text();
+        Object bean = labelToBean.get(v.get("label").asText());
+        boolean present = Boolean.TRUE.equals(invokeGetter(bean, Namen.getter(characteristic)));
+        boolean isOpen = open(bean, "characteristic " + characteristic);
+        if (openExpected == isOpen && (openExpected || present == presentExpected)) return null;
+        return Msg.drools("PART.mismatch.characteristic", "characteristic", v.get("characteristic").asText(),
+                "expected", openExpected ? Msg.drools("PART.value.open").text() : presence(presentExpected),
+                "actual", isOpen ? Msg.drools("PART.value.open").text() : presence(present)).text();
     }
 
     /** The §9.5 consistency check. A {@code consistent} expectation demands NO Inconsistency fact at all
@@ -1405,6 +1453,7 @@ public final class CaseRunner {
         return switch (v.get("kind").asText()) {
             case "attributeValue" -> render(valueToArg(v.get("value"), v.get("attribute").asText()));
             case "attributeEmpty" -> render(null);
+            case "attributeOpen", "characteristicOpen" -> Msg.drools("PART.value.open").text();
             case "attributeTimeline" -> {
                 List<String> segs = new ArrayList<>();
                 for (JsonNode s : v.get("timeline"))
@@ -1431,7 +1480,9 @@ public final class CaseRunner {
         Object bean = label == null ? null : labelToBean.get(label);
         ObjectType ot = label == null ? null : labelType.get(label);
         return switch (v.get("kind").asText()) {
-            case "attributeValue", "attributeEmpty" -> render(bean == null ? null
+            case "attributeValue", "attributeEmpty", "attributeOpen" -> bean != null
+                    && open(bean, "attribute " + attributeName(ot, v.get("attribute").asText()))
+                    ? Msg.drools("PART.value.open").text() : render(bean == null ? null
                     : invokeGetter(bean, Namen.getter(attributeName(ot, v.get("attribute").asText()))));
             case "attributeTimeline" -> {
                 Object read = bean == null ? null
@@ -1439,7 +1490,9 @@ public final class CaseRunner {
                 yield read == null ? Msg.drools("PART.value.empty-timeline").text() : renderTl(segments((List<?>) read));
             }
             case "cellValue", "cellEmpty" -> render(cellValue(v, bean, ot));
-            case "characteristicPresent", "characteristicAbsent" -> presence(bean != null && Boolean.TRUE.equals(
+            case "characteristicPresent", "characteristicAbsent", "characteristicOpen" -> bean != null
+                    && open(bean, "characteristic " + characteristicName(ot, v.get("characteristic").asText()))
+                    ? Msg.drools("PART.value.open").text() : presence(bean != null && Boolean.TRUE.equals(
                     invokeGetter(bean, Namen.getter(characteristicName(ot, v.get("characteristic").asText())))));
             default -> inconsistencies.isEmpty() ? "consistent"
                     : "inconsistent (" + renderIncs(inconsistencies, v.hasNonNull("code")) + ")";

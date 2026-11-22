@@ -76,7 +76,7 @@ class StatePlanWitnessTest {
                         + " $onderwerp] bind []",
                 "  consequence State [subject=$onderwerp, attribute=ElementKey[objectType=jutter, name=aantal"
                         + " aangemelde vondsten, characteristic=false], source=INPUT, value=0, bucketScalar=false,"
-                        + " cell=null, insertion=LOGICAL]",
+                        + " cell=null, incomplete=false, insertion=LOGICAL]",
                 "rule stand Jutter.aantal aangemelde vondsten: uit de invoer, een emmerscalair | form null | group"
                         + " null",
                 "  readings [0 INPUT $invoer (invoer ElementKey[objectType=jutter, name=aantal aangemelde"
@@ -91,7 +91,7 @@ class StatePlanWitnessTest {
                         + " subject = $onderwerp] bind []",
                 "  consequence State [subject=$onderwerp, attribute=ElementKey[objectType=jutter, name=aantal"
                         + " aangemelde vondsten, characteristic=false], source=INPUT, value=0, bucketScalar=true,"
-                        + " cell=null, insertion=LOGICAL]",
+                        + " cell=null, incomplete=false, insertion=LOGICAL]",
                 "rule stand Jutter.totaal aangemelde vondsten: uit een afleiding | form null | group null",
                 "  readings [0 DERIVATION $v (afleiding ElementKey[objectType=jutter, name=totaal aangemelde"
                         + " vondsten, characteristic=false])]",
@@ -101,7 +101,7 @@ class StatePlanWitnessTest {
                         + " subject = $onderwerp] bind [$v = [] Value.value VALUE]",
                 "  consequence State [subject=$onderwerp, attribute=ElementKey[objectType=jutter, name=totaal"
                         + " aangemelde vondsten, characteristic=false], source=DERIVATION, value=0, bucketScalar=false,"
-                        + " cell=null, insertion=LOGICAL]",
+                        + " cell=null, incomplete=false, insertion=LOGICAL]",
                 "rule stand Jutter.totaal aangemelde vondsten: uit de invoer | form null | group null",
                 "  readings [0 INPUT $invoer (invoer ElementKey[objectType=jutter, name=totaal aangemelde"
                         + " vondsten, characteristic=false])]",
@@ -111,7 +111,7 @@ class StatePlanWitnessTest {
                         + " subject = $onderwerp] bind []",
                 "  consequence State [subject=$onderwerp, attribute=ElementKey[objectType=jutter, name=totaal"
                         + " aangemelde vondsten, characteristic=false], source=INPUT, value=0, bucketScalar=false,"
-                        + " cell=null, insertion=LOGICAL]",
+                        + " cell=null, incomplete=false, insertion=LOGICAL]",
                 "rule kenmerkstand Jutter.penninggerechtigd: waar uit de invoer | form null | group null",
                 "  readings []",
                 "  subject Jutter $onderwerp alpha [invoer_25: [[] penninggerechtigd WAAR GELIJK true]] bind []",
@@ -184,7 +184,7 @@ class StatePlanWitnessTest {
                         + " name=premie, characteristic=false]]] join [waarde-onderwerp_89: subject = $onderwerp] bind"
                         + " [$v = [] Value.value VALUE]",
                 "  consequence State [subject=$onderwerp, attribute=ElementKey[objectType=jutter, name=premie,"
-                        + " characteristic=false], source=DERIVATION, value=0, bucketScalar=false, cell=null, insertion=LOGICAL]",
+                        + " characteristic=false], source=DERIVATION, value=0, bucketScalar=false, cell=null, incomplete=false, insertion=LOGICAL]",
                 "rule stand Jutter.premie: uit de invoer | form null | group null",
                 "  readings [0 INPUT $invoer (invoer ElementKey[objectType=jutter, name=premie,"
                         + " characteristic=false])]",
@@ -193,7 +193,7 @@ class StatePlanWitnessTest {
                         + " name=premie, characteristic=false]]] join [waarde-onderwerp_91: subject = $onderwerp] bind"
                         + " []",
                 "  consequence State [subject=$onderwerp, attribute=ElementKey[objectType=jutter, name=premie,"
-                        + " characteristic=false], source=INPUT, value=0, bucketScalar=false, cell=null, insertion=LOGICAL]",
+                        + " characteristic=false], source=INPUT, value=0, bucketScalar=false, cell=null, incomplete=false, insertion=LOGICAL]",
                 "rule kenmerkstand Vondst.zwaar: waar uit de invoer | form null | group null",
                 "  readings []",
                 "  subject Vondst $onderwerp alpha [invoer_92: [[] zwaar WAAR GELIJK true]] bind []",

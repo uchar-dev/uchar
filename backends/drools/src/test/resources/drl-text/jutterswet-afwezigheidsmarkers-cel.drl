@@ -126,23 +126,16 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn gewicht in najaar heeft een waarde - zijn gewicht in najaar is groter dan 100,00
 function boolean toets_zwareVondst(Object $gewicht) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest(ComputeHelpers.payload($gewicht, "waarde"), Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest(ComputeHelpers.payload($gewicht, "waarde"), Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.payload($gewicht, "waarde"), new java.math.BigDecimal("100"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.payload($gewicht, "waarde"), new java.math.BigDecimal("100"), ">"));
+    return lezing.verdict();
 }
 
 rule "zware vondst"

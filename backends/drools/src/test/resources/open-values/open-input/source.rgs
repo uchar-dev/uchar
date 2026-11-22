@@ -1,0 +1,16 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    het vindloon Numeriek (geheel getal);
+    het bergloon Numeriek (geheel getal);
+    de uitbetaling Numeriek (geheel getal);
+    de drijftoeslag Numeriek (geheel getal);
+    is drijfhout kenmerk (bijvoeglijk);
+
+Regel uitbetaling
+    geldig altijd
+        De uitbetaling van een Vondst moet berekend worden als zijn vindloon plus zijn bergloon.
+
+Regel drijftoeslag
+    geldig altijd
+        De drijftoeslag van een Vondst moet gesteld worden op 2 indien hij niet drijfhout is.

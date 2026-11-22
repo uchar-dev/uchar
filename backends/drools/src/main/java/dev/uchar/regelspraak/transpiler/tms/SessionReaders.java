@@ -812,7 +812,53 @@ final class SessionReaders {
         inconsistencies.sort(Comparator.comparing((Object i) -> (String) RegelSpraakRuntime.get(i, "rule"), emptyFirst)
                 .thenComparing(i -> name.apply(RegelSpraakRuntime.get(i, "subject")), emptyFirst)
                 .thenComparing(i -> String.valueOf(RegelSpraakRuntime.get(i, "codes"))));
-        return new Read(new Fixpoint(values, characteristics, objects, links, ordered, inconsistencies), acts);
+        return new Read(new Fixpoint(values, characteristics, objects, links, ordered, inconsistencies,
+                openValues(session, perTarget)), acts);
+    }
+
+    /**
+     * The members open at the fixpoint of {@code session} (RUNTIME-SEMANTICS ch. 1.5), as the standing rules read them
+     * ({@link TmsTranspiler#attributeStateRules}): an attribute on which no {@link Value} stands, of the values
+     * {@code perTarget} groups, where a writer leaves it open ({@link LeftOpen}) or where its input is not complete
+     * ({@link OpenInput}) and the bean holds no value; a characteristic that neither the bean nor a
+     * {@link HasCharacteristic} makes hold, where a writer leaves it open or its input is not complete.
+     */
+    private List<Fixpoint.OpenValue> openValues(KieSession session, Map<Object, Map<ElementKey, List<Value>>> perTarget) {
+        Map<Object, Set<ElementKey>> byWriter = new IdentityHashMap<>(), candidates = new IdentityHashMap<>();
+        for (Object f : session.getObjects(o -> o instanceof LeftOpen)) {
+            LeftOpen l = (LeftOpen) f;
+            byWriter.computeIfAbsent(l.subject(), k -> new HashSet<>()).add(l.member());
+            candidates.computeIfAbsent(l.subject(), k -> new LinkedHashSet<>()).add(l.member());
+        }
+        for (Object f : session.getObjects(o -> o instanceof OpenInput))
+            candidates.computeIfAbsent(((OpenInput) f).subject(), k -> new LinkedHashSet<>()).add(((OpenInput) f).member());
+        Map<Object, Set<ElementKey>> holding = new IdentityHashMap<>();
+        for (Object f : session.getObjects(o -> o instanceof HasCharacteristic))
+            holding.computeIfAbsent(((HasCharacteristic) f).subject(), k -> new HashSet<>())
+                    .add(((HasCharacteristic) f).characteristic());
+        List<Fixpoint.OpenValue> out = new ArrayList<>();
+        candidates.forEach((subject, keys) -> {
+            for (ElementKey key : keys) {
+                String name = declaredName(key);
+                Object input = Accessors.leesEigenschap(subject, Namen.property(name));
+                boolean open = key.characteristic()
+                        ? !Boolean.TRUE.equals(input) && !holding.getOrDefault(subject, Set.of()).contains(key)
+                        : !perTarget.getOrDefault(subject, Map.of()).containsKey(key)
+                        && (byWriter.getOrDefault(subject, Set.of()).contains(key) || input == null);
+                if (open) out.add(new Fixpoint.OpenValue(subject, name, key.characteristic()));
+            }
+        });
+        return out;
+    }
+
+    /** The name of the member {@code key} as the type that declares it spells it. */
+    private String declaredName(ElementKey key) {
+        for (RegelSpraakModel.ObjectType t : model.objectTypes.values()) {
+            if (!Namen.norm(t.name).equals(key.objectType())) continue;
+            for (String n : key.characteristic() ? t.characteristics : t.attributes.keySet())
+                if (Namen.norm(n).equals(key.name())) return n;
+        }
+        throw new IllegalStateException("no type of the model declares " + FactNames.member(key));
     }
 
     /**

@@ -98,30 +98,20 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn opgegeven waarde is gevuld - zijn berekende waarde is gevuld - zijn opgegeven waarde is ongelijk aan zijn berekende waarde
 function boolean toets_afwijkingOpgaveWaarde(Object $opgegevenWaarde, Object $berekendeWaarde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($opgegevenWaarde, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($opgegevenWaarde, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.emptyTest($berekendeWaarde, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($berekendeWaarde, Boolean.FALSE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($opgegevenWaarde, $berekendeWaarde, "!=")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($opgegevenWaarde, $berekendeWaarde, "!="));
+    return lezing.verdict();
 }
 
 rule "afwijking opgave waarde"
@@ -136,30 +126,20 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn opgegeven wachtgeld is gevuld - zijn berekende wachtgeld is gevuld - zijn opgegeven wachtgeld is ongelijk aan zijn berekende wachtgeld
 function boolean toets_afwijkingOpgaveWachtgeld(Object $opgegevenWachtgeld, Object $berekendeWachtgeld) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($opgegevenWachtgeld, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($opgegevenWachtgeld, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.emptyTest($berekendeWachtgeld, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($berekendeWachtgeld, Boolean.FALSE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($opgegevenWachtgeld, $berekendeWachtgeld, "!=")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($opgegevenWachtgeld, $berekendeWachtgeld, "!="));
+    return lezing.verdict();
 }
 
 rule "afwijking opgave wachtgeld"
@@ -174,30 +154,20 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn opgegeven stukprijs is gevuld - zijn berekende stukprijs is gevuld - zijn opgegeven stukprijs is ongelijk aan zijn berekende stukprijs
 function boolean toets_afwijkingOpgaveStukprijs(Object $opgegevenStukprijs, Object $berekendeStukprijs) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($opgegevenStukprijs, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($opgegevenStukprijs, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.emptyTest($berekendeStukprijs, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($berekendeStukprijs, Boolean.FALSE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($opgegevenStukprijs, $berekendeStukprijs, "!=")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($opgegevenStukprijs, $berekendeStukprijs, "!="));
+    return lezing.verdict();
 }
 
 rule "afwijking opgave stukprijs"
@@ -257,23 +227,16 @@ end
 
 // de taxatie van de Vondst kleiner is dan 10,00 en hij museaal is
 function boolean toets_defaultsAVondstBerekendeWaardeDefault000(Object $taxatie, Object $museaal) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($taxatie, new java.math.BigDecimal("10"), "<")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($taxatie, new java.math.BigDecimal("10"), "<"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.characteristic($museaal, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.characteristic($museaal, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "defaults A:Vondst.berekende waarde: default 0.0.0"

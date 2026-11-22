@@ -1,0 +1,14 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    de vangst Numeriek (geheel getal);
+    het strandloon Numeriek (geheel getal);
+    is gemeld kenmerk (bijvoeglijk);
+
+Regel strandloon
+    geldig altijd
+        Het strandloon van een Vondst moet berekend worden als zijn vangst maal 2 indien hij gemeld is.
+
+Regel standaardstrandloon
+    geldig altijd
+        Het strandloon van een Vondst moet geïnitialiseerd worden op 5.

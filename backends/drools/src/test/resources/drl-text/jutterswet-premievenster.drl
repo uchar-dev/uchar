@@ -189,23 +189,16 @@ end
 
 // de Vondst geborgen is, en van 1 januari 2024 tot 1 januari 2025
 function boolean toets_borgpremieVanEenVondst(Object $geborgen, Object $rekendatumwaarde_1) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($geborgen, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($geborgen, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.timeWindow(java.time.LocalDate.parse("2024-01-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-01-01"), Boolean.TRUE, Boolean.FALSE, $rekendatumwaarde_1)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.timeWindow(java.time.LocalDate.parse("2024-01-01"), Boolean.TRUE, java.time.LocalDate.parse("2025-01-01"), Boolean.TRUE, Boolean.FALSE, $rekendatumwaarde_1));
+    return lezing.verdict();
 }
 
 // 15

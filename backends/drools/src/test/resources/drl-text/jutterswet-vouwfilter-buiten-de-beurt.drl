@@ -17,23 +17,16 @@ import dev.uchar.regelspraak.transpiler.tms.Value;
 // hij aan geen van de volgende voorwaarden voldoet: - hij is actief - de eerste van de vinddag van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is later dan dd. 01-01-2026
 function boolean toets_rust(Object $actief, Object $aantal_vouw_15, Object $vouw_vouw_17, Object $eerste_filterfout_vouw_22, Object $filterdeponeringen_vouw_26) {
     try {
-        int raak = 0;
-        Boolean vast;
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
-        if (vast != null) {
-            return vast;
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
-            raak++;
+        lezing.read(ComputeHelpers.characteristic($actief, Boolean.TRUE));
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
-        if (vast != null) {
-            return vast;
-        }
-        if (ComputeHelpers.dateCompare(vouwlezing_rust($actief, $aantal_vouw_15, $vouw_vouw_17, $eerste_filterfout_vouw_22, $filterdeponeringen_vouw_26), java.time.LocalDate.parse("2026-01-01"), dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
-            raak++;
-        }
-        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+        lezing.read(ComputeHelpers.dateCompare(vouwlezing_rust($actief, $aantal_vouw_15, $vouw_vouw_17, $eerste_filterfout_vouw_22, $filterdeponeringen_vouw_26), java.time.LocalDate.parse("2026-01-01"), dev.uchar.regelspraak.ir.Condition.Operator.LATER));
+        return lezing.verdict();
     } catch (RuntimeException e) {
         ComputeHelpers.caught(e);
         return false;
@@ -73,23 +66,16 @@ function boolean toets_rustFoutInDeVoorwaarde(Object $actief, Object $aantal_vou
 
 // hij aan geen van de volgende voorwaarden voldoet: - hij is actief - de eerste van de vinddag van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is later dan dd. 01-01-2026
 function boolean samengesteld1_rustFoutInDeVoorwaarde(Object $actief, Object $aantal_vouw_31, Object $vouw_vouw_33, Object $eerste_filterfout_vouw_38, Object $filterdeponeringen_vouw_42) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.dateCompare(vouwlezing1_rustFoutInDeVoorwaarde($actief, $aantal_vouw_31, $vouw_vouw_33, $eerste_filterfout_vouw_38, $filterdeponeringen_vouw_42), java.time.LocalDate.parse("2026-01-01"), dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+    lezing.read(ComputeHelpers.dateCompare(vouwlezing1_rustFoutInDeVoorwaarde($actief, $aantal_vouw_31, $vouw_vouw_33, $eerste_filterfout_vouw_38, $filterdeponeringen_vouw_42), java.time.LocalDate.parse("2026-01-01"), dev.uchar.regelspraak.ir.Condition.Operator.LATER));
+    return lezing.verdict();
 }
 
 // de eerste van de vinddag van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
@@ -112,23 +98,16 @@ function Object fout_rustFoutInDeVoorwaarde(Object $actief, Object $aantal_vouw_
 
 // hij aan geen van de volgende voorwaarden voldoet: - hij is actief - de eerste van de vinddag van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is later dan dd. 01-01-2026
 function boolean samengesteld2_rustFoutInDeVoorwaarde(Object $actief, Object $aantal_vouw_31, Object $vouw_vouw_33, Object $eerste_filterfout_vouw_38, Object $filterdeponeringen_vouw_42) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.dateCompare(vouwlezing2_rustFoutInDeVoorwaarde($actief, $aantal_vouw_31, $vouw_vouw_33, $eerste_filterfout_vouw_38, $filterdeponeringen_vouw_42), java.time.LocalDate.parse("2026-01-01"), dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+    lezing.read(ComputeHelpers.dateCompare(vouwlezing2_rustFoutInDeVoorwaarde($actief, $aantal_vouw_31, $vouw_vouw_33, $eerste_filterfout_vouw_38, $filterdeponeringen_vouw_42), java.time.LocalDate.parse("2026-01-01"), dev.uchar.regelspraak.ir.Condition.Operator.LATER));
+    return lezing.verdict();
 }
 
 // de eerste van de vinddag van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
@@ -167,23 +146,16 @@ function boolean toets_rustDeponeringInDeVoorwaarde(Object $actief, Object $aant
 
 // hij aan geen van de volgende voorwaarden voldoet: - hij is actief - de eerste van de vinddag van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is later dan dd. 01-01-2026
 function boolean samengesteld1_rustDeponeringInDeVoorwaarde(Object $actief, Object $aantal_vouw_47, Object $vouw_vouw_49, Object $eerste_filterfout_vouw_54, Object $filterdeponeringen_vouw_58, Object sonde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.dateCompare(vouwlezing1_rustDeponeringInDeVoorwaarde($actief, $aantal_vouw_47, $vouw_vouw_49, $eerste_filterfout_vouw_54, $filterdeponeringen_vouw_58, sonde), java.time.LocalDate.parse("2026-01-01"), dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+    lezing.read(ComputeHelpers.dateCompare(vouwlezing1_rustDeponeringInDeVoorwaarde($actief, $aantal_vouw_47, $vouw_vouw_49, $eerste_filterfout_vouw_54, $filterdeponeringen_vouw_58, sonde), java.time.LocalDate.parse("2026-01-01"), dev.uchar.regelspraak.ir.Condition.Operator.LATER));
+    return lezing.verdict();
 }
 
 // de eerste van de vinddag van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2
@@ -210,23 +182,16 @@ function java.util.List deponering_rustDeponeringInDeVoorwaarde(Object $actief, 
 
 // hij aan geen van de volgende voorwaarden voldoet: - hij is actief - de eerste van de vinddag van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2 is later dan dd. 01-01-2026
 function boolean samengesteld2_rustDeponeringInDeVoorwaarde(Object $actief, Object $aantal_vouw_47, Object $vouw_vouw_49, Object $eerste_filterfout_vouw_54, Object $filterdeponeringen_vouw_58, Object sonde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.dateCompare(vouwlezing2_rustDeponeringInDeVoorwaarde($actief, $aantal_vouw_47, $vouw_vouw_49, $eerste_filterfout_vouw_54, $filterdeponeringen_vouw_58, sonde), java.time.LocalDate.parse("2026-01-01"), dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+    lezing.read(ComputeHelpers.dateCompare(vouwlezing2_rustDeponeringInDeVoorwaarde($actief, $aantal_vouw_47, $vouw_vouw_49, $eerste_filterfout_vouw_54, $filterdeponeringen_vouw_58, sonde), java.time.LocalDate.parse("2026-01-01"), dev.uchar.regelspraak.ir.Condition.Operator.LATER));
+    return lezing.verdict();
 }
 
 // de eerste van de vinddag van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht gedeeld door zijn deelnemers is groter dan 2

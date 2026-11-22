@@ -542,9 +542,99 @@ public final class ComputeHelpers {
     }
 
     /** The leeg test of {@code value}, where {@code leeg}, or else the gevuld test; a read over an absent link is leeg
-     *  (RUNTIME-SEMANTICS ch. 5.8 rule 1). */
+     *  (RUNTIME-SEMANTICS ch. 5.8 rule 1). Over the mark of a closure, an operand whose evaluation read an open value
+     *  ({@link #closed}), the value is leeg for the form itself, and for another form the test is undetermined
+     *  ({@link Undetermined}, ch. 1.5). */
     public static boolean emptyTest(Object value, boolean empty) {
+        if (value instanceof Closure c) throw new Undetermined(empty, c.read());
         return (value == null) == empty;
+    }
+
+    // ---------------- open values (RUNTIME-SEMANTICS ch. 1.5) ----------------
+
+    /** The value {@code v} a rule bound off the standing of a member that can be open, as the evaluation reads it: where
+     *  the member is open, the read breaks the evaluation off ({@link OpenRead}). */
+    public static Object read(Object v) {
+        if (v instanceof OpenMember m) throw new OpenRead(m);
+        return v;
+    }
+
+    /** The open standing of {@code member} on {@code subject}. */
+    public static OpenMember open(Object subject, ElementKey member) {
+        return new OpenMember(subject, member);
+    }
+
+    /** The standing of the attribute {@code member} of {@code subject} whose input {@code input} is not complete: the
+     *  input, or its open member where the bean holds no value. */
+    public static Object incompleteInput(Object input, Object subject, ElementKey member) {
+        return input == null ? new OpenMember(subject, member) : input;
+    }
+
+    /** The mark of a closure over the open read {@code read}: the operand of a test on leeg and gevuld that read an open
+     *  value. */
+    private record Closure(OpenMember read) {}
+
+    /** What {@code depositFlag}, a probe or nothing, has heard so far: the start of the boundary of the operand of a test
+     *  on leeg and gevuld ({@link #closed}). */
+    public static Object mark(Object depositFlag) {
+        return DepositFlag.mark(depositFlag);
+    }
+
+    /** The operand of a test on leeg and gevuld whose evaluation threw {@code e}: where it read an open value, the mark
+     *  of a closure over that read, which {@link #emptyTest} reads, with what the evaluation deposited since
+     *  {@code mark} dropped from {@code depositFlag}; anything else passes on. */
+    public static Object closed(RuntimeException e, Object depositFlag, Object mark) {
+        if (!(e instanceof OpenRead o)) throw e;
+        DepositFlag.restore(depositFlag, mark);
+        return new Closure(o.member());
+    }
+
+    /** The answer of the test that a condition holds for the form itself, where its evaluation threw {@code e}: true for
+     *  a closure that holds; false for an open read and any other undetermined judgement, and where
+     *  {@code withoutFault} for an evaluation fault, which the rule of the fault takes; any other exception passes on. */
+    public static boolean holdsForItself(RuntimeException e, boolean withoutFault) {
+        if (e instanceof Undetermined u) return Boolean.TRUE.equals(u.own());
+        if (e instanceof OpenRead || withoutFault && ComputeFault.isEvaluationFault(e)) return false;
+        throw e;
+    }
+
+    /** The answer of the test that a condition leaves its writer undecided, neither true for the form itself nor false
+     *  for another, where its evaluation threw {@code e}: true for an open read and for a judgement that is not true
+     *  for the form itself; false for an evaluation fault, which the rule of the fault takes; any other exception
+     *  passes on. A condition that answers is established for both, so it decides or fills nothing. */
+    public static boolean leavesOpen(RuntimeException e) {
+        if (e instanceof Undetermined u) return !Boolean.TRUE.equals(u.own());
+        if (e instanceof OpenRead) return true;
+        caught(e);
+        return false;
+    }
+
+    /** The answer of the test that a condition faults, where its evaluation threw {@code e}: true for an evaluation
+     *  fault, false for an open read and an undetermined judgement; any other exception passes on. */
+    public static boolean faulted(RuntimeException e) {
+        if (e instanceof OpenRead || e instanceof Undetermined) return false;
+        caught(e);
+        return true;
+    }
+
+    /** What a test of deposits keeps where the evaluation of its condition threw {@code e}: nothing for an open read,
+     *  which broke off the one atomic condition it is, so that {@code depositFlag}, the fresh probe of the test, drops
+     *  what it heard; what was deposited before an undetermined judgement or an evaluation fault stays heard; any other
+     *  exception passes on. */
+    public static void caughtDeposit(RuntimeException e, Object depositFlag) {
+        if (e instanceof OpenRead) DepositFlag.restore(depositFlag, DepositFlag.mark(new DepositFlag()));
+        else if (!(e instanceof Undetermined)) caught(e);
+    }
+
+    /** {@code e}, raised by a value that reads a member that can be open, as its outcome: an open read ({@link #isOpen})
+     *  or an evaluation fault; any other exception passes on. */
+    public static RuntimeException caughtOpen(RuntimeException e) {
+        return e instanceof OpenRead ? e : caught(e);
+    }
+
+    /** Whether {@code v}, the outcome of a value, is an open read. */
+    public static boolean isOpen(Object v) {
+        return v instanceof OpenRead;
     }
 
     /** The exact-digit test (§8.1.4, {@code rsNumeriekMetExact}) of {@code value} with {@code digits} digits, whose
@@ -672,30 +762,23 @@ public final class ComputeHelpers {
     static final String OPEN_BUCKET_WALK = "a fold over the buckets of a grid walks the buckets of a period with an"
             + " open bound, which has no end to reach (ch. 3.1)";
 
-    /** The stop triggers of a composite and of a quantifier fold (RUNTIME-SEMANTICS ch. 5.10): the verdict once
-     *  {@code read} members are read, of which {@code touch} hold and {@code rest} are unread, or null while the
-     *  unread members can still change it. */
+    /** The reading of a composite under {@code kw}, with the threshold {@code threshold} of a counting quantifier, over
+     *  {@code n} members, whose deposits {@code depositFlag} hears, a probe or nothing ({@link Composite}). */
+    public static Composite composite(Condition.Quantifier kw, int threshold, int n, Object depositFlag) {
+        return new Composite(kw, threshold, n, depositFlag);
+    }
+
+    /** The stop triggers of a quantifier fold (RUNTIME-SEMANTICS ch. 5.10): the verdict once {@code read} members are
+     *  read, of which {@code touch} hold and {@code rest}, one or more, are unread, or null while the unread members can
+     *  still change it ({@link Composite#truth}). */
     public static Boolean established(Condition.Quantifier kw, int threshold, int touch, int read, int rest) {
-        return switch (kw) {
-            case ALLE, DE -> touch < read ? Boolean.FALSE : null;
-            case GEEN -> touch > 0 ? Boolean.FALSE : null;
-            case TEN_MINSTE -> touch >= threshold ? Boolean.TRUE : (touch + rest < threshold ? Boolean.FALSE : null);
-            case TEN_HOOGSTE -> touch > threshold ? Boolean.FALSE : (touch + rest <= threshold ? Boolean.TRUE : null);
-            case PRECIES -> (touch > threshold || touch + rest < threshold) ? Boolean.FALSE : null;
-        };
+        return Composite.truth(kw, threshold, read + rest, touch, read - touch);
     }
 
     /** The verdict of a quantifier over {@code n} members of which {@code touch} hold, every member read
-     *  (RUNTIME-SEMANTICS ch. 5.10): all where all hold, none where none does, the counting quantifiers on the
-     *  threshold. */
+     *  (RUNTIME-SEMANTICS ch. 5.10, {@link Composite#truth}). */
     public static boolean endVerdict(Condition.Quantifier kw, int threshold, long touch, long n) {
-        return switch (kw) {
-            case ALLE, DE -> touch == n;
-            case GEEN -> touch == 0;
-            case TEN_MINSTE -> touch >= threshold;
-            case TEN_HOOGSTE -> touch <= threshold;
-            case PRECIES -> touch == threshold;
-        };
+        return Composite.truth(kw, threshold, n, touch, n - touch);
     }
 
     /** The verdict of a quantifier fold whose matrix can neither fault nor deposit (RUNTIME-SEMANTICS ch. 3.9a): over

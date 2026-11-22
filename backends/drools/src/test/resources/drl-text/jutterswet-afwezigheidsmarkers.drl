@@ -196,23 +196,16 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn taxatie heeft een waarde - zijn taxatie is groter dan 1000,00
 function boolean toets_kostbareVondst(Object $taxatie) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest(ComputeHelpers.payload($taxatie, "waarde"), Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest(ComputeHelpers.payload($taxatie, "waarde"), Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.payload($taxatie, "waarde"), new java.math.BigDecimal("1000"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.payload($taxatie, "waarde"), new java.math.BigDecimal("1000"), ">"));
+    return lezing.verdict();
 }
 
 rule "kostbare vondst"

@@ -52,30 +52,20 @@ function Object pad2_overschot(Object o) {
 
 // hij aan alle volgende voorwaarden voldoet: - hij is overdraagbaar - de stopdag van zijn houder is gevuld - de stopdag van zijn houder is eerder dan de basiseinddag van zijn houder
 function boolean toets_overschot(Object $overdraagbaar, Object $houderStopdag, Object $houderBasiseinddag) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($overdraagbaar, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($overdraagbaar, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.emptyTest($houderStopdag, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($houderStopdag, Boolean.FALSE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.dateCompare($houderStopdag, $houderBasiseinddag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(ComputeHelpers.dateCompare($houderStopdag, $houderBasiseinddag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER));
+    return lezing.verdict();
 }
 
 // de tijdsduur van de stopdag van zijn houder tot de basiseinddag van zijn houder in hele dagen

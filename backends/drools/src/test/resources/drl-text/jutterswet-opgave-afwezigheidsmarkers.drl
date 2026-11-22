@@ -202,30 +202,20 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn opgegeven teruggavedatum is gevuld - zijn berekende teruggavedatum is gevuld - zijn opgegeven teruggavedatum is ongelijk aan zijn berekende teruggavedatum
 function boolean toets_afwijkingOpgaveTeruggavedatum(Object $opgegevenTeruggavedatum, Object $berekendeTeruggavedatum) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($opgegevenTeruggavedatum, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($opgegevenTeruggavedatum, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.emptyTest($berekendeTeruggavedatum, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($berekendeTeruggavedatum, Boolean.FALSE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.textEqual($opgegevenTeruggavedatum, $berekendeTeruggavedatum, Boolean.FALSE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(ComputeHelpers.textEqual($opgegevenTeruggavedatum, $berekendeTeruggavedatum, Boolean.FALSE));
+    return lezing.verdict();
 }
 
 rule "afwijking opgave teruggavedatum"
@@ -240,30 +230,20 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn opgegeven afhaaldatum is gevuld - zijn berekende afhaaldatum is gevuld - zijn opgegeven afhaaldatum is ongelijk aan zijn berekende afhaaldatum
 function boolean toets_afwijkingOpgaveAfhaaldatum(Object $opgegevenAfhaaldatum, Object $berekendeAfhaaldatum) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($opgegevenAfhaaldatum, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($opgegevenAfhaaldatum, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.emptyTest($berekendeAfhaaldatum, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($berekendeAfhaaldatum, Boolean.FALSE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.textEqual($opgegevenAfhaaldatum, $berekendeAfhaaldatum, Boolean.FALSE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(ComputeHelpers.textEqual($opgegevenAfhaaldatum, $berekendeAfhaaldatum, Boolean.FALSE));
+    return lezing.verdict();
 }
 
 rule "afwijking opgave afhaaldatum"
@@ -278,30 +258,20 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn opgegeven bergloon is gevuld - zijn berekende bergloon is gevuld - zijn opgegeven bergloon is ongelijk aan zijn berekende bergloon
 function boolean toets_afwijkingOpgaveBergloon(Object $opgegevenBergloon, Object $berekendeBergloon) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($opgegevenBergloon, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($opgegevenBergloon, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.emptyTest($berekendeBergloon, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($berekendeBergloon, Boolean.FALSE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.textEqual($opgegevenBergloon, $berekendeBergloon, Boolean.FALSE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(ComputeHelpers.textEqual($opgegevenBergloon, $berekendeBergloon, Boolean.FALSE));
+    return lezing.verdict();
 }
 
 rule "afwijking opgave bergloon"

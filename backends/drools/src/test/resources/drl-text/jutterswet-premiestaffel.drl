@@ -272,23 +272,16 @@ end
 
 // hij aan ten minste één van de volgende voorwaarden voldoet: - de minimale waarde van het gewicht van alle vondsten van de Jutter is kleiner dan 2 - de maximale waarde van het gewicht van alle vondsten van de Jutter is kleiner dan 5
 function boolean toets_defaultsKJutterIjverigDefault0(Object $aantal_vouw_65, Object $vouw_vouw_67, Object $aantal_vouw_72, Object $vouw_vouw_74) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_65, $vouw_vouw_67, null), new java.math.BigDecimal("2"), "<")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_65, $vouw_vouw_67, null), new java.math.BigDecimal("2"), "<"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_72, $vouw_vouw_74, null), new java.math.BigDecimal("5"), "<")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_72, $vouw_vouw_74, null), new java.math.BigDecimal("5"), "<"));
+    return lezing.verdict();
 }
 
 rule "defaults K:Jutter.ijverig: default 0"

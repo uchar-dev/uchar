@@ -1,0 +1,14 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (geheel getal);
+    het gewicht Numeriek (geheel getal);
+    het vindloon Numeriek (geheel getal);
+
+Regel vindloon naar taxatie
+    geldig altijd
+        Het vindloon van een Vondst moet gesteld worden op 10 indien zijn taxatie groter is dan 1000.
+
+Regel vindloon naar gewicht
+    geldig altijd
+        Het vindloon van een Vondst moet gesteld worden op 5 indien zijn gewicht groter is dan 100.

@@ -113,23 +113,16 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - alle vondsten van de Jutter geen drijfvermogen hebben - ten minste één van de vondsten van de Jutter waardevol is
 function boolean toets_duikplichtigeJutter(Object $aantal_vouw_60, Object $vouw_vouw_62, Object $aantal_vouw_67, Object $vouw_vouw_69) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.quantifierVerdict($aantal_vouw_60, $vouw_vouw_62, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0))) {
-        raak++;
+    lezing.read(ComputeHelpers.quantifierVerdict($aantal_vouw_60, $vouw_vouw_62, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0)));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.quantifierVerdict($aantal_vouw_67, $vouw_vouw_69, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1))) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.quantifierVerdict($aantal_vouw_67, $vouw_vouw_69, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1)));
+    return lezing.verdict();
 }
 
 rule "duikplichtige jutter"

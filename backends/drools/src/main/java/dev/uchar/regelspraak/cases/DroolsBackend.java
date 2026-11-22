@@ -33,6 +33,7 @@ import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.Fired;
 import dev.uchar.regelspraak.transpiler.tms.Cycles;
 import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.OpenInput;
 import dev.uchar.regelspraak.transpiler.tms.RelationLink;
 import dev.uchar.regelspraak.transpiler.tms.WrittenBack;
 import dev.uchar.regelspraak.transpiler.tms.TmsTranspiler;
@@ -169,7 +170,9 @@ public final class DroolsBackend {
      *  @throws IrLoader.Refusal      a form the loader does not carry; the replay reports it as {@code loader: …}
      *  @throws IrLoader.DocumentError a document that is not well-formed {@code uchar-ir-v1}
      *  @throws CaseRunner.Excluded   a form the backend does not carry past the loader: a document that carries
-     *      {@code inferFromEmpty: false} ({@code DROOLS-370}, before a bean is generated), two declarations on one
+     *      {@code inferFromEmpty: false} and a form whose reading of RUNTIME-SEMANTICS ch. 1.5 this backend does not
+     *      carry, or a build with readings of such a document ({@code DROOLS-370} with the slug of the form,
+     *      {@code UncarriedForms}, before a bean is generated), two declarations on one
      *      Java name of the bean model, a reciprocal self-relation the bean model cannot hold, a bean-contract
      *      violation, a construct the analysis does not lower, a cycle of the dependency graph that WF-045 or WF-046
      *      forbids, two rules of one name, and on the DRL-text branch a kind its rendering does not carry
@@ -201,10 +204,13 @@ public final class DroolsBackend {
         IrLoader.Positioned positioned = IrLoader.loadWithPositions(document);
         IrLoader.Loaded loaded = positioned.loaded();
         RegelSpraakModel model = loaded.model();
-        // this backend reads an empty value as RUNTIME-SEMANTICS ch. 1.2–1.4 does; on a document that infers nothing
-        // from one, an answer in that reading would be a wrong answer without a word
-        if (!model.inferFromEmpty())
-            throw new Excluded(DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "document"));
+        // a document that infers nothing from an empty value is read as RUNTIME-SEMANTICS ch. 1.5 lays down; one that
+        // holds a form whose reading this backend does not carry is refused before anything is built, naming the form,
+        // since an answer in the reading of ch. 1.2-1.4 would be a wrong answer without a word
+        if (!model.inferFromEmpty()) {
+            String form = UncarriedForms.first(model, loaded.prioritizedDefaults(), readings);
+            if (form != null) throw new Excluded(DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", form));
+        }
         refuseBeanNameCollision(loaded);
 
         // A form the v0 backend cannot REPLAY is refused up front — a LOUD per-form exclusion, never a
@@ -391,7 +397,11 @@ public final class DroolsBackend {
      * {@code IllegalStateException}. A link of a relation both of whose roles are to-many ({@link Input#link}) goes in
      * as a {@code RelationLink} of phase 0, the input's; refused are a link whose fact type is no such relation, an end
      * that is no bean of the input or that does not fill its role, and a link that comes twice. A link inserted after
-     * this call is a fact outside it, which {@link #fire} refuses as every such fact.
+     * this call is a fact outside it, which {@link #fire} refuses as every such fact. For a document that infers nothing
+     * from an empty value, the input members of every bean that are not complete go in as {@code OpenInput} facts, less
+     * the characteristics the input states not to hold ({@link #openInputs}); refused is such a statement about a bean
+     * outside the input, a member its type does not declare as a characteristic of one truth value, or one the bean
+     * holds.
      *
      * <p>Then it puts the watch of the entry on the session ({@code Watch}), with the relations the beans hold now,
      * and {@link #fire} refuses a session in which more happened outside it than an update of an attribute or a
@@ -423,8 +433,47 @@ public final class DroolsBackend {
         for (Input.Bucket e : input.buckets()) facts.add(bucketInput(types, e));
         facts.addAll(listPlaces(build, tms.listFields(), beans, types, input.lists()));
         facts.addAll(inputLinks(build, types, input.links()));
+        facts.addAll(openInputs(build, beans, types, input));
         for (Object fact : facts) session.insert(fact);
         Watch.op(session, relationFields(build, beansClasses(build)), beans, "DroolsBackend.insert");
+    }
+
+    /**
+     * The {@link OpenInput} facts of the input (RUNTIME-SEMANTICS ch. 1.5, "The three states", "Complete input"): one per
+     * bean of {@code beans} and per member that is input on an object of the bean's type and not complete, as the
+     * analysis finds them ({@code OpenableMembers.incompleteInput}); none for a characteristic the input states not to
+     * hold, and none at all in a session that treats every input member as complete. A standing reads the fact beside
+     * the bean: the member is open where the bean holds no value for it. In a document that infers from an empty value
+     * there is none. Refused: a characteristic stated not to hold that the bean's type does not declare, that lies on a
+     * timeline, or that the bean holds.
+     */
+    private static List<OpenInput> openInputs(Build build, List<Object> beans, Map<Object, ObjectType> types,
+                                              Input input) {
+        Map<Object, Set<ProducerConsumer.ElementKey>> absent = new IdentityHashMap<>();
+        for (Input.Absent a : input.absent()) {
+            ObjectType t = types.get(a.bean());
+            if (t == null) throw absentRefused(a, DroolsCode.INSERT_ABSENT_CHARACTERISTIC.part("not-in-input"));
+            ObjectType declarant = t.chain().stream().filter(c -> c.characteristics.contains(a.characteristic()))
+                    .findFirst().orElse(null);
+            if (declarant == null || declarant.characteristicGranularity.get(a.characteristic()) != null)
+                throw absentRefused(a, DroolsCode.INSERT_ABSENT_CHARACTERISTIC.part("undeclared", "objectType", t.name));
+            if (Boolean.TRUE.equals(Accessors.leesEigenschap(a.bean(), a.characteristic())))
+                throw absentRefused(a, DroolsCode.INSERT_ABSENT_CHARACTERISTIC.part("holds"));
+            absent.computeIfAbsent(a.bean(), k -> new HashSet<>())
+                    .add(ProducerConsumer.elementOf(declarant, a.characteristic(), true));
+        }
+        List<OpenInput> out = new ArrayList<>();
+        if (input.closed()) return out;
+        for (Object bean : beans)
+            for (ProducerConsumer.ElementKey member : build.execModelTranspiler().openableMembers().incompleteInput(types.get(bean)))
+                if (!absent.getOrDefault(bean, Set.of()).contains(member)) out.add(new OpenInput(bean, member));
+        return out;
+    }
+
+    /** The refusal of the statement that a characteristic does not hold, for {@code reason}. */
+    private static IllegalArgumentException absentRefused(Input.Absent a, Msg reason) {
+        return new IllegalArgumentException(DroolsCode.INSERT_ABSENT_CHARACTERISTIC.reason("bean", name(a.bean()),
+                "characteristic", a.characteristic(), "reason", reason).text());
     }
 
     /** The {@link RelationLink} facts of the links {@code links} of the input over relations both of whose roles are
@@ -1244,7 +1293,7 @@ public final class DroolsBackend {
                             name(earlierBean), "second", name(beanObject)).text());
                 types.put(l, k.getValue());
             }
-        return CaseRunner.comparison(build, perLabel, types, fp.inconsistencies(), expectations);
+        return CaseRunner.comparison(build, perLabel, types, fp.inconsistencies(), fp.open(), expectations);
     }
 
     /** As {@link #fire(Build, KieSession)} on every branch under the cap {@code max(vloer, factor × R × N0)}, rounded

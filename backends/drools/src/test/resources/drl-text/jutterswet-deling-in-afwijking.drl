@@ -69,23 +69,16 @@ end
 
 // zijn toeslaggrond gevuld is en hij gemerkt is
 function boolean toets_defaultsAVondstToeslagDefault000(Object $toeslaggrond, Object $gemerkt) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($toeslaggrond, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($toeslaggrond, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.characteristic($gemerkt, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.characteristic($gemerkt, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "defaults A:Vondst.toeslag: default 0.0.0"

@@ -61,6 +61,19 @@ final class ClosureRendering {
                 ValueFunction then = valueFunction(k.then()), otherwise = valueFunction(k.otherwise());
                 yield w -> condition.test(w) ? then.of(w) : otherwise.of(w);
             }
+            case Term.ClosureOverOpen o -> {
+                ValueFunction value = valueFunction(o.value());
+                int depositFlag = o.depositFlag();
+                yield w -> {
+                    Object flag = depositFlag < 0 ? null : w[depositFlag];
+                    Object mark = ComputeHelpers.mark(flag);
+                    try {
+                        return value.of(w);
+                    } catch (RuntimeException e) {
+                        return ComputeHelpers.closed(e, flag, mark);
+                    }
+                };
+            }
             case Term.Call a -> call(a.function(), a.arguments());
             case Term.Restate h -> restate(h);
             case Term.Division d -> {
@@ -137,28 +150,48 @@ final class ClosureRendering {
     /** The test of {@code t}, the condition of a rule's left-hand side, that asks {@code role} of it
      *  ({@link TestItem}). */
     static Predicate<Object[]> test(TestItem t) {
-        return test(t.role(), test(t.test()), t.depositFlag());
+        Predicate<Object[]> test = test(t.test());
+        boolean open = t.open(), withoutFault = t.role() == TestItem.Role.WITHOUT_FAULT;
+        return switch (t.role()) {
+            case VORM -> test;
+            case CONDITION, WITHOUT_FAULT -> open ? thrown(test, true, e -> ComputeHelpers.holdsForItself(e, withoutFault))
+                    : withoutFault ? withoutFault(test) : test;
+            case LEAVES_OPEN -> thrown(test, false, ComputeHelpers::leavesOpen);
+            case FAULT -> open ? thrown(test, false, ComputeHelpers::faulted) : w -> fault(test, w) != null;
+            case DEPOSIT -> {
+                int depositFlag = t.depositFlag();
+                yield w -> {
+                    Object s = ComputeHelpers.depositFlag();
+                    w[depositFlag] = s;
+                    heard(test, w, s, open);
+                    return ComputeHelpers.reported(s);
+                };
+            }
+        };
     }
 
-    /** The test of a rule's left-hand side that asks {@code role} of the condition {@code test}
-     *  ({@link TestItem.Role}); {@code depositFlag} is the probe's slot of a test of deposits. */
-    static Predicate<Object[]> test(TestItem.Role role, Predicate<Object[]> test, int depositFlag) {
-        return switch (role) {
-            case CONDITION, VORM -> test;
-            case WITHOUT_FAULT -> withoutFault(test);
-            case FAULT -> w -> fault(test, w) != null;
-            case DEPOSIT -> w -> {
-                Object s = ComputeHelpers.depositFlag();
-                w[depositFlag] = s;
-                try {
-                    test.test(w);
-                } catch (RuntimeException e) {
-                    // a fault is the fault rule's; what the evaluation deposited before it stays heard
-                    if (!ComputeHelpers.isEvaluationFault(e)) throw e;
-                }
-                return ComputeHelpers.reported(s);
-            };
+    /** The verdict of {@code test} where it answers and {@code answer} asks for it, false where it does not; and where
+     *  it throws, what {@code thrown} says of that. */
+    private static Predicate<Object[]> thrown(Predicate<Object[]> test, boolean answer, Predicate<RuntimeException> thrown) {
+        return w -> {
+            try {
+                return test.test(w) && answer;
+            } catch (RuntimeException e) {
+                return thrown.test(e);
+            }
         };
+    }
+
+    /** {@code test} evaluated over {@code w} with the fresh probe {@code depositFlag} in its slot: a fault is the fault
+     *  rule's, and what the evaluation deposited before it stays heard; where {@code open}, an open read drops it
+     *  ({@link ComputeHelpers#caughtDeposit}). */
+    static void heard(Predicate<Object[]> test, Object[] w, Object depositFlag, boolean open) {
+        try {
+            test.test(w);
+        } catch (RuntimeException e) {
+            if (open) ComputeHelpers.caughtDeposit(e, depositFlag);
+            else ComputeHelpers.caught(e);
+        }
     }
 
     /** {@code test} where it answers, and not holding where it faults: the fault is the fault rule's
@@ -233,21 +266,23 @@ final class ClosureRendering {
         };
     }
 
-    /** A composite ({@link Term.Compound}): its members read in order, the stop triggers of RUNTIME-SEMANTICS
-     *  ch. 5.10 tested before each, and the quantifier's verdict where none stops it, so a member after the stop is not
-     *  evaluated. */
+    /** A composite ({@link Term.Compound}): its members read in order and counted by its reading ({@link Composite}),
+     *  which stops where the judgement stands, so a member after the stop is not evaluated. */
     private static Predicate<Object[]> compound(Term.Compound s) {
         List<Predicate<Object[]>> members = s.members().stream().map(ClosureRendering::test).toList();
         Condition.Quantifier kw = s.quantifier();
-        int threshold = s.threshold();
+        int threshold = s.threshold(), n = members.size(), openFrom = s.openFrom(), depositFlag = s.depositFlag();
         return w -> {
-            int touch = 0;
-            for (int i = 0; i < members.size(); i++) {
-                Boolean fixed = ComputeHelpers.established(kw, threshold, touch, i, members.size() - i);
-                if (fixed != null) return fixed;
-                if (members.get(i).test(w)) touch++;
+            Composite reading = ComputeHelpers.composite(kw, threshold, n, depositFlag < 0 ? null : w[depositFlag]);
+            for (int i = 0; i < n && !reading.stands(); i++) {
+                if (i < openFrom) reading.read(members.get(i).test(w));
+                else try {
+                    reading.read(members.get(i).test(w));
+                } catch (RuntimeException e) {
+                    reading.read(e);
+                }
             }
-            return ComputeHelpers.endVerdict(kw, threshold, touch, members.size());
+            return reading.verdict();
         };
     }
 
@@ -437,6 +472,7 @@ final class ClosureRendering {
             case TEXT_EQUAL -> x -> ComputeHelpers.textEqual(x[0], x[1], (Boolean) x[2]);
             case RS_ENUM_NAME -> x -> RegelSpraakRuntime.rsEnumNaam(x[0]);
             case EMPTY_TEST -> x -> ComputeHelpers.emptyTest(x[0], (Boolean) x[1]);
+            case READ -> x -> ComputeHelpers.read(x[0]);
             case NUMERIEK_MET_EXACT -> x -> ComputeHelpers.exactDigits(x[0], (Integer) x[1], (Boolean) x[2]);
             case KENMERK -> x -> ComputeHelpers.characteristic(x[0], (Boolean) x[1]);
             case SAME_OBJECT -> x -> ComputeHelpers.sameObject(x[0], x[1], (Boolean) x[2]);

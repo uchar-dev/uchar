@@ -78,6 +78,15 @@ public sealed interface Term {
      *  where not (RUNTIME-SEMANTICS ch. 10.2). The other branch evaluates nothing. */
     record Choice(Term condition, Term then, Term otherwise, String source) implements Term {}
 
+    /**
+     * The value of {@code value}, which can read an open value, as the operand of a test on leeg and gevuld
+     * (RUNTIME-SEMANTICS ch. 1.5): where its evaluation reads one, the mark of a closure over that read, which the test
+     * reads as leeg for the form itself and as undetermined for another ({@code ComputeHelpers.emptyTest}), with what
+     * the evaluation deposited dropped from the probe in slot {@code depositFlag} (-1: the position has none). An
+     * evaluation fault passes on. The analysis adds no node where the operand reads no member that can be open.
+     */
+    record ClosureOverOpen(Term value, int depositFlag, String source) implements Term {}
+
     /** The function {@code function} on the values of {@code arguments}, evaluated in that order. */
     record Call(StaticFunction function, List<Term> arguments, String source) implements Term {
         public Call {
@@ -165,14 +174,25 @@ public sealed interface Term {
     /**
      * A composite condition (RUNTIME-SEMANTICS ch. 5.10, IR-SPEC ch. 4.5): its members, truth values, read in the order
      * of {@code members}, the wire order, and counted under {@code quantifier}, with the threshold {@code threshold} of a
-     * counting quantifier. Before each member the stop triggers of ch. 5.10 are tested on the members read so far
-     * ({@code ComputeHelpers.established}), and the composite stops at the first point from which its verdict stands, so a
-     * member after it is not evaluated: it raises no fault and deposits nothing. Where no trigger stops it, every member
-     * is read and the verdict is the quantifier's over them ({@code ComputeHelpers.endVerdict}).
+     * counting quantifier ({@code Composite}). The read stops before the first member from which the verdict stands,
+     * whatever the members after it: those are not evaluated, raise no fault and deposit nothing.
+     *
+     * <p>The judgement of the member at place {@code openFrom} and of any member after it can be undetermined
+     * (RUNTIME-SEMANTICS ch. 1.5): what its evaluation throws is the composite's to count, and what it deposited is
+     * dropped from the probe in slot {@code depositFlag} (-1: the position has none) where the composite says so. Where
+     * no member reads a member that can be open, {@code openFrom} is the number of members and {@code depositFlag} -1.
      */
-    record Compound(Condition.Quantifier quantifier, int threshold, List<Term> members, String source) implements Term {
+    record Compound(Condition.Quantifier quantifier, int threshold, List<Term> members, int openFrom, int depositFlag,
+                    String source) implements Term {
         public Compound {
             members = List.copyOf(members);
+            if (openFrom == members.size() && depositFlag >= 0)
+                throw new IllegalArgumentException("a composite drops no deposit where every member stands");
+        }
+
+        /** A composite whose members all stand. */
+        public Compound(Condition.Quantifier quantifier, int threshold, List<Term> members, String source) {
+            this(quantifier, threshold, members, members.size(), -1, source);
         }
     }
 

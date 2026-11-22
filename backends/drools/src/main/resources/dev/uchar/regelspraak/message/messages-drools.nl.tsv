@@ -432,6 +432,10 @@ DROOLS-367	{description} komt twee keer voor
 DROOLS-368	het tekstdeel '{snippet}' schrijft de eenheid van zijn getal, en {type} heeft geen eenheid (WF-129)
 DROOLS-369	het tekstdeel '{snippet}' schrijft de eenheid {unit}, en geen eenheidstelsel van het document declareert haar factor '{factor}' van het eenheidstelsel '{unitSystem}': een factor zonder declaratie heeft geen symbool om te schrijven
 DROOLS-370	het document draagt inferFromEmpty false, een lezing waarin uit een lege waarde niets volgt, en deze backend draagt die lezing niet (vorm: {form})
+DROOLS-371	insert: de invoer zegt dat het kenmerk "{characteristic}" van {bean} niet geldt, en {reason}
+DROOLS-371.not-in-input	die bean is geen bean van de invoer
+DROOLS-371.undeclared	zijn type {objectType} declareert geen kenmerk met die naam dat één waarheidswaarde heeft
+DROOLS-371.holds	de bean heeft het
 EF-002	de rol "{role}" van "{label}" verwijst naar het onbekende label "{target}"
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
@@ -474,6 +478,7 @@ EF-040.attribute	instantie "{label}": het attribuut "{name}" is niet gedeclareer
 EF-040.characteristic	instantie "{label}": het kenmerk "{name}" is niet gedeclareerd op "{objectType}"
 EF-040.object-type	instantie "{label}": het objecttype "{name}" is niet gedeclareerd
 EF-040.role	instantie "{label}": de rolsleutel "{name}" noemt geen gedeclareerde rol
+EF-047	instantie "{label}": het kenmerk "{characteristic}" staat in "characteristics" en in "characteristicsAbsent": de case zegt dat het geldt en dat het niet geldt
 FRAME.case-reads	{sentence}; de case leest het
 FRAME.case-sets	{sentence}; de case zet het
 FRAME.contract	contract: {sentence}
@@ -595,6 +600,7 @@ PART.value.empty	leeg
 PART.value.empty-timeline	(leeg)
 PART.value.present	aanwezig
 PART.value.absent	afwezig
+PART.value.open	openstaand
 PART.target.characteristic	kenmerk '{name}'
 PART.target.attribute	attribuut '{name}'
 PART.no-source	zonder bron

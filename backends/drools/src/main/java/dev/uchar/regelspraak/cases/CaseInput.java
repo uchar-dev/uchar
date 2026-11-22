@@ -206,6 +206,9 @@ public final class CaseInput {
      *  {@link #bucketInput} lays on the bean as one segment: what {@link #inputData()} names as bucket scalars
      *  ({@link Input#bucketScalar}). */
     private final List<Input.Bucket> bucketScalars = new ArrayList<>();
+    /** The characteristics the case states not to hold ({@code characteristicsAbsent}, RUNTIME-SEMANTICS ch. 1.5), in the
+     *  order of the case: what {@link #inputData()} names as such ({@link Input#characteristicAbsent}). */
+    private final List<Input.Absent> absentCharacteristics = new ArrayList<>();
     /** Per bean and per getter of a to-one reference field, the link of the case that wrote the field, which a collision
      *  of the reverse leg names ({@link #mirrorReciprocalRoles}). */
     private final Map<Object, Map<String, RoleLink>> writers = new IdentityHashMap<>();
@@ -284,6 +287,7 @@ public final class CaseInput {
         Input inputData = new Input().beans(labelToBean.values());
         for (Input.Bucket e : bucketScalars) inputData.bucketScalar(e.bean(), e.attribute());
         for (Input.Link k : links) inputData.link(k.factType(), k.first(), k.second());
+        for (Input.Absent a : absentCharacteristics) inputData.characteristicAbsent(a.bean(), a.characteristic());
         for (Map.Entry<Object, Map<String, ToManyList>> perHolder : lists.entrySet())
             for (ToManyList l : perHolder.getValue().values()) {
                 List<Object> members = new ArrayList<>(l.written);
@@ -364,13 +368,14 @@ public final class CaseInput {
         for (String section : new String[]{"attributes", "roles", "characteristicTimelines"})
             if (i.has(section) && !i.get(section).isObject())
                 throw new IllegalArgumentException(label + "." + section + ": expected an object, got " + i.get(section));
-        JsonNode characteristics = i.get("characteristics");
-        if (characteristics != null) {
+        for (String section : new String[]{"characteristics", "characteristicsAbsent"}) {
+            JsonNode characteristics = i.get(section);
+            if (characteristics == null) continue;
             if (!characteristics.isArray())
-                throw new IllegalArgumentException(label + ".characteristics: expected a list, got " + characteristics);
+                throw new IllegalArgumentException(label + "." + section + ": expected a list, got " + characteristics);
             for (int k = 0; k < characteristics.size(); k++)
                 if (!characteristics.get(k).isTextual())
-                    throw new IllegalArgumentException(label + ".characteristics[" + k + "]: expected a string, got "
+                    throw new IllegalArgumentException(label + "." + section + "[" + k + "]: expected a string, got "
                             + characteristics.get(k));
         }
         if (i.has("roles")) for (Map.Entry<String, JsonNode> role : i.get("roles").properties()) {
@@ -461,6 +466,22 @@ public final class CaseInput {
             reader.ownField(ot, k, true, "sets");
             CaseRunner.call(bean, Namen.setter(k), boolean.class, Boolean.TRUE);
         }
+        // the characteristics the case states do not hold (RUNTIME-SEMANTICS ch. 1.5): declared, scalar as the static list
+        // is, and never also in that list, which would state that one characteristic holds and does not (EF-047)
+        JsonNode absent = i.get("characteristicsAbsent");
+        if (absent != null) for (JsonNode written : absent) {
+            String label = i.get("label").asText();
+            String k = CaseRunner.declaredCharacteristic(ot, written.asText());
+            if (k == null) throw NameFault.undeclared("characteristic", label, written.asText(), ot.name);
+            if (Namen.containsName(ot.characteristicGranularityMembers(), k))
+                throw new IllegalArgumentException(label + "." + k + ": the characteristic is declared time-dependent on "
+                        + ot.name + ": it holds per period, and \"characteristicsAbsent\" states a scalar truth no temporal"
+                        + " reader consults");
+            reader.ownField(ot, k, true, "sets");
+            if (Boolean.TRUE.equals(dev.uchar.regelspraak.runtime.Accessors.leesEigenschap(bean, k)))
+                throw NameFault.bothStated(label, written.asText());
+            absentCharacteristics.add(new Input.Absent(bean, k));
+        }
         JsonNode ctls = i.get("characteristicTimelines");
         if (ctls != null) for (Map.Entry<String, JsonNode> e : ctls.properties()) {
             String k = CaseRunner.declaredCharacteristic(ot, e.getKey());
@@ -529,6 +550,8 @@ public final class CaseInput {
         private final String code;
         private final String label;
         private final String name;
+        /** For EF-047, the characteristic the case names in both lists. */
+        private String characteristic;
 
         private NameFault(String code, String label, String name, dev.uchar.regelspraak.message.Msg message) {
             super(message.text());
@@ -539,6 +562,15 @@ public final class CaseInput {
 
         static NameFault duplicateLabel(String label) {
             return new NameFault("EF-039", label, null, dev.uchar.regelspraak.message.Msg.drools("EF-039", "label", label));
+        }
+
+        /** A characteristic {@code characteristic} the instance {@code label} names in {@code characteristics} and in
+         *  {@code characteristicsAbsent} (EF-047, RUNTIME-SEMANTICS ch. 1.5), as the case writes it. */
+        static NameFault bothStated(String label, String characteristic) {
+            NameFault f = new NameFault("EF-047", label, null, dev.uchar.regelspraak.message.Msg.drools("EF-047",
+                    "label", label, "characteristic", characteristic));
+            f.characteristic = characteristic;
+            return f;
         }
 
         /** {@code what} is the part of the sentence: {@code object-type}, {@code attribute}, {@code characteristic} or
@@ -555,11 +587,13 @@ public final class CaseInput {
             return code;
         }
 
-        /** The parameters of the kind (ch. 5.7b): the label of the instance, and for EF-040 the name. */
+        /** The parameters of the kind (ch. 5.7b): the label of the instance, for EF-040 the name, and for EF-047 the
+         *  characteristic. */
         public Map<String, String> params() {
             Map<String, String> out = new LinkedHashMap<>();
             out.put("label", label);
             if (name != null) out.put("name", name);
+            if (characteristic != null) out.put("characteristic", characteristic);
             return out;
         }
     }

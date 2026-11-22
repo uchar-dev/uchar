@@ -43,6 +43,23 @@ final class DepositFlag {
         return reported;
     }
 
+    /** What {@code depositFlag}, a probe or nothing, has heard so far, for {@link #restore}; null for nothing. */
+    static Object mark(Object depositFlag) {
+        return depositFlag instanceof DepositFlag s ? new Heard(s.reported, List.copyOf(s.codes)) : null;
+    }
+
+    /** {@code depositFlag} back to what it had heard at {@code mark}: an open read drops what the evaluation deposited
+     *  since the start of its boundary, and a member read provisionally what it deposited (RUNTIME-SEMANTICS ch. 1.5). */
+    static void restore(Object depositFlag, Object mark) {
+        if (!(depositFlag instanceof DepositFlag s)) return;
+        Heard h = (Heard) mark;
+        s.reported = h.reported();
+        s.codes.clear();
+        s.codes.addAll(h.codes());
+    }
+
+    private record Heard(boolean reported, List<String> codes) {}
+
     /** The codes the probe heard, ascending, each once. */
     List<String> codes() {
         return List.copyOf(codes);

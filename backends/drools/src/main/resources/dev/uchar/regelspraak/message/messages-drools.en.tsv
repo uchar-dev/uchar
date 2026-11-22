@@ -432,6 +432,10 @@ DROOLS-367	{description} occurs twice
 DROOLS-368	the text part '{snippet}' writes the unit of its number, and {type} has no unit (WF-129)
 DROOLS-369	the text part '{snippet}' writes the unit {unit}, and no unit system of the document declares its factor '{factor}' of the unit system '{unitSystem}': a factor without a declaration has no symbol to write
 DROOLS-370	the document carries inferFromEmpty false, a reading in which nothing follows from an empty value, and this backend does not carry that reading (form: {form})
+DROOLS-371	insert: the input states that the characteristic "{characteristic}" of {bean} does not hold, and {reason}
+DROOLS-371.not-in-input	that bean is no bean of the input
+DROOLS-371.undeclared	its type {objectType} declares no characteristic of that name that holds one truth value
+DROOLS-371.holds	the bean holds it
 EF-002	role "{role}" on "{label}" links unknown label "{target}"
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
@@ -474,6 +478,7 @@ EF-040.attribute	instance "{label}": the attribute "{name}" is not declared on "
 EF-040.characteristic	instance "{label}": the characteristic "{name}" is not declared on "{objectType}"
 EF-040.object-type	instance "{label}": the object type "{name}" is not declared
 EF-040.role	instance "{label}": the role key "{name}" names no declared role
+EF-047	instance "{label}": the characteristic "{characteristic}" is named in "characteristics" and in "characteristicsAbsent": the case states that it holds and that it does not
 FRAME.case-reads	{sentence}; the case reads it
 FRAME.case-sets	{sentence}; the case sets it
 FRAME.contract	contract: {sentence}
@@ -595,6 +600,7 @@ PART.value.empty	empty
 PART.value.empty-timeline	(empty)
 PART.value.present	present
 PART.value.absent	absent
+PART.value.open	open
 PART.target.characteristic	characteristic '{name}'
 PART.target.attribute	attribute '{name}'
 PART.no-source	no source

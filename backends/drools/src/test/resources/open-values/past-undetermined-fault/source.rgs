@@ -1,0 +1,14 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    de taxatie Numeriek (geheel getal);
+    is vrijgesteld kenmerk (bijvoeglijk);
+
+Regel vrijgesteld
+    geldig altijd
+        Een Vondst is vrijgesteld
+        indien hij aan alle volgende voorwaarden voldoet:
+        - zijn gewicht is groter dan 10
+        - het Rekenjaar is groter dan 2025
+        - zijn taxatie is groter dan 1000.

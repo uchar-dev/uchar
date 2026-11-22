@@ -6,30 +6,20 @@ import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
 
 // ten minste 2 van de volgende gelden
 function boolean toets_gemengdBijTenminsteTwee(Object $toegewezenWachtpostGezet, Object $actief) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.roleField($toegewezenWachtpostGezet, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.roleField($toegewezenWachtpostGezet, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.roleField($toegewezenWachtpostGezet, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.roleField($toegewezenWachtpostGezet, Boolean.TRUE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.characteristic($actief, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 3);
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "gemengd bij tenminste twee"

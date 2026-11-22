@@ -1,0 +1,53 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (geheel getal);
+    het gewicht Numeriek (geheel getal);
+    de getuigen Numeriek (geheel getal);
+    de schade Numeriek (geheel getal);
+    de bewakingstoeslag Numeriek (geheel getal);
+    de getuigentoeslag Numeriek (geheel getal);
+    de schadetoeslag Numeriek (geheel getal);
+    is getaxeerd kenmerk (bijvoeglijk);
+    is ongetaxeerd kenmerk (bijvoeglijk);
+    is kostbaar kenmerk (bijvoeglijk);
+    is onbekend kenmerk (bijvoeglijk);
+
+Regel getaxeerd
+    geldig altijd
+        Een Vondst is getaxeerd indien zijn taxatie gevuld is.
+
+Regel ongetaxeerd
+    geldig altijd
+        Een Vondst is ongetaxeerd indien zijn taxatie leeg is.
+
+Regel kostbaar
+    geldig altijd
+        Een Vondst is kostbaar
+        indien hij aan alle volgende voorwaarden voldoet:
+        - zijn taxatie is gevuld
+        - zijn taxatie is groter dan 1000.
+
+Regel bewakingstoeslag
+    geldig altijd
+        De bewakingstoeslag van een Vondst moet gesteld worden op 5 indien hij niet kostbaar is.
+
+Regel taxatieplicht
+    geldig altijd
+        De taxatie van een Vondst moet gevuld zijn.
+
+Regel getuigentoeslag
+    geldig altijd
+        De getuigentoeslag van een Vondst moet gesteld worden op 7
+        indien zijn gewicht gedeeld door zijn getuigen leeg is.
+
+Regel schadetoeslag
+    geldig altijd
+        De schadetoeslag van een Vondst moet gesteld worden op 3
+        indien zijn gewicht plus zijn schade gevuld is.
+
+Regel onbekend
+    geldig altijd
+        Een Vondst is onbekend
+        indien hij aan geen van de volgende voorwaarden voldoet:
+        - zijn taxatie is gevuld.

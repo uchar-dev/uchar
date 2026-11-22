@@ -1,0 +1,14 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    de taxatie Numeriek (geheel getal);
+    de getuigen Numeriek (geheel getal);
+    de vrijstelling Numeriek (geheel getal);
+
+Regel vrijstelling
+    geldig altijd
+        De vrijstelling van een Vondst moet gesteld worden op 1
+        indien hij aan alle volgende voorwaarden voldoet:
+        - zijn gewicht is groter dan 10
+        - zijn taxatie gedeeld door zijn getuigen is groter dan 3.

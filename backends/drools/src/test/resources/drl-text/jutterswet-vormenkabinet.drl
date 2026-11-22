@@ -58,30 +58,20 @@ end
 
 // bewaakt, omheind, en vanaf 1 januari 2026
 function boolean toets_peilingBijDubbeleBorging(Object $bewaakt, Object $omheind, Object $rekendatumwaarde_2) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($bewaakt, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($bewaakt, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.characteristic($omheind, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($omheind, Boolean.TRUE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.timeWindow(java.time.LocalDate.parse("2026-01-01"), Boolean.TRUE, null, Boolean.FALSE, Boolean.FALSE, $rekendatumwaarde_2)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(ComputeHelpers.timeWindow(java.time.LocalDate.parse("2026-01-01"), Boolean.TRUE, null, Boolean.FALSE, Boolean.FALSE, $rekendatumwaarde_2));
+    return lezing.verdict();
 }
 
 // 1

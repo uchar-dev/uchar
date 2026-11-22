@@ -108,23 +108,16 @@ then
 end
 
 function boolean toets_eenmaligeReekscodeSleutelVanStrandvondst1(Object $reekscode, Object $tijdlijn_1) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($reekscode, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($reekscode, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.bucketScalar($tijdlijn_1, Boolean.FALSE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.bucketScalar($tijdlijn_1, Boolean.FALSE));
+    return lezing.verdict();
 }
 
 function java.util.List componenten_eenmaligeReekscodeSleutelVanStrandvondst1(Object $reekscode, Object $tijdlijn_1) {
@@ -147,23 +140,16 @@ then
 end
 
 function boolean toets_eenmaligeReekscodeSleutelvormVanStrandvondst1(Object $reekscode, Object $tijdlijn_1) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($reekscode, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($reekscode, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.bucketScalar($tijdlijn_1, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.bucketScalar($tijdlijn_1, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "eenmalige reekscode: sleutelvorm van Strandvondst 1"
@@ -177,23 +163,16 @@ then
 end
 
 function boolean toets_eenmaligeReekscodeSleutelVanWrakvondst2(Object $reekscode, Object $tijdlijn_1) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($reekscode, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($reekscode, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.bucketScalar($tijdlijn_1, Boolean.FALSE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.bucketScalar($tijdlijn_1, Boolean.FALSE));
+    return lezing.verdict();
 }
 
 function java.util.List componenten_eenmaligeReekscodeSleutelVanWrakvondst2(Object $reekscode, Object $tijdlijn_1) {
@@ -216,23 +195,16 @@ then
 end
 
 function boolean toets_eenmaligeReekscodeSleutelvormVanWrakvondst2(Object $reekscode, Object $tijdlijn_1) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($reekscode, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($reekscode, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.bucketScalar($tijdlijn_1, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.bucketScalar($tijdlijn_1, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "eenmalige reekscode: sleutelvorm van Wrakvondst 2"

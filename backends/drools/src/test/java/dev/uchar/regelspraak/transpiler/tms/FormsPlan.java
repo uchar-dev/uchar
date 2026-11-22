@@ -64,7 +64,11 @@ final class FormsPlan {
             "dev.uchar.regelspraak.ir.Condition.Operator.LATER", "ComputeHelpers.contractBreach(", "ComputeHelpers.computeFault(",
             "ComputeHelpers.inconsistency(", "ComputeHelpers.writersConflict(", "new ParameterState(", "new EvaluationDate(",
             "new CharacteristicState(", "ComputeHelpers.bucketScalarOf(", "new PathState(", "new Reading($onderwerp, ",
-            "lezing_lezing(");
+            "lezing_lezing(", "ComputeHelpers.read(", "ComputeHelpers.composite(", "lezing.read(lid);", "sluiting1_openDeponering(",
+            "ComputeHelpers.mark(sonde)", "ComputeHelpers.closed(e, sonde, merk)", "ComputeHelpers.holdsForItself(e, false)",
+            "ComputeHelpers.holdsForItself(e, true)", "ComputeHelpers.leavesOpen(e)", "ComputeHelpers.faulted(e)",
+            "ComputeHelpers.caughtDeposit(e, sonde)", "ComputeHelpers.caughtOpen(e)", "ComputeHelpers.isOpen(v)",
+            "new LeftOpen($onderwerp, ", "ComputeHelpers.open($onderwerp, ", "ComputeHelpers.incompleteInput($uitkijkbonus, ");
 
     private static final String O = "$onderwerp";
 
@@ -83,6 +87,7 @@ final class FormsPlan {
         rules.add(new RulePlan("kenmerk zonder fout", "proef", "proefgroep", one, List.of(subject,
                 new TestItem("zonder", TestItem.Role.WITHOUT_FAULT, division, -1, List.of(0), 1)),
                 new Consequence.Characteristic(O, ElementKey.of("wachter", "gevarenwacht", true), Consequence.Insertion.LOGICAL)));
+        rules.addAll(openForms(subject, one, faultName));
         rules.add(new RulePlan("vaste fout", "proef", null, one, List.of(subject,
                 new TestItem("vorm", TestItem.Role.VORM, new Term.Call(StaticFunction.BUCKET_SCALAR, List.of(readOf(0),
                         new Term.Const(Boolean.FALSE, null, null)), null), -1, List.of(0), 1)),
@@ -96,7 +101,8 @@ final class FormsPlan {
         rules.add(new RulePlan("deponering van een toets", "proef", null, new ReadTable(List.of(
                 new Read(0, ReadKind.INPUT, "uitkijkbonus", "$uitkijkbonus"), new Read(1, ReadKind.DEPOSIT_FLAG, null, null))),
                 List.of(subject, new TestItem("deponering", TestItem.Role.DEPOSIT, depositing, 1, List.of(0), 2)),
-                new Consequence.ConditionDeposit(O, "proef", depositing, 1, List.of(0), 2, Consequence.Insertion.LOGICAL)));
+                new Consequence.ConditionDeposit(O, "proef", depositing, 1, List.of(0), 2, false,
+                        Consequence.Insertion.LOGICAL)));
         FactPattern values = new FactPattern(Value.class, "$waarde", List.of(new Alpha("attribuut", List.of(
                 new Alpha.FieldTest("attribute", Alpha.Comparator.GELIJK, ElementKey.of("wachter", "uitkijkbonus", false))))),
                 List.of(new Join("subject", "subject", O)), List.of());
@@ -556,6 +562,47 @@ final class FormsPlan {
      * A rule with every kind of left-hand item, every comparator and form of reading, and a test of deposits and a
      * value with a deposit whose terms hold every node of a term.
      */
+    /** The forms of a member that can be open (RUNTIME-SEMANTICS ch. 1.5): the test of every role over a condition whose
+     *  judgement can be undetermined, a composite with a test on leeg and gevuld over a read that can be open and a
+     *  probe; a value with an open read; the fact of a writer that leaves its target open; the open standings and the
+     *  input that is not complete. */
+    private static List<RulePlan> openForms(Subject subject, ReadTable one, Consequence.FaultName faultName) {
+        ReadTable probed = new ReadTable(List.of(new Read(0, ReadKind.INPUT, "uitkijkbonus", "$uitkijkbonus"),
+                new Read(1, ReadKind.DEPOSIT_FLAG, null, null)));
+        Term read = new Term.Call(StaticFunction.READ, List.of(readOf(0)), "zijn uitkijkbonus");
+        Term depositing = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.Division(StaticFunction.DIVIDED,
+                read, read, 1, "uitkijkbonus gedeeld door uitkijkbonus"), number("1"), text(">")), "de deling groter dan 1");
+        Term composite = new Term.Compound(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, List.of(
+                new Term.Call(StaticFunction.EMPTY_TEST, List.of(number("1"), new Term.Const(Boolean.FALSE, null, null)), "1 gevuld is"),
+                new Term.Call(StaticFunction.EMPTY_TEST, List.of(new Term.ClosureOverOpen(read, 1, null),
+                        new Term.Const(Boolean.TRUE, null, null)), "zijn uitkijkbonus leeg is"), depositing), 1, 1,
+                "aan ten minste een voldoet");
+        Term withoutProbe = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(read, number("1"), text(">")),
+                "zijn uitkijkbonus groter is dan 1");
+        ElementKey bonus = ElementKey.of("wachter", "uitkijkbonus", false);
+        ElementKey watch = ElementKey.of("wachter", "gevarenwacht", true);
+        List<RulePlan> rules = new ArrayList<>();
+        for (TestItem.Role role : List.of(TestItem.Role.CONDITION, TestItem.Role.WITHOUT_FAULT, TestItem.Role.LEAVES_OPEN,
+                TestItem.Role.FAULT))
+            rules.add(new RulePlan("open " + role, "proef", null, one, List.of(subject,
+                    new TestItem("open", role, withoutProbe, -1, List.of(0), 1, true)),
+                    new Consequence.LeftOpen(O, bonus, "proef", Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("open deponering", "proef", null, probed, List.of(subject,
+                new TestItem("open", TestItem.Role.DEPOSIT, composite, 1, List.of(0), 2, true)),
+                new Consequence.ConditionDeposit(O, "proef", composite, 1, List.of(0), 2, true,
+                        Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("open waarde", "proef", null, one, List.of(subject),
+                new Consequence.Value(O, bonus, "proef", read, List.of(0), 1, false, false, null, faultName, true,
+                        Consequence.Insertion.LOGICAL)));
+        for (ElementKey member : List.of(bonus, watch))
+            rules.add(new RulePlan("open stand " + member.name(), null, null, new ReadTable(List.of()), List.of(subject),
+                    new Consequence.OpenStanding(O, member, Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("onvolledige invoer", null, null, one, List.of(subject),
+                new Consequence.State(O, bonus, Consequence.StateSource.INPUT, 0, false, null, true,
+                        Consequence.Insertion.LOGICAL)));
+        return rules;
+    }
+
     private static RulePlan allTerms(Class<?> wachter, Class<?> post, Class<?> kustvak) {
         Binding.Field toPost = new Binding.Field(wachter, "post"), toKustvak = new Binding.Field(post, "kustvak");
         Subject subject = new Subject(wachter, O,

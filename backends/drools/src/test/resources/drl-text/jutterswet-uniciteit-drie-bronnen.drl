@@ -5,23 +5,16 @@ import dev.uchar.regelspraak.transpiler.tms.UniquenessKey;
 import dev.uchar.regelspraak.transpiler.tms.UniquenessViolation;
 
 function boolean toets_eenmaligeReekscodeSleutelVanStrandvondst1(Object $reekscode, Object $volgnummer) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($reekscode, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($reekscode, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.emptyTest($volgnummer, Boolean.FALSE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.emptyTest($volgnummer, Boolean.FALSE));
+    return lezing.verdict();
 }
 
 function java.util.List componenten_eenmaligeReekscodeSleutelVanStrandvondst1(Object $reekscode, Object $volgnummer) {
@@ -43,23 +36,16 @@ then
 end
 
 function boolean toets_eenmaligeReekscodeSleutelVanWrakvondst2(Object $reekscode, Object $volgnummer) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($reekscode, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($reekscode, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.emptyTest($volgnummer, Boolean.FALSE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.emptyTest($volgnummer, Boolean.FALSE));
+    return lezing.verdict();
 }
 
 function java.util.List componenten_eenmaligeReekscodeSleutelVanWrakvondst2(Object $reekscode, Object $volgnummer) {
@@ -81,23 +67,16 @@ then
 end
 
 function boolean toets_eenmaligeReekscodeSleutelVanDrijfvondst3(Object $reekscode, Object $volgnummer) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($reekscode, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($reekscode, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.emptyTest($volgnummer, Boolean.FALSE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.emptyTest($volgnummer, Boolean.FALSE));
+    return lezing.verdict();
 }
 
 function java.util.List componenten_eenmaligeReekscodeSleutelVanDrijfvondst3(Object $reekscode, Object $volgnummer) {

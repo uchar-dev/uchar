@@ -59,23 +59,16 @@ function boolean toets_eersteKetenAanHetPlafond(Object $rang, Object $ketennumme
 
 // Een Wachter moet voldoen aan ten minste één van de volgende criteria: - zijn rang is kleiner dan 101 - zijn ketennummer is ongelijk aan 1
 function boolean samengesteld_eersteKetenAanHetPlafond(Object $rang, Object $ketennummer) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($rang, new java.math.BigDecimal("101"), "<")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($rang, new java.math.BigDecimal("101"), "<"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($ketennummer, new java.math.BigDecimal("1"), "!=")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ketennummer, new java.math.BigDecimal("1"), "!="));
+    return lezing.verdict();
 }
 
 rule "eerste keten aan het plafond"
@@ -96,23 +89,16 @@ function boolean toets_tweedeKetenAanHetPlafond(Object $rang, Object $ketennumme
 
 // Een Wachter moet voldoen aan ten minste één van de volgende criteria: - zijn rang is kleiner dan 101 - zijn ketennummer is ongelijk aan 2
 function boolean samengesteld_tweedeKetenAanHetPlafond(Object $rang, Object $ketennummer) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($rang, new java.math.BigDecimal("101"), "<")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($rang, new java.math.BigDecimal("101"), "<"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($ketennummer, new java.math.BigDecimal("2"), "!=")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ketennummer, new java.math.BigDecimal("2"), "!="));
+    return lezing.verdict();
 }
 
 rule "tweede keten aan het plafond"

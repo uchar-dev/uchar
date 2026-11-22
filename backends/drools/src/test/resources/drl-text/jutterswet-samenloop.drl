@@ -9,30 +9,20 @@ import dev.uchar.regelspraak.transpiler.tms.Value;
 
 // hij berger en wachter is en zijn wachtgeld hoger is dan zijn berggeld
 function boolean toets_defaultsAJutterVergoedingDefault0(Object $berger, Object $wachter, Object $wachtgeld, Object $berggeld) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($berger, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($berger, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.characteristic($wachter, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($wachter, Boolean.TRUE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($wachtgeld, $berggeld, ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($wachtgeld, $berggeld, ">"));
+    return lezing.verdict();
 }
 
 rule "defaults A:Jutter.vergoeding: default 0"

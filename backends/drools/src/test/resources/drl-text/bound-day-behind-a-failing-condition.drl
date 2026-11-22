@@ -40,23 +40,16 @@ end
 // hij aan ten minste een van de volgende voorwaarden voldoet
 function boolean toets_gemeldBaken(Object $actief) {
     try {
-        int raak = 0;
-        Boolean vast;
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-        if (vast != null) {
-            return vast;
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
-            raak++;
+        lezing.read(ComputeHelpers.characteristic($actief, Boolean.FALSE));
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-        if (vast != null) {
-            return vast;
-        }
-        if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsDatumDeel(ComputeHelpers.fail("a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind evaluation it denotes nothing"), java.time.temporal.ChronoField.YEAR), new java.math.BigDecimal("2000"), ">")) {
-            raak++;
-        }
-        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+        lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsDatumDeel(ComputeHelpers.fail("a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind evaluation it denotes nothing"), java.time.temporal.ChronoField.YEAR), new java.math.BigDecimal("2000"), ">"));
+        return lezing.verdict();
     } catch (RuntimeException e) {
         ComputeHelpers.caught(e);
         return false;
@@ -85,23 +78,16 @@ function boolean toets_gemeldBakenFoutInDeVoorwaarde(Object $actief) {
 
 // hij aan ten minste een van de volgende voorwaarden voldoet
 function boolean samengesteld1_gemeldBakenFoutInDeVoorwaarde(Object $actief) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsDatumDeel(ComputeHelpers.fail("a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind evaluation it denotes nothing"), java.time.temporal.ChronoField.YEAR), new java.math.BigDecimal("2000"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsDatumDeel(ComputeHelpers.fail("a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind evaluation it denotes nothing"), java.time.temporal.ChronoField.YEAR), new java.math.BigDecimal("2000"), ">"));
+    return lezing.verdict();
 }
 
 // hij aan ten minste een van de volgende voorwaarden voldoet
@@ -116,23 +102,16 @@ function Object fout_gemeldBakenFoutInDeVoorwaarde(Object $actief) {
 
 // hij aan ten minste een van de volgende voorwaarden voldoet
 function boolean samengesteld2_gemeldBakenFoutInDeVoorwaarde(Object $actief) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsDatumDeel(ComputeHelpers.fail("a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind evaluation it denotes nothing"), java.time.temporal.ChronoField.YEAR), new java.math.BigDecimal("2000"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsDatumDeel(ComputeHelpers.fail("a BoundDay is the bound day of a day-kind definition (ch. 3.7); outside a day-kind evaluation it denotes nothing"), java.time.temporal.ChronoField.YEAR), new java.math.BigDecimal("2000"), ">"));
+    return lezing.verdict();
 }
 
 rule "gemeld baken: fout in de voorwaarde"

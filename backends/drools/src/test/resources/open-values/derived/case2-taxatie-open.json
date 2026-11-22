@@ -1,0 +1,55 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "bergloon": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "uitbetaling"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "V1",
+      "characteristic": "beloond"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "V1",
+      "characteristic": "kostbaar"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "bewakingstoeslag"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "toeslag"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

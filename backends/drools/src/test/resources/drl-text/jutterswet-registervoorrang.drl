@@ -55,23 +55,16 @@ function boolean beta_hoogsteLatereTariefBijdrageAanVouw0(Object eigen, Object a
 
 // aan alle volgende voorwaarden voldoen: - hij is niet de Vergunning zelf - zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf
 function boolean toets_hoogsteLatereTariefBijdrageAanVouw0(Object $vouwonderwerp, Object $onderwerp, Object $ingangsdag, Object $ingangsdag2) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER));
+    return lezing.verdict();
 }
 
 rule "hoogste latere tarief: bijdrage aan vouw 0"

@@ -21,44 +21,30 @@ end
 
 // hij aan precies één van de volgende voorwaarden voldoet: - zijn lengte is groter dan 20 - hij voldoet aan ten minste één van de volgende voorwaarden: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860
 function boolean toets_keurigheidVanEenVondst(Object $lengte, Object $gewicht, Object $jaartal) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("20"), ">")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("20"), ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (samengesteld_keurigheidVanEenVondst($lengte, $gewicht, $jaartal)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 2);
+    lezing.read(samengesteld_keurigheidVanEenVondst($lengte, $gewicht, $jaartal));
+    return lezing.verdict();
 }
 
 // hij voldoet aan ten minste één van de volgende voorwaarden: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860
 function boolean samengesteld_keurigheidVanEenVondst(Object $lengte, Object $gewicht, Object $jaartal) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("50"), ">")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("50"), ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($jaartal, new java.math.BigDecimal("1860"), "<")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($jaartal, new java.math.BigDecimal("1860"), "<"));
+    return lezing.verdict();
 }
 
 rule "keurigheid van een vondst"
@@ -77,30 +63,20 @@ function boolean toets_keuringNaarTenMinsteTweeCriteria(Object $gewicht, Object 
 
 // Een Vondst moet voldoen aan ten minste twee van de volgende criteria: - zijn gewicht is groter dan 0 - zijn lengte is groter dan 10 - zijn jaartal is kleiner dan 1900
 function boolean samengesteld_keuringNaarTenMinsteTweeCriteria(Object $gewicht, Object $lengte, Object $jaartal) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("0"), ">")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("0"), ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("10"), ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("10"), ">")) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($jaartal, new java.math.BigDecimal("1900"), "<")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 2, raak, 3);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($jaartal, new java.math.BigDecimal("1900"), "<"));
+    return lezing.verdict();
 }
 
 rule "keuring naar ten minste twee criteria"
@@ -119,30 +95,20 @@ function boolean toets_keuringNaarTenHoogsteEenCriterium(Object $gewicht, Object
 
 // Een Vondst moet voldoen aan ten hoogste één van de volgende criteria: - zijn gewicht is groter dan 50 - zijn lengte is groter dan 50 - zijn jaartal is kleiner dan 1500
 function boolean samengesteld_keuringNaarTenHoogsteEenCriterium(Object $gewicht, Object $lengte, Object $jaartal) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("50"), ">")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("50"), ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("50"), ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("50"), ">")) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($jaartal, new java.math.BigDecimal("1500"), "<")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 3);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($jaartal, new java.math.BigDecimal("1500"), "<"));
+    return lezing.verdict();
 }
 
 rule "keuring naar ten hoogste een criterium"
@@ -161,23 +127,16 @@ function boolean toets_keuringNaarPreciesEenCriterium(Object $gewicht, Object $l
 
 // Een Vondst moet voldoen aan precies één van de volgende criteria: - zijn gewicht is groter dan 1 - zijn lengte is groter dan 20
 function boolean samengesteld_keuringNaarPreciesEenCriterium(Object $gewicht, Object $lengte) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("1"), ">")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("1"), ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("20"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("20"), ">"));
+    return lezing.verdict();
 }
 
 rule "keuring naar precies een criterium"
@@ -196,23 +155,16 @@ function boolean toets_keuringNaarGeenCriterium(Object $gewicht, Object $lengte)
 
 // Een Vondst moet voldoen aan geen van de volgende criteria: - zijn gewicht is kleiner dan 0 - zijn lengte is kleiner dan 0
 function boolean samengesteld_keuringNaarGeenCriterium(Object $gewicht, Object $lengte) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("0"), "<")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("0"), "<"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("0"), "<")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("0"), "<"));
+    return lezing.verdict();
 }
 
 rule "keuring naar geen criterium"
@@ -231,44 +183,30 @@ function boolean toets_keuringNaarEenSamengesteldCriterium(Object $lengte, Objec
 
 // Een Vondst moet voldoen aan precies één van de volgende criteria: - zijn lengte is groter dan 20 - er wordt voldaan aan ten minste één van de volgende criteria: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860
 function boolean samengesteld1_keuringNaarEenSamengesteldCriterium(Object $lengte, Object $gewicht, Object $jaartal) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("20"), ">")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($lengte, new java.math.BigDecimal("20"), ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (samengesteld2_keuringNaarEenSamengesteldCriterium($lengte, $gewicht, $jaartal)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 1, raak, 2);
+    lezing.read(samengesteld2_keuringNaarEenSamengesteldCriterium($lengte, $gewicht, $jaartal));
+    return lezing.verdict();
 }
 
 // er wordt voldaan aan ten minste één van de volgende criteria: .. zijn gewicht is groter dan 50 .. zijn jaartal is kleiner dan 1860
 function boolean samengesteld2_keuringNaarEenSamengesteldCriterium(Object $lengte, Object $gewicht, Object $jaartal) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("50"), ">")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("50"), ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($jaartal, new java.math.BigDecimal("1860"), "<")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($jaartal, new java.math.BigDecimal("1860"), "<"));
+    return lezing.verdict();
 }
 
 rule "keuring naar een samengesteld criterium"

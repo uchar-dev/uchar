@@ -131,23 +131,16 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn grens is gevuld - (de maximale waarde van het loon van alle rechten van de ploeg van het Jutrecht die aan alle volgende voorwaarden voldoen: .. hij is niet het Jutrecht zelf .. het Strandrecht heeft de vaartijd) is groter dan zijn grens
 function boolean toets_blokkade(Object $grens, Object $aantal_vouw_31, Object $vouw_vouw_33) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($grens, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($grens, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_31, $vouw_vouw_33, null), $grens, ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.foldValue($aantal_vouw_31, $vouw_vouw_33, null), $grens, ">"));
+    return lezing.verdict();
 }
 
 rule "blokkade"
@@ -211,23 +204,16 @@ function boolean beta_hoogsteVaarloonBijdrageAanVouw0(Object eigen, Object ander
 
 // aan alle volgende voorwaarden voldoen: - hij is niet het Jutrecht zelf - hij heeft de vaartijd
 function boolean toets_hoogsteVaarloonBijdrageAanVouw0(Object $vouwonderwerp, Object $onderwerp, Object $vaartijd) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.characteristic($vaartijd, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.characteristic($vaartijd, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "hoogste vaarloon: bijdrage aan vouw 0"
@@ -250,23 +236,16 @@ function boolean beta_hoogsteRustloonBijdrageAanVouw1(Object eigen, Object ander
 
 // aan alle volgende voorwaarden voldoen: - hij is niet het Jutrecht zelf - hij heeft geen vaartijd
 function boolean toets_hoogsteRustloonBijdrageAanVouw1(Object $vouwonderwerp, Object $onderwerp, Object $vaartijd) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.characteristic($vaartijd, Boolean.FALSE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.characteristic($vaartijd, Boolean.FALSE));
+    return lezing.verdict();
 }
 
 rule "hoogste rustloon: bijdrage aan vouw 1"
@@ -289,23 +268,16 @@ function boolean beta_blokkadeBijdrageAanVouw2(Object eigen, Object ander) {
 
 // aan alle volgende voorwaarden voldoen: .. hij is niet het Jutrecht zelf .. het Strandrecht heeft de vaartijd
 function boolean toets_blokkadeBijdrageAanVouw2(Object $vouwonderwerp, Object $onderwerp, Object $vaartijd) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.characteristic($vaartijd, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.characteristic($vaartijd, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "blokkade: bijdrage aan vouw 2"

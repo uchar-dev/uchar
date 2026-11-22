@@ -25,6 +25,12 @@ import java.util.Objects;
  *   <li>{@link #link}: a link of a relation both of whose roles are to-many. The bean model stores a relation in the
  *       reference field of its one side, and such a relation has none, so the branch reads its links as facts of their
  *       own, as it reads the links of a relation a form creates.</li>
+ *   <li>{@link #characteristicAbsent}: a characteristic the input states not to hold ({@code characteristicsAbsent},
+ *       RUNTIME-SEMANTICS ch. 1.5). A characteristic on a bean is a truth value, which cannot tell "not named" from
+ *       "does not hold"; in a document that infers nothing from an empty value an input characteristic that is not
+ *       named is open, and one stated here is not. In any other document it changes no outcome.</li>
+ *   <li>{@link #closedInputs}: the session treats every input member as complete (ch. 1.5, "Complete input"), so that
+ *       no input member is open: the measurement of preservation with complete knowledge.</li>
  * </ul>
  */
 public final class Input {
@@ -33,6 +39,8 @@ public final class Input {
     private final List<Bucket> buckets = new ArrayList<>();
     private final List<ToManyList> lists = new ArrayList<>();
     private final List<Link> links = new ArrayList<>();
+    private final List<Absent> absent = new ArrayList<>();
+    private boolean closedInputs;
 
     /** A bucket scalar: attribute {@code attribute} of {@code bean}, named as the model declares it. */
     record Bucket(Object bean, String attribute) {}
@@ -44,6 +52,10 @@ public final class Input {
     /** A link of the relation {@code factType}, both of whose roles are to-many: {@code first} fills the first declared
      *  role of the fact type and {@code second} the second. */
     record Link(String factType, Object first, Object second) {}
+
+    /** A characteristic the input states not to hold: {@code characteristic} of {@code bean}, named as the model
+     *  declares it. */
+    record Absent(Object bean, String characteristic) {}
 
     /** Adds {@code bean}. */
     public Input bean(Object bean) {
@@ -85,6 +97,20 @@ public final class Input {
         return this;
     }
 
+    /** States that the characteristic {@code characteristic} of {@code bean}, named as the model declares it, does not
+     *  hold ({@code characteristicsAbsent}, RUNTIME-SEMANTICS ch. 1.5): the bean must not hold it. */
+    public Input characteristicAbsent(Object bean, String characteristic) {
+        absent.add(new Absent(Objects.requireNonNull(bean, "bean"), Objects.requireNonNull(characteristic, "characteristic")));
+        return this;
+    }
+
+    /** States that the session treats every input member as complete (RUNTIME-SEMANTICS ch. 1.5, "Complete input"): no
+     *  input member is open. */
+    public Input closedInputs() {
+        closedInputs = true;
+        return this;
+    }
+
     List<Object> beans() {
         return List.copyOf(beans);
     }
@@ -99,5 +125,13 @@ public final class Input {
 
     List<Link> links() {
         return List.copyOf(links);
+    }
+
+    List<Absent> absent() {
+        return List.copyOf(absent);
+    }
+
+    boolean closed() {
+        return closedInputs;
     }
 }

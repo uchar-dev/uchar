@@ -57,23 +57,16 @@ end
 
 // hij aan ten minste een van de volgende voorwaarden voldoet
 function boolean toets_kenmerktoekenningVondstZomervondst(Object $vondstdatum) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsDatumDeel($vondstdatum, java.time.temporal.ChronoField.MONTH_OF_YEAR), new java.math.BigDecimal("7"), "==")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsDatumDeel($vondstdatum, java.time.temporal.ChronoField.MONTH_OF_YEAR), new java.math.BigDecimal("7"), "=="));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsDatumDeel($vondstdatum, java.time.temporal.ChronoField.MONTH_OF_YEAR), new java.math.BigDecimal("8"), "==")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsDatumDeel($vondstdatum, java.time.temporal.ChronoField.MONTH_OF_YEAR), new java.math.BigDecimal("8"), "=="));
+    return lezing.verdict();
 }
 
 rule "Kenmerktoekenning vondst zomervondst"

@@ -316,9 +316,13 @@ public final class ProducerConsumer {
      *  that names no declared role with a declared filler fails loudly; the verifier refuses such a document
      *  (WF-053). */
     public static Navigation wireNavigation(IrLoader.Loaded loaded) {
-        RegelSpraakModel model = loaded.model();
-        Map<Object, List<RegelSpraakModel.RoleBindingRef>> hops = loaded.navigationBindings();
-        Set<Object> anchored = loaded.anchored();
+        return wireNavigation(loaded.model(), loaded.navigationBindings(), loaded.anchored());
+    }
+
+    /** As {@link #wireNavigation(IrLoader.Loaded)}, of the loaded {@code model} with its side tables {@code hops}, the
+     *  bindings of every navigation, and {@code anchored}. */
+    public static Navigation wireNavigation(RegelSpraakModel model,
+                                            Map<Object, List<RegelSpraakModel.RoleBindingRef>> hops, Set<Object> anchored) {
         Navigation reach = (k, subjectType) -> {
             List<RegelSpraakModel.RoleBindingRef> path = hops.get(k);
             if (path == null || path.isEmpty()) return null;

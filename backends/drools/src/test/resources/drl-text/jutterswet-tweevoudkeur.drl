@@ -8,30 +8,20 @@ import dev.uchar.regelspraak.transpiler.tms.Value;
 
 // precies twee van: gemerkt, gewogen, zegels vanaf 2
 function boolean toets_oordeelBijTweevoudigeKeur(Object $gemerkt, Object $gewogen, Object $zegels) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 2, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 2, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($gemerkt, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($gemerkt, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 2, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.characteristic($gewogen, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($gewogen, Boolean.TRUE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 2, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($zegels, new java.math.BigDecimal("2"), ">=")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.PRECIES, 2, raak, 3);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($zegels, new java.math.BigDecimal("2"), ">="));
+    return lezing.verdict();
 }
 
 rule "oordeel bij tweevoudige keur"

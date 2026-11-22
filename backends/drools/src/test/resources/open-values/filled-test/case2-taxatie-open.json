@@ -1,0 +1,66 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicOpen",
+      "label": "V1",
+      "characteristic": "getaxeerd"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "ongetaxeerd"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "V1",
+      "characteristic": "kostbaar"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "bewakingstoeslag"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "getuigentoeslag",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "schadetoeslag"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "onbekend"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "taxatieplicht",
+      "label": "V1",
+      "code": "EF-025"
+    }
+  ]
+}

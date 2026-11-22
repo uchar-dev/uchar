@@ -14,23 +14,16 @@ import dev.uchar.regelspraak.transpiler.tms.Value;
 
 // hij aan alle volgende voorwaarden voldoet: - zijn begindag is eerder dan de verlengde einddag van zijn houder - de verlengde einddag van zijn houder is eerder dan zijn einddag
 function boolean toets_overschot(Object $begindag, Object $houderVerlengdeEinddag, Object $einddag) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.dateCompare($begindag, $houderVerlengdeEinddag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER)) {
-        raak++;
+    lezing.read(ComputeHelpers.dateCompare($begindag, $houderVerlengdeEinddag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.dateCompare($houderVerlengdeEinddag, $einddag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.dateCompare($houderVerlengdeEinddag, $einddag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER));
+    return lezing.verdict();
 }
 
 // de tijdsduur van de verlengde einddag van zijn houder tot zijn einddag in hele dagen
@@ -101,23 +94,16 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - het restant van de vorige vergunning van de Vergunning is gevuld - de vorige vergunning van de Vergunning is niet afgewikkeld
 function boolean toets_verlengdeEinddag(Object $vorigeVergunningRestant, Object $vorigeVergunningAfgewikkeld) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($vorigeVergunningRestant, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($vorigeVergunningRestant, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.characteristicCheckAlongPath($vorigeVergunningAfgewikkeld, Boolean.FALSE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.characteristicCheckAlongPath($vorigeVergunningAfgewikkeld, Boolean.FALSE));
+    return lezing.verdict();
 }
 
 // zijn basiseinddag plus de som van de overschotten van alle termijnen van de vorige vergunning van de Vergunning

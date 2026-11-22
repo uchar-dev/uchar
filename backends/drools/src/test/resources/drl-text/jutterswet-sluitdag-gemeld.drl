@@ -33,30 +33,20 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn opgegeven uiterste meldingsdag is gevuld - zijn berekende uiterste meldingsdag is gevuld - zijn opgegeven uiterste meldingsdag is ongelijk aan zijn berekende uiterste meldingsdag
 function boolean toets_afwijkingOpgaveUitersteMeldingsdag(Object $opgegevenUitersteMeldingsdag, Object $berekendeUitersteMeldingsdag) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($opgegevenUitersteMeldingsdag, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($opgegevenUitersteMeldingsdag, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.emptyTest($berekendeUitersteMeldingsdag, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($berekendeUitersteMeldingsdag, Boolean.FALSE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.dateCompare($opgegevenUitersteMeldingsdag, $berekendeUitersteMeldingsdag, dev.uchar.regelspraak.ir.Condition.Operator.ONGELIJK)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(ComputeHelpers.dateCompare($opgegevenUitersteMeldingsdag, $berekendeUitersteMeldingsdag, dev.uchar.regelspraak.ir.Condition.Operator.ONGELIJK));
+    return lezing.verdict();
 }
 
 rule "afwijking opgave uiterste meldingsdag"
@@ -71,30 +61,20 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn opgegeven afrekendag is gevuld - zijn berekende afrekendag is gevuld - zijn opgegeven afrekendag is ongelijk aan zijn berekende afrekendag
 function boolean toets_afwijkingOpgaveAfrekendag(Object $opgegevenAfrekendag, Object $berekendeAfrekendag) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($opgegevenAfrekendag, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($opgegevenAfrekendag, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.emptyTest($berekendeAfrekendag, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($berekendeAfrekendag, Boolean.FALSE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.dateCompare($opgegevenAfrekendag, $berekendeAfrekendag, dev.uchar.regelspraak.ir.Condition.Operator.ONGELIJK)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(ComputeHelpers.dateCompare($opgegevenAfrekendag, $berekendeAfrekendag, dev.uchar.regelspraak.ir.Condition.Operator.ONGELIJK));
+    return lezing.verdict();
 }
 
 rule "afwijking opgave afrekendag"

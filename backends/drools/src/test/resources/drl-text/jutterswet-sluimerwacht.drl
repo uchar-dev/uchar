@@ -9,30 +9,20 @@ import dev.uchar.regelspraak.transpiler.tms.Value;
 
 // ten hoogste één van: bemand, verlicht, meldingen boven 2
 function boolean toets_sluimerstandBijBeperkteDienst(Object $bemand, Object $verlicht, Object $meldingen) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($bemand, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($bemand, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.characteristic($verlicht, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($verlicht, Boolean.TRUE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($meldingen, new java.math.BigDecimal("2"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_HOOGSTE, 1, raak, 3);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($meldingen, new java.math.BigDecimal("2"), ">"));
+    return lezing.verdict();
 }
 
 rule "sluimerstand bij beperkte dienst"

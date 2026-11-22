@@ -1,0 +1,64 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    de schatting Numeriek (geheel getal);
+    de lengte Numeriek (geheel getal);
+    is alles kenmerk (bijvoeglijk);
+    is eenvan kenmerk (bijvoeglijk);
+    is geen kenmerk (bijvoeglijk);
+    is nieta kenmerk (bijvoeglijk);
+    is tweevan kenmerk (bijvoeglijk);
+    is hoogstens kenmerk (bijvoeglijk);
+    is exact kenmerk (bijvoeglijk);
+
+Regel alles
+    geldig altijd
+        Een Vondst is alles
+        indien hij aan alle volgende voorwaarden voldoet:
+        - zijn gewicht is groter dan 100
+        - zijn schatting is groter dan 1000.
+
+Regel eenvan
+    geldig altijd
+        Een Vondst is eenvan
+        indien hij aan ten minste één van de volgende voorwaarden voldoet:
+        - zijn gewicht is groter dan 100
+        - zijn schatting is groter dan 1000.
+
+Regel geen
+    geldig altijd
+        Een Vondst is geen
+        indien hij aan geen van de volgende voorwaarden voldoet:
+        - zijn gewicht is groter dan 100
+        - zijn schatting is groter dan 1000.
+
+Regel nieta
+    geldig altijd
+        Een Vondst is nieta
+        indien hij aan geen van de volgende voorwaarden voldoet:
+        - zijn gewicht is groter dan 100.
+
+Regel tweevan
+    geldig altijd
+        Een Vondst is tweevan
+        indien hij aan ten minste twee van de volgende voorwaarden voldoet:
+        - zijn gewicht is groter dan 100
+        - zijn schatting is groter dan 1000
+        - zijn lengte is groter dan 2.
+
+Regel hoogstens
+    geldig altijd
+        Een Vondst is hoogstens
+        indien hij aan ten hoogste één van de volgende voorwaarden voldoet:
+        - zijn gewicht is groter dan 100
+        - zijn schatting is groter dan 1000
+        - zijn lengte is groter dan 2.
+
+Regel exact
+    geldig altijd
+        Een Vondst is exact
+        indien hij aan precies één van de volgende voorwaarden voldoet:
+        - zijn gewicht is groter dan 100
+        - zijn schatting is groter dan 1000
+        - zijn lengte is groter dan 2.

@@ -40,23 +40,16 @@ end
 // hij aan ten minste een van de volgende voorwaarden voldoet
 function boolean toets_bijzondereVondst(Object $actief) {
     try {
-        int raak = 0;
-        Boolean vast;
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-        if (vast != null) {
-            return vast;
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
-            raak++;
+        lezing.read(ComputeHelpers.characteristic($actief, Boolean.FALSE));
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-        if (vast != null) {
-            return vast;
-        }
-        if (((Boolean) ComputeHelpers.fail("Unresolved condition reached in evaluation"))) {
-            raak++;
-        }
-        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+        lezing.read(((Boolean) ComputeHelpers.fail("Unresolved condition reached in evaluation")));
+        return lezing.verdict();
     } catch (RuntimeException e) {
         ComputeHelpers.caught(e);
         return false;
@@ -85,23 +78,16 @@ function boolean toets_bijzondereVondstFoutInDeVoorwaarde(Object $actief) {
 
 // hij aan ten minste een van de volgende voorwaarden voldoet
 function boolean samengesteld1_bijzondereVondstFoutInDeVoorwaarde(Object $actief) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (((Boolean) ComputeHelpers.fail("Unresolved condition reached in evaluation"))) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(((Boolean) ComputeHelpers.fail("Unresolved condition reached in evaluation")));
+    return lezing.verdict();
 }
 
 // hij aan ten minste een van de volgende voorwaarden voldoet
@@ -116,23 +102,16 @@ function Object fout_bijzondereVondstFoutInDeVoorwaarde(Object $actief) {
 
 // hij aan ten minste een van de volgende voorwaarden voldoet
 function boolean samengesteld2_bijzondereVondstFoutInDeVoorwaarde(Object $actief) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (((Boolean) ComputeHelpers.fail("Unresolved condition reached in evaluation"))) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(((Boolean) ComputeHelpers.fail("Unresolved condition reached in evaluation")));
+    return lezing.verdict();
 }
 
 rule "bijzondere vondst: fout in de voorwaarde"
@@ -151,23 +130,16 @@ end
 // hij aan ten minste een van de volgende voorwaarden voldoet
 function boolean toets_zwareVondst(Object $actief) {
     try {
-        int raak = 0;
-        Boolean vast;
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-        if (vast != null) {
-            return vast;
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
-            raak++;
+        lezing.read(ComputeHelpers.characteristic($actief, Boolean.FALSE));
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-        if (vast != null) {
-            return vast;
-        }
-        if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.fail("Unresolved reached in evaluation: this rule fails observably"), new java.math.BigDecimal("5"), ">")) {
-            raak++;
-        }
-        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+        lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.fail("Unresolved reached in evaluation: this rule fails observably"), new java.math.BigDecimal("5"), ">"));
+        return lezing.verdict();
     } catch (RuntimeException e) {
         ComputeHelpers.caught(e);
         return false;
@@ -196,23 +168,16 @@ function boolean toets_zwareVondstFoutInDeVoorwaarde(Object $actief) {
 
 // hij aan ten minste een van de volgende voorwaarden voldoet
 function boolean samengesteld1_zwareVondstFoutInDeVoorwaarde(Object $actief) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.fail("Unresolved reached in evaluation: this rule fails observably"), new java.math.BigDecimal("5"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.fail("Unresolved reached in evaluation: this rule fails observably"), new java.math.BigDecimal("5"), ">"));
+    return lezing.verdict();
 }
 
 // hij aan ten minste een van de volgende voorwaarden voldoet
@@ -227,23 +192,16 @@ function Object fout_zwareVondstFoutInDeVoorwaarde(Object $actief) {
 
 // hij aan ten minste een van de volgende voorwaarden voldoet
 function boolean samengesteld2_zwareVondstFoutInDeVoorwaarde(Object $actief) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.fail("Unresolved reached in evaluation: this rule fails observably"), new java.math.BigDecimal("5"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.fail("Unresolved reached in evaluation: this rule fails observably"), new java.math.BigDecimal("5"), ">"));
+    return lezing.verdict();
 }
 
 rule "zware vondst: fout in de voorwaarde"

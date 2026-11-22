@@ -323,8 +323,12 @@ public enum StaticFunction {
      *  enumeration (maintainer decision 2026-09-20). */
     RS_ENUM_NAME(RegelSpraakRuntime.class, "rsEnumNaam", false),
     /** The leeg test, where a {@code Boolean} constant is true, or the gevuld test, where it is false, of a value
-     *  (ch. 5.8 rule 1: a read over an absent link is leeg). */
+     *  (ch. 5.8 rule 1: a read over an absent link is leeg); over the mark of a closure ({@link Term.ClosureOverOpen})
+     *  it is true or false for the form itself and undetermined for another (ch. 1.5). */
     EMPTY_TEST(ComputeHelpers.class, "emptyTest", false),
+    /** The read of a member that can be open, off its standing (ch. 1.5): the bound value, and an open read that breaks
+     *  the evaluation off where the member is open. */
+    READ(ComputeHelpers.class, "read", false),
     /** The exact-digit test of a value ({@code rsNumeriekMetExact}, §8.1.4) with an {@code Integer} constant of
      *  digits, whose verdict a {@code Boolean} constant must equal. */
     NUMERIEK_MET_EXACT(ComputeHelpers.class, "exactDigits", false),

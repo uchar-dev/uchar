@@ -10,30 +10,20 @@ import dev.uchar.regelspraak.transpiler.tms.Value;
 
 // hij aan alle volgende voorwaarden voldoet: - zijn stopdag is gevuld - zijn einddag is gevuld - zijn stopdag is eerder dan zijn einddag
 function boolean toets_restant(Object $stopdag, Object $einddag) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($stopdag, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($stopdag, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.emptyTest($einddag, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($einddag, Boolean.FALSE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.dateCompare($stopdag, $einddag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(ComputeHelpers.dateCompare($stopdag, $einddag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER));
+    return lezing.verdict();
 }
 
 // de tijdsduur van zijn stopdag tot zijn einddag in hele dagen
@@ -119,30 +109,20 @@ function Object pad_overschot(Object o) {
 
 // hij aan alle volgende voorwaarden voldoet: - de stopdag van de houder van de Termijn is gevuld - de verlengde einddag van de houder van de Termijn is gevuld - de stopdag van de houder van de Termijn is eerder dan de verlengde einddag van de houder van de Termijn
 function boolean toets_overschot(Object $houderStopdag, Object $houderVerlengdeEinddag) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($houderStopdag, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($houderStopdag, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.emptyTest($houderVerlengdeEinddag, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($houderVerlengdeEinddag, Boolean.FALSE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.dateCompare($houderStopdag, $houderVerlengdeEinddag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(ComputeHelpers.dateCompare($houderStopdag, $houderVerlengdeEinddag, dev.uchar.regelspraak.ir.Condition.Operator.EERDER));
+    return lezing.verdict();
 }
 
 // de tijdsduur van de stopdag van de houder van de Termijn tot de verlengde einddag van de houder van de Termijn in hele dagen

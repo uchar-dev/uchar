@@ -13,23 +13,16 @@ import dev.uchar.regelspraak.transpiler.tms.Value;
 // hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10) is groter dan 0
 function boolean toets_kliptekenVanEenKustwacht(Object $ploegomvang, Object $tijdlijn_1, Object $onderwerp) {
     try {
-        int raak = 0;
-        Boolean vast;
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-        if (vast != null) {
-            return vast;
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!=")) {
-            raak++;
+        lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!="));
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-        if (vast != null) {
-            return vast;
-        }
-        if (RegelSpraakRuntime.rsAggVergelijk(PeriodArithmetic.total(RegelSpraakRuntime.rsTijdKnip(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), RegelSpraakRuntime.rsTijdConditie(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" compares \"wachtvergoeding per maand\" per segment and needs its full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", "wachtvergoeding per maand", Boolean.TRUE), Integer.valueOf(2), new java.math.BigDecimal("10"), ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), Period.class), Period.class), "MAAND", null, null, "wachtvergoeding per maand", $onderwerp), new java.math.BigDecimal("0"), ">")) {
-            raak++;
-        }
-        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+        lezing.read(RegelSpraakRuntime.rsAggVergelijk(PeriodArithmetic.total(RegelSpraakRuntime.rsTijdKnip(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), RegelSpraakRuntime.rsTijdConditie(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" compares \"wachtvergoeding per maand\" per segment and needs its full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", "wachtvergoeding per maand", Boolean.TRUE), Integer.valueOf(2), new java.math.BigDecimal("10"), ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), Period.class), Period.class), "MAAND", null, null, "wachtvergoeding per maand", $onderwerp), new java.math.BigDecimal("0"), ">"));
+        return lezing.verdict();
     } catch (RuntimeException e) {
         ComputeHelpers.caught(e);
         return false;
@@ -75,23 +68,16 @@ function boolean toets_kliptekenVanEenKustwachtFoutInDeVoorwaarde(Object $ploego
 
 // hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10) is groter dan 0
 function boolean samengesteld1_kliptekenVanEenKustwachtFoutInDeVoorwaarde(Object $ploegomvang, Object $tijdlijn_1, Object $onderwerp) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!=")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!="));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(PeriodArithmetic.total(RegelSpraakRuntime.rsTijdKnip(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), RegelSpraakRuntime.rsTijdConditie(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" compares \"wachtvergoeding per maand\" per segment and needs its full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", "wachtvergoeding per maand", Boolean.TRUE), Integer.valueOf(2), new java.math.BigDecimal("10"), ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), Period.class), Period.class), "MAAND", null, null, "wachtvergoeding per maand", $onderwerp), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(PeriodArithmetic.total(RegelSpraakRuntime.rsTijdKnip(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), RegelSpraakRuntime.rsTijdConditie(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" compares \"wachtvergoeding per maand\" per segment and needs its full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", "wachtvergoeding per maand", Boolean.TRUE), Integer.valueOf(2), new java.math.BigDecimal("10"), ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), Period.class), Period.class), "MAAND", null, null, "wachtvergoeding per maand", $onderwerp), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 // hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10) is groter dan 0
@@ -106,23 +92,16 @@ function Object fout_kliptekenVanEenKustwachtFoutInDeVoorwaarde(Object $ploegomv
 
 // hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan 10) is groter dan 0
 function boolean samengesteld2_kliptekenVanEenKustwachtFoutInDeVoorwaarde(Object $ploegomvang, Object $tijdlijn_1, Object $onderwerp) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!=")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!="));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(PeriodArithmetic.total(RegelSpraakRuntime.rsTijdKnip(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), RegelSpraakRuntime.rsTijdConditie(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" compares \"wachtvergoeding per maand\" per segment and needs its full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", "wachtvergoeding per maand", Boolean.TRUE), Integer.valueOf(2), new java.math.BigDecimal("10"), ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), Period.class), Period.class), "MAAND", null, null, "wachtvergoeding per maand", $onderwerp), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(PeriodArithmetic.total(RegelSpraakRuntime.rsTijdKnip(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), RegelSpraakRuntime.rsTijdConditie(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" compares \"wachtvergoeding per maand\" per segment and needs its full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", "wachtvergoeding per maand", Boolean.TRUE), Integer.valueOf(2), new java.math.BigDecimal("10"), ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), Period.class), Period.class), "MAAND", null, null, "wachtvergoeding per maand", $onderwerp), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 rule "klipteken van een kustwacht: fout in de voorwaarde"
@@ -142,23 +121,16 @@ end
 // hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan zijn drempelbedrag) is groter dan 0
 function boolean toets_randkliptekenVanEenKustwacht(Object $ploegomvang, Object $tijdlijn_1, Object $onderwerp, Object $drempelbedrag) {
     try {
-        int raak = 0;
-        Boolean vast;
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-        if (vast != null) {
-            return vast;
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!=")) {
-            raak++;
+        lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!="));
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-        if (vast != null) {
-            return vast;
-        }
-        if (RegelSpraakRuntime.rsAggVergelijk(PeriodArithmetic.total(RegelSpraakRuntime.rsTijdKnip(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), RegelSpraakRuntime.rsTijdConditie(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" compares \"wachtvergoeding per maand\" per segment and needs its full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", "wachtvergoeding per maand", Boolean.TRUE), Integer.valueOf(2), $drempelbedrag, ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), Period.class), Period.class), "MAAND", null, null, "wachtvergoeding per maand", $onderwerp), new java.math.BigDecimal("0"), ">")) {
-            raak++;
-        }
-        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+        lezing.read(RegelSpraakRuntime.rsAggVergelijk(PeriodArithmetic.total(RegelSpraakRuntime.rsTijdKnip(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), RegelSpraakRuntime.rsTijdConditie(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" compares \"wachtvergoeding per maand\" per segment and needs its full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", "wachtvergoeding per maand", Boolean.TRUE), Integer.valueOf(2), $drempelbedrag, ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), Period.class), Period.class), "MAAND", null, null, "wachtvergoeding per maand", $onderwerp), new java.math.BigDecimal("0"), ">"));
+        return lezing.verdict();
     } catch (RuntimeException e) {
         ComputeHelpers.caught(e);
         return false;
@@ -204,23 +176,16 @@ function boolean toets_randkliptekenVanEenKustwachtFoutInDeVoorwaarde(Object $pl
 
 // hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan zijn drempelbedrag) is groter dan 0
 function boolean samengesteld1_randkliptekenVanEenKustwachtFoutInDeVoorwaarde(Object $ploegomvang, Object $tijdlijn_1, Object $onderwerp, Object $drempelbedrag) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!=")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!="));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(PeriodArithmetic.total(RegelSpraakRuntime.rsTijdKnip(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), RegelSpraakRuntime.rsTijdConditie(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" compares \"wachtvergoeding per maand\" per segment and needs its full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", "wachtvergoeding per maand", Boolean.TRUE), Integer.valueOf(2), $drempelbedrag, ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), Period.class), Period.class), "MAAND", null, null, "wachtvergoeding per maand", $onderwerp), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(PeriodArithmetic.total(RegelSpraakRuntime.rsTijdKnip(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), RegelSpraakRuntime.rsTijdConditie(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" compares \"wachtvergoeding per maand\" per segment and needs its full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", "wachtvergoeding per maand", Boolean.TRUE), Integer.valueOf(2), $drempelbedrag, ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), Period.class), Period.class), "MAAND", null, null, "wachtvergoeding per maand", $onderwerp), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 // hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan zijn drempelbedrag) is groter dan 0
@@ -235,23 +200,16 @@ function Object fout_randkliptekenVanEenKustwachtFoutInDeVoorwaarde(Object $ploe
 
 // hij aan alle volgende voorwaarden voldoet: - zijn ploegomvang is ongelijk aan 0 - (het totaal van zijn wachtvergoeding per maand gedurende de tijd dat zijn wachtvergoeding per maand groter is dan zijn drempelbedrag) is groter dan 0
 function boolean samengesteld2_randkliptekenVanEenKustwachtFoutInDeVoorwaarde(Object $ploegomvang, Object $tijdlijn_1, Object $onderwerp, Object $drempelbedrag) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!=")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($ploegomvang, new java.math.BigDecimal("0"), "!="));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(PeriodArithmetic.total(RegelSpraakRuntime.rsTijdKnip(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), RegelSpraakRuntime.rsTijdConditie(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" compares \"wachtvergoeding per maand\" per segment and needs its full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", "wachtvergoeding per maand", Boolean.TRUE), Integer.valueOf(2), $drempelbedrag, ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), Period.class), Period.class), "MAAND", null, null, "wachtvergoeding per maand", $onderwerp), new java.math.BigDecimal("0"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(PeriodArithmetic.total(RegelSpraakRuntime.rsTijdKnip(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), RegelSpraakRuntime.rsTijdConditie(ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" compares \"wachtvergoeding per maand\" per segment and needs its full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar (ch. 3.6, ch. 8.4)", "wachtvergoeding per maand", Boolean.TRUE), Integer.valueOf(2), $drempelbedrag, ComputeHelpers.complete($tijdlijn_1, "the gedurende clip of \"wachtvergoeding per maand\" needs the full timeline; ", $onderwerp, " supplies only the asOfDate-bucket scalar", "wachtvergoeding per maand", Boolean.TRUE), Period.class), Period.class), "MAAND", null, null, "wachtvergoeding per maand", $onderwerp), new java.math.BigDecimal("0"), ">"));
+    return lezing.verdict();
 }
 
 rule "randklipteken van een kustwacht: fout in de voorwaarde"

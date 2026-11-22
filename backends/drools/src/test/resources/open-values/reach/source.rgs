@@ -1,0 +1,34 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (geheel getal);
+    het gewicht Numeriek (geheel getal);
+    de getuigen Numeriek (geheel getal);
+    de schade Numeriek (geheel getal);
+    het vindloon Numeriek (geheel getal);
+    het aandeel Numeriek (getal);
+    het vindaandeel Numeriek (getal);
+    het drempelgewicht Numeriek (getal);
+    het restgewicht Numeriek (getal);
+
+Regel vindloon
+    geldig altijd
+        Het vindloon van een Vondst moet gesteld worden op 10 indien zijn taxatie groter is dan 1000.
+
+Regel aandeel
+    geldig altijd
+        Het aandeel van een Vondst moet berekend worden als zijn gewicht gedeeld door zijn getuigen.
+
+Regel vindaandeel
+    geldig altijd
+        Het vindaandeel van een Vondst moet berekend worden als zijn vindloon gedeeld door zijn getuigen.
+
+Regel drempelgewicht
+    geldig altijd
+        Het drempelgewicht van een Vondst moet berekend worden als zijn vindloon gedeeld door de vangst.
+        Daarbij geldt:
+            de vangst is zijn gewicht plus zijn schade.
+
+Regel restgewicht
+    geldig altijd
+        Het restgewicht van een Vondst moet berekend worden als zijn gewicht gedeeld door 0 plus zijn schade.

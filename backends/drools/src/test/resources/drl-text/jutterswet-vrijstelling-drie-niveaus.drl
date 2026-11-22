@@ -7,72 +7,48 @@ import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
 
 // hij aan ten minste één van de volgende voorwaarden voldoet: - zijn soort is gelijk aan 'Blik' - hij voldoet aan alle volgende voorwaarden: .. zijn leeftijd is groter dan 65 .. hij voldoet aan ten minste één van de volgende voorwaarden: .... zijn soort is gelijk aan 'Touw' .... zijn soort is gelijk aan 'Glas' .... zijn soort is gelijk aan 'Kurk'
 function boolean toets_vrijstelling(Object $soort, Object $leeftijd) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($soort), RegelSpraakRuntime.rsEnumNaam("Blik"), Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($soort), RegelSpraakRuntime.rsEnumNaam("Blik"), Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (samengesteld1_vrijstelling($soort, $leeftijd)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(samengesteld1_vrijstelling($soort, $leeftijd));
+    return lezing.verdict();
 }
 
 // hij voldoet aan alle volgende voorwaarden: .. zijn leeftijd is groter dan 65 .. hij voldoet aan ten minste één van de volgende voorwaarden: .... zijn soort is gelijk aan 'Touw' .... zijn soort is gelijk aan 'Glas' .... zijn soort is gelijk aan 'Kurk'
 function boolean samengesteld1_vrijstelling(Object $soort, Object $leeftijd) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($leeftijd, new java.math.BigDecimal("65"), ">")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($leeftijd, new java.math.BigDecimal("65"), ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (samengesteld2_vrijstelling($soort, $leeftijd)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(samengesteld2_vrijstelling($soort, $leeftijd));
+    return lezing.verdict();
 }
 
 // hij voldoet aan ten minste één van de volgende voorwaarden: .... zijn soort is gelijk aan 'Touw' .... zijn soort is gelijk aan 'Glas' .... zijn soort is gelijk aan 'Kurk'
 function boolean samengesteld2_vrijstelling(Object $soort, Object $leeftijd) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($soort), RegelSpraakRuntime.rsEnumNaam("Touw"), Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($soort), RegelSpraakRuntime.rsEnumNaam("Touw"), Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($soort), RegelSpraakRuntime.rsEnumNaam("Glas"), Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($soort), RegelSpraakRuntime.rsEnumNaam("Glas"), Boolean.TRUE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($soort), RegelSpraakRuntime.rsEnumNaam("Kurk"), Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 3);
+    lezing.read(ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam($soort), RegelSpraakRuntime.rsEnumNaam("Kurk"), Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "vrijstelling"

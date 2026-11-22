@@ -34,23 +34,16 @@ then
 end
 
 function boolean toets_eenmaligKaveletiketSleutelVanKavel1(Object $etiket, Object $gemeente) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($etiket, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($etiket, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.emptyTest($gemeente, Boolean.FALSE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.emptyTest($gemeente, Boolean.FALSE));
+    return lezing.verdict();
 }
 
 function java.util.List componenten_eenmaligKaveletiketSleutelVanKavel1(Object $etiket, Object $gemeente) {
@@ -97,23 +90,16 @@ then
 end
 
 function boolean toets_eenmaligeSectiecodeSleutelVanKavel1(Object $sectiecode, Object $gemeente) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($sectiecode, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($sectiecode, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.emptyTest($gemeente, Boolean.FALSE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.emptyTest($gemeente, Boolean.FALSE));
+    return lezing.verdict();
 }
 
 function java.util.List componenten_eenmaligeSectiecodeSleutelVanKavel1(Object $sectiecode, Object $gemeente) {

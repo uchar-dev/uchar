@@ -367,23 +367,16 @@ function boolean beta_tariefNaastGeschorsteBijdrageAanVouw0(Object eigen, Object
 
 // aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; de Vergunning zelf is geschorst
 function boolean toets_tariefNaastGeschorsteBijdrageAanVouw0(Object $vouwonderwerp, Object $onderwerp, Object $geschorst) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.characteristic($geschorst, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.characteristic($geschorst, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "tarief naast geschorste: bijdrage aan vouw 0"
@@ -456,23 +449,16 @@ function boolean beta_tariefNaastDuurRegisterBijdrageAanVouw3(Object eigen, Obje
 
 // aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; ten minste een van de vergunningen van het register van de Vergunning zelf heeft een tarief van ten minste 20
 function boolean toets_tariefNaastDuurRegisterBijdrageAanVouw3(Object $vouwonderwerp, Object $onderwerp, Object $aantal_vouw_30, Object $vouw_vouw_32) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.quantifierVerdict($aantal_vouw_30, $vouw_vouw_32, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1))) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.quantifierVerdict($aantal_vouw_30, $vouw_vouw_32, dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, Integer.valueOf(1)));
+    return lezing.verdict();
 }
 
 rule "tarief naast duur register: bijdrage aan vouw 3"
@@ -536,23 +522,16 @@ function boolean beta_deelbaarTariefBijdrageAanVouw6(Object eigen, Object ander)
 // aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
 function boolean toets_deelbaarTariefBijdrageAanVouw6(Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $teller) {
     try {
-        int raak = 0;
-        Boolean vast;
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-        if (vast != null) {
-            return vast;
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
-            raak++;
+        lezing.read(ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE));
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-        if (vast != null) {
-            return vast;
-        }
-        if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">")) {
-            raak++;
-        }
-        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+        lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">"));
+        return lezing.verdict();
     } catch (RuntimeException e) {
         ComputeHelpers.caught(e);
         return false;
@@ -593,23 +572,16 @@ function boolean toets_deelbaarTariefFilterfoutInVouw6(Object $vouwonderwerp, Ob
 
 // aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
 function boolean samengesteld1_deelbaarTariefFilterfoutInVouw6(Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $teller) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">"));
+    return lezing.verdict();
 }
 
 // aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
@@ -624,23 +596,16 @@ function RuntimeException fout_deelbaarTariefFilterfoutInVouw6(Object $lijstplaa
 
 // aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
 function boolean samengesteld2_deelbaarTariefFilterfoutInVouw6(Object $lijstplaatsen_plaats_53, Object $plaats_plaats_54, Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $teller) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">"));
+    return lezing.verdict();
 }
 
 function java.util.List plaats_deelbaarTariefFilterfoutInVouw6(Object $onderwerp, Object $lijstplaatsen_plaats_53, Object $plaats_plaats_54) {
@@ -678,23 +643,16 @@ function boolean toets_deelbaarTariefFilterdeponeringInVouw6(Object $vouwonderwe
 
 // aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
 function boolean samengesteld1_deelbaarTariefFilterdeponeringInVouw6(Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $teller, Object sonde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, sonde), new java.math.BigDecimal("1"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, sonde), new java.math.BigDecimal("1"), ">"));
+    return lezing.verdict();
 }
 
 // aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
@@ -712,23 +670,16 @@ function java.util.List deponering_deelbaarTariefFilterdeponeringInVouw6(Object 
 
 // aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
 function boolean samengesteld2_deelbaarTariefFilterdeponeringInVouw6(Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $teller, Object sonde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, sonde), new java.math.BigDecimal("1"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, sonde), new java.math.BigDecimal("1"), ">"));
+    return lezing.verdict();
 }
 
 rule "deelbaar tarief: filterdeponering in vouw 6"
@@ -747,23 +698,16 @@ function boolean beta_gelijkAanLaterTariefBijdrageAanVouw7(Object eigen, Object 
 
 // aan alle volgende voorwaarden voldoen: hij is niet de Vergunning zelf; zijn tarief is gelijk aan de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf
 function boolean toets_gelijkAanLaterTariefBijdrageAanVouw7(Object $vouwonderwerp, Object $onderwerp, Object $tarief, Object $aantal_vouw_81, Object $vouw_vouw_83) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.sameObject($onderwerp, $vouwonderwerp, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($tarief, ComputeHelpers.foldValue($aantal_vouw_81, $vouw_vouw_83, null), "==")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($tarief, ComputeHelpers.foldValue($aantal_vouw_81, $vouw_vouw_83, null), "=="));
+    return lezing.verdict();
 }
 
 rule "gelijk aan later tarief: bijdrage aan vouw 7"
@@ -808,23 +752,16 @@ function boolean beta_laterTariefZonderKortingBijdrageAanVouw9(Object eigen, Obj
 
 // aan alle volgende voorwaarden voldoen: zijn korting is leeg; zijn tarief is gelijk aan de maximale waarde van het tarief van alle vergunningen van het register van de Vergunning zelf die later ingaan dan de Vergunning zelf
 function boolean toets_laterTariefZonderKortingBijdrageAanVouw9(Object $korting, Object $tarief, Object $aantal_vouw_97, Object $vouw_vouw_99) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($korting, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($korting, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($tarief, ComputeHelpers.foldValue($aantal_vouw_97, $vouw_vouw_99, null), "==")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($tarief, ComputeHelpers.foldValue($aantal_vouw_97, $vouw_vouw_99, null), "=="));
+    return lezing.verdict();
 }
 
 rule "later tarief zonder korting: bijdrage aan vouw 9"
@@ -906,23 +843,16 @@ function boolean beta_deelbaarLaterTariefBijdrageAanVouw13(Object eigen, Object 
 // aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
 function boolean toets_deelbaarLaterTariefBijdrageAanVouw13(Object $ingangsdag, Object $ingangsdag2, Object $tarief, Object $teller) {
     try {
-        int raak = 0;
-        Boolean vast;
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-        if (vast != null) {
-            return vast;
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        if (ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
-            raak++;
+        lezing.read(ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER));
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-        if (vast != null) {
-            return vast;
-        }
-        if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">")) {
-            raak++;
-        }
-        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+        lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">"));
+        return lezing.verdict();
     } catch (RuntimeException e) {
         ComputeHelpers.caught(e);
         return false;
@@ -963,23 +893,16 @@ function boolean toets_deelbaarLaterTariefFilterfoutInVouw13(Object $ingangsdag,
 
 // aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
 function boolean samengesteld1_deelbaarLaterTariefFilterfoutInVouw13(Object $ingangsdag, Object $ingangsdag2, Object $tarief, Object $teller) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
-        raak++;
+    lezing.read(ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">"));
+    return lezing.verdict();
 }
 
 // aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
@@ -994,23 +917,16 @@ function RuntimeException fout_deelbaarLaterTariefFilterfoutInVouw13(Object $lij
 
 // aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
 function boolean samengesteld2_deelbaarLaterTariefFilterfoutInVouw13(Object $lijstplaatsen_plaats_128, Object $plaats_plaats_129, Object $ingangsdag, Object $ingangsdag2, Object $tarief, Object $teller, Object $onderwerp) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
-        raak++;
+    lezing.read(ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, null), new java.math.BigDecimal("1"), ">"));
+    return lezing.verdict();
 }
 
 function java.util.List plaats_deelbaarLaterTariefFilterfoutInVouw13(Object $onderwerp, Object $lijstplaatsen_plaats_128, Object $plaats_plaats_129) {
@@ -1048,23 +964,16 @@ function boolean toets_deelbaarLaterTariefFilterdeponeringInVouw13(Object $ingan
 
 // aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
 function boolean samengesteld1_deelbaarLaterTariefFilterdeponeringInVouw13(Object $ingangsdag, Object $ingangsdag2, Object $tarief, Object $teller, Object sonde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
-        raak++;
+    lezing.read(ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, sonde), new java.math.BigDecimal("1"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, sonde), new java.math.BigDecimal("1"), ">"));
+    return lezing.verdict();
 }
 
 // aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
@@ -1082,23 +991,16 @@ function java.util.List deponering_deelbaarLaterTariefFilterdeponeringInVouw13(O
 
 // aan alle volgende voorwaarden voldoen: zijn ingangsdag is later dan de ingangsdag van de Vergunning zelf; zijn tarief gedeeld door zijn teller is groter dan 1
 function boolean samengesteld2_deelbaarLaterTariefFilterdeponeringInVouw13(Object $ingangsdag, Object $ingangsdag2, Object $tarief, Object $teller, Object $onderwerp, Object sonde) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER)) {
-        raak++;
+    lezing.read(ComputeHelpers.dateCompare($ingangsdag, $ingangsdag2, dev.uchar.regelspraak.ir.Condition.Operator.LATER));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, sonde), new java.math.BigDecimal("1"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.divided($tarief, $teller, sonde), new java.math.BigDecimal("1"), ">"));
+    return lezing.verdict();
 }
 
 rule "deelbaar later tarief: filterdeponering in vouw 13"

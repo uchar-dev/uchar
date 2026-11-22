@@ -65,16 +65,12 @@ end
 
 // aan geen van de volgende voorwaarden voldoen: gemerkt zijn
 function boolean toets_ongemerktAantalBijdrageAanVouw0Selectie0(Object $gemerkt) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 1);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 1, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($gemerkt, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1);
+    lezing.read(ComputeHelpers.characteristic($gemerkt, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "ongemerkt aantal: bijdrage aan vouw 0, selectie 0"
@@ -90,16 +86,12 @@ end
 
 // aan geen van de volgende voorwaarden voldoen: gemerkt zijn
 function boolean toets_ongemerktAantalBijdrageAanVouw0Selectie1(Object $gemerkt) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 1);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 1, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($gemerkt, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1);
+    lezing.read(ComputeHelpers.characteristic($gemerkt, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "ongemerkt aantal: bijdrage aan vouw 0, selectie 1"
@@ -115,16 +107,12 @@ end
 
 // aan geen van de volgende voorwaarden voldoen: gemerkt zijn
 function boolean toets_alarmerendBijOngemerkteVondstenBijdrageAanVouw1Selectie0(Object $gemerkt) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 1);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 1, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($gemerkt, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1);
+    lezing.read(ComputeHelpers.characteristic($gemerkt, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "alarmerend bij ongemerkte vondsten: bijdrage aan vouw 1, selectie 0"
@@ -140,16 +128,12 @@ end
 
 // aan geen van de volgende voorwaarden voldoen: gemerkt zijn
 function boolean toets_alarmerendBijOngemerkteVondstenBijdrageAanVouw1Selectie1(Object $gemerkt) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 0, 1);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, 1, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($gemerkt, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.GEEN, 0, raak, 1);
+    lezing.read(ComputeHelpers.characteristic($gemerkt, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "alarmerend bij ongemerkte vondsten: bijdrage aan vouw 1, selectie 1"

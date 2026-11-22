@@ -1,0 +1,39 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "20"
+          },
+          "taxatie": {
+            "number": "50"
+          },
+          "getuigen": {
+            "number": "0"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "vrijstelling"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "vrijstelling",
+      "label": "V1",
+      "code": "EF-005"
+    }
+  ]
+}

@@ -291,15 +291,17 @@ final class DrlRendering {
         throw new IllegalStateException("no wrapper for " + k);
     }
 
-    /** Whether evaluating {@code t} can neither fault, deposit nor end a {@code Let}: a constant, a bound value, a read
-     *  of an input and a call that cannot fail, over such terms. */
+    /** Whether evaluating {@code t} can neither fault, deposit nor end a {@code Let} or an evaluation: a constant, a
+     *  bound value, a read of an input and a call that cannot fail and is no read of a member that can be open, over
+     *  such terms. */
     private static boolean inert(Term t) {
         return switch (t) {
             case Term.Const x -> true;
             case Term.SlotValue x -> true;
             case Term.Input i -> inert(i.object());
             case Term.Restate h -> inert(h.term());
-            case Term.Call a -> !a.function().canFail() && a.arguments().stream().allMatch(DrlRendering::inert);
+            case Term.Call a -> !a.function().canFail() && a.function() != StaticFunction.READ
+                    && a.arguments().stream().allMatch(DrlRendering::inert);
             default -> false;
         };
     }
@@ -930,15 +932,30 @@ final class DrlRendering {
             Context c = context(t.slots(), deposit ? t.depositFlag() : -1, route(Route.FRESH_DEPOSIT_FLAG) + "()", t.test());
             String caught = "        " + route(Route.CAUGHT) + "(e);\n";
             String body = switch (t.role()) {
-                case CONDITION, VORM -> returning(t.test(), c, "    ");
-                case WITHOUT_FAULT -> tryCatch(returning(t.test(), c, "        "), caught + "        return false;\n");
-                case FAULT -> tryCatch("        boolean uitkomst = " + bool(t.test(), c) + ";\n        return false;\n",
-                        caught + "        return true;\n");
-                case DEPOSIT -> tryCatch("        boolean uitkomst = " + bool(t.test(), c) + ";\n", caught)
-                        + "    return " + route(Route.REPORTED) + "(" + DEPOSIT_FLAG + ");\n";
+                case CONDITION, WITHOUT_FAULT, VORM -> {
+                    boolean withoutFault = t.role() == TestItem.Role.WITHOUT_FAULT;
+                    if (t.open()) yield tryCatch(returning(t.test(), c, "        "), "        return "
+                            + route(Route.HOLDS_FOR_ITSELF) + "(e, " + withoutFault + ");\n");
+                    yield withoutFault ? tryCatch(returning(t.test(), c, "        "), caught + "        return false;\n")
+                            : returning(t.test(), c, "    ");
+                }
+                case LEAVES_OPEN, FAULT -> tryCatch("        boolean uitkomst = " + bool(t.test(), c)
+                        + ";\n        return false;\n", t.role() == TestItem.Role.LEAVES_OPEN
+                        ? "        return " + route(Route.LEAVES_OPEN) + "(e);\n"
+                        : t.open() ? "        return " + route(Route.FAULTED) + "(e);\n"
+                        : caught + "        return true;\n");
+                case DEPOSIT -> evaluated(t.test(), t.open(), c) + "    return " + route(Route.REPORTED) + "("
+                        + DEPOSIT_FLAG + ");\n";
             };
             fill(place, t.test().source(), "boolean " + name + "(" + c.declaration() + ")", body);
             return "eval( " + name + "(" + c.arguments() + ") )";
+        }
+
+        /** The statements that evaluate {@code condition} for the probe of the function alone: a fault is the fault
+         *  rule's, and what was deposited before it stays heard; where {@code open}, an open read drops it. */
+        private String evaluated(Term condition, boolean open, Context c) {
+            return tryCatch("        boolean uitkomst = " + bool(condition, c) + ";\n", "        " + (open
+                    ? route(Route.CAUGHT_DEPOSIT) + "(e, " + DEPOSIT_FLAG + ")" : route(Route.CAUGHT) + "(e)") + ";\n");
         }
 
         /** Whether test {@code t} holds whatever the rule binds, so that the rule has no test for it: it asks the
@@ -1025,6 +1042,7 @@ final class DrlRendering {
                 case Term.Let l -> new Expr(let(l, c), Object.class);
                 case Term.Choice k -> new Expr("(" + bool(k.condition(), c) + " ? (Object) " + value(k.then(), c).text()
                         + " : (Object) " + value(k.otherwise(), c).text() + ")", Object.class);
+                case Term.ClosureOverOpen o -> new Expr(closure(o, c), Object.class);
                 case Term.Call a -> call(a.function(), a.arguments().stream().map(x -> value(x, c)).toList());
                 case Term.Restate h -> call(StaticFunction.RESTATE_EXACT,
                         List.of(value(h.term(), c), constant(h.counter()), constant(h.denominator())));
@@ -1116,26 +1134,29 @@ final class DrlRendering {
         }
 
         /** The statements of composite {@code s} over a member or more, indented by {@code indent}: its members read in
-         *  order, the stop triggers of RUNTIME-SEMANTICS ch. 5.10 tested before each, the quantifier's verdict where
-         *  none stops it, each returned. The sentence of a composite that went into a member stands above the member's
-         *  test ({@link #sentences}). */
+         *  order and counted by its reading ({@link Composite}), the verdict returned where it stands before a member
+         *  and after the last; a member whose judgement can be undetermined hands the reading what it throws. The
+         *  sentence of a composite that went into a member stands above the member's test ({@link #sentences}). */
         private String compoundBody(Term.Compound s, Context c, String indent) {
-            String kw = enumlabel(s.quantifier());
             int n = s.members().size();
-            StringBuilder b = new StringBuilder(indent + "int raak = 0;\n" + indent + "Boolean vast;\n");
+            StringBuilder b = new StringBuilder(indent).append("var lezing = ").append(route(Route.COMPOSITE)).append("(")
+                    .append(enumlabel(s.quantifier())).append(", ").append(s.threshold()).append(", ").append(n)
+                    .append(", ").append(depositFlag(s.depositFlag(), c).text()).append(");\n");
             for (int i = 0; i < n; i++) {
-                b.append(indent).append("vast = ").append(route(Route.ESTABLISHED)).append("(").append(kw).append(", ")
-                        .append(s.threshold()).append(", raak, ").append(i).append(", ").append(n - i).append(");\n");
-                b.append(indent).append("if (vast != null) {\n").append(indent).append("    return vast;\n")
+                b.append(indent).append("if (lezing.stands()) {\n").append(indent).append("    return lezing.verdict();\n")
                         .append(indent).append("}\n");
                 int mark = absorbed.size();
                 String member = bool(s.members().get(i), c);
                 b.append(sentences(mark, indent, s.source()));
-                b.append(indent).append("if (").append(member).append(") {\n").append(indent).append("    raak++;\n")
-                        .append(indent).append("}\n");
+                if (i < s.openFrom()) {
+                    b.append(indent).append("lezing.read(").append(member).append(");\n");
+                } else {
+                    b.append(indent).append("try {\n").append(indent).append("    lezing.read(").append(member)
+                            .append(");\n").append(indent).append("} catch (RuntimeException lid) {\n").append(indent)
+                            .append("    lezing.read(lid);\n").append(indent).append("}\n");
+                }
             }
-            b.append(indent).append("return ").append(route(Route.END_VERDICT)).append("(").append(kw).append(", ")
-                    .append(s.threshold()).append(", raak, ").append(n).append(");\n");
+            b.append(indent).append("return lezing.verdict();\n");
             return b.toString();
         }
 
@@ -1146,6 +1167,19 @@ final class DrlRendering {
             for (Term u = t; u != m; u = ((Term.Compound) u).members().get(0))
                 if (u.source() != null) absorbed.add(u.source());
             return m;
+        }
+
+        /** The operand of a test on leeg and gevuld as a function that gives the mark of a closure where its
+         *  evaluation reads an open value ({@link Term.ClosureOverOpen}). */
+        private String closure(Term.ClosureOverOpen o, Context c) {
+            int place = reserveer();
+            String name = name("sluiting", place);
+            String flag = depositFlag(o.depositFlag(), c).text();
+            String v = value(o.value(), c).text();
+            fill(place, o.source(), "Object " + name + "(" + c.declaration() + ")", "    Object merk = "
+                    + route(Route.MARK) + "(" + flag + ");\n" + tryCatch("        return " + v + ";\n",
+                    "        return " + route(Route.CLOSED) + "(e, " + flag + ", merk);\n"));
+            return name + "(" + c.pass() + ")";
         }
 
         /** A condition where its evaluation answers, and not holding where it faults. */
@@ -1273,6 +1307,7 @@ final class DrlRendering {
                 case Consequence.Value x -> value(x, b);
                 case Consequence.Characteristic x -> insert(b, "    ", x.insertion(), "new " + typeName(HasCharacteristic.class) + "("
                         + x.subject() + ", " + key(x.characteristic()) + ")");
+                case Consequence.LeftOpen x -> insert(b, "    ", x.insertion(), leftOpen(x.subject(), x.member(), x.writer()));
                 case Consequence.TestFault x -> testFault(x, b);
                 case Consequence.Fault x -> insert(b, "    ", x.insertion(), "new " + typeName(Fault.class) + "("
                         + x.subject() + ", " + str(x.fault().form()) + ", " + route(Route.COMPUTE_FAULT) + "("
@@ -1281,7 +1316,7 @@ final class DrlRendering {
                         + str(x.form()) + ", " + x.subject() + ", " + list(texts(x.codes())) + ")");
                 case Consequence.ConditionDeposit x -> insert(b, "    ", x.insertion(), route(Route.INCONSISTENCY) + "("
                         + str(x.form()) + ", " + x.subject() + ", " + depositCodesAgain(x.condition(), x.depositFlag(),
-                                x.slots(), "the condition of \"" + x.form() + "\"") + ")");
+                                x.slots(), x.open(), "the condition of \"" + x.form() + "\"") + ")");
                 case Consequence.WritersUnion x -> insert(b, "    ", x.insertion(), route(Route.WRITERS_UNION)
                         + "(" + x.subject() + ", " + key(x.attribute()) + ", " + variable(x.values()) + ", "
                         + (x.input() < 0 ? "null" : variable(x.input())) + ", " + list(texts(x.documentOrder())) + ")");
@@ -1295,11 +1330,17 @@ final class DrlRendering {
                         + "(" + x.global() + ")");
                 case Consequence.InsertCharacteristicState x -> insert(b, "    ", x.insertion(), "new " + typeName(CharacteristicState.class)
                         + "(" + x.subject() + ", " + key(x.characteristic()) + ", " + x.holds() + ")");
+                case Consequence.OpenStanding x -> insert(b, "    ", x.insertion(), "new "
+                        + typeName(x.member().characteristic() ? CharacteristicState.class : State.class) + "("
+                        + x.subject() + ", " + key(x.member()) + ", " + route(Route.OPEN) + "(" + x.subject() + ", "
+                        + key(x.member()) + "))");
                 case Consequence.State x -> insert(b, "    ", x.insertion(), "new " + typeName(State.class) + "("
                         + x.subject() + ", " + key(x.attribute()) + ", " + (x.bucketScalar()
                         ? route(Route.BUCKET_SCALAR) + "(" + variable(x.value()) + ")"
                         : x.cell() != null ? route(Route.CELL) + "(" + variable(x.value()) + ", "
                                 + consequenceConstant(x.cell()).text() + ")"
+                        : x.incomplete() ? route(Route.INCOMPLETE_INPUT) + "(" + variable(x.value()) + ", " + x.subject()
+                                + ", " + key(x.attribute()) + ")"
                         : variable(x.value())) + ")");
                 case Consequence.InsertPathState x -> insert(b, "    ", x.insertion(), "new " + typeName(PathState.class) + "("
                         + x.subject() + ", " + str(x.path()) + ", " + key(x.member()) + ", "
@@ -1308,7 +1349,7 @@ final class DrlRendering {
                 case Consequence.Contribution x -> contribution(x, b);
                 case Consequence.FilterDeposit x -> insert(b, "    ", x.insertion(), "new "
                         + typeName(FilterDeposit.class) + "(" + str(x.fold()) + ", " + x.subject() + ", "
-                        + variable(x.member()) + ", " + depositCodesAgain(x.filter(), x.depositFlag(), x.slots(),
+                        + variable(x.member()) + ", " + depositCodesAgain(x.filter(), x.depositFlag(), x.slots(), false,
                                 "the filter of " + x.fold()) + ")");
                 case Consequence.FilterFault x -> filterFault(x, b);
                 case Consequence.MemberFault x -> insert(b, "    ", x.insertion(), "new " + typeName(MemberFault.class) + "("
@@ -1394,11 +1435,17 @@ final class DrlRendering {
                 Expr e = value(x.value(), c);
                 String v = x.collapse() ? call(StaticFunction.COLLAPSE, List.of(e)).text() : e.text();
                 fill(place, x.value().source(), "Object " + name + "(" + c.declaration() + ")",
-                        tryCatch("        return " + v + ";\n", "        return " + route(Route.CAUGHT) + "(e);\n"));
+                        tryCatch("        return " + v + ";\n", "        return "
+                                + route(x.open() ? Route.CAUGHT_OPEN : Route.CAUGHT) + "(e);\n"));
                 b.append("    Object v = ").append(name).append("(").append(c.arguments()).append(");\n");
                 b.append("    if (").append(route(Route.IS_EVALUATION_FAULT)).append("(v)) {\n");
                 insert(b, "        ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
                         + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().rule()) + "))");
+                // an open read breaks the value off, and what it deposited is dropped (RUNTIME-SEMANTICS ch. 1.5)
+                if (x.open()) {
+                    b.append("    } else if (").append(route(Route.IS_OPEN)).append("(v)) {\n");
+                    insert(b, "        ", x.insertion(), leftOpen(x.subject(), x.target(), x.writer()));
+                }
                 b.append("    } else {\n");
             }
             String in = carried ? "    " : "        ";
@@ -1418,6 +1465,11 @@ final class DrlRendering {
                 b.append(in).append("}\n");
             }
             if (!carried) b.append("    }\n");
+        }
+
+        /** The fact that {@code writer} leaves {@code member} of the object {@code subject} binds open. */
+        private String leftOpen(String subject, ElementKey member, String writer) {
+            return "new " + typeName(LeftOpen.class) + "(" + subject + ", " + key(member) + ", " + str(writer) + ")";
         }
 
         /** Whether {@code t}, the value of a decision or of a value consequence, computes nothing: a constant, or the
@@ -1440,14 +1492,13 @@ final class DrlRendering {
 
         /** The codes of the deposit of {@code condition}, which the test of the rule found: a function of the rule
          *  evaluates it again over the bound values at {@code slots} with a fresh probe in slot {@code depositFlag},
-         *  an evaluation fault leaving what the probe heard before it, and gives the codes the probe heard, a probe
-         *  that heard nothing a broken contract of {@code what}; returns its call. */
-        private String depositCodesAgain(Term condition, int depositFlag, List<Integer> slots, String what) {
+         *  as the test evaluated it ({@link #evaluated}), and gives the codes the probe heard, a probe that heard
+         *  nothing a broken contract of {@code what}; returns its call. */
+        private String depositCodesAgain(Term condition, int depositFlag, List<Integer> slots, boolean open, String what) {
             int place = reserveer();
             String name = name("deponering", place);
             Context c = context(slots, depositFlag, route(Route.FRESH_DEPOSIT_FLAG) + "()", condition);
-            String body = tryCatch("        boolean uitkomst = " + bool(condition, c) + ";\n",
-                    "        " + route(Route.CAUGHT) + "(e);\n")
+            String body = evaluated(condition, open, c)
                     + "    if (!" + route(Route.REPORTED) + "(" + DEPOSIT_FLAG + ")) {\n        "
                     + route(Route.CONTRACT_BREACH) + "(" + str(what + " deposited in the test and not in the consequence,"
                             + " over the same bound values") + ");\n    }\n"
@@ -1862,6 +1913,7 @@ final class DrlRendering {
                     dayKinds(q.contributions(), out);
                 }
                 case Term.WithoutFault z -> dayKinds(z.condition(), out);
+                case Term.ClosureOverOpen o -> dayKinds(o.value(), out);
                 case Term.Const k -> { }
                 case Term.SlotValue l -> { }
                 case Term.Binder x -> { }

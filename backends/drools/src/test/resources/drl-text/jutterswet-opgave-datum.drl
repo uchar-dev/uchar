@@ -75,30 +75,20 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn opgegeven meldingsdatum is gevuld - zijn berekende meldingsdatum is gevuld - zijn opgegeven meldingsdatum is ongelijk aan zijn berekende meldingsdatum
 function boolean toets_afwijkingOpgaveMeldingsdatum(Object $opgegevenMeldingsdatum, Object $berekendeMeldingsdatum) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($opgegevenMeldingsdatum, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest($opgegevenMeldingsdatum, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.emptyTest($berekendeMeldingsdatum, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest($berekendeMeldingsdatum, Boolean.FALSE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.dateCompare($opgegevenMeldingsdatum, $berekendeMeldingsdatum, dev.uchar.regelspraak.ir.Condition.Operator.ONGELIJK)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(ComputeHelpers.dateCompare($opgegevenMeldingsdatum, $berekendeMeldingsdatum, dev.uchar.regelspraak.ir.Condition.Operator.ONGELIJK));
+    return lezing.verdict();
 }
 
 rule "afwijking opgave meldingsdatum"

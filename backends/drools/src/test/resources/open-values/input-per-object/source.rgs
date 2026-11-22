@@ -1,0 +1,11 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (geheel getal);
+    het vindloon Numeriek (geheel getal);
+
+Objecttype de Strandvondst is een Vondst (mv: Strandvondsten)
+
+Regel vindloon
+    geldig altijd
+        Het vindloon van een Strandvondst moet gesteld worden op 10 indien zijn taxatie groter is dan 1000.

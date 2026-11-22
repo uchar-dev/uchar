@@ -1,0 +1,8 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+
+Regel gewichtscontrole
+    geldig altijd
+        Het gewicht van een Vondst moet groter of gelijk zijn aan 0.

@@ -44,23 +44,16 @@ end
 // hij aan ten minste een van de volgende voorwaarden voldoet
 function boolean toets_gemeldeVondst(Object $actief, Object $rekendatumwaarde_1, Object $vondstjaar) {
     try {
-        int raak = 0;
-        Boolean vast;
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-        if (vast != null) {
-            return vast;
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
-            raak++;
+        lezing.read(ComputeHelpers.characteristic($actief, Boolean.FALSE));
+        if (lezing.stands()) {
+            return lezing.verdict();
         }
-        vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-        if (vast != null) {
-            return vast;
-        }
-        if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_1, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), $vondstjaar, ">")) {
-            raak++;
-        }
-        return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+        lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_1, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), $vondstjaar, ">"));
+        return lezing.verdict();
     } catch (RuntimeException e) {
         ComputeHelpers.caught(e);
         return false;
@@ -90,23 +83,16 @@ function boolean toets_gemeldeVondstFoutInDeVoorwaarde(Object $actief, Object $r
 
 // hij aan ten minste een van de volgende voorwaarden voldoet
 function boolean samengesteld1_gemeldeVondstFoutInDeVoorwaarde(Object $actief, Object $rekendatumwaarde_1, Object $vondstjaar) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_1, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), $vondstjaar, ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_1, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), $vondstjaar, ">"));
+    return lezing.verdict();
 }
 
 // hij aan ten minste een van de volgende voorwaarden voldoet
@@ -121,23 +107,16 @@ function Object fout_gemeldeVondstFoutInDeVoorwaarde(Object $actief, Object $rek
 
 // hij aan ten minste een van de volgende voorwaarden voldoet
 function boolean samengesteld2_gemeldeVondstFoutInDeVoorwaarde(Object $actief, Object $rekendatumwaarde_1, Object $vondstjaar) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($actief, Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($actief, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_1, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), $vondstjaar, ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_1, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), $vondstjaar, ">"));
+    return lezing.verdict();
 }
 
 rule "gemelde vondst: fout in de voorwaarde"

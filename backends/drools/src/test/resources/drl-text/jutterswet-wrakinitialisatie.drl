@@ -40,23 +40,16 @@ end
 
 // zijn gewicht groter is dan 50 en zijn gewicht groter is dan 100
 function boolean toets_defaultsAWrakvondstBergloonDefault0(Object $gewicht) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("50"), ">")) {
-        raak++;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("50"), ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("100"), ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($gewicht, new java.math.BigDecimal("100"), ">"));
+    return lezing.verdict();
 }
 
 rule "defaults A:Wrakvondst.bergloon: default 0"

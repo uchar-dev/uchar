@@ -185,23 +185,16 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn herkeuring heeft een waarde - zijn herkeuring is gelijk aan 'hout'
 function boolean toets_houtenVondst(Object $herkeuring) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.emptyTest(ComputeHelpers.payload($herkeuring, "waarde"), Boolean.FALSE)) {
-        raak++;
+    lezing.read(ComputeHelpers.emptyTest(ComputeHelpers.payload($herkeuring, "waarde"), Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam(ComputeHelpers.payload($herkeuring, "waarde")), RegelSpraakRuntime.rsEnumNaam("hout"), Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam(ComputeHelpers.payload($herkeuring, "waarde")), RegelSpraakRuntime.rsEnumNaam("hout"), Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "houten vondst"

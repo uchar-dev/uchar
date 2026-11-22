@@ -84,44 +84,28 @@ end
 
 // hij werkloos is, zijn maandinkomen groter is dan zijn inkomensgrens, de omstandigheid die tot het eindigen heeft geleid is vervallen en hij een nieuw recht heeft waarvan het maandloon boven de grens ligt
 function boolean toets_defaultsKWerknemerRechtOpUitkeringDefault0000000(Object $werkloos, Object $maandinkomen, Object $inkomensgrens, Object $omstandigheidVervallen, Object $nieuwRechtOntstaan, Object $nieuwMaandloon) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 5);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 5, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($werkloos, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($werkloos, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 4);
-    if (vast != null) {
-        return vast;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($maandinkomen, $inkomensgrens, ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($maandinkomen, $inkomensgrens, ">")) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($omstandigheidVervallen, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 3);
-    if (vast != null) {
-        return vast;
+    lezing.read(ComputeHelpers.characteristic($nieuwRechtOntstaan, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($omstandigheidVervallen, Boolean.TRUE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3, 2);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.characteristic($nieuwRechtOntstaan, Boolean.TRUE)) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 4, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($nieuwMaandloon, $inkomensgrens, ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 5);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($nieuwMaandloon, $inkomensgrens, ">"));
+    return lezing.verdict();
 }
 
 rule "defaults K:Werknemer.recht op uitkering: default 0.0.0.0.0.0.0"
@@ -150,30 +134,20 @@ end
 
 // hij werkloos is, zijn maandinkomen groter is dan zijn inkomensgrens en de omstandigheid die tot het eindigen heeft geleid is vervallen
 function boolean toets_defaultsKWerknemerRechtOpUitkeringTerugval00000(Object $werkloos, Object $maandinkomen, Object $inkomensgrens, Object $omstandigheidVervallen) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 3);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($werkloos, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($werkloos, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 2);
-    if (vast != null) {
-        return vast;
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($maandinkomen, $inkomensgrens, ">"));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (RegelSpraakRuntime.rsAggVergelijk($maandinkomen, $inkomensgrens, ">")) {
-        raak++;
-    }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (ComputeHelpers.characteristic($omstandigheidVervallen, Boolean.TRUE)) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 3);
+    lezing.read(ComputeHelpers.characteristic($omstandigheidVervallen, Boolean.TRUE));
+    return lezing.verdict();
 }
 
 rule "defaults K:Werknemer.recht op uitkering: terugval 0.0.0.0.0"
@@ -203,23 +177,16 @@ end
 
 // hij werkloos is en zijn maandinkomen groter is dan zijn inkomensgrens
 function boolean toets_defaultsKWerknemerRechtOpUitkeringTerugval000(Object $werkloos, Object $maandinkomen, Object $inkomensgrens) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($werkloos, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($werkloos, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($maandinkomen, $inkomensgrens, ">")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($maandinkomen, $inkomensgrens, ">"));
+    return lezing.verdict();
 }
 
 rule "defaults K:Werknemer.recht op uitkering: terugval 0.0.0"

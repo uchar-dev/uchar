@@ -127,11 +127,37 @@ public enum Route {
     BINDER_VALUE(ComputeHelpers.class, "binderValue"),
     /** The outcome of a {@code Let} its barrier ended: leeg where the barrier is its own; another passes on. */
     INTERCEPTED(ComputeHelpers.class, "intercepted"),
-    /** The verdict of a composite once some of its members are read, or none while the rest can change it: the stop
-     *  triggers before each member ({@link Term.Compound}). */
-    ESTABLISHED(ComputeHelpers.class, "established"),
-    /** The verdict of a composite whose members are all read ({@link Term.Compound}). */
+    /** The reading of a composite over its members, which counts them and stops where its judgement stands
+     *  ({@link Term.Compound}). */
+    COMPOSITE(ComputeHelpers.class, "composite"),
+    /** The verdict of a composite over no member ({@link Term.Compound}). */
     END_VERDICT(ComputeHelpers.class, "endVerdict"),
+    /** What a probe has heard so far, where the operand of a test on leeg and gevuld begins
+     *  ({@link Term.ClosureOverOpen}). */
+    MARK(ComputeHelpers.class, "mark"),
+    /** The operand of a test on leeg and gevuld that read an open value, as the mark of a closure; any other exception
+     *  passes on ({@link Term.ClosureOverOpen}). */
+    CLOSED(ComputeHelpers.class, "closed"),
+    /** The answer of a test that a condition holds for the form itself, where its evaluation threw
+     *  ({@link TestItem#open}). */
+    HOLDS_FOR_ITSELF(ComputeHelpers.class, "holdsForItself"),
+    /** The answer of a test that a condition leaves its writer undecided, where its evaluation threw
+     *  ({@link TestItem.Role#LEAVES_OPEN}). */
+    LEAVES_OPEN(ComputeHelpers.class, "leavesOpen"),
+    /** The answer of a test that a condition faults, where its evaluation threw ({@link TestItem#open}). */
+    FAULTED(ComputeHelpers.class, "faulted"),
+    /** What a test of deposits keeps where the evaluation of its condition threw ({@link TestItem#open}). */
+    CAUGHT_DEPOSIT(ComputeHelpers.class, "caughtDeposit"),
+    /** The open read or the evaluation fault a value raised, as its outcome; any other exception passes on
+     *  ({@link Consequence.Value#open}). */
+    CAUGHT_OPEN(ComputeHelpers.class, "caughtOpen"),
+    /** Whether the outcome of a value is an open read ({@link Consequence.Value#open}). */
+    IS_OPEN(ComputeHelpers.class, "isOpen"),
+    /** The open standing of a member on an object ({@link Consequence.OpenStanding}). */
+    OPEN(ComputeHelpers.class, "open"),
+    /** The input of an attribute that is not complete, or its open member where the bean holds no value
+     *  ({@link Consequence.State#incomplete}). */
+    INCOMPLETE_INPUT(ComputeHelpers.class, "incompleteInput"),
     /** The verdict of a matrix as a member's contribution, 1 or 0 ({@link Consequence.Input.Verdict}). */
     VERDICT(ComputeHelpers.class, "verdict"),
     /** A decision of a defaults stack on a target with declared decimals: the decision where it fits them, as a

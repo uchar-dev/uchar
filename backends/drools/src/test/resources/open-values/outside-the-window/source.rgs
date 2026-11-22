@@ -1,0 +1,15 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (geheel getal);
+    het vindloon Numeriek (geheel getal);
+    het bergloon Numeriek (geheel getal);
+    de uitbetaling Numeriek (geheel getal);
+
+Regel vindloon
+    geldig vanaf 01-01-2030
+        Het vindloon van een Vondst moet gesteld worden op 10 indien zijn taxatie groter is dan 1000.
+
+Regel uitbetaling
+    geldig altijd
+        De uitbetaling van een Vondst moet berekend worden als zijn vindloon plus zijn bergloon.

@@ -256,6 +256,9 @@ public final class TmsTranspiler {
     private PrecisionBound precisionBound;
     /** Every member a form of the document writes, lowered or not. A member that no form writes is input. */
     private Map<ElementKey, Set<String>> writers = Map.of();
+    /** The members that can be open (RUNTIME-SEMANTICS ch. 1.5): none in a document that infers from an empty value. A
+     *  member outside it is settled wherever it is not filled, so nothing of the lowering asks whether it is open. */
+    private OpenableMembers openable = OpenableMembers.NONE;
     /** The members of the unbounded form whose one writer is an object creation ({@link #createdExactValues}). */
     private Set<ElementKey> createdExactValues = Set.of();
     /** Per attribute, and per cell of a dimensioned attribute, the assignments and computations of the document that
@@ -404,6 +407,12 @@ public final class TmsTranspiler {
     /** The defaults groups of the document, in its order: the loader keeps them beside the model. */
     public List<PrioritizedDefaults> prioritizedDefaults() {
         return defaults;
+    }
+
+    /** The members of the document that can be open on an object (RUNTIME-SEMANTICS ch. 1.5): none in a document that
+     *  infers from an empty value. */
+    public OpenableMembers openableMembers() {
+        return openable;
     }
 
     private TmsTranspiler(RegelSpraakModel model, ClassLoader beanLoader, List<PrioritizedDefaults> defaults,
@@ -670,6 +679,9 @@ public final class TmsTranspiler {
             /** The rule that inserts the fault of a condition that can fault: a form's condition or assertion, a
              *  default's justification. */
             CONDITION_FAULT("condition-fault", Kind.FORM, Kind.DEFAULT),
+            /** The rule that inserts that a form leaves its target open, where its condition neither holds for the form
+             *  itself nor fails for another (RUNTIME-SEMANTICS ch. 1.5, "A rule"). */
+            LEFT_OPEN("left-open", Kind.FORM),
             /** The rule that deposits the §9.5 inconsistency where the evaluation of a form's condition, or of the
              *  justification of a default that decides, divides a filled dividend by a leeg divisor or takes the root of
              *  a negative number (ch. 1.2, 7.1). */
@@ -1137,6 +1149,8 @@ public final class TmsTranspiler {
 
     private Modelplan run() {
         writers = ProducerConsumer.producerIndex(model, defaults);
+        openable = OpenableMembers.of(model, defaults,
+                ProducerConsumer.wireNavigation(model, navigationBindings, anchored));
         createdExactValues = createdExactValues(writers);
         for (ResolvedRule r : model.resolvedRules)
             if (r.name() != null && !documentOrder.contains(r.name())) documentOrder.add(r.name());
@@ -1404,9 +1418,9 @@ public final class TmsTranspiler {
         beginReading();
         Term testTerm = r.condition() == null ? null : conditionTerm(r.condition(), reads);
         Noted noted = endReading();
-        boolean canFail = reads.canFail();
+        Ends ends = reads.ends();
         reads.stop();
-        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
+        List<LhsItem> items = reads.plan(Asked.DECIDES, ends, testTerm, read);
         ElementKey key = member.key();
         derived.put(key, member);
         reads.recorder();
@@ -1417,7 +1431,8 @@ public final class TmsTranspiler {
         if (noted != null && testTerm != null)
             conditionReadingRule(ruleName, positions.versionOf(r), reads, reads.readingPlan(List.of(), false),
                     testTerm, r.condition(), noted, r.validity(), false);
-        out.addAll(conditionSideRules(canFail, ruleName, fresh, r.condition(), r.name(), null, r.name(), null, null));
+        out.addAll(openRule(ends, r.name(), ruleName, fresh, r.condition(), null, key));
+        out.addAll(conditionSideRules(ends, ruleName, fresh, r.condition(), r.name(), null, r.name(), null, null));
         return out;
     }
 
@@ -1475,7 +1490,7 @@ public final class TmsTranspiler {
         Noted noted = endReading();
         reads.stop();
         int depositFlag = reads.depositFlagSlot();
-        List<LhsItem> items = reads.plan(TestItem.Role.CONDITION, null, read);
+        List<LhsItem> items = reads.plan(null, read);
         String ruleName = model.emittedRuleName(r.name());
         Consequence consequence = new Consequence.Value(SUBJECT, key, r.name(), value, List.copyOf(use), reads.size(),
                 false, true, depositFlag < 0 ? null : new Consequence.Deposit(depositFlag, r.name()),
@@ -2494,7 +2509,7 @@ public final class TmsTranspiler {
         beginReading();
         boolean perPeriod = r.condition() != null && readsTimeline(r.condition(), subject);
         Term testTerm = r.condition() == null || perPeriod ? null : conditionTerm(r.condition(), reads);
-        boolean canFail = reads.canFail();
+        Ends ends = reads.ends();
         reads.stop();
         Set<Integer> use = reads.follow();
         // the condition first, then the days the stack leaves, then the value, as the reference interpreter reads them
@@ -2528,7 +2543,7 @@ public final class TmsTranspiler {
         Noted noted = endReading();
         reads.stop();
         int depositFlag = reads.depositFlagSlot();
-        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
+        List<LhsItem> items = reads.plan(Asked.DECIDES, ends, testTerm, read);
         Consequence decision = new Consequence.Decision(SUBJECT, value, List.copyOf(use), reads.size(), false,
                 new Consequence.FaultName(name, ruleName),
                 depositFlag < 0 ? null : new Consequence.Deposit(depositFlag, name),
@@ -2541,7 +2556,7 @@ public final class TmsTranspiler {
             readingRule(ruleName, positions.versionOf(r), reads, reads.readingPlan(List.of(), false), null, testTerm,
                     periods, reading, r.condition(), r.value(), noted, r.validity(), false, null, left);
         if (perPeriod) return out;
-        out.addAll(conditionSideRules(canFail, ruleName, fresh, r.condition(), name, null, name, null, null));
+        out.addAll(conditionSideRules(ends, ruleName, fresh, r.condition(), name, null, name, null, null));
         return out;
     }
 
@@ -2580,7 +2595,7 @@ public final class TmsTranspiler {
         // the consequence, and its faults and deposits are the value's (RUNTIME-SEMANTICS ch. 3.10)
         boolean perPeriod = member.time() != null && r.condition() != null && readsTimeline(r.condition(), subject);
         Term testTerm = r.condition() == null || perPeriod ? null : conditionTerm(r.condition(), reads);
-        boolean canFail = reads.canFail();
+        Ends ends = reads.ends();
         reads.stop();
         Set<Integer> use = reads.follow();
         Term periods = perPeriod ? periodCondition(r.condition(), member, reads) : null;
@@ -2606,9 +2621,10 @@ public final class TmsTranspiler {
             note(produced, value);
         }
         Noted noted = endReading();
+        boolean openValue = reads.ends().open();
         reads.stop();
         int depositFlag = reads.depositFlagSlot();
-        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
+        List<LhsItem> items = reads.plan(Asked.DECIDES, ends, testTerm, read);
         List<LhsItem> blockadeItems = blockade == null ? List.of() : blockade.apply(reads);
         items.addAll(blockadeItems);
         String name = r.name();
@@ -2617,7 +2633,7 @@ public final class TmsTranspiler {
         // wrote (ch. 2.1, 2.4 point 3); the write-back puts it on the bean as a decimal (readFixpoint)
         Consequence consequence = new Consequence.Value(SUBJECT, key, name, value, List.copyOf(use), reads.size(), false,
                 false, depositFlag < 0 ? null : new Consequence.Deposit(depositFlag, name), new Consequence.FaultName(name, ruleName),
-                Consequence.Insertion.LOGICAL);
+                openValue, Consequence.Insertion.LOGICAL);
         derived.put(key, member);
         reads.recorder();
         List<RulePlan> out = new ArrayList<>();
@@ -2633,7 +2649,8 @@ public final class TmsTranspiler {
                     r.condition(), r.value(), noted, r.validity(), blockade != null, null, null);
         }
         if (perPeriod) return out;
-        out.addAll(conditionSideRules(canFail, ruleName, fresh, r.condition(), name, blockade, name, blockade, null));
+        out.addAll(openRule(ends, name, ruleName, fresh, r.condition(), blockade, key));
+        out.addAll(conditionSideRules(ends, ruleName, fresh, r.condition(), name, blockade, name, blockade, null));
         return out;
     }
 
@@ -2697,7 +2714,7 @@ public final class TmsTranspiler {
 
     /**
      * The rules beside the rule {@code ruleName} of a form that tests the condition {@code c}, in this order: where the
-     * condition can fault ({@code canFail}), the rule that inserts its fault under {@code form}, after {@code blockade}
+     * condition can fault ({@code ends}), the rule that inserts its fault under {@code form}, after {@code blockade}
      * ({@link #conditionFaultRule}); where the condition deposits, the rule that deposits under {@code depositForm},
      * after {@code depositBlockade} ({@link #depositRule}); and where {@code validity} is bounded, the rule that faults
      * a session without an evaluation date under {@code form} ({@link #validityFault}). {@code fresh} builds the
@@ -2705,11 +2722,11 @@ public final class TmsTranspiler {
      * since {@link #rule} adds that rule for every kind, and so does a default, whose stack has a rule of its own for
      * a session without a date ({@link #stackValidityFault}).
      */
-    private List<RulePlan> conditionSideRules(boolean canFail, String ruleName, Supplier<Reads> fresh, Condition c,
+    private List<RulePlan> conditionSideRules(Ends ends, String ruleName, Supplier<Reads> fresh, Condition c,
                                               String form, Function<Reads, List<LhsItem>> blockade, String depositForm,
                                               Function<Reads, List<LhsItem>> depositBlockade, Validity validity) {
         List<RulePlan> out = new ArrayList<>();
-        if (canFail) out.add(conditionFaultRule(form, ruleName, fresh, c, blockade));
+        if (ends.fault()) out.add(conditionFaultRule(form, ruleName, fresh, c, blockade));
         RulePlan deposit = depositRule(depositForm, ruleName, fresh, c, depositBlockade);
         if (deposit != null) out.add(deposit);
         RulePlan withoutDate = validityFault(ruleName, form, validity);
@@ -2736,8 +2753,9 @@ public final class TmsTranspiler {
         Reads reads = fresh.get();
         Set<Integer> read = reads.follow();
         Term testTerm = conditionTerm(c, reads);
+        Ends ends = reads.ends();
         reads.stop();
-        List<LhsItem> items = reads.plan(TestItem.Role.FAULT, testTerm, read);
+        List<LhsItem> items = reads.plan(Asked.FAULTS, ends, testTerm, read);
         if (blockade != null) items.addAll(blockade.apply(reads));
         Consequence fault = new Consequence.TestFault(SUBJECT, testTerm, TestItem.Role.FAULT, List.copyOf(read), reads.size(),
                 new Consequence.FaultName(form, model.emittedRuleName(form)), Consequence.Insertion.LOGICAL);
@@ -2745,11 +2763,47 @@ public final class TmsTranspiler {
         return as(RuleOrigin.Role.CONDITION_FAULT, reads.rulePlan(ruleName + ": fout in de voorwaarde", items, fault));
     }
 
-    /** The role of the test of a condition in the rule of its form: where the condition can fault it is tested without
-     *  its fault, which the fault rule takes ({@link #conditionFaultRule}). */
-    private static TestItem.Role conditionRole(boolean canFail) {
-        return canFail ? TestItem.Role.WITHOUT_FAULT : TestItem.Role.CONDITION;
+    /**
+     * The rule of the open outcome of the writer {@code form} of {@code member}, beside its rule {@code ruleName}, whose
+     * condition is {@code c}, ending as {@code ends} says (RUNTIME-SEMANTICS ch. 1.5, "A rule"): the left-hand side of
+     * that rule built again over fresh declarations ({@code fresh}), with the test that the condition leaves the writer
+     * undecided ({@link Asked#LEAVES_OPEN}) and {@code blockade} after it, and a consequence that inserts that the form
+     * leaves {@code member} of the subject open ({@link LeftOpen}). It fires exactly where the form's rule tests the
+     * condition and the condition neither holds for the form itself nor fails for another, and the fact goes when a read
+     * it rested on changes. Where the condition fails for another form, no rule of the form fires: it stands that the
+     * form fills nothing. A value with an open read leaves the target open from the form's own rule
+     * ({@link Consequence.Value}). Empty for a form whose condition always stands.
+     */
+    private List<RulePlan> openRule(Ends ends, String form, String ruleName, Supplier<Reads> fresh, Condition c,
+                                    Function<Reads, List<LhsItem>> blockade, ElementKey member) {
+        if (!ends.open()) return List.of();
+        Reads reads = fresh.get();
+        Set<Integer> read = reads.follow();
+        Term testTerm = conditionTerm(c, reads);
+        reads.stop();
+        List<LhsItem> items = reads.plan(Asked.LEAVES_OPEN, ends, testTerm, read);
+        if (blockade != null) items.addAll(blockade.apply(reads));
+        reads.recorder();
+        return List.of(as(RuleOrigin.Role.LEFT_OPEN, reads.rulePlan(ruleName + ": laat open", items,
+                new Consequence.LeftOpen(SUBJECT, member, form, Consequence.Insertion.LOGICAL))));
     }
+
+    /** How the evaluation of a condition or a value can end beside its outcome: in an evaluation fault, and in an open
+     *  read, so that a condition's judgement can be undetermined (RUNTIME-SEMANTICS ch. 1.5). */
+    private record Ends(boolean fault, boolean open) {}
+
+    /** A part of a condition as a term, and whether it reads a member that can be open ({@link Reads#opened}). */
+    private record Opened(Term term, boolean open) {}
+
+    /**
+     * What the test of a rule asks of a condition of the IR (RUNTIME-SEMANTICS ch. 1.5): one of the outcomes of its
+     * form, or what its evaluation does beside them. A form decides where its condition holds for the form itself
+     * ({@code DECIDES}); it leaves its target open where the condition neither holds for the form itself nor fails for
+     * another ({@code LEAVES_OPEN}, a {@link LeftOpen}); and it fills nothing where the condition fails for another
+     * form, which no rule tests, since it is the absence of the other two. Beside them the condition can fault
+     * ({@code FAULTS}) and deposit ({@code DEPOSITS}). {@link Reads#conditionTest} turns each into a test.
+     */
+    private enum Asked { DECIDES, LEAVES_OPEN, FAULTS, DEPOSITS }
 
     /**
      * The rule that deposits the §9.5 inconsistency of RUNTIME-SEMANTICS ch. 1.2 for the condition {@code c} of
@@ -2768,15 +2822,16 @@ public final class TmsTranspiler {
         Reads reads = fresh.get();
         Set<Integer> read = reads.follow();
         Term testTerm = conditionTerm(c, reads);
+        Ends ends = reads.ends();
         reads.stop();
         int depositFlag = reads.depositFlagSlot();
         if (depositFlag < 0) throw new IllegalStateException("the condition of \"" + form + "\" deposits, but got no probe");
-        List<LhsItem> items = reads.plan(TestItem.Role.DEPOSIT, testTerm, read);
+        List<LhsItem> items = reads.plan(Asked.DEPOSITS, ends, testTerm, read);
         if (blockade != null) items.addAll(blockade.apply(reads));
         reads.recorder();
         return as(RuleOrigin.Role.CONDITION_DEPOSIT, reads.rulePlan(ruleName + ": deponering in de voorwaarde", items,
                 new Consequence.ConditionDeposit(SUBJECT, form, testTerm, depositFlag, List.copyOf(read), reads.size(),
-                        Consequence.Insertion.LOGICAL)));
+                        ends.open(), Consequence.Insertion.LOGICAL)));
     }
 
     // ---------------- a consistency and the §9.5 channel ----------------
@@ -2802,10 +2857,15 @@ public final class TmsTranspiler {
         beginReading();
         Term holds = conditionTerm(c.assertion(), reads);
         Noted noted = endReading();
-        boolean canFail = reads.canFail();
+        Ends ends = reads.ends();
         reads.stop();
-        Term violated = new Term.Call(StaticFunction.NIET, List.of(holds), source(c.assertion().source()));
-        List<LhsItem> items = reads.plan(conditionRole(canFail), violated, read);
+        // "niet A" is none over A (RUNTIME-SEMANTICS ch. 1.5): where the assertion can be undetermined, the composite
+        // keeps its judgement, and the rule reports where the assertion fails for the form itself
+        String source = source(c.assertion().source());
+        Term violated = ends.open()
+                ? new Term.Compound(Condition.Quantifier.GEEN, 0, List.of(holds), 0, reads.depositFlagSlot(), source)
+                : new Term.Call(StaticFunction.NIET, List.of(holds), source);
+        List<LhsItem> items = reads.plan(Asked.DECIDES, ends, violated, read);
         String name = c.name();
         reads.recorder();
         List<RulePlan> out = new ArrayList<>();
@@ -2816,7 +2876,7 @@ public final class TmsTranspiler {
         if (noted != null)
             conditionReadingRule(model.emittedRuleName(name), positions.versionOf(c), reads,
                     reads.readingPlan(List.of(), false), holds, c.assertion(), noted, c.validity(), false);
-        out.addAll(conditionSideRules(canFail, model.emittedRuleName(name), fresh, c.assertion(), name, null, name,
+        out.addAll(conditionSideRules(ends, model.emittedRuleName(name), fresh, c.assertion(), name, null, name,
                 null, c.validity()));
         return out;
     }
@@ -2938,7 +2998,7 @@ public final class TmsTranspiler {
         // a key the case gives as the asOfDate-bucket scalar is the fault of the key-form rule beside this one
         if (timeline >= 0) participation.add(bucketScalar(keySlots.get(timeline), false));
         if (scope >= 0) participation.add(filled(scope));
-        List<LhsItem> items = reads.plan(TestItem.Role.VORM, all(participation), read);
+        List<LhsItem> items = reads.plan(all(participation), read);
         List<Term> components = new ArrayList<>();
         for (int i = 0; i < keySlots.size(); i++) {
             Term component = new Term.SlotValue(keySlots.get(i), null);
@@ -2981,7 +3041,7 @@ public final class TmsTranspiler {
         List<Term> bucket = new ArrayList<>();
         for (int i : preceding) bucket.add(filled(i));
         bucket.add(bucketScalar(timeline, true));
-        List<LhsItem> items = reads.plan(TestItem.Role.VORM, all(bucket), read);
+        List<LhsItem> items = reads.plan(all(bucket), read);
         reads.recorder();
         return as(RuleOrigin.Role.UNIQUENESS_KEY_FORM_FAULT, reads.rulePlan(ruleName + ": sleutelvorm van "
                 + type.name + " " + (b + 1), items,
@@ -3226,7 +3286,7 @@ public final class TmsTranspiler {
         int g = weight == null ? -1 : member.own(weight);
         int k = key == null ? -1 : member.own(key);
         int m = maximum == null ? -1 : member.own(maximum);
-        List<LhsItem> memberRule = member.plan(TestItem.Role.CONDITION, null, Set.of());
+        List<LhsItem> memberRule = member.plan(null, Set.of());
         member.recorder();
         out.add(as(RuleOrigin.Role.ALLOCATION_RECIPIENT, member.rulePlan(ruleName + ": ontvanger", memberRule,
                 new Consequence.Recipient(FOLD_SUBJECT, name, recipient, g, k, m, Consequence.Insertion.LOGICAL))));
@@ -3238,11 +3298,11 @@ public final class TmsTranspiler {
         beginReading();
         Term testTerm = v.condition() == null ? null : conditionTerm(v.condition(), reads);
         Noted noted = endReading();
-        boolean canFail = reads.canFail();
+        Ends ends = reads.ends();
         reads.stop();
         int p = reads.own(pot);
         int list = reads.recipients(name);
-        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
+        List<LhsItem> items = reads.plan(Asked.DECIDES, ends, testTerm, read);
         ElementKey shareKey = share.key(), restKey = rest == null ? null : rest.key();
         // the distribution computes in the unit of the pot: the cap restated into it, as a comparison restates (ch. 2.6
         // rule 5), and the share and the rest restated out of it into their targets, as a write does (ch. 2.4, 2.6 rule 6)
@@ -3266,7 +3326,7 @@ public final class TmsTranspiler {
                     testTerm, v.condition(), noted, v.validity(), false);
         derived.put(shareKey, share);
         if (rest != null) derived.put(restKey, rest);
-        out.addAll(conditionSideRules(canFail, ruleName, fresh, v.condition(), name, null, name, null, v.validity()));
+        out.addAll(conditionSideRules(ends, ruleName, fresh, v.condition(), name, null, name, null, v.validity()));
         return out;
     }
 
@@ -3420,7 +3480,7 @@ public final class TmsTranspiler {
         beginReading();
         Term testTerm = oc.condition() == null ? null : conditionTerm(oc.condition(), reads);
         Noted noted = endReading();
-        boolean canFail = reads.canFail();
+        Ends ends = reads.ends();
         reads.stop();
         Set<Integer> use = reads.follow();
         List<Assignment> assigned = new ArrayList<>();
@@ -3461,7 +3521,7 @@ public final class TmsTranspiler {
         use.add(phase);
         int origin = reads.origin();
         use.add(origin);
-        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read,
+        List<LhsItem> items = reads.plan(Asked.DECIDES, ends, testTerm, read,
                 creationGuard(name, reads, phase));
         // the fault this creation stated when it fired for the subject blocks it there: the driver counts every firing of
         // a creation rule as a creation, so a creation that fired again on its own fault would never let a stratum end
@@ -3508,7 +3568,7 @@ public final class TmsTranspiler {
         if (noted != null && testTerm != null)
             conditionReadingRule(ruleName, positions.versionOf(oc), reads, reads.readingPlan(List.of(), true),
                     testTerm, oc.condition(), noted, oc.validity(), k.oneToOne());
-        out.addAll(conditionSideRules(canFail, ruleName, newReads, oc.condition(), name, null, name, null,
+        out.addAll(conditionSideRules(ends, ruleName, newReads, oc.condition(), name, null, name, null,
                 oc.validity()));
         return out;
     }
@@ -3638,11 +3698,11 @@ public final class TmsTranspiler {
         beginReading();
         Term testTerm = anchorGuard == null ? null : conditionTerm(anchorGuard, reads);
         Noted noted = endReading();
-        boolean canFail = reads.canFail();
+        Ends ends = reads.ends();
         reads.stop();
         int stratum = stratum(fc, fc.name());
         int phase = reads.creationPhase(stratum);
-        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
+        List<LhsItem> items = reads.plan(Asked.DECIDES, ends, testTerm, read);
         List<RoleBindingRef> steps = new ArrayList<>();
         for (ResolvedFactCreation.PathStep t : fc.pathSteps()) steps.add(t.roleBinding());
         steps.add(fc.path());
@@ -3681,7 +3741,7 @@ public final class TmsTranspiler {
         if (noted != null && testTerm != null)
             conditionReadingRule(ruleName, positions.versionOf(fc), reads, reads.readingPlan(List.of(), true),
                     testTerm, anchorGuard, noted, fc.validity(), false);
-        out.addAll(conditionSideRules(canFail, ruleName, fresh, anchorGuard, fc.name(), null, fc.name(), null,
+        out.addAll(conditionSideRules(ends, ruleName, fresh, anchorGuard, fc.name(), null, fc.name(), null,
                 fc.validity()));
         return out;
     }
@@ -4335,7 +4395,7 @@ public final class TmsTranspiler {
         Set<Integer> read = reads.follow();
         beginReading();
         Term testTerm = d.condition() == null ? null : conditionTerm(d.condition(), reads);
-        boolean canFail = reads.canFail();
+        Ends ends = reads.ends();
         reads.stop();
         String name = b.name;
         List<LhsItem> items, control;
@@ -4345,7 +4405,7 @@ public final class TmsTranspiler {
         if (b.characteristic) {
             noted = endReading();
             control = guard.get();
-            items = reads.plan(conditionRole(canFail), testTerm, read, control);
+            items = reads.plan(Asked.DECIDES, ends, testTerm, read, control);
             decision = new Consequence.Decision(SUBJECT, constant(d.decision()), List.of(), reads.size(), false, null, facts,
                     Consequence.Insertion.LOGICAL);
         } else {
@@ -4355,7 +4415,7 @@ public final class TmsTranspiler {
             reads.stop();
             noted = endReading();
             control = guard.get();
-            items = reads.plan(conditionRole(canFail), testTerm, read, control);
+            items = reads.plan(Asked.DECIDES, ends, testTerm, read, control);
             decision = new Consequence.Decision(SUBJECT, value, List.copyOf(use), reads.size(), false,
                     new Consequence.FaultName(name, name),
                     deposits(d.consequence()) ? new Consequence.Deposit(reads.depositFlagSlot(), b.targetForm) : null,
@@ -4381,7 +4441,7 @@ public final class TmsTranspiler {
                     control.isEmpty() ? null : reads.readingPlan(List.of(), false), unconditional ? null : testTerm,
                     null, value, unconditional ? null : d.condition(), b.characteristic ? null : d.consequence(), noted,
                     k.validity(), !control.isEmpty() || d.initialisation(), null, null);
-        out.addAll(conditionSideRules(canFail, ruleName, fresh, d.condition(), name, l -> guard.get(), b.targetForm,
+        out.addAll(conditionSideRules(ends, ruleName, fresh, d.condition(), name, l -> guard.get(), b.targetForm,
                 l -> {
                     List<LhsItem> decided = new ArrayList<>(guard.get());
                     decided.add(decidedBy(facts));
@@ -4596,7 +4656,7 @@ public final class TmsTranspiler {
         reads.stop();
         String name = b.name;
         int depositFlag = reads.depositFlagSlot();
-        List<LhsItem> items = reads.plan(TestItem.Role.CONDITION, test, read);
+        List<LhsItem> items = reads.plan(test, read);
         Consequence decision = new Consequence.Decision(SUBJECT, value, List.copyOf(use), reads.size(), false,
                 new Consequence.FaultName(name, name),
                 depositFlag < 0 ? null : new Consequence.Deposit(depositFlag, b.targetForm),
@@ -4628,7 +4688,7 @@ public final class TmsTranspiler {
         Term members = new Term.SlotValue(reads.outcomes(b.name, first, to, -1), null);
         reads.stop();
         Term value = new Term.Call(StaticFunction.DAYS_RECONCILED, List.of(constant(k.key()), members), null);
-        return reads.rulePlan(b.name + ": eens " + k.label(), reads.plan(TestItem.Role.CONDITION, null, Set.of()),
+        return reads.rulePlan(b.name + ": eens " + k.label(), reads.plan(null, Set.of()),
                 new Consequence.Decision(SUBJECT, value, List.copyOf(use), reads.size(), false, null,
                         List.of(new Consequence.StackFact.Outcome(b.name, k.chain(), k.position(), Outcome.Kind.DECIDED)),
                         Consequence.Insertion.LOGICAL));
@@ -4652,12 +4712,12 @@ public final class TmsTranspiler {
                 : new Term.Call(StaticFunction.PERIOD_WRITTEN, List.of(decided, constant(ceiling(b.member.datatype())),
                         constant(b.member.spelled())), null);
         if (key == null)
-            return reads.rulePlan(b.name + ": eens wortel", reads.plan(TestItem.Role.CONDITION, null, Set.of()),
+            return reads.rulePlan(b.name + ": eens wortel", reads.plan(null, Set.of()),
                     new Consequence.Value(SUBJECT, b.member.key(), b.name, written,
                             List.copyOf(use), reads.size(), false, false, null, new Consequence.FaultName(b.name, b.name),
                             Consequence.Insertion.LOGICAL));
         Term conflicted = new Term.Call(StaticFunction.DAYS_CONFLICTED, List.of(reconciled, constant(key)), null);
-        return reads.rulePlan(b.name + ": verschil " + key, reads.plan(TestItem.Role.CONDITION, conflicted, use),
+        return reads.rulePlan(b.name + ": verschil " + key, reads.plan(conflicted, use),
                 new Consequence.Inconsistency(SUBJECT, key, Consequence.StackFact.Inconsistency.CODES,
                         Consequence.Insertion.LOGICAL));
     }
@@ -4878,7 +4938,7 @@ public final class TmsTranspiler {
         if (anchored.contains(e) && !reads.atForm) return reads.atForm(e, () -> value(e, reads));
         Term planned = switch (e) {
             case Expr.Literal l -> literal(l);
-            case Expr.AttributeReference a -> new Term.SlotValue(attributeRead(a, reads), source(a.source()));
+            case Expr.AttributeReference a -> attributeRead(a, reads);
             case Expr.ParameterRef p -> parameterValue(p, reads);
             case Expr.Binary b -> binary(b, reads);
             case Expr.TextComposition t -> textComposition(t, reads);
@@ -5647,10 +5707,14 @@ public final class TmsTranspiler {
             // a read of an input has no effect and cannot fault, so the evaluation goes on to what follows it
             case Term.Input i -> readsFirst(i.object(), slot);
             case Term.Binder b -> b.slot() == slot;
+            // the read of a member that can be open ends the evaluation where it is open (RUNTIME-SEMANTICS ch. 1.5)
             case Term.Call a -> {
                 Boolean first = readsFirst(a.arguments(), slot);
-                yield first != null ? first : a.function().canFail() ? Boolean.FALSE : null;
+                yield first != null ? first
+                        : a.function().canFail() || a.function() == StaticFunction.READ ? Boolean.FALSE : null;
             }
+            // a test on leeg and gevuld is a condition, as a composite is
+            case Term.ClosureOverOpen o -> Boolean.FALSE;
             case Term.Restate h -> readsFirst(h.term(), slot);
             case Term.Division d -> {
                 Boolean first = readsFirst(List.of(d.left(), d.right()), slot);
@@ -6603,7 +6667,7 @@ public final class TmsTranspiler {
         Reads reads = contributionReads(subject, elem, range.join());
         Set<Integer> read = reads.follow();
         Term testTerm = filter == null ? null : conditionTerm(filter, reads);
-        boolean canFail = reads.canFail();
+        Ends ends = reads.ends();
         reads.stop();
         Set<Integer> use = reads.follow();
         int member = reads.member();
@@ -6630,7 +6694,7 @@ public final class TmsTranspiler {
         String total = memberValue == null || memberValue.time() == null || whole ? null : memberValue.time().name();
         String fixed = total == null ? null : memberValue.declarant().fixedStartPointOf(memberValue.name());
         reads.stop();
-        List<LhsItem> items = reads.plan(conditionRole(canFail), testTerm, read);
+        List<LhsItem> items = reads.plan(Asked.DECIDES, ends, testTerm, read);
         Consequence.Input input = kind == Expr.FunctionKind.AANTAL ? new Consequence.Input.Count()
                 : new Consequence.Input.MemberValue(value, total, fixed, kind == Expr.FunctionKind.AANTAL_GEVULDE, cellKey,
                         payload, whole);
@@ -6639,7 +6703,7 @@ public final class TmsTranspiler {
                 new Consequence.Contribution(FOLD_SUBJECT, key, member, input, List.copyOf(use), reads.size(),
                         Consequence.Insertion.LOGICAL))));
         readings.add(reads);
-        if (canFail) out.add(filterFaultRule(key, formName + ": filterfout in " + name, subject, elem, range,
+        if (ends.fault()) out.add(filterFaultRule(key, formName + ": filterfout in " + name, subject, elem, range,
                 selection, filter, readings::add));
         if (total != null || whole) out.add(memberFaultRule(key, formName + ": lidfout in " + name, subject, elem, range,
                 selection, filter, memberValue, readings::add, whole ? MemberFaultKind.PERIOD_BUCKET : MemberFaultKind.BUCKET));
@@ -6647,7 +6711,7 @@ public final class TmsTranspiler {
                 elem, range, selection, filter, memberValue, readings::add, MemberFaultKind.OPEN_SEGMENT));
         if (deposits(filter)) out.add(filterDepositRule(key, formName + ": filterdeponering in " + name, subject,
                 elem, range, filter, readings::add));
-        return canFail;
+        return ends.fault();
     }
 
     /**
@@ -6666,11 +6730,12 @@ public final class TmsTranspiler {
         Reads reads = contributionReads(subject, elem, range.join());
         Set<Integer> read = reads.follow();
         Term testTerm = conditionTerm(filter, reads);
+        Ends ends = reads.ends();
         reads.stop();
         if (reads.depositFlagSlot() < 0)
             throw new IllegalStateException("the filter of " + key + " deposits, but got no probe");
         int member = reads.member();
-        List<LhsItem> items = reads.plan(TestItem.Role.DEPOSIT, testTerm, read);
+        List<LhsItem> items = reads.plan(Asked.DEPOSITS, ends, testTerm, read);
         recorder.accept(reads);
         Set<Integer> use = new TreeSet<>(read);
         use.add(member);
@@ -6696,6 +6761,7 @@ public final class TmsTranspiler {
         Reads reads = contributionReads(subject, elem, l -> places.addAll(range.perRoute().apply(l)));
         Set<Integer> read = reads.follow();
         Term testTerm = conditionTerm(filter, reads);
+        Ends ends = reads.ends();
         reads.stop();
         Set<Integer> use = reads.follow();
         int member = reads.member();
@@ -6705,7 +6771,7 @@ public final class TmsTranspiler {
             use.add(p.count());
             use.add(p.place());
         }
-        List<LhsItem> items = reads.plan(TestItem.Role.FAULT, testTerm, read);
+        List<LhsItem> items = reads.plan(Asked.FAULTS, ends, testTerm, read);
         recorder.accept(reads);
         return as(RuleOrigin.Role.FOLD_FILTER_FAULT, reads.rulePlan(ruleName, items,
                 new Consequence.FilterFault(FOLD_SUBJECT, key, member, testTerm,
@@ -6741,7 +6807,7 @@ public final class TmsTranspiler {
         List<Term> bucket = new ArrayList<>();
         if (filter != null) {
             Term filterTest = conditionTerm(filter, reads);
-            bucket.add(reads.canFail() ? new Term.WithoutFault(filterTest, source(filter.source())) : filterTest);
+            bucket.add(reads.ends().fault() ? new Term.WithoutFault(filterTest, source(filter.source())) : filterTest);
         }
         int value = reads.timeline(memberValue);
         reads.stop();
@@ -6749,7 +6815,7 @@ public final class TmsTranspiler {
         bucket.add(kind == MemberFaultKind.OPEN_SEGMENT
                 ? new Term.Call(StaticFunction.OPEN_NONZERO, List.of(new Term.SlotValue(value, null)), null)
                 : bucketScalar(value, true));
-        List<LhsItem> items = reads.plan(TestItem.Role.VORM, all(bucket), read);
+        List<LhsItem> items = reads.plan(all(bucket), read);
         recorder.accept(reads);
         Consequence.FoldPlace place = new Consequence.FoldPlace(selection, places, Consequence.PlaceReason.MEMBER_FAULT);
         String name = memberValue.name();
@@ -7063,19 +7129,21 @@ public final class TmsTranspiler {
 
     /** A read of an attribute: of the subject where the reference carries no path (it must name the subject's own type,
      *  WF-053), else over its path of roles. */
-    private int attributeRead(Expr.AttributeReference a, Reads reads) {
+    private Term attributeRead(Expr.AttributeReference a, Reads reads) {
         if (a.objectType() == null || a.attribute() == null)
             throw new Refusal(DroolsCode.UNRESOLVED_ATTRIBUTE_REFERENCE.reason("snippet", snippet(a.source())));
         List<RoleBindingRef> path = navigationBindings.get(a);
         if (path == null) {
             if (a.objectType() != reads.subject)
                 throw new Refusal(DroolsCode.OWN_READ_FOREIGN_SUBJECT.reason("objectType", a.objectType().name, "subject", reads.subject.name, "snippet", snippet(a.source())));
-            return reads.own(member(reads.subject, a.attribute(), false));
+            Member own = member(reads.subject, a.attribute(), false);
+            return reads.memberTerm(reads.own(own), own, source(a.source()));
         }
         Path p = path(reads.subject, path, a.objectType(), Msg.drools("PART.desc.read", "snippet", snippet(a.source())));
-        int i = reads.navigated(p, member(p.reaches(), a.attribute(), false));
+        Member reached = member(p.reaches(), a.attribute(), false);
+        int i = reads.navigated(p, reached);
         noteObject(a, reads, i);
-        return i;
+        return reads.memberTerm(i, reached, source(a.source()));
     }
 
     // ---------------- conditions ----------------
@@ -7164,7 +7232,7 @@ public final class TmsTranspiler {
             if (member.declarant() != k.owner())
                 throw new Refusal(DroolsCode.NARROWING_HOST_NOT_CARRIED.reason("snippet", snippet(k)));
             int i = reads.narrowed(member);
-            return new Term.Call(StaticFunction.KENMERK, List.of(new Term.SlotValue(i, null), constant(!k.negation())),
+            return new Term.Call(StaticFunction.KENMERK, List.of(reads.memberTerm(i, member, null), constant(!k.negation())),
                     source(k.source()));
         }
         if (!Host.hostOp(k, reads.subject))
@@ -7178,14 +7246,15 @@ public final class TmsTranspiler {
         if (nav == null) {
             if (k.navigation() != null)
                 throw new Refusal(DroolsCode.NAVIGATION_WITHOUT_BINDING.reason("snippet", snippet(k)));
-            int i = reads.own(member(reads.subject, k.characteristic(), true));
-            return new Term.Call(StaticFunction.KENMERK, List.of(new Term.SlotValue(i, null), constant(desired)),
+            Member own = member(reads.subject, k.characteristic(), true);
+            return new Term.Call(StaticFunction.KENMERK, List.of(reads.memberTerm(reads.own(own), own, null), constant(desired)),
                     source(k.source()));
         }
         Path p = path(reads.subject, nav, null, Msg.drools("PART.desc.characteristic-check", "snippet", snippet(k)));
-        int i = reads.navigated(p, member(p.reaches(), k.characteristic(), true));
+        Member reached = member(p.reaches(), k.characteristic(), true);
+        int i = reads.navigated(p, reached);
         noteObject(k, reads, i);
-        return new Term.Call(StaticFunction.CHARACTERISTIC_CHECK_ALONG_PATH, List.of(new Term.SlotValue(i, null), constant(desired)),
+        return new Term.Call(StaticFunction.CHARACTERISTIC_CHECK_ALONG_PATH, List.of(reads.memberTerm(i, reached, null), constant(desired)),
                 source(k.source()));
     }
 
@@ -7420,8 +7489,14 @@ public final class TmsTranspiler {
         Reason window = WindowPosition.refusal(s);
         if (window != null) throw new Refusal(window.framed("with-snippet", "snippet", snippet(s)));
         List<Term> members = new ArrayList<>();
-        for (Condition part : s.components()) members.add(conditionTerm(part, reads));
-        return new Term.Compound(s.quantifier(), s.threshold(), members, source(s.source()));
+        int openFrom = s.components().size();
+        for (Condition part : s.components()) {
+            Opened member = reads.opened(() -> conditionTerm(part, reads));
+            if (member.open()) openFrom = Math.min(openFrom, members.size());
+            members.add(member.term());
+        }
+        return new Term.Compound(s.quantifier(), s.threshold(), members, openFrom,
+                openFrom < members.size() ? reads.depositFlagSlot() : -1, source(s.source()));
     }
 
     /**
@@ -7496,12 +7571,12 @@ public final class TmsTranspiler {
         Reads reads = contributionReads(subject, elem, l -> { });
         Set<Integer> read = reads.follow();
         Term filter = kv.filter() == null ? null : conditionTerm(kv.filter(), reads);
-        boolean filterCanFail = reads.canFail();
+        Ends filterEnds = reads.ends();
         reads.stop();
         Set<Integer> use = reads.follow();
         int member = reads.member();
         Term matrix = conditionTerm(kv.test(), reads);
-        boolean memberCanFail = reads.canFail();
+        boolean memberCanFail = reads.ends().fault();
         reads.stop();
         boolean memberDeposits = deposits(kv.test());
         int depositFlag = reads.depositFlagSlot();
@@ -7522,7 +7597,7 @@ public final class TmsTranspiler {
                 use.add(p.place());
             }
         } else range.join().accept(reads);
-        List<LhsItem> items = reads.plan(conditionRole(filterCanFail), filter, read);
+        List<LhsItem> items = reads.plan(Asked.DECIDES, filterEnds, filter, read);
         Consequence.Input input = ordered
                 ? new Consequence.Input.MemberTest(matrix, depositFlag, new Consequence.FoldPlace(0, places,
                         Consequence.PlaceReason.QUANTIFIER))
@@ -7534,13 +7609,13 @@ public final class TmsTranspiler {
                 new Consequence.Contribution(FOLD_SUBJECT, key, member, input, List.copyOf(use), reads.size(),
                         Consequence.Insertion.LOGICAL))));
         readings.add(reads);
-        if (filterCanFail) rules.add(filterFaultRule(key, formName + ": filterfout in " + name, subject, elem,
+        if (filterEnds.fault()) rules.add(filterFaultRule(key, formName + ": filterfout in " + name, subject, elem,
                 range, 0, kv.filter(), readings::add));
         boolean filterDeposits = deposits(kv.filter());
         if (filterDeposits) rules.add(filterDepositRule(key, formName + ": filterdeponering in " + name,
                 subject, elem, range, kv.filter(), readings::add));
         refuseMixedDeposits(name, Collections.singletonList(kv.filter()));
-        return new Fold(key, List.copyOf(rules), List.copyOf(readings), filterCanFail, filterDeposits, memberCanFail,
+        return new Fold(key, List.copyOf(rules), List.copyOf(readings), filterEnds.fault(), filterDeposits, memberCanFail,
                 memberDeposits);
     }
 
@@ -7624,8 +7699,11 @@ public final class TmsTranspiler {
         }
         switch (p.kind()) {
             case LEEG, GEVULD -> {
-                Term operand = value(p.operand(), reads);
-                return new Term.Call(StaticFunction.EMPTY_TEST, List.of(operand,
+                Opened operand = reads.opened(() -> value(p.operand(), reads));
+                // over an operand whose evaluation reads an open value the test is a closure (RUNTIME-SEMANTICS ch. 1.5)
+                Term tested = operand.open()
+                        ? new Term.ClosureOverOpen(operand.term(), reads.depositFlagSlot(), null) : operand.term();
+                return new Term.Call(StaticFunction.EMPTY_TEST, List.of(tested,
                         constant(p.kind() == Condition.PredicateKind.LEEG)), source(p.source()));
             }
             case NUMERIEK_MET_EXACT -> {
@@ -7704,8 +7782,9 @@ public final class TmsTranspiler {
         private final Set<String> channelNames = new LinkedHashSet<>();
         /** The indices the expression being compiled reads, or null outside such a compilation. */
         private Set<Integer> use;
-        /** Whether an expression compiled since the last {@link #follow} can raise an evaluation fault. */
-        private boolean fail;
+        /** Whether an expression compiled since the last {@link #follow} can raise an evaluation fault, and whether it
+         *  reads a member that can be open ({@link OpenableMembers}). */
+        private boolean fail, open;
         /** The planned items before the subject pattern: the pattern of the source of an allocation's recipient rule,
          *  and of the fold's subject in a contribution rule ({@link #addToHeadPlan}). */
         private final List<LhsItem> headPlan = new ArrayList<>();
@@ -7820,19 +7899,29 @@ public final class TmsTranspiler {
         }
 
         /** The left-hand side of the rule after its subject pattern, once its condition and its value are compiled:
-         *  the parameter items, the standing items, and the test {@code testTerm}, the condition compiled, over the
-         *  values at {@code read}, which asks {@code role} of it ({@link TestItem.Role}); {@link #rulePlan} takes them
-         *  with what the form adds after them. A test of deposits takes the probe of this rule
-         *  ({@link #depositFlagSlot}). */
-        List<LhsItem> plan(TestItem.Role role, Term testTerm, Set<Integer> read) {
-            return plan(role, testTerm, read, List.of());
+         *  the parameter items, the standing items, and the test that asks {@code asked} of {@code testTerm}, a
+         *  condition of the IR compiled, ending as {@code ends} says, over the values at {@code read}
+         *  ({@link #conditionTest}; null for a form without a condition); {@link #rulePlan} takes them with what the
+         *  form adds after them. A test of deposits takes the probe of this rule ({@link #depositFlagSlot}). */
+        List<LhsItem> plan(Asked asked, Ends ends, Term testTerm, Set<Integer> read) {
+            return plan(asked, ends, testTerm, read, List.of());
         }
 
-        /** As {@link #plan(TestItem.Role, Term, Set)}, with {@code control} between the standing items and the
+        /** As {@link #plan(Asked, Ends, Term, Set)}, with {@code control} between the standing items and the
          *  test: the guard of a creation, whose ids the analysis draws before the test's, or the control-fact patterns
          *  of a default, so that a default a higher one displaced is not tested at all. */
-        List<LhsItem> plan(TestItem.Role role, Term testTerm, Set<Integer> read, List<LhsItem> control) {
-            TestItem test = testItem(role, testTerm, read);
+        List<LhsItem> plan(Asked asked, Ends ends, Term testTerm, Set<Integer> read, List<LhsItem> control) {
+            return lhs(testTerm == null ? null : conditionTest(asked, ends, testTerm, read), control);
+        }
+
+        /** As {@link #plan(Asked, Ends, Term, Set)}, for a test {@code testTerm} the form composes itself
+         *  ({@link TestItem.Role#VORM}), or none where it is null. */
+        List<LhsItem> plan(Term testTerm, Set<Integer> read) {
+            return lhs(testTerm == null ? null : new TestItem(id("voorwaarde"), TestItem.Role.VORM, testTerm, -1,
+                    List.copyOf(read), slots.size()), List.of());
+        }
+
+        private List<LhsItem> lhs(TestItem test, List<LhsItem> control) {
             List<LhsItem> out = new ArrayList<>(parameters);
             out.addAll(states);
             out.addAll(control);
@@ -7840,12 +7929,23 @@ public final class TmsTranspiler {
             return out;
         }
 
-        /** The test {@code testTerm}, the condition compiled, over the values at {@code read}, asking {@code role} of
-         *  it; null where the rule has no condition. */
-        private TestItem testItem(TestItem.Role role, Term testTerm, Set<Integer> read) {
-            if (testTerm == null) return null;
+        /**
+         * The test that asks {@code asked} of {@code testTerm}, a condition of the IR compiled, ending as {@code ends}
+         * says, over the values at {@code read}: the one place where a condition becomes the test of a rule, so that
+         * every form reads the outcomes of RUNTIME-SEMANTICS ch. 1.5 alike ({@link Asked}). Where the condition can
+         * fault, the tests of the form's outcomes answer false on a fault, which the rule of the fault takes
+         * ({@link #conditionFaultRule}). Where its judgement can be undetermined, every test answers for that end too
+         * ({@link TestItem#open}); where it cannot, no rule asks whether it leaves its target open.
+         */
+        private TestItem conditionTest(Asked asked, Ends ends, Term testTerm, Set<Integer> read) {
+            TestItem.Role role = switch (asked) {
+                case DECIDES -> ends.fault() ? TestItem.Role.WITHOUT_FAULT : TestItem.Role.CONDITION;
+                case LEAVES_OPEN -> TestItem.Role.LEAVES_OPEN;
+                case FAULTS -> TestItem.Role.FAULT;
+                case DEPOSITS -> TestItem.Role.DEPOSIT;
+            };
             return new TestItem(id("voorwaarde"), role, testTerm, role == TestItem.Role.DEPOSIT ? depositFlag : -1,
-                    List.copyOf(read), slots.size());
+                    List.copyOf(read), slots.size(), ends.open());
         }
 
         /** The plan of this rule, {@code name}, of the form being lowered: the planned items before the subject
@@ -7940,6 +8040,7 @@ public final class TmsTranspiler {
         Set<Integer> follow() {
             use = new TreeSet<>();
             fail = false;
+            open = false;
             return use;
         }
 
@@ -7948,9 +8049,28 @@ public final class TmsTranspiler {
         /** Records that the expression being compiled can raise an evaluation fault. */
         void markFail() { fail = true; }
 
-        /** Whether an expression compiled since the last {@link #follow} can raise an evaluation fault: a condition that
-         *  can is tested with the role {@link TestItem.Role#WITHOUT_FAULT}, beside the rule that inserts its fault. */
-        boolean canFail() { return fail; }
+        /** How the evaluation of what compiled since the last {@link #follow} can end beside its outcome: a condition
+         *  that can fault is tested without its fault, beside the rule that inserts it, and one whose judgement can be
+         *  undetermined beside the rule of the open outcome ({@link #conditionTest}). */
+        Ends ends() { return new Ends(fail, open); }
+
+        /** The term {@code compile} gives, and whether it reads a member that can be open. */
+        Opened opened(Supplier<Term> compile) {
+            boolean outer = open;
+            open = false;
+            Term t = compile.get();
+            Opened out = new Opened(t, open);
+            open |= outer;
+            return out;
+        }
+
+        /** The read of {@code member}, bound at {@code slot}: the bound value, and where the member can be open, through
+         *  the read that breaks the evaluation off where it is ({@link StaticFunction#READ}). */
+        Term memberTerm(int slot, Member member, String source) {
+            if (!openable.contains(member.key())) return new Term.SlotValue(slot, source);
+            open = true;
+            return new Term.Call(StaticFunction.READ, List.of(new Term.SlotValue(slot, null)), source);
+        }
 
         /** Registers what the lowered rule reads with the transpiler: the standings, path standings and channel
          *  standings it needs, and the contribution rules of its folds with what those read. */
@@ -7959,7 +8079,7 @@ public final class TmsTranspiler {
             outsideHost.forEach(outsideStandings::putIfAbsent);
             for (PathRead p : paths.values()) {
                 pathReads.putIfAbsent(p.key(), p);
-                if (writers.containsKey(p.member().key()) || timelineAttribute(p.member()))
+                if (throughStanding(p.member()) || timelineAttribute(p.member()))
                     read.putIfAbsent(p.member().key(), p.member());
             }
             channels.addAll(channelNames);
@@ -8405,7 +8525,7 @@ public final class TmsTranspiler {
             if (known >= 0) return known;
             String w = readName(member.name());
             ElementKey lk = member.key();
-            if (writers.containsKey(lk)) {
+            if (throughStanding(member)) {
                 if (member.characteristic()) {
                     states(state(CharacteristicState.class, "$stand_" + slots.size(), "characteristic", lk, "holds", w));
                     derived.put(lk, member);
@@ -8415,7 +8535,8 @@ public final class TmsTranspiler {
                 derived.put(lk, member);
                 return allocateSlot(ReadKind.STATE, key, w);
             }
-            // input: no form writes it, so it does not change while the session fires and is read off the bean
+            // input that is never open: no form writes it, so it does not change while the session fires and is read off
+            // the bean
             bindSubject(new Binding(w, List.of(), new Binding.Field(member.javaClass(), member.name()),
                     member.characteristic() ? Binding.ReadForm.WAAR : Binding.ReadForm.VALUE, null));
             return allocateSlot(ReadKind.INPUT, key, w);
@@ -8471,9 +8592,10 @@ public final class TmsTranspiler {
             ElementKey lk = member.key();
             if (member.time() != null && member.characteristic() && writers.containsKey(lk))
                 throw new Refusal(DroolsCode.TIMELINE_CHARACTERISTIC_WRITTEN.reason("member", member.name(), "objectType", member.declarant().name));
-            // a derived member, an attribute on a timeline, or any member at the end of a path whose links a form
-            // creates: through the path's standing, whose rules bind every link and the member in their left-hand sides
-            if (writers.containsKey(lk) || timelineAttribute(member) || path.created()) {
+            // a derived member or one that can be open, an attribute on a timeline, or any member at the end of a path
+            // whose links a form creates: through the path's standing, whose rules bind every link and the member in
+            // their left-hand sides
+            if (throughStanding(member) || timelineAttribute(member) || path.created()) {
                 PathRead p = new PathRead(path, member);
                 String ps = path.key();
                 String st = "$padstand_" + slots.size();
@@ -8578,7 +8700,7 @@ public final class TmsTranspiler {
      *  one name twice. {@code ReadNameWitnessTest} holds this set equal to the fixed names this source spells. */
     static final Set<String> FIXED_NAMES = Set.of("$afgeleid", "$ander", "$bereikt", "$besluit", "$botsingen",
             "$conflict", "$creatiefase", "$een", "$element", "$emmerinvoer", "$fase", "$houder", "$inconsistentie",
-            "$invoer", "$nabij", "$onderwerp", "$rekendatum", "$schending", "$schrijver", "$sleutel", "$stand",
+            "$invoer", "$nabij", "$onderwerp", "$opengelaten", "$openinvoer", "$rekendatum", "$schending", "$schrijver", "$sleutel", "$stand",
             "$subject", "$twee",
             "$v", "$vouwonderwerp", "$waarde", "$waarden");
 
@@ -8589,7 +8711,7 @@ public final class TmsTranspiler {
         for (LhsItem item : lhs) {
             if (item instanceof TestItem t && t.role() != TestItem.Role.DEPOSIT) {
                 Term testTerm = withoutDepositFlag(t.test());
-                if (testTerm != t.test()) item = new TestItem(t.id(), t.role(), testTerm, t.depositFlag(), t.slots(), t.size());
+                if (testTerm != t.test()) item = new TestItem(t.id(), t.role(), testTerm, t.depositFlag(), t.slots(), t.size(), t.open());
             }
             out.add(item);
         }
@@ -8610,7 +8732,7 @@ public final class TmsTranspiler {
             case Consequence.Value w when w.deposit() == null -> {
                 Term z = withoutDepositFlag(w.value());
                 return z == w.value() ? w : new Consequence.Value(w.subject(), w.target(), w.writer(), z, w.slots(),
-                        w.size(), w.collapse(), w.writesEmpty(), null, w.fault(), w.insertion());
+                        w.size(), w.collapse(), w.writesEmpty(), null, w.fault(), w.open(), w.insertion());
             }
             case Consequence.TestFault f -> {
                 Term z = withoutDepositFlag(f.test());
@@ -8731,7 +8853,12 @@ public final class TmsTranspiler {
             }
             case Term.Compound s -> {
                 List<Term> z = withoutDepositFlag(s.members());
-                return z == s.members() ? s : new Term.Compound(s.quantifier(), s.threshold(), z, s.source());
+                return s.depositFlag() < 0 && z == s.members() ? s
+                        : new Term.Compound(s.quantifier(), s.threshold(), z, s.openFrom(), -1, s.source());
+            }
+            case Term.ClosureOverOpen o -> {
+                Term z = withoutDepositFlag(o.value());
+                return o.depositFlag() < 0 && z == o.value() ? o : new Term.ClosureOverOpen(z, -1, o.source());
             }
             case Term.QuantifierRead k -> {
                 Term n = withoutDepositFlag(k.count()), b = withoutDepositFlag(k.contributions());
@@ -8799,6 +8926,33 @@ public final class TmsTranspiler {
 
     // ---------------- standings ----------------
 
+    /** Whether {@code member}, which holds one value, is read through its standing: a form writes it, or it can be open
+     *  ({@link OpenableMembers}). Any other is input that stands as the bean holds it. */
+    private boolean throughStanding(Member member) {
+        return writers.containsKey(member.key()) || openable.contains(member.key());
+    }
+
+    /** The pattern of the {@link LeftOpen} facts of {@code member} on the subject: a writer leaves it open. */
+    private FactPattern leftOpen(ElementKey member) {
+        return new FactPattern(LeftOpen.class, "$opengelaten", List.of(equal(id("opengelaten"), "member", member)),
+                List.of(onSubject(id("opengelaten-onderwerp"))), List.of());
+    }
+
+    /** The pattern of the {@link OpenInput} of {@code member} on the subject: its input is not complete. */
+    private FactPattern openInput(ElementKey member) {
+        return new FactPattern(OpenInput.class, "$openinvoer", List.of(equal(id("openinvoer"), "member", member)),
+                List.of(onSubject(id("openinvoer-onderwerp"))), List.of());
+    }
+
+    /** That nothing leaves {@code member} of the subject open: no writer, where one can, and no input that is not
+     *  complete, where the member can be such an input. Empty for a member that cannot be open. */
+    private List<LhsItem> notOpen(ElementKey member) {
+        List<LhsItem> out = new ArrayList<>();
+        if (openable.leftOpen(member)) out.add(new Not(leftOpen(member)));
+        if (openable.openInput(member)) out.add(new Not(openInput(member)));
+        return out;
+    }
+
     /**
      * The three generic rules that keep one {@link CharacteristicState} per object of the declaring type: waar from the input,
      * waar from a derivation, onwaar when neither holds. The onwaar rule carries the branch's only negation over a
@@ -8807,6 +8961,10 @@ public final class TmsTranspiler {
      * standings are equal, and truth maintenance keeps them as one fact with a justification each. The input is read
      * off the bean as whether it holds {@code true} ({@link Binding.ReadForm#WAAR}), the one truth value the standing
      * holds: a characteristic on a timeline is never read through it ({@link Reads#timeline}).
+     *
+     * <p>A characteristic that can be open (RUNTIME-SEMANTICS ch. 1.5, {@link OpenableMembers}) has a third standing,
+     * where neither holds: open where a writer leaves it open ({@link LeftOpen}) and where its input is not complete
+     * ({@link OpenInput}), each a rule where that can be, and the onwaar rule stands under a {@code not} over both.
      */
     private List<RulePlan> characteristicStateRules(Member member) {
         ElementKey key = member.key();
@@ -8819,12 +8977,27 @@ public final class TmsTranspiler {
                 List.of(new Subject(member.javaClass(), SUBJECT, List.of(), List.of(), List.of()), derived(key)),
                 new Consequence.InsertCharacteristicState(SUBJECT, key, Consequence.StateSource.DERIVATION, true,
                         Consequence.Insertion.LOGICAL));
-        Alpha noInput = inputTrue(id("geen-invoer"), member, false);
-        RulePlan falsePlan = new RulePlan(name + "onwaar", null, null, new ReadTable(List.of()),
-                List.of(new Subject(member.javaClass(), SUBJECT, List.of(noInput), List.of(), List.of()),
-                        new Not(derived(key))),
-                new Consequence.InsertCharacteristicState(SUBJECT, key, Consequence.StateSource.NONE, false, Consequence.Insertion.LOGICAL));
-        return List.of(inputData, derivation, falsePlan);
+        Supplier<List<LhsItem>> neither = () -> new ArrayList<>(List.of(new Subject(member.javaClass(), SUBJECT,
+                List.of(inputTrue(id("geen-invoer"), member, false)), List.of(), List.of()), new Not(derived(key))));
+        List<RulePlan> out = new ArrayList<>(List.of(inputData, derivation));
+        if (openable.leftOpen(key))
+            out.add(openStateRule(member, name + "open door een schrijver", neither.get(), leftOpen(key)));
+        if (openable.openInput(key))
+            out.add(openStateRule(member, name + "open invoer", neither.get(), openInput(key)));
+        List<LhsItem> settled = neither.get();
+        settled.addAll(notOpen(key));
+        out.add(new RulePlan(name + "onwaar", null, null, new ReadTable(List.of()), settled,
+                new Consequence.InsertCharacteristicState(SUBJECT, key, Consequence.StateSource.NONE, false, Consequence.Insertion.LOGICAL)));
+        return out;
+    }
+
+    /** The rule {@code name} of the open standing of {@code member}: where {@code unfilled}, the subject on which nothing
+     *  fills it, and a fact of {@code opens} on it. */
+    private RulePlan openStateRule(Member member, String name, List<LhsItem> unfilled, FactPattern opens) {
+        List<LhsItem> items = new ArrayList<>(unfilled);
+        items.add(new Exists(List.of(opens), List.of(opens.name()), List.of(SUBJECT)));
+        return new RulePlan(name, null, null, new ReadTable(List.of()), items,
+                new Consequence.OpenStanding(SUBJECT, member.key(), Consequence.Insertion.LOGICAL));
     }
 
     /** A characteristic {@code member} read with a narrowing host on subjects of type {@code within}, a strict supertype
@@ -8869,8 +9042,15 @@ public final class TmsTranspiler {
      * The generic rules that keep one {@link State} per object of the declaring type: the derived value where a
      * {@link Value} exists, else the input on the bean, read in the left-hand side, leeg included. An input rule
      * carries {@code not Waarde}, so a derivation that appears later retracts the input standing and every value that
-     * read it. A member no form writes has no derivation, and only an attribute on a timeline is read through its
-     * standing then ({@link Reads#timeline}).
+     * read it. A member no form writes has no derivation; it is read through its standing where it is an attribute on
+     * a timeline ({@link Reads#timeline}) or can be open.
+     *
+     * <p>An attribute that can be open (RUNTIME-SEMANTICS ch. 1.5, {@link OpenableMembers}) has a third standing: where
+     * no {@link Value} stands, open where a writer leaves it open ({@link LeftOpen}), whatever its input, which then
+     * stands no more than the writer's leeg would (ch. 7.8); and where its input is not complete ({@link OpenInput}),
+     * which is only where no form writes it on the object, the input where the bean holds one and else open. Each is a
+     * rule where that can be, and the input rule stands under a {@code not} over both. The bean's value is read beside
+     * the {@link OpenInput}, so a value a consumer puts there between two fires fills the member.
      *
      * <p>The input timeline of a member on a timeline stands in the form a {@link Value} carries one,
      * {@code List<Period>} ({@link Period#list}), so every standing of the member holds one representation, except
@@ -8899,12 +9079,23 @@ public final class TmsTranspiler {
         }
 
         if (member.time() == null || member.characteristic()) {
-            out.add(inputStateRule(member, name + "uit de invoer", null));
+            if (openable.leftOpen(key))
+                out.add(openStateRule(member, name + "open door een schrijver", List.of(new Subject(member.javaClass(),
+                        SUBJECT, List.of(), List.of(), List.of()), noValue(key)), leftOpen(key)));
+            out.add(inputStateRule(member, name + "uit de invoer", null, false));
+            if (openable.openInput(key))
+                out.add(inputStateRule(member, name + "uit de onvolledige invoer", null, true));
             return out;
         }
-        out.add(inputStateRule(member, name + "uit de invoer", false));
-        out.add(inputStateRule(member, name + "uit de invoer, een emmerscalair", true));
+        out.add(inputStateRule(member, name + "uit de invoer", false, false));
+        out.add(inputStateRule(member, name + "uit de invoer, een emmerscalair", true, false));
         return out;
+    }
+
+    /** That no {@link Value} of {@code member} stands on the subject. */
+    private Not noValue(ElementKey member) {
+        return new Not(new FactPattern(Value.class, "$waarde", List.of(equal(id("waarde"), "attribute", member)),
+                List.of(onSubject(id("waarde-onderwerp"))), List.of()));
     }
 
     /**
@@ -8952,8 +9143,9 @@ public final class TmsTranspiler {
      *  only where an {@link BucketInput} of the member on the object exists ({@code true}), the input then standing as
      *  its {@link BucketScalar}, or does not ({@code false}). The bucket is taken in the consequence, from the bound
      *  timeline: a binding is computed for every object the subject pattern matches, also one whose input is a full
-     *  timeline. */
-    private RulePlan inputStateRule(Member member, String name, Boolean bucket) {
+     *  timeline. Where {@code incomplete}, the rule of an input that is not complete: where an {@link OpenInput} of the
+     *  member stands on the object; and else where nothing leaves the member open ({@link #notOpen}). */
+    private RulePlan inputStateRule(Member member, String name, Boolean bucket, boolean incomplete) {
         ElementKey key = member.key();
         List<LhsItem> items = new ArrayList<>();
         items.add(new Subject(member.javaClass(), SUBJECT, List.of(), List.of(), List.of(new Binding("$invoer", List.of(),
@@ -8964,11 +9156,14 @@ public final class TmsTranspiler {
                     List.of(onSubject(id("emmerinvoer-onderwerp"))), List.of());
             items.add(bucket ? new Exists(List.of(p), List.of(p.name()), List.of(SUBJECT)) : new Not(p));
         }
-        items.add(new Not(new FactPattern(Value.class, "$waarde", List.of(equal(id("waarde"), "attribute", key)),
-                List.of(onSubject(id("waarde-onderwerp"))), List.of())));
+        items.add(noValue(key));
+        if (incomplete) {
+            FactPattern p = openInput(key);
+            items.add(new Exists(List.of(p), List.of(p.name()), List.of(SUBJECT)));
+        } else items.addAll(notOpen(key));
         return new RulePlan(name, null, null, oneSlot(ReadKind.INPUT, "invoer " + key, "$invoer"),
                 items, new Consequence.State(SUBJECT, key, Consequence.StateSource.INPUT, 0, Boolean.TRUE.equals(bucket),
-                        member.cell(), Consequence.Insertion.LOGICAL));
+                        member.cell(), incomplete, Consequence.Insertion.LOGICAL));
     }
 
     /** The value array of a standing rule whose consequence reads one value: slot 0, of {@code category}, which the
@@ -9047,7 +9242,7 @@ public final class TmsTranspiler {
         items.add(new Subject(javaClass, SUBJECT, List.of(), List.of(), List.of()));
         List<FactPattern> chain = chain(path.hops(), SUBJECT, null);
         ReadTable value;
-        if (writers.containsKey(lk) || timelineAttribute(member)) {
+        if (throughStanding(member) || timelineAttribute(member)) {
             items.addAll(chain);
             Class<?> stateClass = member.characteristic() ? CharacteristicState.class : State.class;
             items.add(new FactPattern(stateClass, "$stand",

@@ -21,23 +21,16 @@ end
 
 // hij aan alle volgende voorwaarden voldoet: - hij is hardheid toegepast - zijn aantal aangemelde vondsten is groter of gelijk aan 6
 function boolean toets_penninggerechtigdBijHardheid(Object $hardheidToegepast, Object $aantalAangemeldeVondsten) {
-    int raak = 0;
-    Boolean vast;
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 0, 2);
-    if (vast != null) {
-        return vast;
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    if (ComputeHelpers.characteristic($hardheidToegepast, Boolean.TRUE)) {
-        raak++;
+    lezing.read(ComputeHelpers.characteristic($hardheidToegepast, Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
     }
-    vast = ComputeHelpers.established(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 1, 1);
-    if (vast != null) {
-        return vast;
-    }
-    if (RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, new java.math.BigDecimal("6"), ">=")) {
-        raak++;
-    }
-    return ComputeHelpers.endVerdict(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, raak, 2);
+    lezing.read(RegelSpraakRuntime.rsAggVergelijk($aantalAangemeldeVondsten, new java.math.BigDecimal("6"), ">="));
+    return lezing.verdict();
 }
 
 rule "penninggerechtigd bij hardheid"
