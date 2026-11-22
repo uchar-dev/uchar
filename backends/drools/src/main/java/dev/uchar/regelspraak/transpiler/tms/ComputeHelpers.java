@@ -489,15 +489,14 @@ public final class ComputeHelpers {
     }
 
     /** The count {@code count} of the contributions to a fold over a set, as the fold stands by {@code open}, the list of
-     *  its {@link FoldOpen} facts (RUNTIME-SEMANTICS ch. 1.5): where a member is undetermined, an open read that breaks the
-     *  evaluation off ({@link OpenRead}); where a closure decided one, the boundary of the evaluation is told
-     *  ({@link Boundary}). */
+     *  its {@link FoldOpen} facts, read in their order (RUNTIME-SEMANTICS ch. 1.5): where a member is undetermined, the open
+     *  read of the first such breaks the evaluation off ({@link OpenRead}); where a closure decided one, the boundary of the
+     *  evaluation is told of the first ({@link Boundary}). */
     public static Object standingCount(Object count, Object open) {
         OpenMember closed = null;
-        for (Object o : (List<?>) open) {
-            FoldOpen f = (FoldOpen) o;
+        for (FoldOpen f : FoldOpen.inOrder(open)) {
             if (f.own() == null) throw new OpenRead(f.read());
-            closed = f.read();
+            if (closed == null) closed = f.read();
         }
         if (closed != null) Boundary.closes(closed);
         return count;
@@ -510,9 +509,17 @@ public final class ComputeHelpers {
      *  true for the form itself. */
     public static List<Object> contributed(Object judgement, String fold, Object subject, Object member,
                                            Object contribution) {
+        return contributedAt(judgement, fold, subject, member, contribution, null);
+    }
+
+    /** As {@link #contributed}, of a member at {@code place} in the order of the
+     *  fold ({@link #foldPlace}), null in a build without readings. */
+    public static List<Object> contributedAt(Object judgement, String fold, Object subject, Object member,
+                                             Object contribution, List<Integer> place) {
         List<Object> out = new ArrayList<>(2);
         if (decides(judgement) && contribution != null) out.add(contribution);
-        if (judgement instanceof Undetermined u) out.add(new FoldOpen(fold, subject, member, u.own(), u.read()));
+        if (judgement instanceof Undetermined u)
+            out.add(new FoldOpen(fold, subject, member, u.own(), u.read(), FoldOpen.placed(FoldOpen.Part.FILTER, place)));
         return out;
     }
 
@@ -520,7 +527,14 @@ public final class ComputeHelpers {
      *  ({@link #judge}), for the fold {@code fold} on {@code subject}: the {@link Contribution} of its verdict where it
      *  stands for another form, and else a {@link FoldOpen}. */
     public static Object judged(String fold, Object subject, Object member, Object judgement) {
-        return judgement instanceof Undetermined u ? new FoldOpen(fold, subject, member, u.own(), u.read())
+        return judgedAt(fold, subject, member, judgement, null);
+    }
+
+    /** As {@link #judged}, of a member at {@code place} in the order of the fold
+     *  ({@link #foldPlace}), null in a build without readings. */
+    public static Object judgedAt(String fold, Object subject, Object member, Object judgement, List<Integer> place) {
+        return judgement instanceof Undetermined u
+                ? new FoldOpen(fold, subject, member, u.own(), u.read(), FoldOpen.placed(FoldOpen.Part.FILTER, place))
                 : new Contribution(fold, subject, member, verdict((Boolean) judgement));
     }
 
@@ -942,19 +956,19 @@ public final class ComputeHelpers {
                                                     int threshold) {
         long standing = ((Number) countOf).longValue();
         long hits = standing == 0 ? 0 : ((BigDecimal) touch).longValueExact(), fails = standing - hits;
-        long n = standing + ((List<?>) open).size(), ownHits = hits, ownFails = fails;
-        OpenMember first = null, firstOther = null;
-        for (Object o : (List<?>) open) {
-            FoldOpen f = (FoldOpen) o;
-            if (f.own() == null) first = f.read();
+        List<FoldOpen> members = FoldOpen.members(open);
+        long n = standing + members.size(), ownHits = hits, ownFails = fails;
+        OpenMember first = null;
+        for (FoldOpen f : members) {
+            if (f.own() == null) first = first == null ? f.read() : first;
             else if (f.own()) ownHits++;
             else ownFails++;
-            firstOther = f.read();
         }
         Boolean own = Composite.truth(kw, threshold, n, ownHits, ownFails);
         Boolean other = Composite.truth(kw, threshold, n, hits, fails);
         if (own == null) throw new Undetermined(null, first);
-        if (other == null) throw new Undetermined(own, firstOther);
+        // it stands for the form itself and not for another: the first member that does not stand closed
+        if (other == null) throw new Undetermined(own, members.get(0).read());
         return own;
     }
 
@@ -1323,8 +1337,16 @@ public final class ComputeHelpers {
      *  {@code filled}, that the count takes it as leeg, a closure (ch. 1.5). */
     public static Object contribution(String fold, Object subject, Object member, Object value, String total,
                                     String fixed, boolean filled, boolean whole) {
+        return contributionAt(fold, subject, member, value, total, fixed, filled, whole, null);
+    }
+
+    /** As {@link #contribution}, of a member at {@code place} in the order of the fold ({@link #foldPlace}), null in a build
+     *  without readings. */
+    public static Object contributionAt(String fold, Object subject, Object member, Object value, String total,
+                                      String fixed, boolean filled, boolean whole, List<Integer> place) {
         if (value instanceof OpenMember open)
-            return new FoldOpen(fold, subject, member, filled ? Boolean.FALSE : null, open);
+            return new FoldOpen(fold, subject, member, filled ? Boolean.FALSE : null, open,
+                    FoldOpen.placed(FoldOpen.Part.VALUE, place));
         if ((total != null || whole) && value instanceof BucketScalar) return null;
         if (total != null && PeriodArithmetic.openNonZero(value)) return null;
         Object v = total == null ? value
@@ -1354,6 +1376,8 @@ public final class ComputeHelpers {
                     case MEMBER_FAULT -> DroolsCode.LIST_PLACE_MISSING_MEMBER_FAULT.reason("fold", fold, "member",
                             FactNames.object(member), "field", field);
                     case QUANTIFIER -> DroolsCode.LIST_PLACE_MISSING_QUANTIFIER.reason("fold", fold, "member",
+                            FactNames.object(member), "field", field);
+                    case OPEN_MEMBER -> DroolsCode.LIST_PLACE_MISSING_OPEN_MEMBER.reason("fold", fold, "member",
                             FactNames.object(member), "field", field);
                 }).text());
             }

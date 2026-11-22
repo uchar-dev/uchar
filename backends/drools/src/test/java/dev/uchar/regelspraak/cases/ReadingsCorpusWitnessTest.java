@@ -17,6 +17,7 @@ import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
 import dev.uchar.regelspraak.transpiler.tms.ConditionReading;
 import dev.uchar.regelspraak.transpiler.tms.DefaultsDecision;
 import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
+import dev.uchar.regelspraak.transpiler.tms.LeftOpen;
 import dev.uchar.regelspraak.transpiler.tms.Value;
 
 import org.junit.jupiter.api.Test;
@@ -105,7 +106,7 @@ class ReadingsCorpusWitnessTest {
 
     /** What the witness counted on one branch. */
     private static final class Counts {
-        int readings, nodes, operands, compounds, displaced, outside, holds, fails, faults;
+        int readings, nodes, operands, compounds, displaced, outside, holds, fails, faults, open, openReads;
         /** Displaced readings with nodes, those of a default a higher one displaced, and their nodes. */
         int displacedRead, displacedNodes;
         /** Nodes whose object is held to the walk; of them those over a path, and of those the ones without an object. */
@@ -128,7 +129,7 @@ class ReadingsCorpusWitnessTest {
                     if (!TmsDocuments.JSON.readTree(casePath.toFile()).has("expectedFault")) casePaths.add(casePath);
                 if (casePaths.isEmpty()) continue;
                 Path ir = g.resolve("ir.json");
-                if (!TmsDocuments.hasReadings(ir) || !CaseRunner.viaExecModel(ir, casePaths).status().equals("PLAYED")) continue;
+                if (!CaseRunner.viaExecModel(ir, casePaths).status().equals("PLAYED")) continue;
                 String name = CORPUS.resolve("golden").relativize(g).toString();
                 JsonNode document = TmsDocuments.JSON.readTree(ir.toFile());
                 IrLoader.Positioned p = IrLoader.loadWithPositions(document);
@@ -148,7 +149,7 @@ class ReadingsCorpusWitnessTest {
                 }
             }
             System.out.println("ReadingsCorpusWitnessTest " + branch + ": " + n.readings + " lezingen met knopen ("
-                    + n.holds + " geldt, " + n.fails + " faalt, " + n.faults + " fout), " + n.nodes + " knopen, "
+                    + n.holds + " geldt, " + n.fails + " faalt, " + n.faults + " fout, " + n.open + " open), " + n.openReads + " open lezingen, " + n.nodes + " knopen, "
                     + n.operands + " operanden, " + n.compounds + " samenstellingen, " + n.displaced + " verdrongen ("
                     + n.displacedRead + " gelezen, met " + n.displacedNodes + " knopen), "
                     + n.outside + " buiten geldigheid, " + n.objects + " objecten (" + n.navigated + " over een pad, waarvan "
@@ -233,6 +234,7 @@ class ReadingsCorpusWitnessTest {
                 switch (r.status()) {
                     case HOLDS -> n.holds++;
                     case FAILS -> n.fails++;
+                    case OPEN -> n.open++;
                     default -> n.faults++;
                 }
                 n.kinds.merge(form.kind(), 1, Integer::sum);
@@ -259,15 +261,24 @@ class ReadingsCorpusWitnessTest {
                 Object node = form.nodes().get(x.node());
                 boolean member = node instanceof Expr.AttributeReference || node instanceof Expr.DimensionCellRead
                         || node instanceof Condition.CharacteristicCheck;
-                if ((!member || !x.reached() || x.fault() != null) && x.object() != null)
+                if ((!member || !x.reached() || x.fault() != null || x.undetermined()) && x.object() != null)
                     differences.add(at + ": knoop " + x.node() + " (" + x.kind() + ") noemt het object "
                             + name(label, x.object()) + ", en leest geen lid of vond er niets");
                 if (!x.reached() || x.fault() != null) continue;
                 if (member)
                     operands.add(() -> {
-                        String difference = object(model, p.loaded(), r.object(), node, x.object(), n, label);
+                        String difference = object(model, p.loaded(), r.object(), node,
+                                x.undetermined() ? x.open().object() : x.object(), n, label);
                         if (difference != null) differences.add(at + ": knoop " + x.node() + " " + difference);
                     });
+                // an open read names a member that is open at the fixpoint, and the node that read it has no value
+                if (x.undetermined()) {
+                    if (!fp.open().contains(x.open()))
+                        differences.add(at + ": knoop " + x.node() + " las " + x.open().member() + " open, dat aan het fixpunt"
+                                + " niet open is");
+                    n.openReads++;
+                    continue;
+                }
                 if (node instanceof Expr.AttributeReference a) {
                     operands.add(() -> {
                         String difference = operand(model, p.loaded(), r.object(), a, x.value(), n);
@@ -451,6 +462,11 @@ class ReadingsCorpusWitnessTest {
     private static void fired(String at, Form form, ConditionReading r, List<Value> values, Fixpoint fp, KieSession session,
                               Map<Integer, ConditionReading.NodeReading> byNumber, List<String> differences) {
         boolean holds = r.status() == ConditionReading.Status.HOLDS;
+        // a form is open exactly where it left its target open
+        boolean left = session.getObjects(f -> f instanceof LeftOpen l && l.subject() == r.object()
+                && l.writer().equals(form.writer())).iterator().hasNext();
+        if (left != (r.status() == ConditionReading.Status.OPEN) && !form.kind().equals("consistentie"))
+            differences.add(at + ": " + r.status() + ", en de vorm liet haar doel " + (left ? "wel" : "niet") + " open");
         switch (form.kind()) {
             case "regel kenmerk" -> {
                 if (holds && !derived(fp, r.object(), form.target()))
@@ -468,7 +484,8 @@ class ReadingsCorpusWitnessTest {
                 boolean violated = fp.inconsistencies().stream().anyMatch(i ->
                         form.writer().equals(RegelSpraakRuntime.get(i, "rule")) && RegelSpraakRuntime.get(i, "subject") == r.object()
                                 && ((List<?>) RegelSpraakRuntime.get(i, "codes")).contains("EF-025"));
-                if (holds == violated) differences.add(at + ": " + r.status() + ", en de schending staat "
+                if (violated != (r.status() == ConditionReading.Status.FAILS))
+                    differences.add(at + ": " + r.status() + ", en de schending staat "
                         + (violated ? "wel" : "niet"));
             }
             case "objectcreatie" -> {

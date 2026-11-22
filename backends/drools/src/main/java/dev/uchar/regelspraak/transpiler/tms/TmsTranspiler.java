@@ -4868,11 +4868,12 @@ public final class TmsTranspiler {
      * its speculative reading rule, the same left-hand side without those control facts ({@link Reading.Kind}), null
      * for every other form; and for a default of a stack on a timeline target, which decides per day, the term of the
      * days of its turn ({@code turn}) and, for its initialisation default, of the days on which the input leaves the
-     * target empty ({@code inputDays}), each null for every other form (RUNTIME-SEMANTICS ch. 5.12, 7.11).
+     * target empty ({@code inputDays}), each null for every other form (RUNTIME-SEMANTICS ch. 5.12, 7.11); and whether the
+     * condition is the assertion of a consistency ({@code assertion}), which writes nothing.
      */
     record ReadingRule(RulePlan plan, RulePlan speculative, String ownRule, String pointer, Validity validity,
                        boolean guarded, Term condition, Term periods, Term value, List<Site> sites, Term turn,
-                       Term inputDays) {
+                       Term inputDays, boolean assertion) {
 
         /** The subject pattern of the reading rule. */
         Subject subject() {
@@ -4962,7 +4963,7 @@ public final class TmsTranspiler {
                     n instanceof Condition.QuantifierFold q ? q : null, derived, object == null ? -1 : object));
         }
         readingRules.add(new ReadingRule(plan, speculative, ruleName, pointer, validity, guarded, condition, periods, value,
-                sites, turn, inputDays));
+                sites, turn, inputDays, pointer.startsWith("/rules/consistencies/")));
     }
 
     /** The reading rule ({@link #readingRule}) of a form whose reading is its condition alone: {@code condition} the
@@ -6775,19 +6776,22 @@ public final class TmsTranspiler {
      * its whole timeline ({@link #periodSum}). The rules go into {@code out} and their reads into {@code readings}, to be
      * registered with the form; returns whether the filter can fault, whether the member can be open to the fold, its filter
      * undetermined or its value open, and whether a closure can decide it (RUNTIME-SEMANTICS ch. 1.5, "A fold over a set").
-     * Such a member inserts its {@link FoldOpen} in the same rule, beside or in place of its contribution. Refused by name:
-     * a fold nested in a filter that can be open.
+     * Such a member inserts its {@link FoldOpen} in the same rule, beside or in place of its contribution, in a build with
+     * readings with its place in the order of the fold, which that rule then binds as the filter fault rule does. A fold in
+     * the filter is read as any rule reads one, on the member.
      */
     private Ends contributionRules(String key, String name, Expr.FunctionKind kind, ObjectType subject,
                                    ObjectType elem, Range range, int selection, Condition filter,
                                    Expr.AttributeReference arg, List<String> cell, String payload, List<RulePlan> out,
                                    List<Reads> readings, boolean whole) {
-        Reads reads = contributionReads(subject, elem, range.join());
+        // in a build with readings a fold that can be open names the first member that leaves it so (ch. 5.12): the member's
+        // join then binds its place, which the reads of the filter and of the value decide
+        boolean placed = positions != null && !openable.isEmpty();
+        Reads reads = contributionReads(subject, elem, placed ? l -> { } : range.join());
         Set<Integer> read = reads.follow();
         Term testTerm = filter == null ? null : conditionTerm(filter, reads);
         Ends ends = reads.ends();
         reads.stop();
-        if (reads.folds.stream().anyMatch(Fold::canBeOpen)) throw uncarried("set-fold");
         Set<Integer> use = reads.follow();
         int member = reads.member();
         // a member on a timeline contributes its own total over time (RUNTIME-SEMANTICS ch. 3.6, the per-element fold);
@@ -6815,6 +6819,9 @@ public final class TmsTranspiler {
         boolean openValue = memberValue != null && openable.contains(memberValue.key());
         int openInput = openValue && !writers.containsKey(memberValue.key()) ? reads.openInput() : -1;
         reads.stop();
+        Consequence.FoldPlace place = null;
+        if (placed && (ends.open() || openValue)) place = openMemberPlace(range.perRoute().apply(reads), selection, use);
+        else if (placed) range.join().accept(reads);
         List<LhsItem> items = reads.plan(Asked.ACTS, ends, testTerm, read);
         Consequence.Input input = new Consequence.Input.Count();
         if (kind != Expr.FunctionKind.AANTAL) {
@@ -6823,7 +6830,7 @@ public final class TmsTranspiler {
             input = openInput < 0 ? of : new Consequence.Input.IncompleteInput(of, openInput, memberValue.key());
         }
         if (ends.open()) use.addAll(read);
-        Consequence.Contribution contribution = new Consequence.Contribution(FOLD_SUBJECT, key, member, input,
+        Consequence.Contribution contribution = new Consequence.Contribution(FOLD_SUBJECT, key, member, input, place,
                 List.copyOf(use), reads.size(), Consequence.Insertion.LOGICAL);
         String formName = model.emittedRuleName(form);
         out.add(as(RuleOrigin.Role.FOLD_CONTRIBUTION, reads.rulePlan(formName + ": bijdrage aan " + name, items,
@@ -6839,6 +6846,17 @@ public final class TmsTranspiler {
                 elem, range, filter, readings::add));
         return new Ends(ends.fault(), ends.open() || openValue,
                 ends.closes() || openValue && kind == Expr.FunctionKind.AANTAL_GEVULDE);
+    }
+
+    /** The place of a member that can leave its fold open, in the selection {@code selection}, at the steps {@code steps}
+     *  its rule binds; what a consequence reads of it goes into {@code use}. */
+    private static Consequence.FoldPlace openMemberPlace(List<Consequence.FoldPlace.Step> steps, int selection,
+                                                         Set<Integer> use) {
+        for (Consequence.FoldPlace.Step p : steps) {
+            use.add(p.count());
+            use.add(p.place());
+        }
+        return new Consequence.FoldPlace(selection, steps, Consequence.PlaceReason.OPEN_MEMBER);
     }
 
     /**
@@ -7746,7 +7764,10 @@ public final class TmsTranspiler {
                 use.add(p.count());
                 use.add(p.place());
             }
-        } else range.join().accept(reads);
+        }
+        Consequence.FoldPlace place = null;
+        if (positions != null && matrixEnds.open() && !ordered) place = openMemberPlace(range.perRoute().apply(reads), 0, use);
+        else if (!ordered) range.join().accept(reads);
         List<LhsItem> items = reads.plan(Asked.DECIDES, filterEnds, filter, read);
         Consequence.Input input = ordered
                 ? new Consequence.Input.MemberTest(matrix, depositFlag, new Consequence.FoldPlace(0, places,
@@ -7756,7 +7777,7 @@ public final class TmsTranspiler {
         List<RulePlan> rules = new ArrayList<>();
         List<Reads> readings = new ArrayList<>();
         rules.add(as(RuleOrigin.Role.FOLD_CONTRIBUTION, reads.rulePlan(formName + ": bijdrage aan " + name, items,
-                new Consequence.Contribution(FOLD_SUBJECT, key, member, input, List.copyOf(use), reads.size(),
+                new Consequence.Contribution(FOLD_SUBJECT, key, member, input, place, List.copyOf(use), reads.size(),
                         Consequence.Insertion.LOGICAL))));
         readings.add(reads);
         if (filterEnds.fault()) rules.add(filterFaultRule(key, formName + ": filterfout in " + name, subject, elem,
@@ -8960,17 +8981,17 @@ public final class TmsTranspiler {
             case Consequence.Contribution b when b.input() instanceof Consequence.Input.Judged o -> {
                 Term z = withoutDepositFlag(o.matrix());
                 return z == o.matrix() ? b : new Consequence.Contribution(b.subject(), b.fold(), b.member(),
-                        new Consequence.Input.Judged(z), b.slots(), b.size(), b.insertion());
+                        new Consequence.Input.Judged(z), b.place(), b.slots(), b.size(), b.insertion());
             }
             case Consequence.Contribution b when b.input() instanceof Consequence.Input.Verdict o -> {
                 Term z = withoutDepositFlag(o.matrix());
                 return z == o.matrix() ? b : new Consequence.Contribution(b.subject(), b.fold(), b.member(),
-                        new Consequence.Input.Verdict(z), b.slots(), b.size(), b.insertion());
+                        new Consequence.Input.Verdict(z), b.place(), b.slots(), b.size(), b.insertion());
             }
             case Consequence.Contribution b when b.input() instanceof Consequence.Input.MemberTest l && l.depositFlag() < 0 -> {
                 Term z = withoutDepositFlag(l.matrix());
                 return z == l.matrix() ? b : new Consequence.Contribution(b.subject(), b.fold(), b.member(),
-                        new Consequence.Input.MemberTest(z, -1, l.place(), l.open()), b.slots(), b.size(), b.insertion());
+                        new Consequence.Input.MemberTest(z, -1, l.place(), l.open()), b.place(), b.slots(), b.size(), b.insertion());
             }
             case Consequence.Creation c -> {
                 List<Consequence.Assignment> assignments = new ArrayList<>();

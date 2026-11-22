@@ -355,7 +355,7 @@ DROOLS-316	{form} op het tijdsafhankelijke attribuut '{attribute}' van {declaran
 DROOLS-316.initialisation	de waarde van een initialisatie
 DROOLS-316.member	de lidwaarde van een objectcreatie
 DROOLS-317	het beanmodel draagt de beaneigenschap {property} van {objectType} niet: haar getter {getter} is een methode van java.lang.Object, die geen bean opnieuw kan declareren
-DROOLS-318	een vouw over '{factType}', een relatie waarvan beide rollen meervoudig zijn ('{description}'), die haar leden in volgorde leest (een filter dat kan falen, een deposito, of een lidvoorwaarde die kan falen of deponeren): een koppeling van zo'n relatie heeft in deze tak geen plaats in de volgorde van de leden, die bepaalt welk lid de fout geeft (RUNTIME-SEMANTICS ch. 5.7a, 5.11); deze tak draagt deze vorm nog niet
+DROOLS-318	een vouw over '{factType}', een relatie waarvan beide rollen meervoudig zijn ('{description}'), die haar leden in volgorde leest (een filter dat kan falen, een deposito, een lidvoorwaarde die kan falen of deponeren, of met lezingen een lid dat open kan zijn): een koppeling van zo'n relatie heeft in deze tak geen plaats in de volgorde van de leden, die bepaalt welk lid de fout geeft of de lezing noemt (RUNTIME-SEMANTICS ch. 5.7a, 5.11, 5.12); deze tak draagt deze vorm nog niet
 DROOLS-319	insert vult een verse sessie, maar deze houdt al {factCount} feiten: de plaatsen van een lijst worden over de beans van één invoer geteld, en een bean die zonder insert in de sessie kwam, heeft er geen; geef alle beans in één Input aan een verse sessie, en verander tussen twee fires hun waarden met update
 DROOLS-320	insert: de bean {bean} staat twee keer in de invoer
 DROOLS-321	insert: {bean} is geen bean van dit model: een bean is een instantie van een klasse die Build.beanLoader() laadt
@@ -436,6 +436,7 @@ DROOLS-371	insert: de invoer zegt dat het kenmerk "{characteristic}" van {bean} 
 DROOLS-371.not-in-input	die bean is geen bean van de invoer
 DROOLS-371.undeclared	zijn type {objectType} declareert geen kenmerk met die naam dat één waarheidswaarde heeft
 DROOLS-371.holds	de bean heeft het
+DROOLS-372	wat {member} de vouw {fold} geeft, kan open zijn, maar een lid van zijn route heeft geen Lijstplaats onder het veld '{field}': de invoer stelt de volgorde van die lijst niet, en zonder haar is niet te bepalen welk open lid de lezing van de vouw noemt (RUNTIME-SEMANTICS ch. 5.12)
 EF-002	de rol "{role}" van "{label}" verwijst naar het onbekende label "{target}"
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year

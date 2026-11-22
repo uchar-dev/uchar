@@ -50,6 +50,12 @@ public final class Composite {
         return false;
     }
 
+    /** The open read that makes the member under way a provisional one, that of the first member read before it that is
+     *  undetermined for another form; null where the member is not read provisionally. */
+    OpenMember past() {
+        return provisional ? firstOther : null;
+    }
+
     /** The member under way is established, true or false, for the form itself and for another. */
     public void read(boolean holds) {
         if (provisional) DepositFlag.restore(depositFlag, mark);

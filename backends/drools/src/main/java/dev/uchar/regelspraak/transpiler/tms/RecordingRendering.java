@@ -15,18 +15,31 @@ import java.util.function.Supplier;
 /**
  * The third rendering of a planned condition or value ({@link Term}), beside {@link ClosureRendering} and
  * {@code DrlRendering}: an evaluation over a rule's value array that records, per node of the term, whether the
- * evaluation reached it and what it found, a value or an evaluation fault ({@code TmsTranspiler#readingsOf}, card
+ * evaluation reached it and what it found, a value, a truth a closure decided, an open read that broke it off or an
+ * evaluation fault ({@code TmsTranspiler#readingsOf}, card
  * fixpoint-readings). It evaluates as the rendering into closures does, node for node: the same functions of the plan
  * ({@link ClosureRendering#implementation}), the same reading of a composite ({@link Composite}), the same order
  * (RUNTIME-SEMANTICS ch. 5.10, 5.11), a {@code Let} by need (ch. 10.6) and exactly the branch a choice takes
- * (ch. 10.2). It decides nothing either. A probe in the value array is the caller's, which fills each probe slot with a
+ * (ch. 10.2). It decides nothing either. A function of the plan that opens a boundary (an atomic condition in which a fold
+ * can close, the operand of a test on leeg or gevuld) opens it here as well, since it is the same function over what this
+ * rendering evaluates. A probe in the value array is the caller's, which fills each probe slot with a
  * fresh probe and reads none: a reading deposits nothing.
  */
 final class RecordingRendering {
 
     /** What the evaluation found at one node it reached: its value, or the evaluation fault it raised or passed on, or
-     *  neither where a read of a leeg binder ended it (ch. 10.6, clause 2). */
-    record Outcome(Object value, RuntimeException fault) {}
+     *  neither where a read of a leeg binder ended it (ch. 10.6, clause 2); and in a document with open values
+     *  {@code judgement}, where what it found does not stand for another form (ch. 1.5): undetermined, with the open read
+     *  that left it so, at a node an open read broke off and at a condition that is undetermined for the form itself, which
+     *  have no value; or the closure over that read that decided a condition, whose value is its truth for the form
+     *  itself. */
+    record Outcome(Object value, RuntimeException fault, Undetermined judgement) {
+
+        /** Whether the node is undetermined for the form itself. */
+        boolean undetermined() {
+            return judgement != null && judgement.own() == null;
+        }
+    }
 
     private final Map<Term, Outcome> outcomes = new IdentityHashMap<>();
 
@@ -35,21 +48,32 @@ final class RecordingRendering {
         return outcomes.get(t);
     }
 
-    /** The value of {@code t} over {@code w}, every node it reaches recorded; an evaluation fault passes on, recorded at
-     *  every node it passes. */
+    /** The value of {@code t} over {@code w}, every node it reaches recorded; an evaluation fault, an open read and a
+     *  judgement that does not stand for another form pass on, recorded at every node they pass. */
     Object value(Term t, Object[] w) {
         Object v;
         try {
             v = evaluate(t, w);
         } catch (Barrier b) {
-            outcomes.put(t, new Outcome(null, null));
+            outcomes.put(t, new Outcome(null, null, null));
             throw b;
+        } catch (OpenRead e) {
+            brokenOff(t, e.member());
+            throw e;
+        } catch (Undetermined e) {
+            outcomes.put(t, new Outcome(e.own(), null, e));
+            throw e;
         } catch (RuntimeException e) {
-            if (ComputeHelpers.isEvaluationFault(e)) outcomes.put(t, new Outcome(null, e));
+            if (ComputeHelpers.isEvaluationFault(e)) outcomes.put(t, new Outcome(null, e, null));
             throw e;
         }
-        outcomes.put(t, new Outcome(v, null));
+        outcomes.put(t, new Outcome(v, null, null));
         return v;
+    }
+
+    /** Records that {@code t} is undetermined by the open read of {@code member}. */
+    private void brokenOff(Term t, OpenMember member) {
+        outcomes.put(t, new Outcome(null, null, new Undetermined(null, member)));
     }
 
     /** Whether {@code t}, a condition, holds over {@code w}. */
@@ -134,7 +158,8 @@ final class RecordingRendering {
     }
 
     /** A composite: its members read in order and counted by its reading, as {@link ClosureRendering} reads them, so a
-     *  member after the stop is not reached. */
+     *  member after the stop is not reached. A member read provisionally that faults is undetermined by the read that makes
+     *  it provisional, while the nodes inside it carry the fault (RUNTIME-SEMANTICS ch. 5.12, "Open values"). */
     private boolean compound(Term.Compound s, Object[] w) {
         int n = s.members().size();
         Composite reading = ComputeHelpers.composite(s.quantifier(), s.threshold(), n,
@@ -142,7 +167,14 @@ final class RecordingRendering {
         for (int i = 0; i < n && !reading.stands(); i++) {
             Term member = s.members().get(i);
             if (i < s.openFrom()) reading.read(test(member, w));
-            else reading.read(() -> test(member, w));
+            else reading.read(() -> {
+                try {
+                    return test(member, w);
+                } catch (RuntimeException e) {
+                    if (reading.past() != null && ComputeHelpers.isEvaluationFault(e)) brokenOff(member, reading.past());
+                    throw e;
+                }
+            });
         }
         return reading.verdict();
     }

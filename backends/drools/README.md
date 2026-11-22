@@ -65,11 +65,13 @@ DROOLS-370 and the slug of the form (`EXCLUDE DROOLS-370: …`), since an answer
 wrong answer without a word. `UncarriedForms` is the one place that lists those forms, in the order by which the first
 a document holds is named: the table "Forms without the reading" of ch. 1.5; the forms whose reading ch. 1.5 defines
 and this backend does not carry, `defaults-group` (groups without an order between them of which one has an
-initialisation), `if-then-else`, `object-creation` and `fact-creation`; and `reading`, the
-build with readings. Those are refused before a bean is generated. The last three slugs depend on what a part can read,
+initialisation), `if-then-else`, `object-creation` and `fact-creation`. Those are refused before a bean is
+generated. The last three slugs depend on what a part can read,
 and the analysis refuses them where it lowers the form, so after the others: `quantifier-fold`, whose filter reads a
-member that can be open; `set-fold`, a fold over a set whose filter holds a fold that can be open, and a sum whose
-fallback reads a member that can be open; and `anchored-read`, an anchored read of an input member that can be open. The
+member that can be open; `set-fold`, a sum whose fallback reads a member that can be open; and `anchored-read`, an
+anchored read of an input member that can be open. The build with readings carries the forms the build without carries,
+but one: a fold that can be open over a relation both of whose roles are to-many, whose members have no place in an
+order here, so that which of them the reading names cannot be told (DROOLS-318). The
 loader reads the property into the model
 (`RegelSpraakModel.inferFromEmpty()`) and refuses no document for it, so the rule graph reads such a document as any
 other; every other value of the property is a `DocumentError` at `/inferFromEmpty` (witnesses
@@ -500,8 +502,29 @@ shows, the facts that carry it carry the open members too. A matrix that can fau
 ended, an open read or a judgement that does not stand among them, and `Composite` reads them in the order of their
 places, provisionally after one that is undetermined for another. A filter that can fault and be undetermined gives a
 `FilterFault` for a member of either, whose fault is the `OpenRead` where it is undetermined, so that the reading rule
-meets the first of both; a value that is open comes after every filter. A fold none of whose members can be open is
-lowered as any fold.
+meets the first of both; a value that is open comes after every filter. A fold in the filter or the matrix of another is
+read there as any rule reads one. A fold none of whose members can be open is lowered as any fold.
+
+Four words keep four things apart, here, in the javadoc and in the records a consumer reads. A member is **open** where
+neither a value nor leeg stands, and so is the outcome of a form that leaves its target so (`ConditionReading.Status.OPEN`,
+`Fixpoint.open`, `EndState.EndObject.open`). A condition is **undetermined** where it is neither true nor false, and so is, in
+a reading, a node an open read broke off (`NodeReading.undetermined`, with the open read in `NodeReading.open`). A member is
+**settled leeg** where it stands that no writer fills it, or its declaration says that its input is complete (`(volledig
+gegeven)`, `complete`): in an end state it is in neither list, in a reading it is a value that is null. The **absence markers**
+`onbekend` and `niet van toepassing` of a sum type are filled values.
+
+**The readings of open values** (RUNTIME-SEMANTICS ch. 5.12, "Open values"). The recording rendering evaluates the terms of a
+form with the functions of its rule, so it opens the boundaries the evaluation opens, and records the open read or the
+judgement it meets at every node it passes; a member of a composite or of a quantifier fold that is read provisionally and
+faults is undetermined by the read before it (`Composite.past`), and the nodes inside it carry the fault. The calls the
+analysis adds for a boundary or for the list of open members (`ATOM`, `STANDING_COUNT`) are no nodes. A value is read as one
+value (`ComputeHelpers.valued`), so a leeg one after a closure leaves the form `OPEN`. The reading rule of a form stands as its
+rule does: below a default that is open the initialisation is at its turn and every other default has its speculative
+reading. A fold that is broken off names the open read of the first member in the order of the fold, every filter before
+every value, and a quantifier fold that of its first member that is undetermined for the form itself. That order shows in
+a reading alone, so only a build with readings binds it: the contribution rule of a member that can be open binds its place
+as the filter fault rule does, and its `FoldOpen` carries the place; the functions that read those facts take the first. A
+build without readings lowers the document without places.
 
 Witnesses `OpenableMembersWitnessTest`, `OpenValuesWitnessTest` (the examples of ch. 1.5), `OpenValuesRefWitnessTest` (the
 witnesses of the reference interpreter) and `InferFromEmptyRefusalWitnessTest` (what is refused, each beside a document that

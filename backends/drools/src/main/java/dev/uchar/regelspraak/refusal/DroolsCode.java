@@ -392,7 +392,8 @@ public enum DroolsCode {
     TEXT_PART_UNIT_WITHOUT_UNIT("DROOLS-368", Kind.CONTRACT, "text-part-unit-without-unit", "snippet,type", null),
     TEXT_PART_UNIT_UNDECLARED("DROOLS-369", Kind.CONTRACT, "text-part-unit-undeclared", "snippet,unit,factor,unitSystem", null),
     INFER_FROM_EMPTY_FALSE("DROOLS-370", Kind.REFUSAL, "infer-from-empty-false", "form", null),
-    INSERT_ABSENT_CHARACTERISTIC("DROOLS-371", Kind.CONTRACT, "insert-absent-characteristic", "bean,characteristic,reason", null);
+    INSERT_ABSENT_CHARACTERISTIC("DROOLS-371", Kind.CONTRACT, "insert-absent-characteristic", "bean,characteristic,reason", null),
+    LIST_PLACE_MISSING_OPEN_MEMBER("DROOLS-372", Kind.CONTRACT, "list-place-missing-open-member", "fold,member,field", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */

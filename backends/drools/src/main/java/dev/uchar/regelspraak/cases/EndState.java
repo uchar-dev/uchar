@@ -31,7 +31,11 @@ import java.util.function.Function;
  * The end state of a session at its fixpoint (RUNTIME-SEMANTICS ch. 5.12a), read without writing anything on a bean
  * ({@link DroolsBackend#endStateOf}): every object, of the input and made by a creation, with its type and every member
  * of it that holds a value; every link; and the §9.5 facts. Where {@link Fixpoint} gives what the rules derived, this
- * gives what stands: the input of a member where nothing derived it, the derived value where something did.
+ * gives what stands: the input of a member where nothing derived it, the derived value where something did. In a
+ * document that infers nothing from an empty value (ch. 1.5) a member of an object is filled, {@link EndObject#members},
+ * among them the markers "onbekend" and "niet van toepassing" of a sum type, which are values; open,
+ * {@link EndObject#open}, also where its bean holds a value that does not stand; or settled leeg, in neither list. In every
+ * other document nothing is open.
  * {@link DroolsBackend#standingOf} gives the same record for a session in which an evaluation fault stands, which has
  * no end state: there it is a view of the session for diagnosis, and nothing norms it (ch. 5.7).
  *
@@ -54,14 +58,25 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
     /**
      * One object of the session: its bean, its case label (null for a made object), the name of its object type, the
      * name of the creation that made it and the object it made it for (both null for an object of the input), and its
-     * members that hold a value, from the root of its type chain down, each type's members in declaration order.
+     * members that hold a value, from the root of its type chain down, each type's members in declaration order; and in
+     * that order its members that are open (ch. 1.5), none in a document without open values.
      */
     public record EndObject(Object object, String label, String type, String creation, Object subject,
-                            List<Member> members) {
+                            List<Member> members, List<Open> open) {
         public EndObject {
             Objects.requireNonNull(object, "object");
             Objects.requireNonNull(type, "type");
             members = List.copyOf(members);
+            open = List.copyOf(open);
+        }
+    }
+
+    /** One member of an object that is open, a characteristic where {@code characteristic}: neither filled nor settled leeg.
+     *  {@code given} is what its bean field holds, as for a {@link Member}: a value of the input beside a writer that leaves
+     *  the member open, which does not stand; null where the field holds none. */
+    public record Open(boolean characteristic, String name, Object given) {
+        public Open {
+            Objects.requireNonNull(name, "name");
         }
     }
 
@@ -131,6 +146,12 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
         for (Fixpoint.DerivedCharacteristic k : fp.characteristics())
             derivedCharacteristics.computeIfAbsent(k.object(), o -> new HashSet<>()).add(Namen.norm(k.characteristic()));
 
+        // the names of what is open, per object; of an attribute and of a characteristic apart
+        Map<Object, Map<Boolean, Set<String>>> open = new IdentityHashMap<>();
+        for (Fixpoint.OpenValue v : fp.open())
+            open.computeIfAbsent(v.object(), o -> new HashMap<>())
+                    .computeIfAbsent(v.characteristic(), k -> new HashSet<>()).add(Namen.norm(v.member()));
+
         Map<Object, ObjectType> typeOf = new IdentityHashMap<>();
         TreeMap<String, Object> labelled = new TreeMap<>();
         Map<Object, Fixpoint.MadeObject> made = new IdentityHashMap<>();
@@ -153,33 +174,40 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
         List<EndObject> objects = new ArrayList<>();
         for (Map.Entry<String, Object> e : labelled.entrySet()) {
             Object bean = e.getValue();
-            objects.add(new EndObject(bean, e.getKey(), typeOf.get(bean).name, null, null,
-                    members(bean, typeOf.get(bean), displacements, derived, derivedCells, derivedCharacteristics)));
+            List<Member> members = new ArrayList<>();
+            List<Open> opened = new ArrayList<>();
+            members(bean, typeOf.get(bean), displacements, derived, derivedCells, derivedCharacteristics, open, members, opened);
+            objects.add(new EndObject(bean, e.getKey(), typeOf.get(bean).name, null, null, members, opened));
         }
         for (Fixpoint.MadeObject m : fp.objects()) {
             ObjectType ot = typeOf.get(m.object());
             if (ot == null)
                 throw new IllegalStateException("the creation '" + m.creation() + "' made an object that is no bean of"
                         + " the session");
-            objects.add(new EndObject(m.object(), null, ot.name, m.creation(), m.subject(),
-                    members(m.object(), ot, displacements, derived, derivedCells, derivedCharacteristics)));
+            List<Member> members = new ArrayList<>();
+            List<Open> opened = new ArrayList<>();
+            members(m.object(), ot, displacements, derived, derivedCells, derivedCharacteristics, open, members, opened);
+            objects.add(new EndObject(m.object(), null, ot.name, m.creation(), m.subject(), members, opened));
         }
         return new EndState(objects, links(model, session, typeOf), channel(fp), fp.faults());
     }
 
-    /** The members of {@code bean}, of type {@code ot}, that hold a value: the derived value where a rule derived one,
-     *  the bean field's input elsewhere, each with what its bean field holds. A member without a bean field of its own
-     *  has no value here. */
-    private static List<Member> members(Object bean, ObjectType ot, List<FactModelGenerator.Displacement> displacements,
-                                        Map<Object, Map<String, Object>> derived,
-                                        Map<Object, Map<String, Map<List<String>, Object>>> derivedCells,
-                                        Map<Object, Set<String>> derivedCharacteristics) {
+    /** The members of {@code bean}, of type {@code ot}, that hold a value, into {@code out}: the derived value where a rule
+     *  derived one, the bean field's input elsewhere, each with what its bean field holds; and those of {@code open}, which
+     *  hold none, into {@code opened}. A member without a bean field of its own has no value here. */
+    private static void members(Object bean, ObjectType ot, List<FactModelGenerator.Displacement> displacements,
+                                Map<Object, Map<String, Object>> derived,
+                                Map<Object, Map<String, Map<List<String>, Object>>> derivedCells,
+                                Map<Object, Set<String>> derivedCharacteristics,
+                                Map<Object, Map<Boolean, Set<String>>> open, List<Member> out, List<Open> opened) {
         Map<String, Object> mine = derived.getOrDefault(bean, Map.of());
         Map<String, Map<List<String>, Object>> myCells = derivedCells.getOrDefault(bean, Map.of());
         Set<String> myCharacteristics = derivedCharacteristics.getOrDefault(bean, Set.of());
+        Map<Boolean, Set<String>> myOpen = open.getOrDefault(bean, Map.of());
+        Set<String> openAttributes = myOpen.getOrDefault(false, Set.of());
+        Set<String> openCharacteristics = myOpen.getOrDefault(true, Set.of());
         List<ObjectType> chain = new ArrayList<>(ot.chain());
         java.util.Collections.reverse(chain);
-        List<Member> out = new ArrayList<>();
         for (ObjectType t : chain) {
             for (Map.Entry<String, dev.uchar.regelspraak.model.Datatype> a : t.attributes.entrySet()) {
                 String name = a.getKey();
@@ -206,6 +234,10 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
                     continue;
                 }
                 Object field = CaseRunner.invokeGetter(bean, Namen.getter(name));
+                if (openAttributes.contains(key)) {
+                    opened.add(new Open(false, name, given(field)));
+                    continue;
+                }
                 Object v = mine.containsKey(key) ? mine.get(key) : field;
                 if (v != null) out.add(new Member(false, name, null, v, unit, mine.containsKey(key), given(field)));
             }
@@ -220,11 +252,11 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
                     continue;
                 }
                 Object given = Boolean.TRUE.equals(CaseRunner.invokeGetter(bean, Namen.getter(name))) ? Boolean.TRUE : null;
-                if (myCharacteristics.contains(key) || given != null)
+                if (openCharacteristics.contains(key)) opened.add(new Open(true, name, given));
+                else if (myCharacteristics.contains(key) || given != null)
                     out.add(new Member(true, name, null, Boolean.TRUE, null, myCharacteristics.contains(key), given));
             }
         }
-        return out;
     }
 
     /** {@code field} as {@link Member#given} takes it: a timeline without segments holds nothing. */

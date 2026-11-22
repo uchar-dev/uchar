@@ -33,8 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * of the reference interpreter; the same document without
  * the property builds and plays. The forms the analysis refuses where it lowers them each have a document here, beside its
  * neighbour that is carried. The list opens with the table "Forms without the reading" of ch. 1.5, in its
- * order, and the build with readings refuses a document whose forms this backend carries with the slug
- * {@code reading}.
+ * order.
  */
 class InferFromEmptyRefusalWitnessTest {
 
@@ -80,20 +79,6 @@ class InferFromEmptyRefusalWitnessTest {
         assertEquals("het document draagt inferFromEmpty false, een lezing waarin uit een lege waarde niets volgt, en "
                 + "deze backend draagt die lezing niet voor alles wat gevraagd is (vorm: set-fold)",
                 reason.text(Locale.forLanguageTag("nl")));
-    }
-
-    /** The build with readings refuses a document with the property whose forms this backend carries, with the slug
-     *  {@code reading}, on both branches; the build without readings builds it. */
-    @Test void the_build_with_readings_refuses_a_carried_document() throws Exception {
-        for (String fixture : List.of("derived", "stack-exception-groups")) {
-            Path ir = Path.of("src", "test", "resources", "open-values", fixture, "ir.json");
-            for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
-                CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(ir, branch, true),
-                        branch::name);
-                assertEquals(DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "reading").text(), e.getMessage());
-                DroolsBackend.build(ir, branch, false);
-            }
-        }
     }
 
     /** A declared-unordered group of two defaults groups of which one has an initialisation is the one defaults group the
@@ -162,10 +147,9 @@ class InferFromEmptyRefusalWitnessTest {
         assertEquals(null, first(grens(3)));
     }
 
-    /** {@code set-fold}: a fold over a set whose filter holds a fold that can be open, and a sum whose fallback reads a
-     *  member that can be open. Where every input is complete, nothing can be open, and the document is carried. */
-    @Test void a_fold_over_a_set_outside_the_bound_is_refused() throws Exception {
-        refused("set-fold", "eerste schone maand vanaf de eindmaand", golden("fold-filter-inner-fold-via-element-role"));
+    /** {@code set-fold}: a sum whose fallback reads a member that can be open. Where every input is complete, nothing can be
+     *  open, and the document is carried. */
+    @Test void a_sum_whose_fallback_can_be_open_is_refused() throws Exception {
         ObjectNode fallback = fixture("set-fold");
         ObjectNode sum = (ObjectNode) fallback.at("/rules/rules/7/versions/0/value");
         assertEquals("sum", sum.get("kind").asText(), "the aangemeld gewicht, which has a fallback");
@@ -179,12 +163,16 @@ class InferFromEmptyRefusalWitnessTest {
     }
 
     /** A filter and a matrix that can fault or deposit over a member that can be open are carried: a division, a power, a
-     *  parameter, in a fold over a set, a union and a quantifier fold. */
+     *  parameter, in a fold over a set, a union and a quantifier fold, and a fold in the filter of another; with readings as
+     *  well, whose order is that of the members. */
     @Test void a_fold_whose_order_shows_is_carried() throws Exception {
         for (String name : List.of("fold-filter-divides-by-zero", "jutterswet-filterwacht", "jutterswet-macht-van-nul",
                 "jutterswet-kwantorvouw-en-unie", "jutterswet-vouwfilter-buiten-de-beurt", "jutterswet-keurgemiddelde",
-                "jutterswet-loodsgrens"))
-            for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) DroolsBackend.build(golden(name), branch, false);
+                "jutterswet-loodsgrens", "fold-filter-inner-fold-via-element-role"))
+            for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+                DroolsBackend.build(golden(name), branch, false);
+                DroolsBackend.build(golden(name), branch, true);
+            }
     }
 
     /** {@code anchored-read}: an anchored read of an input member that can be open, in the filter of a fold. */
@@ -244,7 +232,7 @@ class InferFromEmptyRefusalWitnessTest {
     /** The slug {@link UncarriedForms} names for {@code ir}, null where it names none. */
     private static String first(ObjectNode ir) {
         IrLoader.Loaded loaded = IrLoader.loadWithPositions(ir).loaded();
-        return UncarriedForms.first(loaded.model(), loaded.prioritizedDefaults(), false);
+        return UncarriedForms.first(loaded.model(), loaded.prioritizedDefaults());
     }
 
     /** The golden jutterswet-grens-per-jutter with the property and only its rule {@code n}. */

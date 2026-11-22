@@ -176,10 +176,6 @@ class PeriodDecisionsWitnessTest {
                 if (!play.ir().equals(last)) {
                     last = play.ir();
                     document = TmsDocuments.JSON.readTree(play.ir().toFile());
-                    if (!TmsDocuments.hasReadings(document)) {
-                        runner = null;
-                        continue;
-                    }
                     try {
                         p = IrLoader.loadWithPositions(document);
                         runner = CaseRunner.forMeasurement(play.ir(), branch, true);

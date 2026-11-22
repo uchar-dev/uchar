@@ -349,19 +349,24 @@ public sealed interface Consequence {
 
     /** What a rule of a fold needs a member's place for: the first fault among the members' filters
      *  ({@code FILTER_FAULT}), the first member whose timeline the case gives as the asOfDate-bucket scalar
-     *  ({@code MEMBER_FAULT}), or the members that the short circuit of a quantifier fold reaches ({@code QUANTIFIER}). */
-    enum PlaceReason { FILTER_FAULT, MEMBER_FAULT, QUANTIFIER }
+     *  ({@code MEMBER_FAULT}), the members that the short circuit of a quantifier fold reaches ({@code QUANTIFIER}), or, in a
+     *  build with readings, the first member that leaves the fold open ({@code OPEN_MEMBER}). */
+    enum PlaceReason { FILTER_FAULT, MEMBER_FAULT, QUANTIFIER, OPEN_MEMBER }
 
     /**
      * The contribution ({@code Contribution}, RUNTIME-SEMANTICS ch. 3.4) of the member in slot {@code member}, the subject of a
      * contribution rule, to the fold {@code fold} of the fold's subject, the object {@code subject} binds: what the
      * member contributes is {@code input}, computed over a value array of {@code size} slots with the bound values
-     * at {@code slots}.
+     * at {@code slots}. Where the member can leave the fold open, {@code place} is in a build with readings its place in the
+     * order of the fold, which its {@code FoldOpen} carries (RUNTIME-SEMANTICS ch. 5.12); null everywhere else.
      */
-    record Contribution(String subject, String fold, int member, Input input, List<Integer> slots, int size,
-                    Insertion insertion) implements Consequence {
+    record Contribution(String subject, String fold, int member, Input input, FoldPlace place, List<Integer> slots,
+                    int size, Insertion insertion) implements Consequence {
         public Contribution {
             slots = List.copyOf(slots);
+            if (place != null && place.reason() != PlaceReason.OPEN_MEMBER)
+                throw new IllegalArgumentException("the place of a contribution is that of an open member, not "
+                        + place.reason());
         }
     }
 

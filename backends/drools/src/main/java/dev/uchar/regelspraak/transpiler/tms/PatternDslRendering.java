@@ -267,8 +267,8 @@ final class PatternDslRendering {
                 Consequence.Contribution c = x.contributes();
                 Predicate<Object[]> filter = ClosureRendering.test(x.filter());
                 yield consequenceItem(c.subject(), c.slots(), c.size(), (drools, carrier, w) -> {
-                    for (Object f : ComputeHelpers.contributed(ComputeHelpers.judge(() -> filter.test(w), false), c.fold(),
-                            carrier, w[c.member()], memberOf(c, carrier, w))) insert(drools, c.insertion(), f);
+                    for (Object f : ComputeHelpers.contributedAt(ComputeHelpers.judge(() -> filter.test(w), false), c.fold(),
+                            carrier, w[c.member()], memberOf(c, carrier, w), placeOf(c, w))) insert(drools, c.insertion(), f);
                 });
             }
             case Consequence.FilterDeposit x -> {
@@ -349,8 +349,8 @@ final class PatternDslRendering {
             case Consequence.Input.Judged o -> {
                 Predicate<Object[]> matrix = ClosureRendering.test(o.matrix());
                 yield consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) ->
-                        insert(drools, g.insertion(), ComputeHelpers.judged(g.fold(), carrier, w[g.member()],
-                                ComputeHelpers.judge(() -> matrix.test(w), false))));
+                        insert(drools, g.insertion(), ComputeHelpers.judgedAt(g.fold(), carrier, w[g.member()],
+                                ComputeHelpers.judge(() -> matrix.test(w), false), placeOf(g, w))));
             }
             case Consequence.Input.MemberTest t -> {
                 Predicate<Object[]> matrix = ClosureRendering.test(t.matrix());
@@ -392,7 +392,13 @@ final class PatternDslRendering {
         Object bound = i == null ? w[l.value()] : ComputeHelpers.input(w[l.value()], w[i.openInput()], member, i.member());
         Object value = l.cell() != null ? ComputeHelpers.cell(bound, l.cell())
                 : l.payload() != null ? ComputeHelpers.payload(bound, l.payload()) : bound;
-        return ComputeHelpers.contribution(g.fold(), carrier, member, value, l.total(), l.fixed(), l.filled(), l.whole());
+        return ComputeHelpers.contributionAt(g.fold(), carrier, member, value, l.total(), l.fixed(), l.filled(), l.whole(),
+                placeOf(g, w));
+    }
+
+    /** The place of the member of {@code g} in the order of its fold, null where the plan has none. */
+    private static List<Integer> placeOf(Consequence.Contribution g, Object[] w) {
+        return g.place() == null ? null : foldPlace(g.place(), g.fold(), w[g.member()], w);
     }
 
     /** The codes of the deposit of {@code condition}, which the test of the rule found: the condition evaluated again

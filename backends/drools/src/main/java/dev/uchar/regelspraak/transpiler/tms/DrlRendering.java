@@ -1598,7 +1598,7 @@ final class DrlRendering {
             String fresh = "new " + typeName(Contribution.class) + "(" + str(x.fold()) + ", " + x.subject() + ", "
                     + variable(x.member()) + ", ";
             switch (x.input()) {
-                case Consequence.Input.Count t -> insert(b, "    ", x.insertion(), memberOf(x));
+                case Consequence.Input.Count t -> insert(b, "    ", x.insertion(), memberOf(x, null));
                 case Consequence.Input.MemberValue l -> contributedValue(x, b);
                 case Consequence.Input.IncompleteInput l -> contributedValue(x, b);
                 case Consequence.Input.Verdict o -> {
@@ -1616,8 +1616,8 @@ final class DrlRendering {
                     Context c = context(x.slots(), -1, null, o.matrix());
                     fill(place, o.matrix().source(), "Object " + name + "(" + c.declaration() + ")", "    return "
                             + route(Route.JUDGE) + "(" + lambda(o.matrix(), c) + ", false);\n");
-                    insert(b, "    ", x.insertion(), route(Route.JUDGED) + "(" + str(x.fold()) + ", " + x.subject() + ", "
-                            + variable(x.member()) + ", " + name + "(" + c.arguments() + "))");
+                    insert(b, "    ", x.insertion(), route(x.place() == null ? Route.JUDGED : Route.JUDGED_AT) + "(" + str(x.fold()) + ", " + x.subject() + ", "
+                            + variable(x.member()) + ", " + name + "(" + c.arguments() + ")" + last(placeOf(x)) + ")");
                 }
                 case Consequence.Input.MemberTest l -> {
                     int place = reserveer();
@@ -1639,25 +1639,37 @@ final class DrlRendering {
 
         /** What the member of {@code x} gives a fold over a set by its value, inserted where it gives something. */
         private void contributedValue(Consequence.Contribution x, StringBuilder b) {
-            b.append("    Object v = ").append(memberOf(x)).append(";\n    if (v != null) {\n");
+            b.append("    Object v = ").append(memberOf(x, placeOf(x))).append(";\n    if (v != null) {\n");
             insert(b, "        ", x.insertion(), "v");
             b.append("    }\n");
         }
 
         /** The expression of what the member of {@code x} gives a fold over a set: the contribution of the member itself, or
-         *  that of its value through the route, the value of its input where it need not be complete. */
-        private String memberOf(Consequence.Contribution x) {
+         *  that of its value through the route, the value of its input where it need not be complete, with the member's
+         *  {@code place}, an expression or null ({@link #placeOf}). */
+        private String memberOf(Consequence.Contribution x, String place) {
             if (x.input() instanceof Consequence.Input.Count)
                 return "new " + typeName(Contribution.class) + "(" + str(x.fold()) + ", " + x.subject() + ", "
                         + variable(x.member()) + ", null)";
             Consequence.Input.IncompleteInput i = x.input() instanceof Consequence.Input.IncompleteInput o ? o : null;
             Consequence.Input.MemberValue l = i != null ? i.of() : (Consequence.Input.MemberValue) x.input();
             String value = i == null ? variable(l.value()) : input(variable(l.value()), variable(x.member()), i.member());
-            return route(Route.CONTRIBUTION) + "(" + str(x.fold()) + ", " + x.subject() + ", " + variable(x.member()) + ", "
+            return route(place == null ? Route.CONTRIBUTION : Route.CONTRIBUTION_AT) + "(" + str(x.fold()) + ", " + x.subject() + ", " + variable(x.member()) + ", "
                     + (l.cell() != null ? route(Route.CELL) + "(" + value + ", " + consequenceConstant(l.cell()).text() + ")"
                             : l.payload() != null ? route(Route.PAYLOAD) + "(" + value + ", " + str(l.payload()) + ")" : value)
                     + ", " + (l.total() == null ? "null" : str(l.total())) + ", "
-                    + (l.fixed() == null ? "null" : str(l.fixed())) + ", " + l.filled() + ", " + l.whole() + ")";
+                    + (l.fixed() == null ? "null" : str(l.fixed())) + ", " + l.filled() + ", " + l.whole() + last(place) + ")";
+        }
+
+        /** The place of the member of {@code x} in the order of its fold, an expression over what the left-hand side binds;
+         *  null where the plan has none. */
+        private String placeOf(Consequence.Contribution x) {
+            return x.place() == null ? null : foldPlace(x.place(), x.fold(), x.member(), null);
+        }
+
+        /** {@code place} as the last argument of a route, and nothing where it is null. */
+        private static String last(String place) {
+            return place == null ? "" : ", " + place;
         }
 
         /** The facts of {@link Consequence.FilteredContribution}, through the route, by the judgement that the test of the
@@ -1665,9 +1677,11 @@ final class DrlRendering {
         private void filteredContribution(Consequence.FilteredContribution x, StringBuilder b) {
             if (outcome == null) throw new IllegalStateException(plan.name() + " does not test the judgement of its filter");
             Consequence.Contribution c = x.contributes();
-            b.append("    for (Object f : ").append(route(Route.CONTRIBUTED)).append("(").append(outcome).append(", ")
+            String place = placeOf(c);
+            if (place != null) b.append("    java.util.List p = ").append(place).append(";\n");
+            b.append("    for (Object f : ").append(route(place == null ? Route.CONTRIBUTED : Route.CONTRIBUTED_AT)).append("(").append(outcome).append(", ")
                     .append(str(c.fold())).append(", ").append(c.subject()).append(", ").append(variable(c.member()))
-                    .append(", ").append(memberOf(c)).append(")) {\n");
+                    .append(", ").append(memberOf(c, place == null ? null : "p")).append(last(place == null ? null : "p")).append(")) {\n");
             insert(b, "        ", c.insertion(), "f");
             b.append("    }\n");
         }

@@ -25,8 +25,7 @@ import java.util.Set;
  * document before it builds anything, naming the first form of {@link #SLUGS} the document holds
  * ({@code DroolsBackend.build}, {@code DROOLS-370}). The list opens with the table of ch. 1.5, in its order, the forms
  * whose reading is not defined; then come the forms whose reading ch. 1.5 defines and this backend does not carry
- * yet, under slugs of its own; then {@code reading}, the build with readings ({@code DroolsBackend.build(…,
- * readings)}), which reads no such document yet. A document whose forms are all outside the list is built and played
+ * yet, under slugs of its own. A document whose forms are all outside the list is built and played
  * with the reading of ch. 1.5.
  *
  * <p>The last three slugs depend on what the parts of a form can read, which the analysis knows ({@code TmsTranspiler}); it
@@ -34,8 +33,7 @@ import java.util.Set;
  * refused by that:
  * <ul>
  *   <li>{@code quantifier-fold}: a quantifier fold whose filter reads a member that can be open;</li>
- *   <li>{@code set-fold}: a fold over a set whose filter holds a fold that can be open, and a sum whose fallback reads a
- *       member that can be open;</li>
+ *   <li>{@code set-fold}: a sum whose fallback reads a member that can be open;</li>
  *   <li>{@code anchored-read}: an anchored read of an input member that can be open (IR-SPEC ch. 4.1a).</li>
  * </ul>
  *
@@ -55,18 +53,15 @@ final class UncarriedForms {
             "whole-period", "time-window", "rule-status-check", "let-in-composite",
             // what ch. 1.5 defines and this backend does not carry yet
             "defaults-group", "if-then-else", "object-creation", "fact-creation",
-            // the build with readings
-            "reading",
             // what the analysis refuses where it lowers the form
             "quantifier-fold", "set-fold", "anchored-read");
 
     /** The number of slugs of the table of ch. 1.5 at the head of {@link #SLUGS}. */
     static final int TABLE = 23;
 
-    /** The first slug of {@link #SLUGS} whose form {@code model} holds, with its defaults groups {@code defaults}, or
-     *  {@code reading} where it holds none and {@code readings} asks a build with readings; null where it holds none
-     *  and is built without readings. */
-    static String first(RegelSpraakModel model, List<PrioritizedDefaults> defaults, boolean readings) {
+    /** The first slug of {@link #SLUGS} whose form {@code model} holds, with its defaults groups {@code defaults}; null
+     *  where it holds none. */
+    static String first(RegelSpraakModel model, List<PrioritizedDefaults> defaults) {
         Set<String> found = new HashSet<>();
         Walk w = new Walk(found, Map.of());
         if (!model.allocations.isEmpty()) found.add("allocation");
@@ -108,7 +103,6 @@ final class UncarriedForms {
         }
         if (!model.factCreations.isEmpty()) found.add("fact-creation");
         for (ResolvedFactCreation f : model.factCreations) w.condition(f.condition());
-        if (readings) found.add("reading");
         for (String slug : SLUGS) if (found.contains(slug)) return slug;
         return null;
     }

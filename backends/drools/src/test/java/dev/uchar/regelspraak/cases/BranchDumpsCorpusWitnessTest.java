@@ -90,12 +90,10 @@ class BranchDumpsCorpusWitnessTest {
             Path ir = g.resolve("ir.json");
             if (!CaseRunner.viaExecModel(ir, casePaths).status().equals("PLAYED")) continue;
             CaseRunner exec = CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL), drl;
-            boolean readings = TmsDocuments.hasReadings(ir);
-            CaseRunner execReading = readings ? CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL, true) : null,
-                    drlReading;
+            CaseRunner execReading = CaseRunner.forMeasurement(ir, DroolsBackend.Branch.EXEC_MODEL, true), drlReading;
             try {
                 drl = CaseRunner.forMeasurement(ir, DroolsBackend.Branch.DRL_TEXT);
-                drlReading = readings ? CaseRunner.forMeasurement(ir, DroolsBackend.Branch.DRL_TEXT, true) : null;
+                drlReading = CaseRunner.forMeasurement(ir, DroolsBackend.Branch.DRL_TEXT, true);
             } catch (RuntimeException e) {
                 differences.add(name + ": de DRL-teksttak bouwt het document niet: " + e);
                 continue;
@@ -108,12 +106,11 @@ class BranchDumpsCorpusWitnessTest {
                 if (a.lines().noneMatch(r -> r.equals("fixpoint yes"))) withoutFixpoint.add(which);
                 String difference = firstDifference(comparable(a), comparable(b));
                 if (difference != null) differences.add(which + ": " + difference);
-                cases++;
-                if (!readings) continue;
                 String x = BranchDumps.dump(execReading, c), y = BranchDumps.dump(drlReading, c);
                 readingLines += x.lines().filter(r -> r.startsWith("reading ")).count();
                 difference = firstDifference(comparable(x), comparable(y));
                 if (difference != null) differences.add(which + " met lezingen: " + difference);
+                cases++;
             }
         }
         assertEquals(List.of(), differences, "cases waarvan de dumps van de twee takken verschillen");

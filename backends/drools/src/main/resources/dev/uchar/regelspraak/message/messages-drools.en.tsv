@@ -355,7 +355,7 @@ DROOLS-316	{form} on the time-dependent attribute '{attribute}' of {declarant} i
 DROOLS-316.initialisation	the value of an initialisation
 DROOLS-316.member	the member value of an object creation
 DROOLS-317	the bean model does not carry the bean property {property} of {objectType}: its getter {getter} is a method of java.lang.Object, which no bean can declare again
-DROOLS-318	a fold over '{factType}', a relation both of whose roles are to-many ('{description}'), that reads its members in order (a filter that can fail, a deposit, or a member condition that can fail or deposit): a link of such a relation has no place in the order of the members in this branch, and that order determines which member gives the fault (RUNTIME-SEMANTICS ch. 5.7a, 5.11); this branch does not carry this form yet
+DROOLS-318	a fold over '{factType}', a relation both of whose roles are to-many ('{description}'), that reads its members in order (a filter that can fail, a deposit, a member condition that can fail or deposit, or with readings a member that can be open): a link of such a relation has no place in the order of the members in this branch, and that order determines which member gives the fault or is named by the reading (RUNTIME-SEMANTICS ch. 5.7a, 5.11, 5.12); this branch does not carry this form yet
 DROOLS-319	insert fills a fresh session, but this one already holds {factCount} facts: the places of a list are counted over the beans of one input, and a bean that came into the session without insert has none; give all beans in one Input to a fresh session, and change their values between two fires with update
 DROOLS-320	insert: the bean {bean} stands twice in the input
 DROOLS-321	insert: {bean} is no bean of this model: a bean is an instance of a class that Build.beanLoader() loads
@@ -436,6 +436,7 @@ DROOLS-371	insert: the input states that the characteristic "{characteristic}" o
 DROOLS-371.not-in-input	that bean is no bean of the input
 DROOLS-371.undeclared	its type {objectType} declares no characteristic of that name that holds one truth value
 DROOLS-371.holds	the bean holds it
+DROOLS-372	what {member} gives the fold {fold} can be open, but a member of its route has no ListPlace under the field '{field}': the input does not state the order of that list, and without it the open member the reading of the fold names cannot be determined (RUNTIME-SEMANTICS ch. 5.12)
 EF-002	role "{role}" on "{label}" links unknown label "{target}"
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year

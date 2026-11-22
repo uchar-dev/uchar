@@ -546,19 +546,19 @@ final class FormsPlan {
         List<RulePlan> rules = new ArrayList<>();
         rules.add(new RulePlan("telling", "proef", null, table(new Read(0, ReadKind.SUBJECT, "lid", O)),
                 List.of(foldSubject, member(post, v)), new Consequence.Contribution(v, "proefvouw: telling", 0,
-                new Consequence.Input.Count(), List.of(0), 1, Consequence.Insertion.LOGICAL)));
+                new Consequence.Input.Count(), null, List.of(0), 1, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidwaarde", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: som", 1,
-                new Consequence.Input.MemberValue(0, null, null, false, null, null, false), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+                new Consequence.Input.MemberValue(0, null, null, false, null, null, false), null, List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidtijdlijn", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: som per periode", 1,
-                new Consequence.Input.MemberValue(0, null, null, false, null, null, true), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+                new Consequence.Input.MemberValue(0, null, null, false, null, null, true), null, List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidwaarde per maand", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: totaal", 1,
-                new Consequence.Input.MemberValue(0, "MAAND", null, true, null, null, false), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+                new Consequence.Input.MemberValue(0, "MAAND", null, true, null, null, false), null, List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("oordeel", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: oordeel", 1,
-                new Consequence.Input.Verdict(matrix), List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+                new Consequence.Input.Verdict(matrix), null, List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidtoets", "proef", null, table(heightSlot(), memberSlot(1),
                 placeSlot(2, ReadKind.LIST_PLACES, "$lijstplaatsen_1"), placeSlot(3, ReadKind.LIST_PLACE, "$plaats_1"),
                 placeSlot(4, ReadKind.LIST_PLACES, "$lijstplaatsen_2"), placeSlot(5, ReadKind.LIST_PLACE, "$plaats_2"),
@@ -570,12 +570,12 @@ final class FormsPlan {
                 new Consequence.Contribution(v, "proefvouw: lidtoets", 1, new Consequence.Input.MemberTest(depositing, 6,
                         new Consequence.FoldPlace(1, List.of(new Consequence.FoldPlace.Step("kustvak", 2, 3),
                                 new Consequence.FoldPlace.Step("wachter", 4, 5)), Consequence.PlaceReason.QUANTIFIER), false),
-                        List.of(0, 1, 2, 3, 4, 5), 7, Consequence.Insertion.LOGICAL)));
+                        null, List.of(0, 1, 2, 3, 4, 5), 7, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidtoets zonder plaats", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: lidtoets", 1,
                 new Consequence.Input.MemberTest(matrix, -1, new Consequence.FoldPlace(0, List.of(), Consequence.PlaceReason.QUANTIFIER),
                         false),
-                List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+                null, List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("filterdeponering", "proef", null, table(heightSlot(), memberSlot(1),
                 new Read(2, ReadKind.DEPOSIT_FLAG, null, null)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.FilterDeposit(v, "proefvouw", 1,
@@ -620,19 +620,35 @@ final class FormsPlan {
         List<RulePlan> rules = new ArrayList<>();
         ReadTable table = table(heightSlot(), memberSlot(1), openInput);
         rules.add(new RulePlan("open lidwaarde", "proef", null, table, List.of(foldSubject, member(post, v, height)),
-                new Consequence.Contribution(v, "proefvouw: open som", 1, input, List.of(0, 1, 2), 3, Consequence.Insertion.LOGICAL)));
+                new Consequence.Contribution(v, "proefvouw: open som", 1, input, null, List.of(0, 1, 2), 3, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidwaarde onder een open filter", "proef", null, table, List.of(foldSubject, member(post, v, height),
                 filtered), new Consequence.FilteredContribution(filter, new Consequence.Contribution(v, "proefvouw: gefilterde som", 1,
-                input, List.of(0, 1, 2), 3, Consequence.Insertion.LOGICAL))));
+                input, null, List.of(0, 1, 2), 3, Consequence.Insertion.LOGICAL))));
         rules.add(new RulePlan("telling onder een open filter", "proef", null, table, List.of(foldSubject, member(post, v, height),
                 filtered), new Consequence.FilteredContribution(filter, new Consequence.Contribution(v, "proefvouw: gefilterde telling",
-                1, new Consequence.Input.Count(), List.of(0, 1, 2), 3, Consequence.Insertion.LOGICAL))));
+                1, new Consequence.Input.Count(), null, List.of(0, 1, 2), 3, Consequence.Insertion.LOGICAL))));
         rules.add(new RulePlan("open oordeel", "proef", null, table, List.of(foldSubject, member(post, v, height)),
-                new Consequence.Contribution(v, "proefvouw: open oordeel", 1, new Consequence.Input.Judged(filter), List.of(0, 1, 2),
+                new Consequence.Contribution(v, "proefvouw: open oordeel", 1, new Consequence.Input.Judged(filter), null, List.of(0, 1, 2),
                         3, Consequence.Insertion.LOGICAL)));
+        // as a build with readings plans them: each with the member's place, which its FoldOpen carries
+        ReadTable placed = table(heightSlot(), memberSlot(1), openInput, placeSlot(3, ReadKind.LIST_PLACES, "$lijstplaatsen_1"),
+                placeSlot(4, ReadKind.LIST_PLACE, "$plaats_1"));
+        LhsItem at = places(1, "kustvak", new BetaTest("plaats-open", StaticFunction.PLACE_OF, O,
+                List.of(new Term.Const(List.of(), null, null))));
+        Consequence.FoldPlace place = new Consequence.FoldPlace(1, List.of(new Consequence.FoldPlace.Step("kustvak", 3, 4)),
+                Consequence.PlaceReason.OPEN_MEMBER);
+        rules.add(new RulePlan("open lidwaarde met plaats", "proef", null, placed, List.of(foldSubject, member(post, v, height), at),
+                new Consequence.Contribution(v, "proefvouw: open som", 1, input, place, List.of(0, 1, 2, 3, 4), 5,
+                        Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("lidwaarde met plaats onder een open filter", "proef", null, placed, List.of(foldSubject,
+                member(post, v, height), at, filtered), new Consequence.FilteredContribution(filter, new Consequence.Contribution(v,
+                "proefvouw: gefilterde som", 1, input, place, List.of(0, 1, 2, 3, 4), 5, Consequence.Insertion.LOGICAL))));
+        rules.add(new RulePlan("open oordeel met plaats", "proef", null, placed, List.of(foldSubject, member(post, v, height), at),
+                new Consequence.Contribution(v, "proefvouw: open oordeel", 1, new Consequence.Input.Judged(filter), place,
+                        List.of(0, 1, 2, 3, 4), 5, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("open lidtoets", "proef", null, table, List.of(foldSubject, member(post, v, height)),
                 new Consequence.Contribution(v, "proefvouw: open lidtoets", 1, new Consequence.Input.MemberTest(filter, -1,
-                        new Consequence.FoldPlace(0, List.of(), Consequence.PlaceReason.QUANTIFIER), true), List.of(0, 1, 2), 3,
+                        new Consequence.FoldPlace(0, List.of(), Consequence.PlaceReason.QUANTIFIER), true), null, List.of(0, 1, 2), 3,
                         Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("open filterfout", "proef", null, table, List.of(foldSubject, member(post, v, height),
                 new TestItem("breekt", TestItem.Role.BREAKS_OFF, filter, -1, List.of(0, 1, 2), 3, true)),

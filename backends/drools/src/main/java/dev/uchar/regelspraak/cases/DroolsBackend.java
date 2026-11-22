@@ -210,7 +210,7 @@ public final class DroolsBackend {
         // holds a form whose reading this backend does not carry is refused before anything is built, naming the form,
         // since an answer in the reading of ch. 1.2-1.4 would be a wrong answer without a word
         if (!model.inferFromEmpty()) {
-            String form = UncarriedForms.first(model, loaded.prioritizedDefaults(), readings);
+            String form = UncarriedForms.first(model, loaded.prioritizedDefaults());
             if (form != null) throw new Excluded(DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", form));
         }
         refuseBeanNameCollision(loaded);

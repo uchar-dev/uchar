@@ -1011,7 +1011,8 @@ final class SessionReaders {
      *
      * <p>A contributor of a fold is read off its {@link Contribution} facts on the object: of a quantifier fold whose
      * matrix can fault or deposit, in their order with the stop rule of RUNTIME-SEMANTICS ch. 5.10 replayed over their
-     * verdicts; of a quantifier fold whose matrix can do neither, with its verdict and without an order; of a value
+     * verdicts; of a quantifier fold whose matrix can do neither, with its verdict and without an order, the members on
+     * which it does not stand by their {@link FoldOpen} facts; of a value
      * fold, with what it contributes. It refuses the sessions {@link #readOf} refuses, with the same sentences. An
      * evaluation fault that stands means the session has no answer ({@link Fixpoint#faults}); this gives what the
      * readings say all the same, and a consumer reads the faults first. The list is in no particular order.
@@ -1031,7 +1032,7 @@ final class SessionReaders {
         }
         LocalDate date = null;
         for (Object f : session.getObjects(new ClassObjectFilter(EvaluationDate.class))) date = ((EvaluationDate) f).date();
-        Map<String, Map<Object, List<Contribution>>> contributions = null;
+        FoldFacts folds = null;
         List<ConditionReading> out = new ArrayList<>();
         for (ReadingRule r : readingRules) {
             Map<Object, Reading> ofForm = facts.get(Reading.Kind.TURN).getOrDefault(r.pointer(), Map.of());
@@ -1050,9 +1051,8 @@ final class SessionReaders {
                     out.add(new ConditionReading(o, r.pointer(), withoutReading(r, o, date), List.of()));
                     continue;
                 }
-                if (contributions == null && r.sites().stream().anyMatch(x -> x.fold() != null))
-                    contributions = contributions(session);
-                out.add(reading(r, o, read, reading == null, contributions));
+                if (folds == null && r.sites().stream().anyMatch(x -> x.fold() != null)) folds = foldFacts(session);
+                out.add(reading(session, r, o, read, reading == null, folds));
             }
         }
         facts.forEach((kind, ofKind) -> ofKind.forEach((form, rest) -> {
@@ -1079,12 +1079,31 @@ final class SessionReaders {
                 + FactNames.object(o) + ", on which the form runs without a guard on its turn and within its validity");
     }
 
-    /** The contributions of the session, by fold and subject. */
-    private static Map<String, Map<Object, List<Contribution>>> contributions(KieSession session) {
-        Map<String, Map<Object, List<Contribution>>> out = new HashMap<>();
+    /** What the members of the folds of a session gave them, by fold and subject: the contributions, and the members that
+     *  do not stand. */
+    private record FoldFacts(Map<String, Map<Object, List<Contribution>>> contributions,
+                             Map<String, Map<Object, List<FoldOpen>>> open) {
+
+        List<Contribution> contributions(String fold, Object subject) {
+            return contributions.getOrDefault(fold, Map.of()).getOrDefault(subject, List.of());
+        }
+
+        List<FoldOpen> open(String fold, Object subject) {
+            return open.getOrDefault(fold, Map.of()).getOrDefault(subject, List.of());
+        }
+    }
+
+    private static FoldFacts foldFacts(KieSession session) {
+        FoldFacts out = new FoldFacts(new HashMap<>(), new HashMap<>());
         for (Object f : session.getObjects(new ClassObjectFilter(Contribution.class))) {
             Contribution b = (Contribution) f;
-            out.computeIfAbsent(b.fold(), k -> new HashMap<>()).computeIfAbsent(b.subject(), k -> new ArrayList<>()).add(b);
+            out.contributions.computeIfAbsent(b.fold(), k -> new HashMap<>())
+                    .computeIfAbsent(b.subject(), k -> new ArrayList<>()).add(b);
+        }
+        for (Object f : session.getObjects(new ClassObjectFilter(FoldOpen.class))) {
+            FoldOpen o = (FoldOpen) f;
+            out.open.computeIfAbsent(o.fold(), k -> new HashMap<>())
+                    .computeIfAbsent(o.subject(), k -> new ArrayList<>()).add(o);
         }
         return out;
     }
@@ -1092,16 +1111,18 @@ final class SessionReaders {
     /** The reading of {@code r} on {@code o} over the values of {@code reading}; where {@code displaced}, a reading of
      *  the speculative reading rule, of a default that was not at its turn: evaluated as at its turn, its status
      *  {@link ConditionReading.Status#DISPLACED}, a fault of its condition at its nodes. */
-    private ConditionReading reading(ReadingRule r, Object o, Reading reading, boolean displaced,
-                                     Map<String, Map<Object, List<Contribution>>> contributions) {
+    private ConditionReading reading(KieSession session, ReadingRule r, Object o, Reading reading, boolean displaced,
+                                     FoldFacts folds) {
         Object[] w = reading.values().toArray();
         List<dev.uchar.regelspraak.transpiler.tms.plan.Read> slots = r.plan().readings().slots();
         if (w.length != slots.size())
             throw new IllegalStateException("the reading of " + r.pointer() + " carries " + w.length + " values, and the rule"
                     + " has " + slots.size() + " slots");
-        // a fresh probe in every probe slot, which nobody reads: a reading deposits nothing
+        // a fresh probe in every probe slot, which nobody reads: a reading deposits nothing; and the incomplete input, a
+        // global, which no pattern of the reading rule binds
         for (dev.uchar.regelspraak.transpiler.tms.plan.Read l : slots)
             if (l.kind() == ReadKind.DEPOSIT_FLAG) w[l.slot()] = ComputeHelpers.depositFlag();
+            else if (l.kind() == ReadKind.OPEN_INPUT) w[l.slot()] = session.getGlobal(Consequence.OPEN_INPUT);
         RecordingRendering rec = new RecordingRendering();
         // the initialisation default of a stack on a timeline target whose input fills the target on every day is not
         // at its turn on any, and has no nodes (RUNTIME-SEMANTICS ch. 5.12, 7.11)
@@ -1125,19 +1146,16 @@ final class SessionReaders {
         // a form without a condition whose reading rule stood is at its turn, and holds there
         else if (r.condition() == null) status = ConditionReading.Status.HOLDS;
         else try {
-            status = rec.test(r.condition(), w) ? ConditionReading.Status.HOLDS : ConditionReading.Status.FAILS;
+            status = status(r, ComputeHelpers.judge(() -> rec.test(r.condition(), w), false));
         } catch (RuntimeException e) {
             if (!ComputeHelpers.isEvaluationFault(e)) throw e;
             status = ConditionReading.Status.FAULTS;
         }
-        if (status == ConditionReading.Status.HOLDS && r.value() != null) {
-            try {
-                rec.value(r.value(), w);
-            } catch (RuntimeException e) {
-                // the form's consequence inserts this fault in place of the value; the node carries it
-                if (!ComputeHelpers.isEvaluationFault(e)) throw e;
-            }
-        }
+        // where the value faults, the form's consequence inserts that fault in place of it, and the node carries it; where
+        // it does not stand, the form leaves its target open (RUNTIME-SEMANTICS ch. 1.5)
+        if (status == ConditionReading.Status.HOLDS && r.value() != null
+                && ComputeHelpers.isOpen(ComputeHelpers.valued(() -> rec.value(r.value(), w), null)))
+            status = ConditionReading.Status.OPEN;
         List<ConditionReading.NodeReading> nodes = new ArrayList<>();
         for (Site s : r.sites()) {
             if (s.derived() != null) {
@@ -1145,18 +1163,31 @@ final class SessionReaders {
                 continue;
             }
             RecordingRendering.Outcome oc = rec.outcome(s.term());
-            List<ConditionReading.Contributor> contributors = oc == null || s.fold() == null ? List.of()
-                    : contributors(s, contributions.getOrDefault(s.fold().key(), Map.of()).getOrDefault(o, List.of()),
-                            rec);
-            boolean found = oc != null && oc.fault() == null;
-            nodes.add(new ConditionReading.NodeReading(s.node(), s.kind(), oc != null,
-                    oc == null ? null : RecordingRendering.given(oc.value()), s.unit(),
-                    oc == null ? null : oc.fault(), !found ? null : s.navigates() ? w[s.objectSlot()] : own(s, o),
-                    contributors));
+            if (oc == null) {
+                nodes.add(new ConditionReading.NodeReading(s.node(), s.kind(), false, null, s.unit(), null, null));
+                continue;
+            }
+            List<ConditionReading.Contributor> contributors = s.fold() == null ? List.of() : contributors(s, oc,
+                    folds.contributions(s.fold().key(), o), folds.open(s.fold().key(), o), rec);
+            boolean found = oc.fault() == null && !oc.undetermined();
+            OpenMember open = oc.undetermined() ? oc.judgement().read() : null;
+            nodes.add(new ConditionReading.NodeReading(s.node(), s.kind(), true, RecordingRendering.given(oc.value()),
+                    s.unit(), oc.fault(), !found ? null : s.navigates() ? w[s.objectSlot()] : own(s, o), contributors,
+                    oc.judgement() != null && open == null, open == null ? null : new Fixpoint.OpenValue(open.subject(),
+                            declaredName(open.member()), open.member().characteristic())));
         }
         // a default of a stack on a timeline target is at its turn where the days of its turn hold one (ch. 7.11)
         if (r.turn() != null && ComputeHelpers.isEmpty(new RecordingRendering().value(r.turn(), w))) displaced = true;
         return new ConditionReading(o, r.pointer(), displaced ? ConditionReading.Status.DISPLACED : status, nodes);
+    }
+
+    /** The status of the form of {@code r}, whose condition has the judgement {@code judgement} ({@link ComputeHelpers#judge}),
+     *  before its value is read: what a writer does with its target, and how the assertion of a consistency came out for
+     *  itself (RUNTIME-SEMANTICS ch. 1.5, 5.12). */
+    private static ConditionReading.Status status(ReadingRule r, Object judgement) {
+        if (ComputeHelpers.decides(judgement)) return ConditionReading.Status.HOLDS;
+        boolean fails = Boolean.FALSE.equals(r.assertion() && judgement instanceof Undetermined u ? u.own() : judgement);
+        return fails ? ConditionReading.Status.FAILS : ConditionReading.Status.OPEN;
     }
 
     /** The object a reached node {@code s} without a path reads a member of, on the object {@code o} of its reading:
@@ -1177,14 +1208,13 @@ final class SessionReaders {
         for (Term t : s.derived().inputs()) {
             RecordingRendering.Outcome oc = rec.outcome(t);
             if (oc != null && oc.fault() != null && s.derived().raises())
-                return new ConditionReading.NodeReading(s.node(), s.kind(), true, null, s.unit(), oc.fault(), null,
-                        List.of());
+                return new ConditionReading.NodeReading(s.node(), s.kind(), true, null, s.unit(), oc.fault(), null);
             if (oc == null || oc.fault() != null)
-                return new ConditionReading.NodeReading(s.node(), s.kind(), false, null, s.unit(), null, null, List.of());
+                return new ConditionReading.NodeReading(s.node(), s.kind(), false, null, s.unit(), null, null);
             values.add(oc.value());
         }
         return new ConditionReading.NodeReading(s.node(), s.kind(), true,
-                RecordingRendering.given(s.derived().compute().apply(values)), s.unit(), null, own(s, o), List.of());
+                RecordingRendering.given(s.derived().compute().apply(values)), s.unit(), null, own(s, o));
     }
 
     /**
@@ -1206,38 +1236,50 @@ final class SessionReaders {
         throw new IllegalStateException(DroolsCode.READINGS_NO_NODE.reason("node", node, "form", form).text());
     }
 
-    /** The contributors of the fold of {@code s}, from its {@code contributions} on the object, as the evaluation
-     *  {@code rec} reached them. */
-    private static List<ConditionReading.Contributor> contributors(Site s, List<Contribution> contributions,
+    /** The contributors of the fold of {@code s}, from its {@code contributions} and its members {@code open} that do not
+     *  stand on the object, as the evaluation {@code rec} reached them, whose node came out as {@code found}. */
+    private static List<ConditionReading.Contributor> contributors(Site s, RecordingRendering.Outcome found,
+                                                                   List<Contribution> contributions, List<FoldOpen> open,
                                                                    RecordingRendering rec) {
         List<ConditionReading.Contributor> out = new ArrayList<>();
         // a fault of the fold's filter, or of a member's value, comes before the fold's value: its contributors are
         // not settled, and the node carries none (RUNTIME-SEMANTICS ch. 3.9a, 5.12)
         if (s.term() instanceof Term.FoldRead f && rec.outcome(f.outcome()) == null) return out;
         if (s.quantifier() == null) {
-            for (Contribution b : contributions)
-                out.add(new ConditionReading.Contributor(b.element(), RecordingRendering.given(b.value()), null, true));
+            // nor are those of a fold over a set that an open read broke off (ch. 5.12, "Open values")
+            if (!found.undetermined()) for (Contribution b : contributions)
+                out.add(new ConditionReading.Contributor(b.element(), RecordingRendering.given(b.value()), null, true, false));
             return out;
         }
         if (!s.fold().ordered()) {
             for (Contribution b : contributions)
-                out.add(new ConditionReading.Contributor(b.element(), ((BigDecimal) b.value()).signum() > 0, null, null));
+                out.add(new ConditionReading.Contributor(b.element(), ((BigDecimal) b.value()).signum() > 0, null, null, false));
+            for (FoldOpen o : FoldOpen.members(open))
+                out.add(new ConditionReading.Contributor(o.element(), o.own(), null, null, o.own() == null));
             return out;
         }
-        // the stop rule over the contributors in their order, as ComputeHelpers.quantifierRead replays it; every
-        // contributor keeps the verdict or the fault of its matrix, the position says whether the stop reached it
+        // the members read in their order as ComputeHelpers.quantifierRead reads them; every one keeps the judgement or the
+        // fault of its matrix, the position says whether the read reached it, and a fault of one read provisionally leaves
+        // it undetermined (ch. 1.5)
         List<Contribution> ordered = new ArrayList<>(contributions);
         ordered.sort(Comparator.comparing(b -> (MemberTest) b.value()));
         Condition.QuantifierFold q = s.quantifier();
-        int n = ordered.size(), touch = 0;
+        Composite reading = new Composite(q.quantifier(), q.threshold(), ordered.size(), null);
         boolean stopped = false;
-        for (int k = 0; k < n; k++) {
-            MemberTest m = (MemberTest) ordered.get(k).value();
-            if (!stopped && ComputeHelpers.established(q.quantifier(), q.threshold(), touch, k, n - k) != null)
+        for (Contribution b : ordered) {
+            MemberTest m = (MemberTest) b.value();
+            stopped = stopped || reading.stands();
+            boolean reached = !stopped, provisional = reached && reading.past() != null;
+            if (reached) try {
+                reading.read(() -> m.replayed(null));
+            } catch (RuntimeException e) {
+                if (!ComputeHelpers.isEvaluationFault(e)) throw e;
                 stopped = true;
-            out.add(new ConditionReading.Contributor(ordered.get(k).element(), m.holds(), m.fault(), !stopped));
-            if (!stopped && m.fault() != null) stopped = true;
-            else if (!stopped && m.holds()) touch++;
+            }
+            RuntimeException ended = m.fault();
+            RuntimeException fault = ComputeHelpers.isEvaluationFault(ended) && !provisional ? ended : null;
+            Boolean verdict = ended instanceof Undetermined u ? u.own() : m.holds();
+            out.add(new ConditionReading.Contributor(b.element(), verdict, fault, reached, verdict == null && fault == null));
         }
         return out;
     }

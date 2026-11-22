@@ -5,6 +5,7 @@ import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.tms.ConditionReading;
 import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
+import dev.uchar.regelspraak.transpiler.tms.FoldOpen;
 import dev.uchar.regelspraak.transpiler.tms.Period;
 import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
@@ -435,6 +436,9 @@ final class SessionDump {
                         ? l.stream().map(x -> (MemberTest) x).sorted().toList() : l;
                 List<String> r = new ArrayList<>();
                 for (Object x : in) r.add(render(x));
+                // nor does the list of the members of a fold that do not stand, which its reader orders by their places
+                // (FoldOpen.inOrder)
+                if (!l.isEmpty() && l.stream().allMatch(x -> x instanceof FoldOpen)) r.sort(Comparator.naturalOrder());
                 return "[" + String.join(", ", r) + "]";
             }
             if (o instanceof Collection<?> c) {
@@ -502,10 +506,11 @@ final class SessionDump {
      * its decimal without trailing zeros where it terminates and as {@code t/n} where it does not, a date and a date-time in the ISO form of the cases, a text quoted, a truth
      * value as {@code true} or {@code false}, leeg as {@code empty}, a timeline as its periods {@code [from to value]};
      * a unit by its rendering; a fault by the EF code of its kind (RUNTIME-SEMANTICS ch. 5.7b), {@code -} where it has
-     * none, and never by its sentence, which differs between executors; after the value of a node that reads a member
+     * none, and never by its sentence, which differs between executors; a truth a closure decided with {@code closure}
+     * behind it, and an undetermined node as {@code undetermined open}, the object and the member read open; after the value of a node that reads a member
      * over a path ({@link dev.uchar.regelspraak.transpiler.tms.TmsTranspiler#navigates}) and did not fault, {@code on}
      * and the object the path reached, named as above, or {@code on none} where a link on it is absent; the
-     * contributors of a fold sorted by member, each with its value or the code of its fault and whether it was reached
+     * contributors of a fold sorted by member, each with its value, {@code undetermined} or the code of its fault and whether it was reached
      * ({@code unordered} where its fold keeps no order). {@code labels} maps each case label to its input bean.
      */
     static List<String> readingLines(DroolsBackend.Build build, KieSession session, Map<String, Object> labels) {
@@ -521,16 +526,18 @@ final class SessionDump {
                     continue;
                 }
                 if (x.fault() != null) b.append(" fault ").append(code(x.fault()));
-                else b.append(' ').append(canonical(x.value()));
-                if (x.unit() != null) b.append(' ').append(quote(x.unit().rendering()));
+                else if (x.undetermined())
+                    b.append(" undetermined open ").append(n.nameOf(x.open().object())).append(' ').append(quote(x.open().member()));
+                else b.append(' ').append(canonical(x.value())).append(x.closure() ? " closure" : "");
+                if (x.unit() != null && !x.undetermined()) b.append(' ').append(quote(x.unit().rendering()));
                 // the object a read over a path reached; the subject's own member stands at the head of the line
-                if (x.fault() == null && build.execModelTranspiler().navigates(r.form(), x.node()))
+                if (x.fault() == null && !x.undetermined() && build.execModelTranspiler().navigates(r.form(), x.node()))
                     b.append(" on ").append(x.object() == null ? "none" : n.nameOf(x.object()));
                 if (!x.contributors().isEmpty()) {
                     List<String> cs = new ArrayList<>();
                     for (ConditionReading.Contributor c : x.contributors())
                         cs.add(n.nameOf(c.member()) + " " + (c.fault() != null ? "fault " + code(c.fault())
-                                : canonical(c.value())) + " " + (c.reached() == null ? "unordered"
+                                : c.undetermined() ? "undetermined" : canonical(c.value())) + " " + (c.reached() == null ? "unordered"
                                 : c.reached() ? "reached" : "unreached"));
                     cs.sort(Comparator.naturalOrder());
                     b.append(" contributors [").append(String.join("; ", cs)).append(']');
@@ -549,7 +556,8 @@ final class SessionDump {
      * cell with its labels {@code ["<label>", …]} before the value, a timeline in its canonical form (ch. 3.1) and left
      * out where that is empty, and after a number or a timeline the unit of the declaration, quoted; per characteristic
      * that holds {@code characteristic <object> "<characteristic>"}, a time-dependent one with its true periods
-     * {@code [[<from> <to> empty], …]}, adjacent periods joined; per link {@code link "<fact type>" "<role>" <object>
+     * {@code [[<from> <to> empty], …]}, adjacent periods joined; per member that is open either of those with {@code open}
+     * in the place of a value; per link {@code link "<fact type>" "<role>" <object>
      * "<role>" <object>}, in the order of the declared roles, of a reciprocal fact type the two names in code-unit
      * order; and per §9.5 fact {@code channel "<rule>" <object> <codes>}, the EF codes ascending and comma-joined, or
      * {@code -}. Objects and values are named and written as {@link #readingLines} writes them.
@@ -586,6 +594,8 @@ final class SessionDump {
                 if (m.unit() != null) b.append(' ').append(quote(m.unit().rendering()));
                 lines.add(b.toString());
             }
+            for (EndState.Open m : o.open())
+                lines.add((m.characteristic() ? "characteristic " : "attribute ") + self + " " + quote(m.name()) + " open");
         }
         for (EndState.Link k : state.links()) {
             String a = n.nameOf(k.first()), b = n.nameOf(k.second());
