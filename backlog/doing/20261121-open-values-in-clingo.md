@@ -336,3 +336,308 @@ Op `6804621b5` + `9976c7297` (logs in de werkmap):
 - gate 9 (`1-10-check-catala.log`): check-catala: PASS — frontend suite green (262 checks, floor 201); 13 catala golden(s) regenerate byte-identically (floor 12)
 - gate 13 (`1-15-gate13.log`): check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens, floor 38; 242 executor replays reproduce the untouched outcome, 40 of them PLAYED by the DRL-text branch, equal to the exec-model branch; 0 pinned survivors)
 - gate 14 (`1-10-check-flogic.log`): check-flogic: PASS — frontend suite green (164 checks, floor 81); 3 flogic golden(s) re-emit byte-identically (floor 1)
+
+## Result (deel 2)
+
+*Bouwers deel 2 en 2b, 2026-11-22. Branch `card/open-values-in-clingo`, op `f73467236`.*
+
+### Wat er is
+
+| commit | wat |
+|---|---|
+| `67f769971` | suite: de getuigen na de kaart `complete-member` |
+| `281e31d4e` | de stapel (kenmerkstapel, uitzonderingsgroepen, ongeordende groep, effectieve stapel van een subtype), het veld `complete`, de kwantorvouw |
+| `45f467c07` | de vouwen over een verzameling, de sluiting binnen een waarde, `IfThenElse`, object- en feitcreatie |
+| `2652c0b72` | suite: de weigeringen na deel 2, de versmallende host, de melding van de modelcontrole |
+| `4fb79aa09` | gate 6: de goldens `jutterswet-afleiden-uit-leeg` en `jutterswet-volledig-gegeven` uit `EXPECTED_CHANNEL` |
+| `0dd91ac0e` | een oordeel in een filter of kwantortoets per paar van vormonderwerp en lid; het filter van een vouw één keer, met zijn deponeringen en fouten op hun plaats; wat een creatie open laat; de limiet in een voorlopig gelezen lid |
+| `55bf3a48d` | de telling over een unie van instantieverzamelingen (de eigen slug `instance-set-union` vervalt); README |
+| `6e684d265` | de stand van een zuiver invoerattribuut als feit (`given/2`); de poort van een fout in een filter loopt langs de links van de case |
+| `75b6f6c77` | een oordeel zonder sluiting deelt zijn hulppredicaten met het oordeel voor een ander (architectuurpunt 2) |
+| `f86f96406` | README bij de lezing van open waarden |
+| (slotcommit) | dit Result |
+
+De predicaten die deel 2 toevoegt, alleen in een document met `inferFromEmpty: false`:
+
+| predicaat | betekenis |
+|---|---|
+| `<tag>_gw<n>(S)`, `<tag>_rch<n>(S)`, `<tag>_rcx<n>(S)` | van default n staat vast dat hij voorrang geeft; default n wordt bereikt (elke hogere geeft voorrang); de initialisatie wordt bereikt, ook onder de eerste default die open is |
+| `<tag>_gw(S)`, `<tag>_st(S)`, `grp<g>_nil(S)` | de keten of groep geeft voorrang; zij beslist, botst of geeft voorrang; van de groep staat vast dat zij niets vult (`member_states` leest dat als van een schrijver) |
+| `qf<n>_*(K,X)` | de kwantorvouw: filter en matrix per wandeling (`ft`,`ff`,`tt`,`tf` en, waar een sluiting staat, `fu`,`fx`,`tu`,`tx`), het lid (`ot`,`of`,`xt`,`xf`), de omvang (`n`), bereikt (`rch`), voorlopig (`pv`), gelezen als ch. 3.9a (`rd`), het bereik open (`ro`) |
+| `ff<n>_*(K,X)`, `fj<n>(F,X)` | het filter van een vouw over een verzameling: in het bereik, onbepaald, een lid ervoor onbepaald; een kant van het oordeel over het lid |
+| `oc<n>(K)` | een sluiting in de grens n sloot over een open waarde (alleen geschreven waar er een sluiting staat) |
+| `cc<n>(S)`, `ropen(I,rel)`, `fco<n>(S)` | de voorwaarde van een creatie staat vast; de relatie is open op I; de keten van een feitcreatie kruist een open relatie |
+| `aopen(I,A)`, `kopen(I,K)` | de creatie die I maakte, liet het attribuut of kenmerk open |
+| `given(I,A)` | een attribuut dat geen vorm schrijft en geen gemaakt object draagt, staat |
+
+K is de sleutel van de plaats (`judged_at`): het onderwerp, en binnen een filter of een kwantortoets het paar van
+vormonderwerp F en lid.
+
+### Per vorm van "Wat je bouwt"
+
+- **De stapel**: gedragen. Elke default heeft drie uitkomsten; een lagere default beslist waar van elke hogere positief
+  vaststaat dat hij voorrang geeft; de initialisatie van een stapel sluit over de eerste default die open is; een lid
+  buiten zijn venster geeft voorrang; een uitzonderingsgroep en een lid van een ongeordende groep beslist waar van elk
+  ander lid vaststaat wat het doet (`stands_beside`). De ontsuikering van ch. 7.7 blijft uit: een initialisatie naast een
+  berekening is een sluiting over de schrijvers (`not wdecides`, deel 1), een initialisatie in een groep is dezelfde
+  sluiting over de stapel (`rcx`), en beide lezen haar voorwaarde en waarde als die van een regel of default. Frames
+  WV-1.5-stack-first-decides, -gives-way, -settled-leeg, -initialisation, -opgave, -characteristic, -exception-groups,
+  -unordered, -type-chain.
+- **`complete`**: gedragen (`input_states` leest het effectieve type). Frames WV-1.5-complete-*, getuigen `closed-input`,
+  `input-above-computation`, `input-above-computation-open`, golden `jutterswet-volledig-gegeven`.
+- **De kwantorvouw**: gedragen, ook met een vormanker, een identiteitscheck of een andere vouw in filter of matrix en over
+  een bereik waaraan een creatie een lid kan toevoegen. Frames WV-1.5-quantifier-fold-*, -past-undetermined-fold, -filter.
+- **De vouwen over een verzameling, de sluiting binnen een waarde**: gedragen, ook genest, met een vormanker of een binder
+  in het filter, over een payload en als telling over een unie. Frames WV-1.5-set-fold*, -closure-in-a-value*.
+- **`IfThenElse`**: gedragen voor een vergelijking als voorwaarde; een toets op leeg of gevuld daar weigert in elk document
+  (CLINGO-023). Frames WV-1.5-if-then-else.
+- **De creaties**: gedragen, met een open relatie als open lezing van elke telling, vouw, kwantorvouw, rolcheck en
+  genavigeerde lezing, en een feitcreatie over een keten die open is. Een gemaakt object heeft de standen van zijn
+  toewijzingen: een getal, een somtype, een kenmerk uit een constante of een boolean attribuut. Frames
+  WV-1.5-creation-condition, -creation-open, -creation-member*, -fact-creation*.
+- **De staart van deel 1**: WV-1.5-reached (binder), [S1], [L3], WV-1.5-past-undetermined-barrier en -binder blijven
+  geweigerd met `let-binder-not-first`, elk met een frame (dat van [L3] is nieuw). De reden: de lowering zet de waarde van
+  een binder naast elke lezing van de body, en `bind_let` vertaalt haar lezingen vooraf; een lezing vóór de eerste lezing
+  van de binder telt dan alleen waar de binder gevuld is, en de lezingen van de waarde tellen ook waar de binder nooit
+  gelezen wordt. Dragen vraagt het bereik van de binder per pad (README [V1]–[V3]), wat het programma van elke Let in een
+  document zonder de eigenschap verandert, of een tweede Let-lowering. De voorlopige lezing van een binder in een
+  samengestelde `IfThenElse`-voorwaarde weigert bovendien in elk document met CLINGO-023. Het frame voor de versmallende
+  host staat er (WV-1.5-negation (a narrowing host)), en de modelcontrole zegt "open" of "settled leeg" waar een lid geen
+  waarde heeft (WV-1.5-case-attribute).
+- **Het corpus**: beide goldens met de eigenschap spelen in gate 6 (12 cases). De rode case
+  `jutterswet-kenmerk-wel-en-niet` heeft in het clingo-been van gate 8 geen regel nodig: het kenmerk in beide lijsten is een
+  fout van de caselezer (EF-047), die clingo meldt zoals ref. `scripts/check-red.sh` is niet gewijzigd.
+
+**Getuigen** (`ref/test/fixtures/strict-empty/`): 32 spelen (144 cases), 2 weigeren met een grens van elk document:
+`arithmetic` (4 cases, CLINGO-005, een niet-literale grens van een Clamp; ook een TextComposition, CLINGO-042) en
+`exact-digits` (3 cases, CLINGO-046). Geen getuige weigert met een eigen slug.
+
+**Eigen slugs na de 22 van ch. 1.5**: één, `let-binder-not-first`, met de reden hierboven. Zij raakt 31 cases van 13
+goldens die ref met de eigenschap draagt.
+
+### De vragen van de nalezing
+
+**a. De kale fouten.** Beide vormen zijn weg. Een vouw die vanuit een lid van een andere vouw gelezen wordt, is verifier-schoon
+en wordt door ref gedragen: een vouw met een vormanker in een filter (goldens `fold-filter-subject-two-spellings`,
+`jutterswet-schone-maand-na-zware-klacht`). Zij wordt gedragen, met elke andere lezing van het vormonderwerp in een filter
+of kwantortoets: een verankerde lezing of check viel met "a helper rule over a member reads the form subject", en een
+binder van een Let in een filter gaf een oordeel dat over elk vormonderwerp bestond, zonder fout. Een vouw waarvan de bron
+geen attribuut van haar lid is, is niet verifier-schoon (WF-037, WF-083, WF-093; een payload is een lid van zijn eigen,
+onder WF-127); `fold_reads` schrijft daar niets en de eigen vertaling van de vouw zegt de zin van de verifier.
+
+Elke andere `fault` die deel 1 en 2 toevoegden:
+
+| fout | waarom een document dat `refuse_uncarried` doorlaat haar niet bereikt |
+|---|---|
+| `boundary_read`: "the read of … stands outside one value or one atomic condition"; `fold_reads`: "a fold over a set stands outside …" | Een waarde van een regel, default of toewijzing en een atomaire voorwaarde worden binnen `within_boundary` vertaald. De enige plaats die dat niet deed, de toewijzing van een somtype aan een gemaakt object, viel zo: hersteld (frame WV-1.5-creation-member (a sum type)). |
+| `within_boundary`: "a boundary inside a boundary" | `judge` wordt buiten een grens aangeroepen; vanuit een waarde alleen door `fold_reads`, die de grens van de waarde opzij zet. |
+| `judge_ref`: "the judgement … asked before it is defined" | De verwijzing wordt bij het laden van de module gezet. |
+| `judge`: "the navigated check reaches the to-many role" | WF-053 (`hop-to-many`); dezelfde zin als in elk document. |
+| `judge`: "the … has no judgement here" | De voorwaarden zonder arm zijn die welke `refuse_uncarried` weigert: `whole-period`, `day-kind`, `time-window`, `rule-status-check`, `unresolved`. |
+| `fills_nothing`: "rule … is not among the rules of its document" | `translate_rule` loopt over `ctx.doc.resolved_rules` zelf. |
+| `refuse_uncarried`: "names …, which uncarried_forms does not list" | Elke slug in de wandeling staat in de lijst; geen document kiest een slug. |
+
+Bij dit onderzoek gevonden en hersteld, elk met een frame: een gevuld-toets op een berekende waarde in een filter telde het
+lid mee (7 in plaats van 4); een deponering van een filter bleef staan waar de vouw door een ander lid open is; een fout
+van een filter ontstond na een open lezing; een kenmerk dat een creatie uit een boolean attribuut toewijst, en één dat zij
+"onwaar" toewijst naast een regel; een open toewijzing naast een regel die niets vult; een feitcreatie over een open keten;
+de bereikwacht in een grens zag het lid van de kwantorvouw niet (CLINGO-035 ontbrak); de limiet CLINGO-034 in een
+voorlopig gelezen lid maakte het lid onbepaald in plaats van te zeggen dat het programma het niet weet; een attribuut en een
+kenmerk van één naam golden als één lid.
+
+**b.** Het commentaar staat bij zijn functie: `translate_chain`, `open_read`, `boundary_read`. Ook het commentaar bij de
+ontsuikering in `translate_guarded` en dat boven `uncarried_forms` beschrijft de huidige stand.
+
+**c. Kan de vertaling van ch. 1.5 de enige worden?** Nee, nu niet.
+
+- *De kosten zijn geen bezwaar.* Van de 421 goldens zonder de eigenschap die clingo speelt, vertaalt hij er 262 ook met
+  haar, en alle 262 spelen met de eigenschap en `--closed-inputs` hun eigen 737 cases (`jutterswet-keurquotient` vertaalt hij
+  ook, en weigert hij in beide met CLINGO-039). Over die 262: de runner met processtart 11,8 s tegen 12,8 s (factor 1,08);
+  clingo zelf 0,66 s tegen 1,46 s (2,2); gegronde regels 24 715 tegen 65 698 (2,7); programmaregels 39 836 tegen 113 253
+  (2,8). De andere 159 dragen een vorm zonder lezing (147) of een Let die zijn binder niet eerst leest (12).
+- *Het bezwaar is dat de oude armen blijven.* Ch. 1.5 geeft 22 vormen geen lezing, en een op de drie goldens draagt er een
+  (tijdlijnen, dagsoorten, verdelingen, uniciteit, lijsten, dimensies). Daar is de samengestelde voorwaarde van
+  `cond_atoms_raw` de enige vertaling: per periode (`period_condition`), in de dagsoorttabel, in het filter van een totaal per
+  element en van een lijst; haar kwantorvouw evenzo. Die twee armen vervallen pas als ch. 1.5 die vormen draagt. De
+  vertaling van ch. 1.5 eerder ook voor gewone documenten gebruiken, ruilt de schakelaar "het document draagt de eigenschap"
+  voor een schakelaar "het document draagt zo'n vorm", met dezelfde twee armen: dan geven twee documenten die alleen in een
+  tijdlijnlid verschillen, voor dezelfde regel twee vertalingen. Dat is slechter leesbaar dan nu, en het geeft de eis van
+  gelijke programma's op.
+- *Wat al één vertaling is*: de atomaire voorwaarde, elke uitdrukking, de vouw (haar vier armen lezen hun filter nu op één
+  plaats, `fold_filter`), de unie en de creatie. Wat dubbel is: de samengestelde voorwaarde, de kwantorvouw, de kenmerkcheck
+  en de toets op leeg en gevuld (in `judge`), en de keten van een defaults-groep (`translate_chain`, elf lezingen van de
+  schakelaar).
+- *De volgende stap die wel los kan*: een defaults-groep op een doel zonder tijdlijn met drie uitkomsten lezen in elk
+  document dat geen enkele vorm zonder lezing draagt. Dat haalt de tweewaardige keten niet weg (een document met zo'n vorm
+  houdt haar), dus ook dat levert pas op als ch. 1.5 de tijdlijnstapel draagt. Ik stel voor het nu te laten.
+
+### De rode stand
+
+De suite van nu in de losse worktree `logs/2-red-wt` (opgeruimd), met in de kopie de fout van `ov_fault_frame` en van de
+limiet-check afgevangen:
+
+- op `67f769971` (vóór deel 2): 192 van 4237 checks rood, alle over documenten met de eigenschap; elke kant van ref groen,
+  elk frame zonder de eigenschap groen (log `2b-16-red-67f769971.log`).
+- op `4fb79aa09` (vóór 2b): 23 rood, de frames van de herstellingen onder a en van de unie (log `2b-17-red-4fb79aa09.log`).
+
+### Byte-gelijk
+
+`dump_programs.py` op de tip tegen `logs/2-programs-base`: 1313 paren, 1300 van documenten zonder de eigenschap, 0
+verschillen (`logs/2b-26-dump.log`). De 13 andere: de twee goldens met de eigenschap (12 cases, anders) en de rode case
+(gelijk).
+
+### De kosten van de grens
+
+`measure_cost.py` (hoogstens vier processen, rem op 8 GB en tien minuten; geen document raakte de rem; logs
+`2b-27-cost.log`, `2b-28-cost-all.log`). De twintig goldens met de langste tijd, clingo's eigen tijd en gegronde regels,
+opgeteld over de cases, zoals het document is tegen met de eigenschap:
+
+| golden | cases | tijd (s) | regels | factor tijd / regels |
+|---|---|---|---|---|
+| `jutterswet-opgave-vormen` | 15 | 0,03 → 0,09 | 324 → 1033 | 3,0 / 3,2 |
+| `jutterswet-opgave-subtype` | 12 | 0,02 → 0,05 | 303 → 1045 | 2,0 / 3,5 |
+| `jutterswet-opgave-boven-berekening` | 12 | 0,01 → 0,05 | 273 → 1170 | 4,0 / 4,3 |
+| `jutterswet-deling-in-afwijking` (en `-omgekeerd`) | 10 | 0,03 → 0,05 | 476 → 1207 | 1,7 / 2,5 |
+| `anchor/ww-herleving-inkomen` (en `ww-herleving-inkomen-rgs`) | 10 | 0,02 → 0,04 | 298 → 1074 | 2,0 / 3,6 |
+| `anchor/jutterswet-nestuitzondering` | 9 | 0,01 → 0,02 | 135 → 401 | 2,0 / 3,0 |
+| `jutterswet-registervoorrang` | 7 | 0,01 → 0,02 | 203 → 1361 | 3,0 / 6,7 |
+| `jutterswet-opgave-bedrag` | 7 | 0,01 → 0,02 | 169 → 571 | 3,0 / 3,4 |
+| `jutterswet-opgave-datum` | 7 | 0,01 → 0,01 | 129 → 462 | 2,0 / 3,6 |
+| `synth-afrondingswaaier` (en `-rgs`) | 5 | 0,01 → 0,01 | 174 → 292 | 1,5 / 1,7 |
+| `jutterswet-samenloop` | 6 | 0,01 → 0,01 | 70 → 214 | 1,2 / 3,1 |
+| `jutterswet-twee-schrijvers-aan-fixpunt` | 6 | 0,01 → 0,01 | 57 → 162 | 1,0 / 2,8 |
+| `anchor/jutterswet-vondstwaardering` | 6 | 0,01 → 0,01 | 61 → 162 | 1,0 / 2,7 |
+| `synth3-nestkorting` | 5 | 0,01 → 0,01 | 134 → 262 | 2,0 / 2,0 |
+| `jutterswet-paasvondst` | 5 | 0,01 → 0,02 | 177 → 347 | 1,3 / 2,0 |
+| `jutterswet-loodsgrens` | 5 | 0,01 → 0,02 | 137 → 733 | 4,0 / 5,4 |
+| `jutterswet-premietabel-twee-ofcellen` | 5 | 0,01 → 0,01 | 136 → 424 | 2,0 / 3,1 |
+
+Alle twintig spelen. De langste case van de 262 goldens loopt 20 ms (`date-with-parts`); clingo meet in hele
+milliseconden, dus een factor op een tijd onder 0,02 s zegt weinig. Boven 3: `jutterswet-opgave-boven-berekening` en `jutterswet-loodsgrens` (4,0), en bij de regels de goldens met een
+kwantorvouw (tot 8,8, `jutterswet-ploegblokkade`, 133 → 1164). Geen enkele regel veroorzaakt het: een default krijgt er
+drie predicaten en een grens bij, een kwantorvouw een tabel van tien predicaten per paar.
+
+De groei met het bereik (`tools/scale.py`, één Jutter met 400 vondsten): een gefilterde som 8 → 12 ms, gewone regels 8 → 13
+ms, een kwantorvouw 8 → 54 ms, kwadratisch in het bereik (de stop van ch. 3.9a telt per lid de leden ervoor; de gewone
+vertaling doet dat alleen waar een fout in de matrix staat). Vóór `6e684d265` kostte de gefilterde som 680 ms: `stands/2`
+ligt op de component van `val/3`, dus geen element van de som was een feit en clingo somde de mogelijke sommen op; dat is
+hersteld met `given/2`. Een vouw over een afgeleid attribuut groeit lineair (400 vondsten: 9 → 12 ms, ook met open leden).
+
+### Zoeken naast de suite
+
+Niet in de repository; scripts in `werk/open-values-in-clingo/tools/`. Elke uitkomst tegen ref (`--end-state`, per lid
+gevuld/vaststaand leeg/open, getallen, kanaal met codes):
+
+- *behoud* (elke golden met de eigenschap en `--closed-inputs`, beide executors): 737 cases spelen in beide, 31 weigeren met
+  `let-binder-not-first`, 16 met dezelfde limiet als het document zonder de eigenschap, 0 anders; 415 cases weigert ref en
+  clingo met dezelfde slug van ch. 1.5.
+- *open leden* (elke golden die clingo draagt: de case met alles wat zij niet geeft open, zonder elk invoerattribuut apart,
+  en met elk lid volledig op één na): 7766 runs gelijk, 6 fouten in beide, 20 limieten, 2 verschillen (open punt 1).
+- *willekeurige documenten* (`fuzz.py`: regels, defaults, initialisaties, kenmerken, consistenties, creaties, vouwen,
+  kwantorvouwen, unies, ankers, Lets; verifier-schoon), op de tip 1500 documenten: 5364 cases gelijk, 380 geweigerd, 0 verschillen; over de opeenvolgende standen ruim 18 000 cases
+  gelijk en 3 verschillen (open punten 2 en 3). De geweigerde cases raken de limiet "a helper rule over a member reads the
+  form subject", die het document zonder de eigenschap ook heeft.
+
+### De eigenschap op één plaats
+
+`infer_from_empty`: `translate.ml` 2 (`refuse_uncarried`, `translate_guarded`), `model.ml` 1. `ctx.strict` wordt 32 keer
+gelezen; per functie met de reden: `boundary_read` (een lezing hoort bij een grens), `expr_term` 3 (de lezingen van een vouw
+vóór de vouw; sleutel en filter van een unie), `creation_condition` (de voorwaarde als oordeel), `no_writer_decides`,
+`translate_rule` 2, `translate_consistency`, `translate_case` (deel 1), `translate_object_creation` 4 (de standen van een
+gemaakt object: niets toegewezen, open, de grens van een waarde, de ongenoemde leden), `translate_fact_creation` (de keten
+kan open zijn), `stands_beside` en `translate_group` (een lid naast een open lid), `translate_chain` 11 (het bereik van een
+default en van de initialisatie, voorrang uit rechtvaardiging, waarde en uitzonderingen, de wandeling zelf),
+`translate_defaults_group` 4 (een lid buiten zijn venster, de groep als schrijver, het kenmerk dat niet toegekend wordt, de
+invoerwaarde). `translate_guarded` zet het veld en schrijft `stands/2`, `member_states` en de `#show`-regel. Omvang van de
+diff tegen `f73467236` (erbij/eraf, deel 1 erbij): `translate.ml` 1533/211, `test_clingo.ml` 1782/20, `README.md` 70/7,
+`model.ml` 38/15, `clingo_runner.ml` 24/4, `codes.tsv` 1/1, `check-clingo.sh` 0/2.
+
+### Voorlopige besluiten
+
+1. **De stapel natief**, met `gw`/`rch`/`rcx` per default en zonder ontsuikering; een botsende groep vult niets (het doel
+   staat vast als leeg, met het feit), een groep die beslist niet toe te kennen vult niets op het kenmerk.
+2. **De vouw als één lezing van haar grens**: eerst het bereik, dan alle filters, dan de waarden. Zij telt met haar eigen
+   oordeel over het filter (`fold_filter`), niet met een tweede vertaling ervan.
+3. **Elk oordeel en elke grens in een filter of toets hangt van het paar van vormonderwerp en lid af** (`judged_at`), ook
+   waar het filter het vormonderwerp niet leest. Eenvoudiger dan per vorm uitzoeken; de kosten staan hierboven.
+4. **De volgorde van fouten in een filter**: een fout wacht op elk lid ervóór in de volgorde van de case. Een lid dat een
+   creatie toevoegt heeft in deze codering geen plaats in die volgorde, dus een fout van zo'n lid wacht op geen ander lid
+   (luid).
+5. **De matrix van een kwantorvouw telt als gelezen waar elke volgorde van de toegevoegde leden haar leest**, zoals in een
+   gewoon document; een fout daar weigert met CLINGO-035.
+6. **Een guard zonder EF-code is een limiet van de codering** en vuurt ook in een voorlopig gelezen lid (`limit_gate`): het
+   programma antwoordt dan niet. De poort is de tabel van Kleene over de leden ervoor.
+7. **Een feitcreatie over een open keten** laat de relatie open op het anker en op elk object van het doeltype, zoals ref; ch.
+   1.5 zegt "on every object it could reach".
+8. **Een open toewijzing is een eigen stand** (`aopen/2`, `kopen/2`): het lid is open tenzij een schrijver beslist.
+9. **Een attribuut en een kenmerk van één naam zijn twee leden**, zoals ch. 1.5 ("a member"); ref houdt ze niet uit elkaar
+   (open punt 1).
+10. **`given/2`** voor een attribuut waarvan alleen de case de stand bepaalt; elders `stands/2`.
+11. **De unie van instantieverzamelingen** leest per selectie als een vouw; de eigen slug verviel.
+
+### Voorgestelde rij voor `spec/CONSTRUCTS.md`
+
+Rij 48, in plaats van het voorstel van deel 1: "The Drools build refuses a document that carries it before it builds, with
+`DROOLS-370` (key `infer-from-empty-false`, parameter `form`, here `document`)." Na de zin over ref: "clingo carries the
+reading for the same forms (a rule, a defaults group on a target without a timeline, a creation off a cycle, a consistency
+rule, and a condition or an expression without a timeline, the quantifier fold, the folds over a set and the count of a
+union of instance sets, and an IfThenElse over a comparison among them); settled leeg is derived positively (`settled/2`,
+`hasnot/2`), open is the absence of every atom, and a value, a judgement and a deposit stand only where no read of their
+boundary is open. It refuses a document with another form by name, `CLINGO-049` with the slug of the form as `form`: the
+first of the list of ch. 1.5, and after it `let-binder-not-first` (a Let whose body reads something before its binder)." De
+zin "is refused by name by clingo (gate 6)" over de goldens met de eigenschap vervalt: zij spelen. Getuigenkolom: "WV-1.5-*
+and WV-1.5-witness-* in the suite of gate 6 (32 of the 34 witnesses play, with ref's outcome beside clingo's); goldens
+`jutterswet-afleiden-uit-leeg`, `jutterswet-volledig-gegeven`". Rij 49 (`complete`): "clingo refuses" vervalt; "clingo reads
+the field (`input_states`)".
+
+### Voorstel voor `spec/ASP-TRANSLATION.md` (deel 3 schrijft de sectie)
+
+De sectie "Open values" neemt de alinea over die nu in `backends/clingo/README.md` staat (met haar punten over waarde,
+voorwaarde, filter, vouw, stapel en creatie), de tabel van predicaten hierboven en de besluiten 2–8.
+
+### Voorstel voor `CLAUDE.md`
+
+Geen: gate 6 en 8 noemen geen document met de eigenschap.
+
+### Open punten
+
+1. **ref houdt een attribuut en een kenmerk van één naam niet uit elkaar** (`World.opened`, `open_inputs.written`: sleutel op
+   label en genormaliseerde naam). Kleinste document: een Vondst met het attribuut toeslag, dat een defaults-groep van
+   gemerkt laat afhangen, en het kenmerk toeslag, dat een defaults-groep aan een volledig kenmerk geeft; gemerkt open. Ch.
+   1.5: het attribuut is open, het kenmerk staat vast als niet. clingo zegt dat, ref noemt beide open. Golden
+   `anchor/jutterswet-toelagegronden`, case 2, met elk lid volledig behalve `wachter`. Waar het kenmerk invoer is en het
+   attribuut geschreven wordt, noemt ref het kenmerk vaststaand afwezig waar ch. 1.5 het open noemt.
+2. **ref verliest een sluiting waar de slagboom van een Let in de voorwaarde van een `IfThenElse` valt.** Kleinste document:
+   "het keurgewicht van een Jutter is, daarbij geldt: t is de som van het gewicht van zijn vondsten waarvan getuigen leeg is,
+   1 als t gelijk is aan 3, anders t", over een vondst met een volledig leeg gewicht en open getuigen. Ch. 1.5 (een waarde die
+   na een sluiting leeg is, laat haar doel open) geeft open, en clingo ook; ref geeft vaststaand leeg. Zonder de `IfThenElse`
+   (body "t" of "t plus t") geeft ref open.
+3. **Een §9.5-deponering in de matrix van een kwantorvouw over een bereik waaraan een creatie een lid toevoegt, ontbreekt in
+   clingo, in elk document.** "Een Jutter is k indien geen van zijn vondsten een gewicht gedeeld door getuigen groter dan 3
+   heeft", over V1 (gewicht 2, getuigen 0) en een gemaakte vondst (20, 1): ref leest V1 eerst en deponeert EF-005, clingo
+   deponeert niets (de matrix geldt als gelezen waar elke volgorde haar leest). Een fout op die plaats weigert met
+   CLINGO-035; een deponering niet. Zelfde uitkomst met en zonder de eigenschap.
+4. **`let-binder-not-first`** (31 cases van 13 goldens): dragen vraagt het bereik van een binder per pad; zie "De staart van
+   deel 1".
+5. **Een kwantorvouw groeit met de eigenschap kwadratisch in het bereik** (400 leden: 8 → 54 ms): de stop van ch. 3.9a telt per
+   lid de leden die ervoor kunnen staan, ook waar geen lid een deponering of een fout kan geven.
+6. **De getuigen `arithmetic` en `exact-digits`** worden door hun grens in geen document tegen ref gehouden (open punt 3 van
+   deel 1 staat nog).
+7. **Een helper in een lid die het vormonderwerp leest** (een optelling met een verankerde lezing onder een vergelijking,
+   `coalesce0`) weigert met een kale fout, in elk document: "a helper rule over a member reads the form subject … and not this
+   one". Geen golden raakt haar; de willekeurige documenten in ongeveer een op de achttien cases.
+
+### Gates, los gedraaid
+
+Op `75b6f6c77` (`f86f96406` wijzigt daarna alleen de README; logs in de werkmap). Gate 13 startte eenmaal terwijl een andere
+bouwer net `make gates` begon; gestopt op procesgroep en opnieuw gedraaid toen die klaar was.
+
+- gate 1 (`2b-30-check-self-contained.log`): check-self-contained: PASS
+- gate 3 (`2b-30-check-verifier.log`): check-verifier: PASS (the verifier's dune files name no library of another project of the workspace: 4 names (ir_v0 yojson zarith); 510 golden clean; 657 negative rejected for their declared rule, floor 568; 502 on their declared arm (expect.txt), floor 411, 277 arm keys, floor 239, 844 name=value lines, floor 686; 374 keys of one template each in the reports, floor 340, 468 key literals in checks.ml, floor 442; 825  …
+- gate 5 (`2b-30-check-oracle.log`): check-oracle: PASS (ref suite 4082 worked examples, floor 489; 1211 cases replayed exactly, floor 427; preservation with complete knowledge: 280 goldens and 784 cases play, floors 280 and 784; 151 goldens refused per form (timeline-member 49, allocation 21, day-kind 17, list-family 16, dimension-cell 8, match 8, uniqueness 8, creation-cycle 7, record 7, function-def 4, time-window 2, dimension-fold 1, rule-status-che …
+- gate 6 (`2b-31-gate6.log`): check-clingo: PASS (backend suite 4238 checks, floor 83; 1181 cases replay exactly through clingo — ref = clingo over the corpus; 10 golden(s) in the refusal channel, by name, 30 cases refused with the pinned codes; the channel rule passes 22 rows of its own)
+- gate 7 (`2b-30-check-noop.log`): check-noop: PASS (1169 cases refute a do-nothing executor; 42 pinned survivors pin defeasible standing)
+- gate 8 (`2b-32-gate8.log`): check-red: PASS (102 red cases fault observably in ref and clingo, floor 44; 181 ref and clingo code checks report the case's code, floor 82, 23 listed as divergence; 301 pinned parameter checks confirmed, floor 120; 47 fault kinds in RUNTIME-SEMANTICS ch. 5.7b, floor 31)
+- gate 9 (`2b-30-check-catala.log`): check-catala: PASS — frontend suite green (262 checks, floor 201); 13 catala golden(s) regenerate byte-identically (floor 12)
+- gate 13 (`2b-35-gate13.log`): check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens, floor 38; 242 executor replays reproduce the untouched outcome, 40 of them PLAYED by the DRL-text branch, equal to the exec-model branch; 0 pinned survivors)
+- gate 14 (`2b-30-check-flogic.log`): check-flogic: PASS — frontend suite green (164 checks, floor 81); 3 flogic golden(s) re-emit byte-identically (floor 1)
