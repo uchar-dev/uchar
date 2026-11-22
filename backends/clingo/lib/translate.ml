@@ -482,6 +482,17 @@ type judgement = { own_t : string list; own_f : string list; other_t : string li
 
 let one_walk j = j.own_t = j.other_t && j.own_f = j.other_f
 
+(* A variable of a scope around a member that a node at that member reads
+   ([unkeyed_read]): the subject of a Let or a match around it, read through
+   the binder, or the form subject of an anchored node. [or_single]: the
+   session holds at most one object it can stand for ([objects_at_most]).
+   [or_form] and [or_read] are what a refusal names *)
+type outer_read = { or_variable : string; or_anchored : bool; or_single : bool; or_form : string; or_read : string }
+
+(* the payload of a match arm: the subject the match stands on, the literal
+   that binds its variable, and its binder *)
+type payload = { pl_subject : string; pl_pattern : string; pl_binder : string }
+
 type ctx = {
   doc : document;
   (* the document before the ch. 7.7 desugaring, the forms ref replays: a
@@ -611,10 +622,19 @@ type ctx = {
      form's own level, where [subject] is the form subject. A node with
      `anchor` is translated on it ([at_form]) *)
   mutable form_subject : (string * string) option;
-  (* the variables of the form subjects an anchored node was translated on
-     in the current form, which [unkeyed_form_read] holds every later rule of
-     that form to; emptied where a form begins ([each_form]) *)
-  mutable anchored : string list;
+  (* the scopes of the current node ([with_member_reach]): the members it
+     stands within, innermost first; per member, the members around it; per
+     subject a member was reached from, its type *)
+  mutable members : string list;
+  around : (string, string list) Hashtbl.t;
+  scope_type : (string, string) Hashtbl.t;
+  (* what the nodes at a member have read of the scopes around it in the
+     current form, which [unkeyed_read] holds every later rule of that form to;
+     emptied where a form begins ([each_form]), with the form's name *)
+  mutable outer_reads : outer_read list;
+  mutable form_name : string;
+  (* the payloads of the match arms translated so far, by their variable *)
+  mutable payloads : (string * payload) list;
   (* the reach of the current member from the form subject: per move to a
      member ([with_member_reach]) the outer subject's is_a and the range join,
      innermost first, down to the form subject. Lazy, so that a document that
@@ -1127,65 +1147,142 @@ let asp_variables (s : string) =
   in
   go 0 []
 
-(* THE FORM ANCHOR'S FENCE (IR-SPEC ch. 4.1a). A helper rule over a member
-   whose body reads the form subject must carry the form subject in its head
+let refuse_unkeyed ~form ~read why =
+  faultc ~params:[ ("form", form); ("read", read) ] "CLINGO-051"
+    "the form %S reads the %s from outside the key of a helper rule, whose answer would then hold for every \
+     value of it: %s"
+    form read why
+
+(* THE KEY OF A HELPER, FENCED. A helper rule over a member whose body reads a
+   variable of a scope around that member must carry it in its head
    ([helper_key]); without it the helper holds for the member as soon as ANY
-   object of that type satisfies the body, because the read binds the
-   variable itself: a wrong answer, not an unsafe rule. The helpers of the
-   conditions and folds a filter or a quantifier test commonly holds carry
-   it. Every other rule of the form that names, in its body and not in its
-   head, the variable of a form subject an anchored node was read on
-   ([anchored]) is refused here, so that no helper this backend does not key
-   answers. Two exemptions. A viol/2 fence: over a member it fires whatever
-   the subject, as every fence over a member does where the rule has no
-   condition ([with_member_reach]). And the literals of the guard the rule
+   object satisfies the body, because the read binds the variable itself: a
+   wrong answer, not an unsafe rule. The helpers of the conditions and folds a
+   filter or a quantifier test commonly holds carry the form subject; none
+   carries another variable. Such a variable is read in three ways
+   ([outer_reads], [payloads]):
+   - through an anchored node (IR-SPEC ch. 4.1a): every later rule of the form
+     that names the form subject's variable in its body and not in its head is
+     refused;
+   - through a Let's binder, whose value is keyed by the objects it stands on:
+     every later rule of the form that does so and whose head names a member
+     within the variable's scope ([around]) is refused, unless the session
+     holds one object only that the variable can stand for. A rule whose head
+     names no such member ranges over the members of that scope, and the
+     variable with them;
+   - through the payload of a match arm, whose variable the arm's pattern
+     binds: a rule that names it without that pattern either is unsafe or
+     binds it by an equality of its own, and is refused; the subject of the
+     match is held as a Let's is.
+   Two exemptions for the first two. A viol/2 fence: over a member it fires
+   whatever the subject, as every fence over a member does where the rule has
+   no condition ([with_member_reach]). And the literals of the guard the rule
    was written under ([rule_guard]: the member's reach, a short circuit's
    prefix): the reader of the helper stands under the same guard for its own
-   form subject, so a helper that reads the form subject only there holds
-   for the member exactly where some form subject reaches it, which is all
-   the reader asks; unless such a literal shares a variable outside the head
-   with the rest of the body (a Let's value the guard binds), through which
-   the helper's value would depend on the form subject. A guard literal is
-   recognised as an element of the body [emit_rule] receives that is one of
-   [rule_guard]'s, so a rule written under the guard passes it in its own
-   elements, never joined into a conjunction. *)
-let unkeyed_form_read ctx ~head ~body text =
-  match ctx.anchored with
-  | [] -> ()
-  | vars ->
-      if head <> "" && not (String.starts_with ~prefix:"viol(" head) then begin
-        let in_head = asp_variables head in
-        let guard, own = List.partition (fun l -> List.mem l ctx.rule_guard) body in
-        let own_vars = List.concat_map asp_variables own in
-        (* the variables of the guard literals joined to [v] through variables
-           outside the head, [v] included *)
-        let rec joined comp pending =
-          let hit, rest =
-            List.partition (fun l -> List.exists (fun w -> List.mem w comp) (asp_variables l)) pending
-          in
-          if hit = [] then comp
-          else
-            joined
-              (comp
-              @ List.filter
-                  (fun w -> not (List.mem w in_head || List.mem w comp))
-                  (List.sort_uniq compare (List.concat_map asp_variables hit)))
-              rest
-        in
-        List.iter
-          (fun v ->
-            if
-              (not (List.mem v in_head))
-              && List.exists (fun w -> List.mem w own_vars) (joined [ v ] guard)
-            then
-              fault
-                "a helper rule over a member reads the form subject %s, an anchored node's \
-                 subject, without carrying it in its head (IR-SPEC ch. 4.1a): this backend keys \
-                 the helpers of comparisons, leeg tests, quantifier folds and ranking and sum \
-                 folds by the form subject, and not this one: %s"
-                v text)
-          vars
-      end
+   subjects, so a helper that reads the variable only there holds for the
+   member exactly where some object reaches it, which is all the reader asks;
+   unless such a literal shares a variable outside the key with the rest of the
+   rule (a Let's value the guard binds), through which the helper's value would
+   depend on that object. A guard literal is recognised as an element of the
+   body [emit_rule] receives that is one of [rule_guard]'s, so a rule written
+   under the guard passes it in its own elements, never joined into a
+   conjunction. *)
+let unkeyed_read ctx ~head ~body text =
+  if ctx.outer_reads <> [] && head <> "" && not (String.starts_with ~prefix:"viol(" head) then begin
+    let in_head = asp_variables head in
+    let members = List.filter (Hashtbl.mem ctx.around) in_head in
+    let key = members @ List.filter (Hashtbl.mem ctx.scope_type) in_head in
+    let guard, own = List.partition (fun l -> List.mem l ctx.rule_guard) body in
+    (* what the rule says of its key beside the guard: the rest of its body,
+       and the value in its head *)
+    let own_vars = List.concat_map asp_variables own @ List.filter (fun w -> not (List.mem w key)) in_head in
+    (* the variables of the guard literals joined to [v] through variables
+       outside the key, [v] included *)
+    let rec joined comp pending =
+      let hit, rest =
+        List.partition (fun l -> List.exists (fun w -> List.mem w comp) (asp_variables l)) pending
+      in
+      if hit = [] then comp
+      else
+        joined
+          (comp
+          @ List.filter
+              (fun w -> not (List.mem w key || List.mem w comp))
+              (List.sort_uniq compare (List.concat_map asp_variables hit)))
+          rest
+    in
+    let unkeyed r =
+      (r.or_anchored
+      || (not r.or_single)
+         && ((members <> [] && not (Hashtbl.mem ctx.around r.or_variable))
+            || List.exists (fun w -> List.mem r.or_variable (Hashtbl.find ctx.around w)) members))
+      && List.exists (fun w -> List.mem w own_vars) (joined [ r.or_variable ] guard)
+    in
+    List.iter
+      (fun r ->
+        if (not (List.mem r.or_variable in_head)) && unkeyed r then
+          refuse_unkeyed ~form:r.or_form ~read:r.or_read
+            (Printf.sprintf "a rule over a member reads its variable %s without carrying it in its head: %s"
+               r.or_variable text))
+      ctx.outer_reads
+  end;
+  if ctx.payloads <> [] then begin
+    let named = asp_variables text in
+    List.iter
+      (fun (v, p) ->
+        if List.mem v named && not (Uchar_ref.Case.contains ~needle:p.pl_pattern text) then
+          refuse_unkeyed ~form:ctx.form_name ~read:("binder " ^ p.pl_binder)
+            (Printf.sprintf "a rule names its variable %s without the pattern that binds it: %s" v text))
+      ctx.payloads
+  end
+
+(* how many objects of type [ot] the session can hold, at most: those of the
+   case, and one per subject of every creation that makes one ([ocN(Subject)]);
+   None where a creation can make its own subjects *)
+let objects_at_most ctx ot =
+  let rec count above ot =
+    let of_case =
+      Uchar_ref.World.SMap.fold
+        (fun _ (i : Uchar_ref.World.instance) n -> if isa ctx i.otype ot then n + 1 else n)
+        ctx.case.world.instances 0
+    in
+    List.fold_left
+      (fun n (oc : resolved_object_creation) ->
+        match (n, oc.created_type) with
+        | Some n, Some made when isa ctx made ot ->
+            if List.memq oc above then None
+            else Option.map (( + ) n) (count (oc :: above) (req "ObjectCreationVersion.subject" oc.oc_subject))
+        | _ -> n)
+      (Some of_case) ctx.doc.object_creations
+  in
+  count [] ot
+
+(* a read of the binder [ident] at [subject], whose binding is [(atoms, term)]:
+   the objects its value is keyed by, the variables of its binding atoms beside
+   the value's own, are read from the scopes around the subject where they are
+   not the subject itself. A variable that can stand for one object only has
+   no other to be taken for *)
+let note_outer_read ctx ~subject ident (atoms, term, _, _) =
+  let keyed_by =
+    match List.filter_map (fun v -> List.assoc_opt v ctx.payloads) (asp_variables term) with
+    | [] ->
+        let own = asp_variables term in
+        List.filter (fun v -> not (List.mem v own)) (List.sort_uniq compare (List.concat_map asp_variables atoms))
+    | payloads -> List.map (fun p -> p.pl_subject) payloads
+  in
+  let single v =
+    match Option.map (objects_at_most ctx) (Hashtbl.find_opt ctx.scope_type v) with
+    | Some (Some n) -> n <= 1
+    | _ -> false
+  in
+  let read = "binder " ^ ident in
+  List.iter
+    (fun v ->
+      if v <> subject then begin
+        let r = { or_variable = v; or_anchored = false; or_single = single v; or_form = ctx.form_name; or_read = read } in
+        if not (List.mem r ctx.outer_reads) then ctx.outer_reads <- r :: ctx.outer_reads
+      end)
+    keyed_by
 
 (* one line of the program that is no rule: a fact, a directive, a comment.
    A rule goes through [emit_rule], which hands the fence above its head and
@@ -1198,7 +1295,7 @@ let emit ctx fmt = Printf.ksprintf (fun s -> Buffer.add_string ctx.buf (s ^ "\n"
 let emit_rule ctx ~head ~(body : string list) =
   let body = body @ ctx.form_gate in
   let text = (if head = "" then ":- " else head ^ " :- ") ^ String.concat ", " body ^ "." in
-  unkeyed_form_read ctx ~head ~body text;
+  unkeyed_read ctx ~head ~body text;
   Buffer.add_string ctx.buf (text ^ "\n")
 
 (* [body] with the literals of [b]'s base it does not hold: a fence or a deposit
@@ -2824,7 +2921,8 @@ let at_form ctx (k : string -> string -> 'a) : 'a =
          test has moved the subject to a member, so there is no form subject apart from the \
          subject itself to read (WF-122)"
   | Some (s, sot) as saved ->
-      if not (List.mem s ctx.anchored) then ctx.anchored <- s :: ctx.anchored;
+      let r = { or_variable = s; or_anchored = true; or_single = false; or_form = ctx.form_name; or_read = "anchor form" } in
+      if not (List.mem r ctx.outer_reads) then ctx.outer_reads <- r :: ctx.outer_reads;
       (* the guard can read the member (a short circuit's prefix); at the
          form's own level only the member's reach binds it *)
       let saved_g = ctx.rule_guard in
@@ -2986,9 +3084,13 @@ let hoist_element_aggregates ctx ~x ~el ~outside atoms =
    where [join] adds more to the reach (the quantifier's matrix waits for its
    open prefix), [join] otherwise. An empty guard reads no subject and stays
    empty, so a document whose rule has no condition translates as before. *)
-let with_member_reach ctx ~subject ~subject_ot ~join ?range ?part f =
+let with_member_reach ctx ~subject ~subject_ot ~member ~join ?range ?part f =
   let saved = ctx.param_reach and saved_p = ctx.parts and saved_s = ctx.deposit_subject
-  and saved_g = ctx.rule_guard and saved_f = ctx.form_subject and saved_r = ctx.member_reach in
+  and saved_g = ctx.rule_guard and saved_f = ctx.form_subject and saved_r = ctx.member_reach
+  and saved_m = ctx.members in
+  Hashtbl.replace ctx.around member saved_m;
+  Hashtbl.replace ctx.scope_type subject subject_ot;
+  ctx.members <- member :: saved_m;
   (* the first move from the form's own level names the form subject *)
   if saved_f = None then ctx.form_subject <- Some (subject, subject_ot);
   ctx.param_reach <-
@@ -3007,6 +3109,7 @@ let with_member_reach ctx ~subject ~subject_ot ~join ?range ?part f =
   ctx.rule_guard <- saved_g;
   ctx.form_subject <- saved_f;
   ctx.member_reach <- saved_r;
+  ctx.members <- saved_m;
   r
 
 (* the fact types in which a creation or a fact creation lays a link at run
@@ -5600,7 +5703,7 @@ let fold_reads ctx ~subject ~subject_ot ~el ~kind ~call_arguments ~filter ~sourc
               ctx.limit_gate <- saved_l;
               ctx.deposit_guard <- saved_d)
             (fun () ->
-              with_member_reach ctx ~subject ~subject_ot ~join:(fun () -> join) ~part:(new_part ctx ro) (fun () ->
+              with_member_reach ctx ~subject ~subject_ot ~member:x ~join:(fun () -> join) ~part:(new_part ctx ro) (fun () ->
                   let key, base = judged_at ctx ~subject:x ~subject_ot:el in
                   let form, _ = form_var ctx ~subject:x ~subject_ot:el in
                   let j = !judge_ref ctx ~subject:x ~subject_ot:el c in
@@ -5845,7 +5948,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
                   ~source_path:None bx
             | None -> []
             | Some c ->
-                with_member_reach ctx ~subject ~subject_ot ~join:(fun () -> join) (fun () ->
+                with_member_reach ctx ~subject ~subject_ot ~member:bx ~join:(fun () -> join) (fun () ->
                     cond_atoms ctx ~subject:bx ~subject_ot:el c)
           in
           emit_rule ctx ~head:(Printf.sprintf "%s(%s,%s)" p key bx) ~body:(base @ join @ fatoms))
@@ -7842,8 +7945,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          declared scale; a Let binder additionally carries its self-contained
          helper atom (B3), so the value is bound wherever the read lands *)
       match List.assoc_opt (norm ident) ctx.binders with
-      | Some (atoms, var, scale, _) ->
+      | Some ((atoms, var, scale, _) as binding) ->
           note_binder_read ctx ~subject ~subject_ot e ident;
+          note_outer_read ctx ~subject ident binding;
           (atoms, var, scale)
       | None -> fault "unbound binder %S in the ASP translation (the verifier should preclude this)" ident)
   | Let { binder; body; _ } when not (reads_binder binder body) ->
@@ -9464,7 +9568,7 @@ and fold_filter ctx ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join 
   | Some judged, _ -> judged x
   | None, None -> []
   | None, Some c ->
-      with_member_reach ctx ~subject ~subject_ot ~join
+      with_member_reach ctx ~subject ~subject_ot ~member:x ~join
         ~part:(new_part ctx (range_order ctx ~subject ~subject_ot ~el ~source_role ~source_path ~x ~join))
         (fun () ->
           hoist_element_aggregates ctx ~x ~el ~outside:[ subject ] (cond_atoms ctx ~subject:x ~subject_ot:el c))
@@ -10093,7 +10197,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
           ~join:(fun () -> join)
       in
       let member f =
-        with_member_reach ctx ~subject ~subject_ot ~join:(fun () -> join) ~part:(new_part ctx ro) f
+        with_member_reach ctx ~subject ~subject_ot ~member:x ~join:(fun () -> join) ~part:(new_part ctx ro) f
       in
       let fatoms =
         match kv_filter with
@@ -10134,7 +10238,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
             r
       in
       let atoms =
-        with_member_reach ctx ~subject ~subject_ot
+        with_member_reach ctx ~subject ~subject_ot ~member:x
           ~join:(fun () -> join @ [ Printf.sprintf "%s(%s,%s)" (reached ()) subject x ])
           ~range:join ~part:(new_part ctx ro)
           (fun () ->
@@ -10597,8 +10701,9 @@ and struct_base ctx ~subject ~subject_ot (e : expr) : string list * string =
       ([ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ], v)
   | Binder_ref { ident; _ } -> (
       match List.assoc_opt (norm ident) ctx.binders with
-      | Some (atoms, var, _, _) ->
+      | Some ((atoms, var, _, _) as binding) ->
           note_binder_read ctx ~subject ~subject_ot e ident;
+          note_outer_read ctx ~subject ident binding;
           (atoms, var)
       | None -> fault "unbound binder %S in a struct field access (the verifier should preclude this)" ident)
   | Field_access { base; field_name; _ } ->
@@ -10739,7 +10844,16 @@ and translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms =
       let scrut_atoms = arm_scrut pattern in
       let saved_guard = ctx.rule_guard and saved_binders = ctx.binders in
       ctx.rule_guard <- ctx.rule_guard @ scrut_atoms;
-      (match binding with Some b -> ctx.binders <- b :: ctx.binders | None -> ());
+      (match (binding, binder) with
+      | Some ((_, (_, pv, _, _)) as b), Some name ->
+          ctx.binders <- b :: ctx.binders;
+          let pl_pattern =
+            match List.filter (fun a -> List.mem pv (asp_variables a)) scrut_atoms with
+            | [ a ] -> a
+            | _ -> fault "the pattern of the match arm %S binds its payload in no single literal" ctor
+          in
+          ctx.payloads <- (pv, { pl_subject = subject; pl_pattern; pl_binder = name }) :: ctx.payloads
+      | _ -> ());
       let body_atoms, body_term, body_scale = expr_term ctx ~subject ~subject_ot body in
       ctx.rule_guard <- saved_guard;
       ctx.binders <- saved_binders;
@@ -13311,7 +13425,7 @@ let rec judge ctx ~subject ~subject_ot (c : condition_expr) : judgement =
             ctx.member_gate <- saved;
             ctx.limit_gate <- saved_l)
           (fun () ->
-            with_member_reach ctx ~subject ~subject_ot ~join:(fun () -> join) ~part:(new_part ctx ro) (fun () ->
+            with_member_reach ctx ~subject ~subject_ot ~member:x ~join:(fun () -> join) ~part:(new_part ctx ro) (fun () ->
                 judge ctx ~subject:x ~subject_ot:el c))
       in
       let filter = Option.map (member ~read:filters_read ~reached:filters_read) kv_filter in
@@ -14905,6 +15019,7 @@ let translate_defaults_group ctx gidx ~owner
       ~default:l0.pd_subject
     ^ "." ^ target_name
   in
+  ctx.form_name <- target_form;
   if (not is_char) && attr_temporal ctx ~otype:owner ~attr:target_name then
     (* ch. 7.7 desugars an initialisation beside at most one computation into a
        group, which decides per day (ch. 7.11) as ref's native stack of ch. 7.8
@@ -17090,7 +17205,8 @@ let translate_guarded ?(closed_inputs = false) (doc : document) (case : Case.t) 
       lets = []; let_serial = 0; demands = []; parts = []; part_serial = 0; order_atoms = [];
       demand_reaches = []; order_guards = []; order_asks = []; hoisted = [];
       before_arm = []; signs = []; sign_helpers = []; oc_strata;
-      form_subject = None; anchored = []; member_reach = lazy []; calendar_rounding = false; form_gate = [];
+      form_subject = None; members = []; around = Hashtbl.create 16; scope_type = Hashtbl.create 16; outer_reads = []; form_name = "?";
+      payloads = []; member_reach = lazy []; calendar_rounding = false; form_gate = [];
       windows = 0; strict; closed_inputs;
       case_only = (if strict then case_only_attributes doc else []); boundary = None; reach = []; member_gate = []; limit_gate = []; fills_nothing = []; fold_filter = None; group_writers = [] }
   in
@@ -17167,27 +17283,28 @@ let translate_guarded ?(closed_inputs = false) (doc : document) (case : Case.t) 
      UNSAT diagnosis re-runs without exactly this line to report which
      guard fired *)
   emit_rule ctx ~head:"" ~body:[ "viol(_,_)" ];
-  (* the fence of the form anchor ([unkeyed_form_read]) holds each form to the
-     form subjects of its own anchored nodes: a form without one names its
-     subject's variable, or an aggregate's local one, wherever it likes. The
-     passes after the forms write for every form at once, and are held to the
-     form subjects of them all *)
-  let all_anchored = ref [] in
-  let each_form f =
-    ctx.anchored <- [];
+  (* the fence of the helpers' keys ([unkeyed_read]) holds each form to what its
+     own nodes read of the scopes around a member: a form without such a read
+     names its subject's variable, or an aggregate's local one, wherever it
+     likes. The passes after the forms write for every form at once, and are
+     held to the reads of them all *)
+  let all_reads = ref [] in
+  let each_form name f =
+    ctx.outer_reads <- [];
+    ctx.form_name <- Option.value name ~default:"?";
     f ();
-    all_anchored := List.sort_uniq compare (ctx.anchored @ !all_anchored);
-    ctx.anchored <- []
+    all_reads := ctx.outer_reads @ !all_reads;
+    ctx.outer_reads <- []
   in
-  List.iter (fun r -> each_form (fun () -> translate_rule ctx r)) doc.resolved_rules;
-  ctx.anchored <- !all_anchored;
+  List.iter (fun r -> each_form r.rr_name (fun () -> translate_rule ctx r)) doc.resolved_rules;
+  ctx.outer_reads <- !all_reads;
   writer_conflicts ctx;
   timeline_input ctx;
-  List.iter (fun f -> each_form (fun () -> translate_fact_creation ctx f)) doc.fact_creations;
-  List.iteri (fun i o -> each_form (fun () -> translate_object_creation ctx i o)) doc.object_creations;
+  List.iter (fun f -> each_form f.fc_name (fun () -> translate_fact_creation ctx f)) doc.fact_creations;
+  List.iteri (fun i o -> each_form o.oc_name (fun () -> translate_object_creation ctx i o)) doc.object_creations;
   List.iteri
     (fun i (a : resolved_allocation) ->
-      each_form (fun () -> validity_gate ctx a.vd_validity (fun () -> translate_allocation ctx i a)))
+      each_form a.vd_name (fun () -> validity_gate ctx a.vd_validity (fun () -> translate_allocation ctx i a)))
     doc.allocations;
   (* One stack per (CONCRETE type, target): the block order of ch. 7.10
      composed the inherited declarations into it, so what is translated here
@@ -17199,22 +17316,22 @@ let translate_guarded ?(closed_inputs = false) (doc : document) (case : Case.t) 
    in
    List.iteri
      (fun gidx (owner, _key, members, _contributors) ->
-       each_form (fun () -> translate_defaults_group ctx gidx ~owner members))
+       each_form None (fun () -> translate_defaults_group ctx gidx ~owner members))
      groups);
   if strict then member_states ctx;
   List.iteri
     (fun i (c : resolved_consistency) ->
-      each_form (fun () -> validity_gate ctx c.cons_validity (fun () -> translate_consistency ctx i c)))
+      each_form c.cons_name (fun () -> validity_gate ctx c.cons_validity (fun () -> translate_consistency ctx i c)))
     doc.consistencies;
   List.iter
     (fun (u : resolved_uniqueness) ->
-      each_form (fun () -> validity_gate ctx u.uni_validity (fun () -> translate_uniqueness ctx u)))
+      each_form u.uni_name (fun () -> validity_gate ctx u.uni_validity (fun () -> translate_uniqueness ctx u)))
     doc.uniquenesses;
   List.iteri
     (fun i (u : resolved_uniqueness_union) ->
-      each_form (fun () -> validity_gate ctx u.uu_validity (fun () -> translate_uniqueness_union ctx i u)))
+      each_form u.uu_name (fun () -> validity_gate ctx u.uu_validity (fun () -> translate_uniqueness_union ctx i u)))
     doc.uniqueness_unions;
-  ctx.anchored <- !all_anchored;
+  ctx.outer_reads <- !all_reads;
   emit_barriers ctx;
   refuse_order_dependent ctx;
   translate_case ctx case;

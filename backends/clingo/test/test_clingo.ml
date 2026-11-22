@@ -16754,10 +16754,12 @@ let () =
   ref_matches ~name:"anchor: a counting composite in the filter" ~ir ~case_text;
   let doc, case = load_pair ~ir ~case_text in
   match translate doc case with
-  | exception Uchar_ref.Value.Fault { text; _ } ->
+  | exception Uchar_ref.Value.Fault { text; code; params } ->
       check "anchor: the fence refuses an unkeyed helper that reads the form subject"
         (Uchar_ref.Case.contains ~needle:"without carrying it in its head" text
-        && Uchar_ref.Case.contains ~needle:"X3 != S" text)
+        && Uchar_ref.Case.contains ~needle:"X3 != S" text);
+      check "anchor: the refusal is CLINGO-051, by the form and the anchor"
+        (code = Some "CLINGO-051" && params = [ ("form", "gedeeld tarief"); ("read", "anchor form") ])
   | _ -> check "anchor: the fence refuses an unkeyed helper that reads the form subject (translated)" false
 
 (* THE EASTER YEAR'S UPPER FENCE (found by the builder of the card
@@ -21906,6 +21908,274 @@ let () =
                  code = Some want && (match form with Some f -> params = [ ("form", f) ] | None -> true)))
         (cases name))
     refused
+
+(* --- the key of a helper (CLINGO-051) -------------------------------------- *)
+
+(* a document whose helper would read a binder from outside its key is refused
+   at translation, with the form and the binder, where ref answers *)
+let refused_unkeyed ~name ~ir ~case_text ~form ~read =
+  verifier_clean ~name ~ir;
+  ref_matches ~name ~ir ~case_text;
+  let doc, case = load_pair ~ir ~case_text in
+  match translate doc case with
+  | _ -> check (name ^ ": CLINGO-051 (translated)") false
+  | exception Uchar_ref.Value.Fault { code; params; text } ->
+      check (Printf.sprintf "%s: CLINGO-051 (%s)" name text)
+        (code = Some "CLINGO-051" && params = [ ("form", form); ("read", read) ])
+
+(* THE ISOLATION PROPERTY, over a matrix of a Let's binder under an operator in
+   the filter of a fold: "het grenstotaal van een Jutter is, daarbij geldt: de
+   grens is zijn drempel, de grens plus [vouw] van zijn vondsten waarvan
+   [filter]". What a Jutter gets is his own: the same alone, with his own
+   vondsten, and beside the other Jutters, and the same as in ref. In a document
+   with inferFromEmpty false every cell is carried, its helpers keyed by the
+   Jutter and the vondst. In an ordinary document a helper is keyed by the
+   vondst alone, so a cell whose helper would read the grens is refused where
+   the session holds more than one Jutter; alone, with no other grens to read,
+   the Jutter plays. The drempels are such that the grens of another Jutter
+   gives another outcome *)
+let () =
+  let jutters =
+    [ ("J1", "5", [ ("V1", "20"); ("V2", "5") ]); ("J2", "10", [ ("V3", "5"); ("V4", "10") ]); ("J3", "1", [ ("V5", "30") ]) ]
+  in
+  let objects js =
+    List.concat_map
+      (fun (j, drempel, vs) ->
+        ov_jutter_of ~attrs:[ ("drempel", drempel) ] j (List.map fst vs)
+        :: List.map (fun (v, gewicht) -> ov_obj v [ ("gewicht", gewicht); ("schade", "3") ]) vs)
+      js
+  in
+  (* the outcome per Jutter of [js], or the code of the refusal *)
+  let outcome ~strict ~ir js =
+    let doc, case = load_pair ~ir ~case_text:(ov_case (objects js) [ ov_consistent ]) in
+    match translate doc case with
+    | exception Uchar_ref.Value.Fault { code; text; _ } -> Error (Option.value code ~default:text)
+    | program -> (
+        match Solve.run_clingo program with
+        | out, Unix.WEXITED (10 | 30) ->
+            let model = Model.model_of_text out in
+            Ok
+              (List.map
+                 (fun (j, _, _) ->
+                   ( j,
+                     match Model.val_of model j "grenstotaal" with
+                     | [] when strict && not (Model.has model "settled" [ Model.A_str j; Model.A_str "grenstotaal" ]) -> "open"
+                     | [] -> "leeg"
+                     | vs -> String.concat " and " (List.map string_of_int vs) ))
+                 js)
+        | _ -> Error "no model")
+  in
+  let shown = function
+    | Ok rows -> String.concat ", " (List.map (fun (j, v) -> j ^ " " ^ v) rows)
+    | Error code -> "refused: " ^ code
+  in
+  let g = ov_attr "gewicht" and b = ov_binder "grens" in
+  let gt l n = ov_cmp "greater" l (ov_lit n) in
+  let wrapped node rest base = Printf.sprintf {|{"node": "%s", "base": %s, %s, "type": %s, %s}|} node base rest ov_num (ov_src node) in
+  let rounded = wrapped "Rounding" {|"mode": "towardZero", "decimals": 0|}
+  and clamped = wrapped "Clamp" (Printf.sprintf {|"minimum": %s, "maximum": %s|} (ov_lit "0") (ov_lit "14")) in
+  let highest = Printf.sprintf {|{"node": "Aggregation", "kind": "maximum", "arguments": [%s, %s], "type": %s, %s}|} g b ov_num (ov_src "maximum") in
+  let operators =
+    [ ("gewicht groter dan de grens", true, ov_cmp "greater" g b); ("gewicht gelijk aan de grens", true, ov_cmp "equal" g b);
+      ("gewicht ongelijk aan de grens", true, ov_cmp "notEqual" g b); ("gewicht gedeeld door de grens", true, gt (ov_div g b) "1");
+      ("het hoogste van gewicht en grens", true, gt highest "9"); ("de grens gevuld", true, ov_test "filled" b);
+      ("gewicht plus de grens", false, gt (ov_bin "plus" g b) "12"); ("gewicht min de grens", false, gt (ov_bin "minus" g b) "0");
+      ("gewicht verminderd met de grens", false, gt (ov_bin "reducedBy" g b) "0");
+      ("gewicht maal de grens", false, gt (ov_bin "times" g b) "40"); ("een afronding", false, gt (rounded (ov_bin "plus" g b)) "12");
+      ("een grens op de som", false, gt (clamped (ov_bin "plus" g b)) "12");
+      ("gewicht plus de grens is gevuld", false, ov_test "filled" (ov_bin "plus" g b));
+      ("geen van", false, ov_compound "none" 0 [ ov_cmp "equal" g b; ov_gt "schade" "5" ]);
+      ("een Let van een Let", false, gt (ov_let "som" (ov_bin "plus" b g) (ov_bin "plus" (ov_binder "som") (ov_lit "1"))) "13") ]
+  and folds = [ ("sum", "gewicht"); ("count", ""); ("maximum", "gewicht") ] in
+  List.iter
+    (fun (operator, carried, filter) ->
+      List.iter
+        (fun (kind, a) ->
+          List.iter
+            (fun strict ->
+              let name =
+                Printf.sprintf "isolation (%s, %s%s)" operator kind (if strict then ", inferFromEmpty false" else "")
+              in
+              let ir = ov_grens_doc ~strict (ov_let "grens" (ov_attr ~ty:"Jutter" "drempel") (ov_bin "plus" b (ov_fold ~filter kind a))) in
+              verifier_clean ~name ~ir;
+              let alone = List.map (fun j -> outcome ~strict ~ir [ j ]) jutters in
+              let each = List.concat_map (function Ok rows -> rows | Error code -> [ ("", "refused: " ^ code) ]) alone in
+              let together = outcome ~strict ~ir jutters in
+              check
+                (Printf.sprintf "%s: alone %s, together %s" name (shown (Ok each)) (shown together))
+                (if carried || strict then together = Ok each else together = Error "CLINGO-051");
+              ref_matches ~name ~ir
+                ~case_text:
+                  (ov_case (objects jutters) (List.map (fun (j, v) -> ov_attr_is ~label:j "grenstotaal" v) each)))
+            [ false; true ])
+        folds)
+    operators
+
+(* "Het grenstotaal van een Jutter is, daarbij geldt: de grens is zijn drempel,
+   de grens plus de som van het gewicht van zijn vondsten waarvan het gewicht
+   plus de grens groter is dan 12": 35 and 1 over drempel 10 and 1. And "… die
+   som als de grens groter is dan 3, anders de grens", where the condition of
+   the branch is the guard its helpers are written under and reads the grens *)
+let () =
+  let filter = ov_cmp "greater" (ov_bin "plus" (ov_attr "gewicht") (ov_binder "grens")) (ov_lit "12") in
+  let branch = ov_ite (ov_cmp "greater" (ov_binder "grens") (ov_lit "3")) (ov_fold ~filter "sum" "gewicht") (ov_binder "grens") in
+  List.iter
+    (fun (name, body, drempels, (want1, want2)) ->
+      refused_unkeyed ~name:("CLINGO-051: a binder of the Jutter under an operator in a filter" ^ name)
+        ~ir:(ov_grens_doc ~strict:false (ov_let "grens" (ov_attr ~ty:"Jutter" "drempel") body))
+        ~case_text:
+          (ov_case
+             [ ov_jutter_of ~attrs:[ ("drempel", fst drempels) ] "J1" [ "V1"; "V2" ];
+               ov_jutter_of ~attrs:[ ("drempel", snd drempels) ] "J2" [ "V3"; "V4" ];
+               ov_obj "V1" [ ("gewicht", "20") ]; ov_obj "V2" [ ("gewicht", "5") ]; ov_obj "V3" [ ("gewicht", "5") ];
+               ov_obj "V4" [ ("gewicht", "10") ] ]
+             [ ov_attr_is ~label:"J1" "grenstotaal" want1; ov_attr_is ~label:"J2" "grenstotaal" want2 ])
+        ~form:"grenstotaal" ~read:"binder grens")
+    [ ("", ov_grens_body filter, ("10", "1"), ("35", "1")); (" of a branch", branch, ("5", "10"), ("20", "15")) ]
+
+(* "Het totaal van een Jutter is de som van het gewicht van zijn vondsten
+   waarvan (daarbij geldt: de maat is zijn gewicht, de maat plus de som van het
+   gewicht van de medevondsten waarvan [filter]) groter is dan 35", over
+   vondsten of 10, 20 and 30: the maat is that of the outer vondst, which the
+   helper of a test on the inner vondst does not carry *)
+let () =
+  let ir filter =
+    let medegewicht =
+      Printf.sprintf {|{"node": "Aggregation", "kind": "sum", "arguments": [%s], "elementType": "Vondst", "filter": %s, %s, "type": %s, %s}|}
+        (ov_attr "gewicht") filter ov_medevondsten ov_num (ov_src "som")
+    in
+    ov_doc ~strict:false ~fact_types:[ ov_aanmelding ]
+      [ ov_type "Jutter" [ "totaal" ] []; ov_type "Vondst" [ "gewicht" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"totaal" "totaal"
+          (Some
+             (ov_fold
+                ~filter:(ov_cmp "greater" (ov_let "maat" (ov_attr "gewicht") (ov_bin "plus" (ov_binder "maat") medegewicht)) (ov_lit "35"))
+                "sum" "gewicht")) ]
+  in
+  let case_text want =
+    ov_case
+      (ov_jutter (List.map (fun (v, w) -> (v, [ ("gewicht", w) ], [], [])) [ ("V1", "10"); ("V2", "20"); ("V3", "30") ]))
+      [ ov_attr_is ~label:"J1" "totaal" want ]
+  in
+  let g = ov_attr "gewicht" and b = ov_binder "maat" in
+  List.iter
+    (fun (filter, cond, want, carried) ->
+      let name = "CLINGO-051: a binder of a Let in a filter, " ^ filter in
+      if carried then ov_frame ~name ~ir:(ir cond) ~case_text:(case_text want) ()
+      else refused_unkeyed ~name ~ir:(ir cond) ~case_text:(case_text want) ~form:"totaal" ~read:"binder maat")
+    [ ("gewicht groter dan de maat", ov_cmp "greater" g b, "30", true);
+      ("gewicht plus 1 groter dan de maat", ov_cmp "greater" (ov_bin "plus" g (ov_lit "1")) b, "60", true);
+      ("gewicht gelijk aan de maat", ov_cmp "equal" g b, "50", false);
+      ("gewicht ongelijk aan de maat", ov_cmp "notEqual" g b, "60", false);
+      ("de maat leeg", ov_test "empty" b, "leeg", false);
+      ("gewicht plus de maat", ov_cmp "greater" (ov_bin "plus" g b) (ov_lit "35"), "60", false) ]
+
+(* the payload of a match arm in the filter of a fold in that arm: "het
+   erkende totaal van een Jutter is, van zijn aanspraak: Erkend(b): de som van
+   het gewicht van zijn vondsten waarvan [filter], Vervallen: 0". A helper that
+   names the payload has no atom that binds it: an equality binds it to the
+   other side (leeg for both Jutters, where every vondst would count), and any
+   other test leaves the rule unsafe, with one Jutter as with two *)
+let () =
+  let number = ov_num in
+  let constructors =
+    Printf.sprintf {|"constructors": [{"name": "Erkend", "payload": %s}, {"name": "Vervallen", "payload": null}]|} number
+  in
+  let jutter =
+    Printf.sprintf
+      {|{"node": "ObjectType", "name": "Jutter", "animate": false, "plural": "Jutters", "attributes": [{"node": "Attribute", "name": "aanspraak", "datatype": {"node": "SumType", "domain": "aanspraak", %s}}, {"node": "Attribute", "name": "erkend totaal", "datatype": %s}], "characteristics": []}|}
+      constructors number
+  in
+  let ir body =
+    ov_doc ~strict:false ~fact_types:[ ov_aanmelding ]
+      ~domains:[ Printf.sprintf {|{"node": "Domain", "name": "aanspraak", "datatype": {"node": "SumType", %s}}|} constructors ]
+      [ jutter; ov_type "Vondst" [ "gewicht" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"erkend totaal" "erkend totaal"
+          (Some
+             (Printf.sprintf
+                {|{"node": "Match", "type": %s, "scrutinee": %s, "arms": [{"constructor": "Erkend", "binder": "b", "body": %s}, {"constructor": "Vervallen", "binder": null, "body": %s}], %s}|}
+                number (ov_attr ~ty:"Jutter" "aanspraak") body (ov_lit "0") (ov_src "aanspraak"))) ]
+  in
+  let case_text js =
+    ov_case
+      (List.concat_map
+         (fun (j, payload, vs, _) ->
+           Printf.sprintf
+             {|{"label": "%s", "objectType": "Jutter", "attributes": {"aanspraak": {"constructor": "Erkend", "payload": {"number": "%s"}}}, "roles": {"vondsten": [%s]}, "characteristics": []}|}
+             j payload
+             (String.concat ", " (List.map (fun (v, _) -> Printf.sprintf "%S" v) vs))
+           :: List.map (fun (v, w) -> ov_obj v [ ("gewicht", w) ]) vs)
+         js)
+      (List.map (fun (j, _, _, want) -> ov_attr_is ~label:j "erkend totaal" want) js)
+  in
+  let g = ov_attr "gewicht" and b = ov_binder "b" in
+  let sum filter = ov_fold ~filter "sum" "gewicht" in
+  let j1 = [ ("V1", "20"); ("V2", "5") ] and j2 = [ ("V3", "5"); ("V4", "10") ] in
+  ov_frame ~name:"CLINGO-051: the payload of a match arm in a sum plays" ~ir:(ir (ov_bin "plus" b (sum (ov_gt "gewicht" "5"))))
+    ~case_text:(case_text [ ("J1", "7", j1, "27"); ("J2", "1", j2, "11") ]) ();
+  List.iter
+    (fun (filter, body, want1, want2) ->
+      List.iter
+        (fun (beside, js) ->
+          refused_unkeyed
+            ~name:(Printf.sprintf "CLINGO-051: the payload of a match arm, %s, %s" filter beside)
+            ~ir:(ir body) ~case_text:(case_text js) ~form:"erkend totaal" ~read:"binder b")
+        [ ("two Jutters", [ ("J1", "7", j1, want1); ("J2", "1", j2, want2) ]); ("one Jutter", [ ("J1", "7", j1, want1) ]) ])
+    [ ("gewicht gelijk aan b", sum (ov_cmp "equal" g b), "leeg", "leeg");
+      ("geen van [gewicht gelijk aan b]", sum (ov_compound "none" 0 [ ov_cmp "equal" g b; ov_gt "gewicht" "100" ]), "25", "15");
+      ("gewicht groter dan b", sum (ov_cmp "greater" g b), "20", "15");
+      ("gewicht plus b plus gewicht", sum (ov_cmp "greater" (ov_bin "plus" (ov_bin "plus" g b) g) (ov_lit "22")), "20", "leeg") ]
+
+(* the subject of a match whose payload a helper reads under its pattern: "het
+   toezichttotaal van een Jutter is, van zijn tarief: Vast(t): de som van het
+   gewicht van de bewaakte vondsten waarvan het bedrag maal t, afgerond op
+   centen, groter is dan 3,00; Geen: 0". The helper of the product carries the
+   pattern, which two Jutters who both watch over a Vondst satisfy *)
+let () =
+  let number decimals = Printf.sprintf {|{"node": "Number", "whole": %b, "decimals": %d, "sign": "unspecified"}|} (decimals = 0) decimals in
+  let constructors = Printf.sprintf {|"constructors": [{"name": "Vast", "payload": %s}, {"name": "Geen", "payload": null}]|} (number 4) in
+  let typ name attrs =
+    Printf.sprintf {|{"node": "ObjectType", "name": "%s", "animate": false, "plural": "%sen", "attributes": [%s], "characteristics": []}|} name name
+      (String.concat ", " (List.map (fun (a, dt) -> Printf.sprintf {|{"node": "Attribute", "name": "%s", "datatype": %s}|} a dt) attrs))
+  in
+  let role name ot plural = Printf.sprintf {|{"node": "Role", "name": "%s", "objectType": "%s", "plural": "%s", "many": true}|} name ot plural in
+  let product =
+    Printf.sprintf
+      {|{"node": "Rounding", "base": {"node": "Binary", "op": "times", "left": %s, "right": %s, "type": %s, %s}, "mode": "halfAwayFromZero", "decimals": 2, "type": %s, %s}|}
+      (ov_attr "bedrag") (ov_binder "t") (number 6) (ov_src "maal") (number 2) (ov_src "afgerond")
+  in
+  let three = Printf.sprintf {|{"node": "Literal", "value": {"number": "3.00"}, "type": %s, %s}|} (number 2) (ov_src "3,00") in
+  let sum =
+    Printf.sprintf
+      {|{"node": "Aggregation", "kind": "sum", "arguments": [%s], "elementType": "Vondst", "filter": %s, "sourceRole": {"node": "RoleBinding", "factType": "toezicht", "role": "bewaakte"}, "type": %s, %s}|}
+      (ov_attr "gewicht") (ov_cmp "greater" product three) ov_num (ov_src "som")
+  in
+  let ir =
+    ov_doc ~strict:false
+      ~fact_types:
+        [ Printf.sprintf {|{"node": "FactType", "name": "toezicht", "reciprocal": false, "roles": [%s, %s]}|}
+            (role "bewaker" "Jutter" "bewakers") (role "bewaakte" "Vondst" "bewaakten") ]
+      ~domains:[ Printf.sprintf {|{"node": "Domain", "name": "tarief", "datatype": {"node": "SumType", %s}}|} constructors ]
+      [ typ "Jutter" [ ("tarief", Printf.sprintf {|{"node": "SumType", "domain": "tarief", %s}|} constructors); ("toezichttotaal", ov_num) ];
+        typ "Vondst" [ ("gewicht", ov_num); ("bedrag", number 2) ] ]
+      [ ov_rule ~ty:"Jutter" ~name:"toezichttotaal" "toezichttotaal"
+          (Some
+             (Printf.sprintf
+                {|{"node": "Match", "type": %s, "scrutinee": %s, "arms": [{"constructor": "Vast", "binder": "t", "body": %s}, {"constructor": "Geen", "binder": null, "body": %s}], %s}|}
+                ov_num (ov_attr ~ty:"Jutter" "tarief") sum (ov_lit "0") (ov_src "tarief"))) ]
+  in
+  let jutter label rate vs =
+    Printf.sprintf
+      {|{"label": "%s", "objectType": "Jutter", "attributes": {"tarief": {"constructor": "Vast", "payload": {"number": "%s"}}}, "roles": {"bewaakten": [%s]}, "characteristics": []}|}
+      label rate (String.concat ", " (List.map (Printf.sprintf "%S") vs))
+  in
+  refused_unkeyed ~name:"CLINGO-051: the subject of a match, its payload in a product" ~ir
+    ~case_text:
+      (ov_case
+         [ jutter "J1" "0.5000" [ "V1"; "V2" ]; jutter "J2" "0.1000" [ "V1"; "V2" ]; ov_obj "V1" [ ("gewicht", "20"); ("bedrag", "10.00") ];
+           ov_obj "V2" [ ("gewicht", "5"); ("bedrag", "4.00") ] ]
+         [ ov_attr_is ~label:"J1" "toezichttotaal" "20"; ov_attr_is ~label:"J2" "toezichttotaal" "leeg" ])
+    ~form:"toezichttotaal" ~read:"binder t"
 
 let () =
   if !failures = 0 then Printf.printf "test_clingo: %d checks, 0 failures\n" !total

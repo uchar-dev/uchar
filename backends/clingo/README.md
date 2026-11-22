@@ -585,6 +585,39 @@ Recorded limitations:
   the `val/3` or `param/2` binding the test reads. ref plays it (suite
   frames `ch1.2 the gevuld test on a list attribute` and `ch1.2 the leeg
   test on a list parameter`).
+- A helper rule over a member of a fold or a quantifier fold holds for
+  the key in its head: the member, and in the helpers of comparisons,
+  leeg tests, quantifier folds and ranking and sum folds the form subject
+  beside it where the body reads that (`helper_key`). The body may read
+  another variable of a scope around the member, or the form subject in a
+  helper without it in its key: the default-0 helper of an operand
+  (`coN`), the chain of a counting composite (`cqN_…`). Such a rule binds
+  the variable itself and holds for the member as soon as any object
+  satisfies it, so the document is refused at translation as the refusal
+  CLINGO-051 (parameters `form`, the form, and `read`, the binder or the
+  form anchor; `unkeyed_read`). ref plays it. Three reads reach out of a
+  member so:
+  - The binder of a Let. "De grens plus de som van het gewicht van zijn
+    vondsten waarvan het gewicht plus de grens groter is dan 12" under
+    "daarbij geldt: de grens is zijn drempel" is refused, and so is a Let
+    in a filter whose binder a deeper filter compares by gelijk aan or
+    ongelijk aan; "waarvan het gewicht groter is dan de grens" is an atom
+    of the fold's own aggregate and is carried. The refusal stands where
+    the session can hold more than one object the variable can stand for,
+    those of the case and those a creation makes (`objects_at_most`): with
+    one Jutter no other grens can be read, and the document plays. In a
+    document with inferFromEmpty false the helpers of a filter carry the
+    pair (`judged_at`).
+  - A node with the form anchor (IR-SPEC ch. 4.1a) or an identity check,
+    in a helper that does not carry the form subject.
+  - The payload of a match arm, which the pattern of the arm binds: a
+    helper for a filter or an operand in the arm that does not hold the
+    pattern, with one Jutter too; and one that does, where the subject of
+    the match is outside its key.
+
+  The suite's frames `CLINGO-051: …` pin the refusals, each beside ref's
+  answer, and `isolation (…)` that a Jutter gets alone what he gets beside
+  the others, over a matrix of operator and fold.
 - The Let lowering keeps an enclosing Let's need on a path that does
   not read its binder, also with every parameter bound, so a value ref
   computes stays leeg. [V1] A Match with an arm that reads the binder,

@@ -49,3 +49,4 @@ CLINGO-047	refusal	inconsistency-channel-read		cond_atoms_raw
 CLINGO-048	limit	date-part-not-statically-whole		date_construction
 CLINGO-049	refusal	infer-from-empty-false	form	refuse_uncarried
 CLINGO-050	refusal	filled-test-operand-not-bound	operand,datatype	filled_operand_atoms
+CLINGO-051	refusal	helper-reads-outside-its-key	form,read	refuse_unkeyed
