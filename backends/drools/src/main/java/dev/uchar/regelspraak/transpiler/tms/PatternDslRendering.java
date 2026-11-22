@@ -263,6 +263,14 @@ final class PatternDslRendering {
                     x.maximum()), (drools, source, w) -> insert(drools, x.insertion(), new Recipient(x.allocation(), source,
                     w[x.recipient()], read(w, x.weight()), read(w, x.key()), read(w, x.maximum()))));
             case Consequence.Contribution x -> contribution(x);
+            case Consequence.FilteredContribution x -> {
+                Consequence.Contribution c = x.contributes();
+                Predicate<Object[]> filter = ClosureRendering.test(x.filter());
+                yield consequenceItem(c.subject(), c.slots(), c.size(), (drools, carrier, w) -> {
+                    for (Object f : ComputeHelpers.contributed(ComputeHelpers.judge(() -> filter.test(w), false), c.fold(),
+                            carrier, w[c.member()], memberOf(c, carrier, w))) insert(drools, c.insertion(), f);
+                });
+            }
             case Consequence.FilterDeposit x -> {
                 Predicate<Object[]> filter = ClosureRendering.test(x.filter());
                 String what = "the filter of " + x.fold();
@@ -329,20 +337,20 @@ final class PatternDslRendering {
      *  of a quantifier fold says of it, its place first and the probe in its slot where the plan says so. */
     private RuleItemBuilder<?> contribution(Consequence.Contribution g) {
         return switch (g.input()) {
-            case Consequence.Input.Count t -> consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) ->
-                    insert(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()], null)));
-            case Consequence.Input.MemberValue l -> consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) -> {
-                Object value = l.cell() != null ? ComputeHelpers.cell(w[l.value()], l.cell())
-                        : l.payload() != null ? ComputeHelpers.payload(w[l.value()], l.payload()) : w[l.value()];
-                Contribution b = ComputeHelpers.contribution(g.fold(), carrier, w[g.member()], value, l.total(), l.fixed(),
-                        l.filled(), l.whole());
-                if (b != null) insert(drools, g.insertion(), b);
-            });
+            case Consequence.Input.Count t -> contributedValue(g);
+            case Consequence.Input.MemberValue l -> contributedValue(g);
+            case Consequence.Input.IncompleteInput l -> contributedValue(g);
             case Consequence.Input.Verdict o -> {
                 Predicate<Object[]> matrix = ClosureRendering.test(o.matrix());
                 yield consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) ->
                         insert(drools, g.insertion(), new Contribution(g.fold(), carrier, w[g.member()],
                                 ComputeHelpers.verdict(matrix.test(w)))));
+            }
+            case Consequence.Input.Judged o -> {
+                Predicate<Object[]> matrix = ClosureRendering.test(o.matrix());
+                yield consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) ->
+                        insert(drools, g.insertion(), ComputeHelpers.judged(g.fold(), carrier, w[g.member()],
+                                ComputeHelpers.judge(() -> matrix.test(w), false))));
             }
             case Consequence.Input.MemberTest t -> {
                 Predicate<Object[]> matrix = ClosureRendering.test(t.matrix());
@@ -364,6 +372,28 @@ final class PatternDslRendering {
                 });
             }
         };
+    }
+
+    /** What the member of {@code g} gives a fold over a set, inserted where it gives something. */
+    private RuleItemBuilder<?> contributedValue(Consequence.Contribution g) {
+        return consequenceItem(g.subject(), g.slots(), g.size(), (drools, carrier, w) -> {
+            Object b = memberOf(g, carrier, w);
+            if (b != null) insert(drools, g.insertion(), b);
+        });
+    }
+
+    /** What the member of {@code g} gives a fold over a set on {@code carrier}, over the bound values {@code w}: the
+     *  contribution of the member itself, or that of its value through the route, the value of its input where it need not
+     *  be complete. */
+    private static Object memberOf(Consequence.Contribution g, Object carrier, Object[] w) {
+        Object member = w[g.member()];
+        if (g.input() instanceof Consequence.Input.Count) return new Contribution(g.fold(), carrier, member, null);
+        Consequence.Input.IncompleteInput i = g.input() instanceof Consequence.Input.IncompleteInput o ? o : null;
+        Consequence.Input.MemberValue l = i != null ? i.of() : (Consequence.Input.MemberValue) g.input();
+        Object bound = i == null ? w[l.value()] : ComputeHelpers.input(w[l.value()], w[i.openInput()], member, i.member());
+        Object value = l.cell() != null ? ComputeHelpers.cell(bound, l.cell())
+                : l.payload() != null ? ComputeHelpers.payload(bound, l.payload()) : bound;
+        return ComputeHelpers.contribution(g.fold(), carrier, member, value, l.total(), l.fixed(), l.filled(), l.whole());
     }
 
     /** The codes of the deposit of {@code condition}, which the test of the rule found: the condition evaluated again
@@ -443,11 +473,11 @@ final class PatternDslRendering {
     }
 
     /** The outcome of {@code value} over {@code w}, collapsed where {@code collapse}: its value, its evaluation fault, or
-     *  where {@code open}, so that it can read an open value, the mark of one ({@link ComputeHelpers#valued}); any other
-     *  exception passes on. */
-    private static Object outcome(ValueFunction value, boolean collapse, boolean open, Object[] w) {
+     *  where {@code open}, so that it can read an open value, the mark that it does not stand, with what it deposited dropped
+     *  from {@code depositFlag} ({@link ComputeHelpers#valued}); any other exception passes on. */
+    private static Object outcome(ValueFunction value, boolean collapse, boolean open, Object depositFlag, Object[] w) {
         Callable<?> evaluated = () -> collapse ? ComputeHelpers.collapse(value.of(w)) : value.of(w);
-        if (open) return ComputeHelpers.valued(evaluated);
+        if (open) return ComputeHelpers.valued(evaluated, depositFlag);
         try {
             return ComputeHelpers.call(evaluated);
         } catch (RuntimeException e) {
@@ -465,12 +495,7 @@ final class PatternDslRendering {
             // the probe hears every §6.5 and §6.6 place the evaluation reaches, and only those (Sonde)
             Object s = deposit == null ? null : ComputeHelpers.depositFlag();
             if (s != null) w[deposit.depositFlag()] = s;
-            Object v = outcome(value, g.collapse(), opens != null, w);
-            // an open read breaks the value off, and what it deposited is dropped (RUNTIME-SEMANTICS ch. 1.5)
-            if (ComputeHelpers.isOpen(v)) {
-                leaveOpen(drools, opens, subject);
-                return;
-            }
+            Object v = outcome(value, g.collapse(), opens != null, s, w);
             if (ComputeHelpers.isEvaluationFault(v)) {
                 insert(drools, g.insertion(),
                         new Fault(subject, g.fault().form(), ComputeHelpers.designate(v, g.fault().rule())));
@@ -479,7 +504,9 @@ final class PatternDslRendering {
             if (ComputeHelpers.reported(s))
                 insert(drools, g.insertion(), ComputeHelpers.inconsistency(deposit.form(), subject,
                         ComputeHelpers.depositCodes(s)));
-            if (!ComputeHelpers.isEmpty(v) || g.writesEmpty())
+            // a value that is leeg after a closure leaves the target open and deposits (RUNTIME-SEMANTICS ch. 1.5)
+            if (ComputeHelpers.isOpen(v)) leaveOpen(drools, opens, subject);
+            else if (!ComputeHelpers.isEmpty(v) || g.writesEmpty())
                 insert(drools, g.insertion(), new Value(subject, g.target(), v, g.writer()));
         };
     }
@@ -560,7 +587,7 @@ final class PatternDslRendering {
         return (drools, subject, w) -> {
             Object s = deposit == null ? null : ComputeHelpers.depositFlag();
             if (s != null) w[deposit.depositFlag()] = s;
-            Object v = outcome(value, g.collapse(), opens != null, w);
+            Object v = outcome(value, g.collapse(), opens != null, null, w);
             if (ComputeHelpers.isOpen(v)) {
                 leaveOpen(drools, opens, subject);
                 return;
@@ -953,6 +980,8 @@ final class PatternDslRendering {
         field(Contribution.class, "fold", Contribution::fold);
         field(Contribution.class, "subject", Contribution::subject);
         field(Contribution.class, "value", Contribution::value);
+        field(FoldOpen.class, "fold", FoldOpen::fold);
+        field(FoldOpen.class, "subject", FoldOpen::subject);
         field(FilterFault.class, "fold", FilterFault::fold);
         field(FilterFault.class, "subject", FilterFault::subject);
         field(FilterDeposit.class, "fold", FilterDeposit::fold);

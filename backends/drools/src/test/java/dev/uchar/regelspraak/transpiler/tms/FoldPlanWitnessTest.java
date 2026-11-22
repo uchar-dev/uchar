@@ -1040,8 +1040,14 @@ class FoldPlanWitnessTest {
                     case Consequence.Input.Count t -> out.add("    input Count");
                     case Consequence.Input.MemberValue l -> out.add("    input MemberValue [value=" + l.value() + ", total="
                             + l.total() + ", filled=" + l.filled() + ", whole=" + l.whole() + "]");
+                    case Consequence.Input.IncompleteInput l -> out.add("    input IncompleteInput [value=" + l.of().value()
+                            + ", filled=" + l.of().filled() + ", openInput=" + l.openInput() + ", member=" + l.member() + "]");
                     case Consequence.Input.Verdict o -> {
                         out.add("    input Verdict matrix " + TermTree.tree(o.matrix()));
+                        TermTree.fields("      matrix", o.matrix(), "0", out);
+                    }
+                    case Consequence.Input.Judged o -> {
+                        out.add("    input Judged matrix " + TermTree.tree(o.matrix()));
                         TermTree.fields("      matrix", o.matrix(), "0", out);
                     }
                     case Consequence.Input.MemberTest l -> {

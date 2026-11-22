@@ -1,0 +1,100 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandvoogd",
+        "attributes": {},
+        "roles": {
+          "beheerde jutter": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "ervaring": {
+            "number": "2"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vindloon": {
+            "number": "7"
+          },
+          "gewicht": {
+            "number": "6"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "taxatie": {
+            "number": "50"
+          },
+          "gewicht": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "vindloon",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "grens"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal zware vondsten",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S1",
+      "characteristic": "vol"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

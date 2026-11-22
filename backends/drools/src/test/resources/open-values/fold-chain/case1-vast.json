@@ -1,0 +1,185 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandvoogd",
+        "attributes": {},
+        "roles": {
+          "beheerde jutter": [
+            "J1",
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "opgave": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "8"
+          },
+          "meting": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemerkt",
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "4"
+          },
+          "meting": {
+            "number": "9"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ],
+        "characteristicsAbsent": [
+          "gemerkt"
+        ]
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": [
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "7"
+          },
+          "meting": {
+            "number": "6"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemerkt"
+        ],
+        "characteristicsAbsent": [
+          "gekeurd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "jutgewicht",
+      "value": {
+        "number": "6"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "jutgewicht",
+      "value": {
+        "number": "12"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "jutgewicht",
+      "value": {
+        "number": "18"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "strandgewicht",
+      "value": {
+        "number": "19"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "zwaarste gewicht",
+      "value": {
+        "number": "12"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "druk"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "keuraantal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "keuraantal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "loon",
+      "value": {
+        "number": "4"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "loon",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

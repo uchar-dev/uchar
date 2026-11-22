@@ -3,7 +3,8 @@ package dev.uchar.regelspraak.transpiler.tms;
 /**
  * The judgement of a condition where it is not established for another form (RUNTIME-SEMANTICS ch. 1.5, "The judgement
  * of a condition", "For the form itself and for another"): undetermined for the form itself as well
- * ({@code own} null), or established for the form itself, true or false, by a closure over an open value. A condition
+ * ({@code own} null), or established for the form itself, true or false, by a closure over an open value, a test on leeg or
+ * gevuld or a fold that closed ({@link ComputeHelpers#atom}). A condition
  * whose judgement is established for both returns its truth value; one whose judgement is not throws this, so that
  * a composite counts it as its member ({@link Composite}) and the test of a rule asks of it what its role names
  * ({@link ComputeHelpers#holdsForItself}, {@link ComputeHelpers#judge}). What the condition deposited stands: what an

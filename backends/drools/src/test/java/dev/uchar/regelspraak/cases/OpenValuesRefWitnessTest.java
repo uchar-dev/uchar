@@ -39,15 +39,12 @@ class OpenValuesRefWitnessTest {
     static {
         for (String plays : List.of("absent-link", "absent-link-path", "arithmetic", "characteristic", "closed-input",
                 "comparison", "composite-filled-test", "compound-all", "compound-any", "compound-counting", "compound-none",
-                "consistency", "defaults-characteristic", "defaults-stack", "defaults-subtype", "exact-digits",
+                "consistency", "defaults-characteristic", "defaults-stack", "defaults-subtype", "empty-by-fault", "exact-digits",
                 "filled-test", "filled-test-not-closure", "initialisation", "input-above-computation",
-                "input-above-computation-open", "let", "marker", "navigated-read", "settled-empty", "settled-empty-date",
-                "settled-empty-stack"))
+                "input-above-computation-open", "let", "listed-fold", "marker", "navigated-read", "set-fold", "settled-empty",
+                "settled-empty-date", "settled-empty-fold", "settled-empty-stack"))
             WITNESS.put(plays, null);
-        for (String fold : List.of("empty-by-fault", "fact-creation", "listed-fold", "set-fold", "settled-empty-fold"))
-            WITNESS.put(fold, "set-fold");
-        WITNESS.put("object-creation", "object-creation");
-        WITNESS.put("quantifier-fold", "quantifier-fold");
+        for (String slug : List.of("fact-creation", "object-creation", "quantifier-fold")) WITNESS.put(slug, slug);
     }
 
     @Test void every_witness_plays_or_is_refused_with_the_slug_of_its_form() throws Exception {
@@ -73,7 +70,9 @@ class OpenValuesRefWitnessTest {
                     CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
                             () -> CaseRunner.playCases(ir, contents, branch, false), what);
                     assertEquals(DroolsCode.INFER_FROM_EMPTY_FALSE, e.code(), what);
-                    assertEquals(DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", w.getValue()).text(), e.getMessage(), what);
+                    // the analysis refuses the quantifier fold with a filter where it lowers its rule
+                    assertEquals((w.getKey().equals("quantifier-fold") ? "transpiler SKIP: regel: keurder — " : "")
+                            + DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", w.getValue()).text(), e.getMessage(), what);
                     continue;
                 }
                 List<String> verdicts = CaseRunner.playCases(ir, contents, branch, false);
@@ -83,7 +82,7 @@ class OpenValuesRefWitnessTest {
                 }
             }
         }
-        // the cases of the twenty-seven witnesses that play, on two branches, counted 2026-11-22
-        assertEquals(2 * 120, played);
+        // the cases of the thirty-one witnesses that play, on two branches, counted 2026-11-22
+        assertEquals(2 * 137, played);
     }
 }

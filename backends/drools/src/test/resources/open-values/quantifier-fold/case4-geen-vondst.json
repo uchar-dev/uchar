@@ -1,0 +1,84 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": []
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "kundig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "licht"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "eenmaal"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "tweemaal"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "hoogstens"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "eenling"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "ongewogen"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "toeslag",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "gewogen"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "gemengd"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "keurder"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "zwaarte",
+      "label": "J1",
+      "code": "EF-025"
+    }
+  ]
+}

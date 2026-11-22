@@ -174,7 +174,7 @@ public final class DroolsBackend {
      *  @throws CaseRunner.Excluded   a form the backend does not carry past the loader: a document that carries
      *      {@code inferFromEmpty: false} and a form whose reading of RUNTIME-SEMANTICS ch. 1.5 this backend does not
      *      carry, or a build with readings of such a document ({@code DROOLS-370} with the slug of the form,
-     *      {@code UncarriedForms}, before a bean is generated), two declarations on one
+     *      {@code UncarriedForms}, before a bean is generated or where the analysis lowers it), two declarations on one
      *      Java name of the bean model, a reciprocal self-relation the bean model cannot hold, a bean-contract
      *      violation, a construct the analysis does not lower, a cycle of the dependency graph that WF-045 or WF-046
      *      forbids, two rules of one name, and on the DRL-text branch a kind its rendering does not carry

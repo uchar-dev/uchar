@@ -1,0 +1,71 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "gift": {
+            "number": "20"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "giftdeel",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "gul"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "karig"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "krap"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.cases;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -28,9 +29,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * A document that carries {@code inferFromEmpty: false} and holds a form whose reading of RUNTIME-SEMANTICS ch. 1.5 this
  * backend does not carry is refused by the build, {@link DroolsBackend#build}, with DROOLS-370 and the slug of that
  * form ({@code UncarriedForms}): on both branches, with and without readings, before anything is built, and the CLI
- * reports it in the status line {@code EXCLUDE DROOLS-370: <sentence>}. The fixture is the witness {@code set-fold} of
- * the reference interpreter, whose folds over a set come first of its forms in that list; the same document without
- * the property builds and plays. The list opens with the table "Forms without the reading" of ch. 1.5, in its
+ * reports it in the status line {@code EXCLUDE DROOLS-370: <sentence>}. The fixture is the witness {@code object-creation}
+ * of the reference interpreter; the same document without
+ * the property builds and plays. The forms the analysis refuses where it lowers them, a fold outside the narrow bound this
+ * backend carries, each have a document here, beside its neighbour that is carried. The list opens with the table "Forms without the reading" of ch. 1.5, in its
  * order, and the build with readings refuses a document whose forms this backend carries with the slug
  * {@code reading}.
  */
@@ -39,17 +41,17 @@ class InferFromEmptyRefusalWitnessTest {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     /** cwd under surefire is the module dir (backends/drools); ref stands two levels up. */
-    private static final Path WITNESS = Path.of("..", "..", "ref", "test", "fixtures", "strict-empty", "set-fold");
+    private static final Path WITNESS = Path.of("..", "..", "ref", "test", "fixtures", "strict-empty", "object-creation");
 
     /** A case in which every value is filled, so the reading of an empty value decides nothing in it. */
-    private static final Path CASE = WITNESS.resolve("case1-volledig.json");
+    private static final Path CASE = WITNESS.resolve("case2-onervaren.json");
 
     private static ObjectNode witness() throws Exception {
         return (ObjectNode) JSON.readTree(Files.readString(WITNESS.resolve("ir.json")));
     }
 
     private static String sentence() {
-        return DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "set-fold").text();
+        return DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "object-creation").text();
     }
 
     @Test void the_build_refuses_the_document_on_both_branches_with_and_without_readings() throws Exception {
@@ -154,10 +156,74 @@ class InferFromEmptyRefusalWitnessTest {
 
     /** WV-1.5-let-in-composite-quantifier-fold-*: the same in the filter and in the matrix of a quantifier fold, the
      *  rules 0, 1 and 2 of the golden {@code jutterswet-grens-per-jutter} with the property; its rule 3 reads the binder
-     *  in the filter of a count and holds a fold over a set, which is this backend's own slug. */
+     *  in the filter of a count, no quantifier fold. */
     @Test void a_let_read_in_a_quantifier_fold_is_named() throws Exception {
         for (int rule : List.of(0, 1, 2)) assertEquals("let-in-composite", first(grens(rule)), "rule " + rule);
-        assertEquals("set-fold", first(grens(3)));
+        assertEquals(null, first(grens(3)));
+    }
+
+    /** {@code set-fold}: a fold over a set whose filter reads a member that can be open and divides, of one selection and of
+     *  a union whose other selection reads one; one whose filter holds a fold that can be open; and a sum whose fallback
+     *  reads a member that can be open. Where every input is complete, nothing can be open, and the document is carried. */
+    @Test void a_fold_over_a_set_outside_the_bound_is_refused() throws Exception {
+        refused("set-fold", "zware vondsten", golden("fold-filter-divides-by-zero"));
+        refused("set-fold", "unietelling", golden("jutterswet-kwantorvouw-en-unie"));
+        refused("set-fold", "eerste schone maand vanaf de eindmaand", golden("fold-filter-inner-fold-via-element-role"));
+        ObjectNode fallback = fixture("set-fold");
+        ObjectNode sum = (ObjectNode) fallback.at("/rules/rules/7/versions/0/value");
+        assertEquals("sum", sum.get("kind").asText(), "the aangemeld gewicht, which has a fallback");
+        sum.set("emptyFallback", fallback.at("/rules/rules/1/versions/0/target").deepCopy());
+        refused("set-fold", "aangemeld gewicht", fallback);
+    }
+
+    /** {@code quantifier-fold}: one whose filter reads a member that can be open, and one whose matrix reads one and
+     *  divides. A filter that stands, over the same matrix without the division, is carried ({@code OpenValuesWitnessTest}). */
+    @Test void a_quantifier_fold_outside_the_bound_is_refused() throws Exception {
+        refused("quantifier-fold", "keurig bij sterkte", golden("jutterswet-vuurtoren"));
+        ObjectNode divides = fixture("quantifier-fold");
+        ObjectNode matrix = (ObjectNode) divides.at("/rules/rules/0/versions/0/condition/test");
+        ObjectNode division = JSON.createObjectNode();
+        division.put("node", "Binary").put("op", "dividedBy").set("left", matrix.get("left").deepCopy());
+        division.set("right", ((ObjectNode) matrix.get("left")).deepCopy().put("attribute", "schade"));
+        division.set("type", JSON.readTree(NUMBER));
+        matrix.set("left", division);
+        refused("quantifier-fold", "kundig", divides);
+    }
+
+    /** {@code anchored-read}: an anchored read of an input member that can be open, in the filter of a fold. */
+    @Test void an_anchored_read_of_an_open_input_is_refused() throws Exception {
+        refused("anchored-read", "hoogste latere tarief", golden("jutterswet-registervoorrang"));
+    }
+
+    /** {@code ir} is refused on both branches with {@code slug}, in the sentence of its rule {@code rule}, and is built once
+     *  every input is complete. */
+    private static void refused(String slug, String rule, ObjectNode ir) {
+        String sentence = DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", slug).text();
+        ObjectNode complete = ir.deepCopy();
+        for (JsonNode list : List.of("attributes", "characteristics").stream()
+                .flatMap(k -> complete.at("/model/objectTypes").findValues(k).stream()).toList())
+            for (JsonNode member : list) ((ObjectNode) member).put("complete", true);
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+            CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                    () -> DroolsBackend.build(ir.deepCopy(), branch, false), () -> branch + " " + rule);
+            assertEquals(DroolsCode.INFER_FROM_EMPTY_FALSE, e.code(), rule);
+            assertEquals("transpiler SKIP: regel: " + rule + " — " + sentence, e.getMessage());
+            DroolsBackend.build(complete.deepCopy(), branch, false);
+        }
+    }
+
+    /** The golden {@code name} with the property. */
+    private static ObjectNode golden(String name) throws Exception {
+        ObjectNode ir = (ObjectNode) JSON.readTree(Files.readString(
+                Path.of("..", "..", "corpus", "golden", name, "ir.json")));
+        ir.put("inferFromEmpty", false);
+        return ir;
+    }
+
+    /** The document of the fixture {@code name} of {@code OpenValuesWitnessTest}. */
+    private static ObjectNode fixture(String name) throws Exception {
+        return (ObjectNode) JSON.readTree(Files.readString(
+                Path.of("src", "test", "resources", "open-values", name, "ir.json")));
     }
 
     /** WV-1.5-let-in-composite-not-*: a Let whose binder is read in a first member only, outside every condition, under

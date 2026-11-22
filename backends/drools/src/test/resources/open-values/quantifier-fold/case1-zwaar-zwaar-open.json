@@ -1,0 +1,106 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": [
+            "V1",
+            "V2",
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "30"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicOpen",
+      "label": "J1",
+      "characteristic": "kundig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "licht"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "eenmaal"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "tweemaal"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "hoogstens"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "eenling"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "ongewogen"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "toeslag"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "J1",
+      "characteristic": "gewogen"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "J1",
+      "characteristic": "gemengd"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

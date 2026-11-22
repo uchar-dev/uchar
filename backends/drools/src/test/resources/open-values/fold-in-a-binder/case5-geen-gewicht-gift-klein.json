@@ -1,0 +1,73 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "gift": {
+            "number": "3"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "giftdeel"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "J1",
+      "characteristic": "gul"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "karig"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "krap"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "giftdeel",
+      "label": "J1",
+      "code": "EF-005"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "gul",
+      "label": "J1",
+      "code": "EF-005"
+    }
+  ]
+}

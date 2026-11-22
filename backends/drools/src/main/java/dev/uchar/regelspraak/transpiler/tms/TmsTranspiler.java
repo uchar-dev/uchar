@@ -2186,7 +2186,7 @@ public final class TmsTranspiler {
                     fieldRange(pair, reads.subject, elem, snippet(f.source())).perRoute());
             contributionRules(key, name, Expr.FunctionKind.SOM, reads.subject, elem, range, 0,
                     null, a, null, null, rules, readings, true);
-            return new Fold(key, List.copyOf(rules), List.copyOf(readings), false, false, false, false, true);
+            return new Fold(key, List.copyOf(rules), List.copyOf(readings), false, false, false, false, true, false, false);
         });
         int[] i = reads.fold(v, Accumulation.Kind.LIST);
         Term fallback = constant(null);
@@ -2788,8 +2788,9 @@ public final class TmsTranspiler {
     }
 
     /** How the evaluation of a condition or a value can end beside its outcome: in an evaluation fault, and in an open
-     *  read, so that a condition's judgement can be undetermined (RUNTIME-SEMANTICS ch. 1.5). */
-    private record Ends(boolean fault, boolean open) {}
+     *  read, so that a condition's judgement can be undetermined (RUNTIME-SEMANTICS ch. 1.5); {@code closes} where it can
+     *  apply a closure to an open value, so that its outcome can stand for the form itself alone. */
+    private record Ends(boolean fault, boolean open, boolean closes) {}
 
     /** A part of a condition as a term, and whether it reads a member that can be open ({@link Reads#opened}). */
     private record Opened(Term term, boolean open) {}
@@ -2800,7 +2801,8 @@ public final class TmsTranspiler {
      * form itself ({@code DECIDES}). A writer acts ({@code ACTS}) where it decides and where the condition neither holds
      * for the form itself nor fails for another, so that the writer leaves its target open; which of the two, its
      * consequence says ({@link #writer}). Where the condition fails for another form, the form fills nothing, and its
-     * rule does not fire. Beside these the condition can fault ({@code FAULTS}) and deposit ({@code DEPOSITS}).
+     * rule does not fire; a member of a fold acts on the filter in the same way. Beside these the condition can fault
+     * ({@code FAULTS}) and deposit ({@code DEPOSITS}).
      * {@link Reads#conditionTest} turns each into a test.
      */
     private enum Asked { DECIDES, ACTS, FAULTS, DEPOSITS }
@@ -5912,20 +5914,12 @@ public final class TmsTranspiler {
      *  fold, whether its matrix can fault and whether it can deposit,
      *  in which case its contributions carry a {@link MemberTest} ({@link #quantifierFold}); and for a per-element fold over
      *  an attribute on a timeline, that a member's value can fault, in which case the rule that reads it binds its
-     *  {@link MemberFault} facts as well ({@link #memberFaultRule}). */
+     *  {@link MemberFault} facts as well ({@link #memberFaultRule}); and whether a member can leave it open what the member
+     *  gives the fold ({@code canBeOpen}, RUNTIME-SEMANTICS ch. 1.5), in which case that rule lists its {@link FoldOpen}
+     *  facts, and whether a closure can decide what a member gives it ({@code closes}). */
     record Fold(String key, List<RulePlan> rules, List<Reads> readings, boolean canFail,
-                boolean deposits, boolean memberCanFail, boolean memberDeposits, boolean valueCanFail) {
-        /** A fold over a set source or a union: no matrix per member. */
-        Fold(String key, List<RulePlan> rules, List<Reads> readings, boolean canFail, boolean deposits) {
-            this(key, rules, readings, canFail, deposits, false, false, false);
-        }
-
-        /** A quantifier fold: a matrix per member, and no value per member. */
-        Fold(String key, List<RulePlan> rules, List<Reads> readings, boolean canFail, boolean deposits,
-             boolean memberCanFail, boolean memberDeposits) {
-            this(key, rules, readings, canFail, deposits, memberCanFail, memberDeposits, false);
-        }
-
+                boolean deposits, boolean memberCanFail, boolean memberDeposits, boolean valueCanFail, boolean canBeOpen,
+                boolean closes) {
         /** Whether the rule that reads the fold replays its contributors in order: a quantifier fold whose matrix can
          *  fault or deposit ({@link MemberTest}). */
         boolean ordered() {
@@ -6142,6 +6136,11 @@ public final class TmsTranspiler {
      * the member in the same way: the reference interpreter evaluates the filter with this rule's collector, so the
      * deposit is this rule's, on its subject, where its evaluation reaches the fold ({@link #readFold}).
      *
+     * <p>A member that can be open to the fold, its filter undetermined or its value open, is a {@link FoldOpen}, and one
+     * that a closure decided as well (RUNTIME-SEMANTICS ch. 1.5, "A fold over a set", "A closure inside a value"). This rule
+     * lists those facts, and the fold's value reads the list with the count, after the faults of the filter and before the
+     * fallback ({@link Reads#standingCount}).
+     *
      * <p>A total without a range reads the subject's own timeline ({@link #ownTotal}). A sum or a total over a member
      * on a timeline folds twice (RUNTIME-SEMANTICS ch. 3.6, the per-element fold): each member's timeline collapses over
      * time first, on its own grid, in the contribution rule, which contributes that scalar, and a member without a
@@ -6157,7 +6156,7 @@ public final class TmsTranspiler {
                 && f.arguments().get(0) instanceof Expr.InstanceSetUnion u) {
             Fold v = unionFold(f, u, reads);
             int[] i = reads.fold(v, null);
-            return readFold(v, i, reads, new Term.Call(StaticFunction.COUNT, List.of(new Term.SlotValue(i[0], null)), fragment),
+            return readFold(v, i, reads, new Term.Call(StaticFunction.COUNT, List.of(reads.standingCount(v, i)), fragment),
                     fragment);
         }
         ObjectType elem = f.elementObjectType();
@@ -6218,11 +6217,11 @@ public final class TmsTranspiler {
         Fold v = foldFor(f, reads, (key, name) -> {
             List<RulePlan> rules = new ArrayList<>();
             List<Reads> readings = new ArrayList<>();
-            boolean canFail = contributionRules(key, name, kind, reads.subject, elem, range(f, reads.subject, elem), 0,
+            Ends ends = contributionRules(key, name, kind, reads.subject, elem, range(f, reads.subject, elem), 0,
                     f.filter(), member, labels, constructor, rules, readings, false);
             refuseMixedDeposits(name, Collections.singletonList(f.filter()));
-            return new Fold(key, List.copyOf(rules), List.copyOf(readings), canFail, deposits(f.filter()), false, false,
-                    timelineMember);
+            return new Fold(key, List.copyOf(rules), List.copyOf(readings), ends.fault(), deposits(f.filter()), false, false,
+                    timelineMember, ends.open(), ends.closes());
         });
         Accumulation.Kind function = switch (kind) {
             case SOM, TOTAAL -> Accumulation.Kind.SUM;
@@ -6232,10 +6231,10 @@ public final class TmsTranspiler {
         };
         int[] i = reads.fold(v, function);
         // the fallback restated into the unit of the folded member (RUNTIME-SEMANTICS ch. 2.6)
-        Term fallback = f.emptyFallback() == null ? null : restated(value(f.emptyFallback(), reads),
+        Term fallback = f.emptyFallback() == null ? null : restated(settled(() -> value(f.emptyFallback(), reads), reads),
                 eff.unitOf(f.emptyFallback()), arg == null ? null : eff.unitOf(f.arguments().get(0)),
                 DroolsCode.UNIT_CONFLICT.part("empty-fallback"));
-        Term itemCount = new Term.SlotValue(i[0], null);
+        Term itemCount = reads.standingCount(v, i);
         // over no contribution a sum is its fallback or leeg, a total 0 and an ordering fold leeg
         Term outcome = switch (kind) {
             case AANTAL, AANTAL_GEVULDE -> new Term.Call(StaticFunction.COUNT, List.of(itemCount), fragment);
@@ -6244,6 +6243,19 @@ public final class TmsTranspiler {
             default -> foldValue(itemCount, i[1], constant(null), fragment);
         };
         return readFold(v, i, reads, outcome, fragment);
+    }
+
+    /** The fallback of a sum, which {@code compile} compiles; one that reads a member that can be open is refused by name. */
+    private static Term settled(Supplier<Term> compile, Reads reads) {
+        Opened fallback = reads.opened(compile);
+        if (fallback.open()) throw uncarried("set-fold");
+        return fallback.term();
+    }
+
+    /** The refusal of a form whose reading of RUNTIME-SEMANTICS ch. 1.5 this backend does not carry where it reads a member
+     *  that can be open, by its slug of {@code UncarriedForms}. */
+    private static Refusal uncarried(String slug) {
+        return new Refusal(DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", slug));
     }
 
     /** The value of a fold from the count {@code count} and the folded value at slot {@code value}, with
@@ -6714,20 +6726,26 @@ public final class TmsTranspiler {
         return foldFor(f, reads, (key, name) -> {
             List<RulePlan> rules = new ArrayList<>();
             List<Reads> readings = new ArrayList<>();
-            boolean canFail = false, deposits = false;
+            boolean deposits = false;
+            Ends ends = new Ends(false, false, false);
             List<Condition> filters = new ArrayList<>();
             for (int k = 0; k < u.branches().size(); k++) {
                 Expr.InstanceSetUnion.Branch t = u.branches().get(k);
                 if (t.elementType() == null)
                     throw new Refusal(DroolsCode.UNION_BRANCH_WITHOUT_TYPE.reason("snippet", snippet(t.source())));
-                canFail |= contributionRules(key, name + ", selectie " + k, Expr.FunctionKind.AANTAL, subject,
+                Ends own = contributionRules(key, name + ", selectie " + k, Expr.FunctionKind.AANTAL, subject,
                         t.elementType(), oneStepRange(t.sourceRole(), subject, t.elementType(), snippet(t.source())), k,
                         t.filter(), null, null, null, rules, readings, false);
+                ends = new Ends(ends.fault() || own.fault(), ends.open() || own.open(), ends.closes() || own.closes());
                 deposits |= deposits(t.filter());
                 filters.add(t.filter());
             }
+            // the filters are read in the order of the selections: a fault of one after an open read of another does not
+            // arise, and the facts of the two have no order between them
+            if (ends.open() && (ends.fault() || deposits)) throw uncarried("set-fold");
             refuseMixedDeposits(name, filters);
-            return new Fold(key, List.copyOf(rules), List.copyOf(readings), canFail, deposits);
+            return new Fold(key, List.copyOf(rules), List.copyOf(readings), ends.fault(), deposits, false, false, false,
+                    ends.open(), ends.closes());
         });
     }
 
@@ -6742,9 +6760,14 @@ public final class TmsTranspiler {
      * ({@link #filterDepositRule}); {@code selection} is the number of the selection of an instance-set union, 0 for any
      * other fold. Where {@code whole}, the fold is the sum per period of RUNTIME-SEMANTICS ch. 3.5 and a member's value is
      * its whole timeline ({@link #periodSum}). The rules go into {@code out} and their reads into {@code readings}, to be
-     * registered with the form; returns whether the filter can fault.
+     * registered with the form; returns whether the filter can fault, whether the member can be open to the fold, its filter
+     * undetermined or its value open, and whether a closure can decide it (RUNTIME-SEMANTICS ch. 1.5, "A fold over a set").
+     * Such a member inserts its {@link FoldOpen} in the same rule, beside or in place of its contribution. Refused by name:
+     * a filter that can be undetermined and can fault or deposit, whose first fault in fold order is told from the members
+     * that are undetermined before it by their places, which the contribution does not carry, and a fold nested in a filter
+     * that can be open.
      */
-    private boolean contributionRules(String key, String name, Expr.FunctionKind kind, ObjectType subject,
+    private Ends contributionRules(String key, String name, Expr.FunctionKind kind, ObjectType subject,
                                    ObjectType elem, Range range, int selection, Condition filter,
                                    Expr.AttributeReference arg, List<String> cell, String payload, List<RulePlan> out,
                                    List<Reads> readings, boolean whole) {
@@ -6753,6 +6776,8 @@ public final class TmsTranspiler {
         Term testTerm = filter == null ? null : conditionTerm(filter, reads);
         Ends ends = reads.ends();
         reads.stop();
+        if (ends.open() && (ends.fault() || deposits(filter)) || reads.folds.stream().anyMatch(Fold::canBeOpen))
+            throw uncarried("set-fold");
         Set<Integer> use = reads.follow();
         int member = reads.member();
         // a member on a timeline contributes its own total over time (RUNTIME-SEMANTICS ch. 3.6, the per-element fold);
@@ -6777,15 +6802,22 @@ public final class TmsTranspiler {
         int value = memberValue == null ? -1 : memberValue.time() == null ? reads.own(memberValue) : reads.timeline(memberValue);
         String total = memberValue == null || memberValue.time() == null || whole ? null : memberValue.time().name();
         String fixed = total == null ? null : memberValue.declarant().fixedStartPointOf(memberValue.name());
+        boolean openValue = memberValue != null && openable.contains(memberValue.key());
+        int openInput = openValue && !writers.containsKey(memberValue.key()) ? reads.openInput() : -1;
         reads.stop();
-        List<LhsItem> items = reads.plan(Asked.DECIDES, ends, testTerm, read);
-        Consequence.Input input = kind == Expr.FunctionKind.AANTAL ? new Consequence.Input.Count()
-                : new Consequence.Input.MemberValue(value, total, fixed, kind == Expr.FunctionKind.AANTAL_GEVULDE, cellKey,
-                        payload, whole);
+        List<LhsItem> items = reads.plan(Asked.ACTS, ends, testTerm, read);
+        Consequence.Input input = new Consequence.Input.Count();
+        if (kind != Expr.FunctionKind.AANTAL) {
+            Consequence.Input.MemberValue of = new Consequence.Input.MemberValue(value, total, fixed,
+                    kind == Expr.FunctionKind.AANTAL_GEVULDE, cellKey, payload, whole);
+            input = openInput < 0 ? of : new Consequence.Input.IncompleteInput(of, openInput, memberValue.key());
+        }
+        if (ends.open()) use.addAll(read);
+        Consequence.Contribution contribution = new Consequence.Contribution(FOLD_SUBJECT, key, member, input,
+                List.copyOf(use), reads.size(), Consequence.Insertion.LOGICAL);
         String formName = model.emittedRuleName(form);
         out.add(as(RuleOrigin.Role.FOLD_CONTRIBUTION, reads.rulePlan(formName + ": bijdrage aan " + name, items,
-                new Consequence.Contribution(FOLD_SUBJECT, key, member, input, List.copyOf(use), reads.size(),
-                        Consequence.Insertion.LOGICAL))));
+                ends.open() ? new Consequence.FilteredContribution(testTerm, contribution) : contribution)));
         readings.add(reads);
         if (ends.fault()) out.add(filterFaultRule(key, formName + ": filterfout in " + name, subject, elem, range,
                 selection, filter, readings::add));
@@ -6795,7 +6827,8 @@ public final class TmsTranspiler {
                 elem, range, selection, filter, memberValue, readings::add, MemberFaultKind.OPEN_SEGMENT));
         if (deposits(filter)) out.add(filterDepositRule(key, formName + ": filterdeponering in " + name, subject,
                 elem, range, filter, readings::add));
-        return ends.fault();
+        return new Ends(ends.fault(), ends.open() || openValue,
+                ends.closes() || openValue && kind == Expr.FunctionKind.AANTAL_GEVULDE);
     }
 
     /**
@@ -7240,7 +7273,7 @@ public final class TmsTranspiler {
             case Condition.CharacteristicCheck k -> characteristicCheck(k, reads);
             case Condition.IdentityCheck i -> identityCheck(i, reads);
             case Condition.Compound s -> compound(s, reads);
-            case Condition.Comparison v -> comparison(v, reads);
+            case Condition.Comparison v -> atom(() -> comparison(v, reads), reads);
             case Condition.Predicate p -> predicate(p, reads);
             case Condition.TimeWindow p -> timeWindow(p, reads);
             case Condition.QuantifierFold q -> quantifierFold(q, reads);
@@ -7258,6 +7291,17 @@ public final class TmsTranspiler {
         };
         note(c, t);
         return t;
+    }
+
+    /** The atomic condition {@code compile} gives, over values: where a fold inside it can apply a closure to an open value,
+     *  its judgement is that of a boundary of its own (RUNTIME-SEMANTICS ch. 1.5, "A closure inside a value"). */
+    private static Term atom(Supplier<Term> compile, Reads reads) {
+        boolean outer = reads.closes;
+        reads.closes = false;
+        Term t = compile.get();
+        boolean closes = reads.closes;
+        reads.closes |= outer;
+        return closes ? new Term.Call(StaticFunction.ATOM, List.of(new Term.Deferred(t, null)), t.source()) : t;
     }
 
     /** The identity check (IR-SPEC ch. 4.5, WF-122; RUNTIME-SEMANTICS ch. 3.4a): whether the member, the subject of the
@@ -7591,7 +7635,9 @@ public final class TmsTranspiler {
      * value changes takes its contribution along, and an accumulate over the contributions in the left-hand side of the
      * rule that reads the fold. Where the matrix can neither fault nor deposit, a contribution carries 1 or 0 for the
      * matrix's verdict and the accumulate counts the contributors and sums the verdicts: the order of the members is then
-     * invisible, and the verdict a call over the count and the sum ({@link StaticFunction#QUANTIFIER_VERDICT}). Where it can, the
+     * invisible, and the verdict a call over the count and the sum ({@link StaticFunction#QUANTIFIER_VERDICT}), with the list of
+     * the {@link FoldOpen} facts of the members on which it does not stand where it can be undetermined (ch. 1.5,
+     * {@link StaticFunction#QUANTIFIER_VERDICT_OVER_OPEN}). Where it can fault or deposit, the
      * order shows (ch. 5.10, 5.11): the reference interpreter reads the matrix in the contributors' order and stops at
      * the first contributor after which the verdict stands, so a contributor it does not reach raises no fault and
      * deposits nothing. A contribution then carries the matrix's outcome and the member's place ({@link MemberTest}), the
@@ -7617,8 +7663,12 @@ public final class TmsTranspiler {
         String source = source(kv.source());
         if (!v.ordered()) {
             int[] i = reads.fold(v, Accumulation.Kind.SUM);
-            return readFold(v, i, reads, new Term.Call(StaticFunction.QUANTIFIER_VERDICT, List.of(new Term.SlotValue(i[0], null),
-                    new Term.SlotValue(i[1], null), constant(kw), constant(threshold)), source), source);
+            Term count = new Term.SlotValue(i[0], null), holding = new Term.SlotValue(i[1], null);
+            if (!v.canBeOpen()) return readFold(v, i, reads, new Term.Call(StaticFunction.QUANTIFIER_VERDICT,
+                    List.of(count, holding, constant(kw), constant(threshold)), source), source);
+            reads.markOpen(v.closes());
+            return readFold(v, i, reads, new Term.Call(StaticFunction.QUANTIFIER_VERDICT_OVER_OPEN, List.of(count, holding,
+                    new Term.SlotValue(i[5], null), constant(kw), constant(threshold)), source), source);
         }
         int[] i = reads.fold(v, Accumulation.Kind.LIST);
         if (v.memberCanFail()) reads.markFail();
@@ -7640,7 +7690,10 @@ public final class TmsTranspiler {
      * range is {@link #pathRange}'s; where a member can be reached along more than one route, the contribution rule
      * of a matrix that can fault or deposit would bind the member once per route, each at its own place, and the
      * replay ({@link ComputeHelpers#quantifierRead}) would read it as often, where the reference interpreter reads it
-     * once, at its first route (RUNTIME-SEMANTICS ch. 3.4b, 5.11): that shape is refused.
+     * once, at its first route (RUNTIME-SEMANTICS ch. 3.4b, 5.11): that shape is refused. A member on which the matrix
+     * does not stand inserts a {@link FoldOpen} in place of its contribution (ch. 1.5, "A quantifier fold"); refused by name
+     * are a filter that can be undetermined and a matrix that can be and that can fault or deposit, since what such a fold
+     * deposits and where it faults depends on the order of the members, which that fact does not carry.
      */
     private Fold quantifierContributions(Condition.QuantifierFold kv, String key, String name, ObjectType subject,
                                   ObjectType elem) {
@@ -7655,14 +7708,17 @@ public final class TmsTranspiler {
         Term filter = kv.filter() == null ? null : conditionTerm(kv.filter(), reads);
         Ends filterEnds = reads.ends();
         reads.stop();
+        if (filterEnds.open()) throw uncarried("quantifier-fold");
         Set<Integer> use = reads.follow();
         int member = reads.member();
         Term matrix = conditionTerm(kv.test(), reads);
-        boolean memberCanFail = reads.ends().fault();
+        Ends matrixEnds = reads.ends();
+        boolean memberCanFail = matrixEnds.fault();
         reads.stop();
         boolean memberDeposits = deposits(kv.test());
         int depositFlag = reads.depositFlagSlot();
         boolean ordered = memberCanFail || memberDeposits;
+        if (ordered && matrixEnds.open()) throw uncarried("quantifier-fold");
         List<Consequence.FoldPlace.Step> places = new ArrayList<>();
         if (ordered) {
             String manyToMany = path ? manyToManyStep(kv.sourcePath()) : null;
@@ -7683,7 +7739,7 @@ public final class TmsTranspiler {
         Consequence.Input input = ordered
                 ? new Consequence.Input.MemberTest(matrix, depositFlag, new Consequence.FoldPlace(0, places,
                         Consequence.PlaceReason.QUANTIFIER))
-                : new Consequence.Input.Verdict(matrix);
+                : matrixEnds.open() ? new Consequence.Input.Judged(matrix) : new Consequence.Input.Verdict(matrix);
         String formName = model.emittedRuleName(form);
         List<RulePlan> rules = new ArrayList<>();
         List<Reads> readings = new ArrayList<>();
@@ -7698,7 +7754,7 @@ public final class TmsTranspiler {
                 subject, elem, range, kv.filter(), readings::add));
         refuseMixedDeposits(name, Collections.singletonList(kv.filter()));
         return new Fold(key, List.copyOf(rules), List.copyOf(readings), filterEnds.fault(), filterDeposits, memberCanFail,
-                memberDeposits);
+                memberDeposits, false, matrixEnds.open(), matrixEnds.closes());
     }
 
     /**
@@ -7784,6 +7840,7 @@ public final class TmsTranspiler {
                 Opened operand = reads.opened(() -> value(p.operand(), reads));
                 boolean empty = p.kind() == Condition.PredicateKind.LEEG;
                 // over an operand whose evaluation reads an open value the test is a closure (RUNTIME-SEMANTICS ch. 1.5)
+                reads.closes |= operand.open();
                 return operand.open()
                         ? new Term.ClosureOverOpen(new Term.Deferred(operand.term(), null), empty, reads.depositFlagSlot(),
                                 source(p.source()))
@@ -7791,7 +7848,7 @@ public final class TmsTranspiler {
                                 source(p.source()));
             }
             case NUMERIEK_MET_EXACT -> {
-                return digitTrial(p, reads);
+                return atom(() -> digitTrial(p, reads), reads);
             }
             // a day kind is consulted as a classifier of a bare date before the rule graph, never as a read inside the
             // fixpoint (ch. 5.4); inside a day-kind definition the test is the definition's own (dagsoortpredikaat)
@@ -7866,9 +7923,9 @@ public final class TmsTranspiler {
         private final Set<String> channelNames = new LinkedHashSet<>();
         /** The indices the expression being compiled reads, or null outside such a compilation. */
         private Set<Integer> use;
-        /** Whether an expression compiled since the last {@link #follow} can raise an evaluation fault, and whether it
-         *  reads a member that can be open ({@link OpenableMembers}). */
-        private boolean fail, open;
+        /** Whether an expression compiled since the last {@link #follow} can raise an evaluation fault, whether it
+         *  reads a member that can be open ({@link OpenableMembers}), and whether it can apply a closure to one. */
+        private boolean fail, open, closes;
         /** The planned items before the subject pattern: the pattern of the source of an allocation's recipient rule,
          *  and of the fold's subject in a contribution rule ({@link #addToHeadPlan}). */
         private final List<LhsItem> headPlan = new ArrayList<>();
@@ -8126,6 +8183,7 @@ public final class TmsTranspiler {
             use = new TreeSet<>();
             fail = false;
             open = false;
+            closes = false;
             return use;
         }
 
@@ -8137,7 +8195,14 @@ public final class TmsTranspiler {
         /** How the evaluation of what compiled since the last {@link #follow} can end beside its outcome: a condition
          *  that can fault is tested without its fault, beside the rule that inserts it, and one whose judgement can be
          *  undetermined beside the rule of the open outcome ({@link #conditionTest}). */
-        Ends ends() { return new Ends(fail, open); }
+        Ends ends() { return new Ends(fail, open, closes); }
+
+        /** Records that the expression being compiled reads a fold that can be open, and where {@code closes} that a closure
+         *  can decide what a member gives it. */
+        void markOpen(boolean closes) {
+            open = true;
+            this.closes |= closes;
+        }
 
         /** The term {@code compile} gives, and whether it reads a member that can be open. */
         Opened opened(Supplier<Term> compile) {
@@ -8163,6 +8228,7 @@ public final class TmsTranspiler {
         Term own(Member member, String source) {
             int i = own(member);
             if (writers.containsKey(member.key()) || !openable.contains(member.key())) return standing(i, member, source);
+            if (atForm) throw uncarried("anchored-read");
             open = true;
             return new Term.Call(StaticFunction.READ_INPUT, List.of(new Term.SlotValue(i, null),
                     new Term.SlotValue(openInput(), null), new Term.SlotValue(member(), null), constant(member.key())), source);
@@ -8203,11 +8269,12 @@ public final class TmsTranspiler {
          * where the fold's filter can fault, a second accumulate over its {@link FilterFault} facts on this subject, which
          * binds the least of them, the first in fold order, or null; where the filter can deposit, an accumulate that
          * lists its {@link FilterDeposit} facts on this subject; and where a member's value can fault, an
-         * accumulate over its {@link MemberFault} facts on this subject, which binds the least of them in the same way.
+         * accumulate over its {@link MemberFault} facts on this subject, which binds the least of them in the same way;
+         * and where a member can be open to the fold, an accumulate that lists its {@link FoldOpen} facts on this subject.
          * Returns the index of the count, that of the folded value, that of the least filter fault, that of the list of
-         * filter deposits and that of the least member fault, each -1 without one. An accumulate over no fact still binds
-         * a row, through the count, so the rule reads an empty fold, and a fold without a filter fault, a filter deposit
-         * or a member fault, as well.
+         * filter deposits, that of the least member fault and that of the list of the open members, each -1 without one. An
+         * accumulate over no fact still binds a row, through the count, so the rule reads an empty fold, and a fold without
+         * a filter fault, a filter deposit, a member fault or an open member, as well.
          */
         int[] fold(Fold v, Accumulation.Kind function) {
             folds.add(v);
@@ -8216,7 +8283,8 @@ public final class TmsTranspiler {
             if (known >= 0) return new int[]{known, function == null ? -1 : existing("vouwwaarde " + key),
                     v.canFail() ? existing("filterfout " + key) : -1,
                     v.deposits() ? existing("filterdeponering " + key) : -1,
-                    v.valueCanFail() ? existing("lidfout " + key) : -1};
+                    v.valueCanFail() ? existing("lidfout " + key) : -1,
+                    v.canBeOpen() ? existing("open leden " + key) : -1};
             String b = "$bijdrage_" + id("vouw");
             Alpha ofFold = equal(id("vouw"), "fold", key);
             Join onSubject = onSubjectHere(id("vouw-onderwerp"));
@@ -8225,7 +8293,7 @@ public final class TmsTranspiler {
             if (function == null) {
                 states(new Accumulation(new FactPattern(Contribution.class, b, List.of(ofFold), List.of(onSubject), List.of()),
                         List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, itemCount))));
-                out = new int[]{allocateSlot(ReadKind.FOLD_COUNT, "vouw " + key, itemCount), -1, -1, -1, -1};
+                out = new int[]{allocateSlot(ReadKind.FOLD_COUNT, "vouw " + key, itemCount), -1, -1, -1, -1, -1};
             } else {
                 String contributionValue = "$bijdragewaarde_" + id("vouw");
                 String outcome = "$vouw_" + id("vouw");
@@ -8234,7 +8302,7 @@ public final class TmsTranspiler {
                         List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, itemCount),
                                 new Accumulation.Aggregation(function, contributionValue, outcome))));
                 out = new int[]{allocateSlot(ReadKind.FOLD_COUNT, "vouw " + key, itemCount),
-                        allocateSlot(ReadKind.FOLDED_VALUE, "vouwwaarde " + key, outcome), -1, -1, -1};
+                        allocateSlot(ReadKind.FOLDED_VALUE, "vouwwaarde " + key, outcome), -1, -1, -1, -1};
             }
             if (v.canFail()) {
                 String f = "$filterfout_" + id("vouw");
@@ -8268,7 +8336,26 @@ public final class TmsTranspiler {
                         new Accumulation.Aggregation(Accumulation.Kind.MINIMUM, null, earliest))));
                 out[4] = allocateSlot(ReadKind.MEMBER_FAULT, "lidfout " + key, earliest);
             }
+            if (v.canBeOpen()) {
+                String o = "$openlid_" + id("vouw");
+                Alpha ofOpen = equal(id("openlid"), "fold", key);
+                Join openOnSubject = onSubjectHere(id("openlid-onderwerp"));
+                String members = "$openleden_" + id("vouw");
+                states(new Accumulation(new FactPattern(FoldOpen.class, o, List.of(ofOpen), List.of(openOnSubject), List.of()),
+                        List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, members))));
+                out[5] = allocateSlot(ReadKind.FOLD_OPEN, "open leden " + key, members);
+            }
             return out;
+        }
+
+        /** The count of the contributions to {@code v}, a fold over a set bound at {@code i} ({@link #fold}): the bound
+         *  count, and where the fold can be open, through the read that breaks the evaluation off where it is
+         *  ({@link StaticFunction#STANDING_COUNT}). */
+        Term standingCount(Fold v, int[] i) {
+            Term count = new Term.SlotValue(i[0], null);
+            if (!v.canBeOpen()) return count;
+            markOpen(v.closes());
+            return new Term.Call(StaticFunction.STANDING_COUNT, List.of(count, new Term.SlotValue(i[5], null)), null);
         }
 
         /** The session's evaluation date (RUNTIME-SEMANTICS ch. 8.1), bound off its {@link EvaluationDate}: one fact for the
@@ -8852,6 +8939,15 @@ public final class TmsTranspiler {
                 Term z = withoutDepositFlag(f.filter());
                 return z == f.filter() ? f : new Consequence.FilterFault(f.subject(), f.fold(), f.member(), z, f.place(),
                         f.slots(), f.size(), f.insertion());
+            }
+            case Consequence.FilteredContribution f -> {
+                Term z = withoutDepositFlag(f.filter());
+                return z == f.filter() ? f : new Consequence.FilteredContribution(z, f.contributes());
+            }
+            case Consequence.Contribution b when b.input() instanceof Consequence.Input.Judged o -> {
+                Term z = withoutDepositFlag(o.matrix());
+                return z == o.matrix() ? b : new Consequence.Contribution(b.subject(), b.fold(), b.member(),
+                        new Consequence.Input.Judged(z), b.slots(), b.size(), b.insertion());
             }
             case Consequence.Contribution b when b.input() instanceof Consequence.Input.Verdict o -> {
                 Term z = withoutDepositFlag(o.matrix());

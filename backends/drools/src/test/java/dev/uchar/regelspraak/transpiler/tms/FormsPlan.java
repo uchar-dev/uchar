@@ -509,7 +509,15 @@ final class FormsPlan {
             "ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER",
             "java.util.Arrays.asList(\"kustvak\", \"wachter\")", "java.util.Arrays.asList()",
             "new FilterDeposit(", "RuntimeException f = ", "new FilterFault(", "new MemberFault(",
-            "ComputeHelpers.bucketScalarFault(\"hoogte\", ", "ComputeHelpers.placeOf(", "ComputeHelpers.meeting(", "ListPlace(");
+            "ComputeHelpers.bucketScalarFault(\"hoogte\", ", "ComputeHelpers.placeOf(", "ComputeHelpers.meeting(", "ListPlace(",
+            "ComputeHelpers.contribution(\"proefvouw: open som\", $vouwonderwerp, $onderwerp, ComputeHelpers.input($hoogte, "
+                    + "open_invoer, $onderwerp, ", "eval( ComputeHelpers.acts(oordeel_lidwaardeOnderEenOpenFilter(",
+            "for (Object f : ComputeHelpers.contributed(oordeel_lidwaardeOnderEenOpenFilter(", "insertLogical(f);",
+            "\"proefvouw: gefilterde telling\", $vouwonderwerp, $onderwerp, new Contribution(\"proefvouw: gefilterde telling\", ",
+            "insertLogical(ComputeHelpers.judged(\"proefvouw: open oordeel\", $vouwonderwerp, $onderwerp, matrix_openOordeel(",
+            "Object matrix_openOordeel(", "FoldOpen( fold == \"proefvouw: open som\"", "ComputeHelpers.atom(() -> ",
+            "ComputeHelpers.countOf(ComputeHelpers.standingCount($aantal, $openleden))",
+            "ComputeHelpers.quantifierVerdictOverOpen($aantal, $som, $openleden, ");
 
     /**
      * A plan with every consequence of the rules of a fold (step 3a of card drl-teksttak-op-truth-maintenance), over the
@@ -518,8 +526,9 @@ final class FormsPlan {
      * per month and counted where it is filled, the verdict of a matrix, and the test of a matrix with a probe and a
      * place of two steps in the second selection, or without either), the deposit of a filter, the fault of a filter
      * and the fault of a member, each with the accumulates over the places of the steps that the analysis plans beside
-     * them, one through the constraint of a place and one through the constraint of a meeting. No rule of it is meant
-     * to fire.
+     * them, one through the constraint of a place and one through the constraint of a meeting; and of a fold that can be
+     * open (RUNTIME-SEMANTICS ch. 1.5) the contribution of a member whose value is an input that need not be complete, of
+     * one whose filter or matrix can be undetermined, and the rules that read such a fold. No rule of it is meant to fire.
      */
     static Modelplan folds(Class<?> wachter, Class<?> post, Class<?> kustvak) {
         String v = "$vouwonderwerp";
@@ -591,7 +600,57 @@ final class FormsPlan {
                 new Consequence.MemberFault(v, "proefvouw", 1, new Consequence.FoldPlace(0,
                         List.of(new Consequence.FoldPlace.Step("kustvak", 2, 3)), Consequence.PlaceReason.MEMBER_FAULT),
                         null, null, "hoogte", 0, Consequence.Insertion.LOGICAL)));
-        return new Modelplan(List.of(), rules);
+        rules.addAll(openFolds(foldSubject, post, kustvak, height));
+        return new Modelplan(List.of(new Modelplan.Global(Consequence.OPEN_INPUT, OpenInput.class)), rules);
+    }
+
+    /** The rules of a fold that can be open ({@link #folds}). */
+    private static List<RulePlan> openFolds(FactPattern foldSubject, Class<?> post, Class<?> kustvak, Binding height) {
+        String v = "$vouwonderwerp";
+        ElementKey key = ElementKey.of("post", "hoogte", false);
+        Read openInput = new Read(2, ReadKind.OPEN_INPUT, "open invoer", Consequence.OPEN_INPUT);
+        Term read = new Term.Call(StaticFunction.READ_INPUT, List.of(readOf(0), readOf(2), readOf(1),
+                new Term.Const(key, null, null)), "zijn hoogte");
+        Term filter = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(read, number("5"), text(">")), "de hoogte groter dan 5");
+        TestItem filtered = new TestItem("filter", TestItem.Role.ACTS, filter, -1, List.of(0, 1, 2), 3, true);
+        Consequence.Input.IncompleteInput input = new Consequence.Input.IncompleteInput(
+                new Consequence.Input.MemberValue(0, null, null, true, null, null, false), 2, key);
+        List<RulePlan> rules = new ArrayList<>();
+        ReadTable table = table(heightSlot(), memberSlot(1), openInput);
+        rules.add(new RulePlan("open lidwaarde", "proef", null, table, List.of(foldSubject, member(post, v, height)),
+                new Consequence.Contribution(v, "proefvouw: open som", 1, input, List.of(0, 1, 2), 3, Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("lidwaarde onder een open filter", "proef", null, table, List.of(foldSubject, member(post, v, height),
+                filtered), new Consequence.FilteredContribution(filter, new Consequence.Contribution(v, "proefvouw: gefilterde som", 1,
+                input, List.of(0, 1, 2), 3, Consequence.Insertion.LOGICAL))));
+        rules.add(new RulePlan("telling onder een open filter", "proef", null, table, List.of(foldSubject, member(post, v, height),
+                filtered), new Consequence.FilteredContribution(filter, new Consequence.Contribution(v, "proefvouw: gefilterde telling",
+                1, new Consequence.Input.Count(), List.of(0, 1, 2), 3, Consequence.Insertion.LOGICAL))));
+        rules.add(new RulePlan("open oordeel", "proef", null, table, List.of(foldSubject, member(post, v, height)),
+                new Consequence.Contribution(v, "proefvouw: open oordeel", 1, new Consequence.Input.Judged(filter), List.of(0, 1, 2),
+                        3, Consequence.Insertion.LOGICAL)));
+        Subject subject = new Subject(kustvak, O, List.of(), List.of(), List.of());
+        Accumulation fold = new Accumulation(new FactPattern(Contribution.class, "$bijdrage", List.of(new Alpha("vouw", List.of(
+                new Alpha.FieldTest("fold", Alpha.Comparator.GELIJK, "proefvouw: open som")))),
+                List.of(new Join("bijdrage", "subject", O)), List.of(Binding.of("$bijdragewaarde", Contribution.class, "value"))),
+                List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, "$aantal"),
+                        new Accumulation.Aggregation(Accumulation.Kind.SUM, "$bijdragewaarde", "$som")));
+        Accumulation open = new Accumulation(new FactPattern(FoldOpen.class, "$openlid", List.of(new Alpha("openlid", List.of(
+                new Alpha.FieldTest("fold", Alpha.Comparator.GELIJK, "proefvouw: open som")))),
+                List.of(new Join("openlid", "subject", O)), List.of()),
+                List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, "$openleden")));
+        ReadTable bound = table(new Read(0, ReadKind.FOLD_COUNT, "vouw", "$aantal"),
+                new Read(1, ReadKind.FOLDED_VALUE, "vouwwaarde", "$som"), new Read(2, ReadKind.FOLD_OPEN, "open leden", "$openleden"));
+        Term atom = new Term.Call(StaticFunction.ATOM, List.of(new Term.Deferred(new Term.Call(StaticFunction.RS_AGG_COMPARE,
+                List.of(new Term.Call(StaticFunction.COUNT, List.of(new Term.Call(StaticFunction.STANDING_COUNT,
+                        List.of(readOf(0), readOf(2)), null)), "de telling"), number("1"), text(">")), null), null)),
+                "de telling groter dan 1");
+        Term quantified = new Term.Call(StaticFunction.QUANTIFIER_VERDICT_OVER_OPEN, List.of(readOf(0), readOf(1), readOf(2),
+                new Term.Const(Condition.Quantifier.ALLE, null, null), new Term.Const(0, null, null)), "alle posten");
+        for (Term t : List.of(atom, quantified))
+            rules.add(new RulePlan("lezing van een open vouw: " + t.source(), "proef", null, bound, List.of(subject, fold, open,
+                    new TestItem("open", TestItem.Role.CONDITION, t, -1, List.of(0, 1, 2), 3, true)),
+                    new Consequence.Inconsistency(O, "proef", List.of(), Consequence.Insertion.LOGICAL)));
+        return rules;
     }
 
     private static ReadTable table(Read... slots) {

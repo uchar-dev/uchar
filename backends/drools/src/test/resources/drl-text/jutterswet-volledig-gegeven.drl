@@ -16,7 +16,7 @@ global OpenInput open_invoer;
 
 // zijn taxatie plus zijn toeslag
 function Object waarde_uitbetaling(Object $taxatie, Object open_invoer, Object $onderwerp, Object $toeslag) {
-    return ComputeHelpers.valued(() -> ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus(ComputeHelpers.readInput($taxatie, open_invoer, $onderwerp, ElementKey.of("vondst", "taxatie", false)), $toeslag), Integer.valueOf(0), "uitbetaling", null));
+    return ComputeHelpers.valued(() -> ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus(ComputeHelpers.readInput($taxatie, open_invoer, $onderwerp, ElementKey.of("vondst", "taxatie", false)), $toeslag), Integer.valueOf(0), "uitbetaling", null), null);
 }
 
 rule "uitbetaling"
@@ -38,7 +38,7 @@ end
 
 // zijn taxatie plus zijn bijslag
 function Object waarde_bijbetaling(Object $taxatie, Object open_invoer, Object $onderwerp, Object $bijslag) {
-    return ComputeHelpers.valued(() -> ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus(ComputeHelpers.readInput($taxatie, open_invoer, $onderwerp, ElementKey.of("vondst", "taxatie", false)), ComputeHelpers.readInput($bijslag, open_invoer, $onderwerp, ElementKey.of("vondst", "bijslag", false))), Integer.valueOf(0), "bijbetaling", null));
+    return ComputeHelpers.valued(() -> ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus(ComputeHelpers.readInput($taxatie, open_invoer, $onderwerp, ElementKey.of("vondst", "taxatie", false)), ComputeHelpers.readInput($bijslag, open_invoer, $onderwerp, ElementKey.of("vondst", "bijslag", false))), Integer.valueOf(0), "bijbetaling", null), null);
 }
 
 rule "bijbetaling"
@@ -89,13 +89,13 @@ then
 end
 
 // hij niet wrakhout is
-function Boolean oordeel_wraktoeslag(Object $wrakhout, Object open_invoer, Object $onderwerp) {
+function Object oordeel_wraktoeslag(Object $wrakhout, Object open_invoer, Object $onderwerp) {
     return ComputeHelpers.judge(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($wrakhout, open_invoer, $onderwerp, ElementKey.of("vondst", "wrakhout", true)), Boolean.FALSE), false);
 }
 
 // 2
 function Object waarde_wraktoeslag(Object $wrakhout, Object open_invoer, Object $onderwerp) {
-    return ComputeHelpers.decided(oordeel_wraktoeslag($wrakhout, open_invoer, $onderwerp), () -> ComputeHelpers.fitTarget(new java.math.BigDecimal("2"), Integer.valueOf(0), "wraktoeslag", null));
+    return ComputeHelpers.decided(oordeel_wraktoeslag($wrakhout, open_invoer, $onderwerp), () -> ComputeHelpers.fitTarget(new java.math.BigDecimal("2"), Integer.valueOf(0), "wraktoeslag", null), null);
 }
 
 rule "wraktoeslag"
@@ -118,7 +118,7 @@ end
 
 // zijn gewicht maal 2
 function Object waarde_bergloon(Object $gewicht, Object open_invoer, Object $onderwerp) {
-    return ComputeHelpers.valued(() -> ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), new java.math.BigDecimal("2")), Integer.valueOf(0), "berekende bergloon", null));
+    return ComputeHelpers.valued(() -> ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), new java.math.BigDecimal("2")), Integer.valueOf(0), "berekende bergloon", null), null);
 }
 
 rule "bergloon"
@@ -139,7 +139,7 @@ then
 end
 
 // hij aan alle volgende voorwaarden voldoet: - zijn opgegeven bergloon is gevuld - zijn berekende bergloon is gevuld - zijn opgegeven bergloon is ongelijk aan zijn berekende bergloon
-function Boolean oordeel_afwijkingOpgaveBergloon(Object $opgegevenBergloon, Object $berekendeBergloon) {
+function Object oordeel_afwijkingOpgaveBergloon(Object $opgegevenBergloon, Object $berekendeBergloon) {
     return ComputeHelpers.judge(() -> {
         var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 3, null);
         if (lezing.stands()) {
@@ -208,7 +208,7 @@ end
 
 // zijn berekende bergloon
 function Object afloop_defaultsAVondstBergloonDefault1(Object $berekendeBergloon) {
-    return ComputeHelpers.valued(() -> ComputeHelpers.read($berekendeBergloon));
+    return ComputeHelpers.valued(() -> ComputeHelpers.read($berekendeBergloon), null);
 }
 
 rule "defaults A:Vondst.bergloon: default 1"

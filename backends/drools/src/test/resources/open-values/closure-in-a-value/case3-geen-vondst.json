@@ -1,0 +1,95 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "bonus": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "vondst": []
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal gewogen vondsten",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "gewogen totaal"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "gewogen aantal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "gemiddeld gewicht",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "aandeel"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "premie"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "volledig gewogen"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "meervoudig gewogen"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "ongewogen"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "gewogen"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "aandeel",
+      "label": "J1",
+      "code": "EF-005"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "weging",
+      "label": "J1",
+      "code": "EF-025"
+    }
+  ]
+}

@@ -83,8 +83,10 @@ class RouteWitnessTest {
                 "PAYOUT_RESTATED: List ComputeHelpers.payoutRestated[String, Object, Method, Object, Object, boolean,"
                         + " boolean, boolean, Integer, ElementKey, ElementKey, String, Integer, Integer, String, Breuk,"
                         + " Breuk, Breuk]",
-                "CONTRIBUTION: Contribution ComputeHelpers.contribution[String, Object, Object, Object, String, String,"
+                "CONTRIBUTION: Object ComputeHelpers.contribution[String, Object, Object, Object, String, String,"
                         + " boolean, boolean]",
+                "CONTRIBUTED: List ComputeHelpers.contributed[Object, String, Object, Object, Object]",
+                "JUDGED: Object ComputeHelpers.judged[String, Object, Object, Object]",
                 "FOLD_PLACE: List ComputeHelpers.foldPlace[PlaceReason, String, Object, int, List, List, List]",
                 "CREATION_DEPTH: int ComputeHelpers.creationDepth[String, int, String, List, int]",
                 "NEW_OBJECT: Object ComputeHelpers.newObject[Object, String]",
@@ -115,13 +117,13 @@ class RouteWitnessTest {
                 "END_VERDICT: boolean ComputeHelpers.endVerdict[Quantifier, int, long, long]",
                 "EMPTY_TEST_OVER_OPEN: boolean ComputeHelpers.emptyTestOverOpen[Callable, boolean, Object]",
                 "HOLDS_FOR_ITSELF: boolean ComputeHelpers.holdsForItself[Callable, boolean]",
-                "JUDGE: Boolean ComputeHelpers.judge[Callable, boolean]",
+                "JUDGE: Object ComputeHelpers.judge[Callable, boolean]",
                 "ACTS: boolean ComputeHelpers.acts[Object]",
                 "DECIDES: boolean ComputeHelpers.decides[Object]",
                 "FAULTED: boolean ComputeHelpers.faulted[Callable]",
                 "DEPOSITED: boolean ComputeHelpers.deposited[Callable, Object]",
-                "VALUED: Object ComputeHelpers.valued[Callable]",
-                "DECIDED: Object ComputeHelpers.decided[Object, Callable]",
+                "VALUED: Object ComputeHelpers.valued[Callable, Object]",
+                "DECIDED: Object ComputeHelpers.decided[Object, Callable, Object]",
                 "IS_OPEN: boolean ComputeHelpers.isOpen[Object]",
                 "OPEN: OpenMember ComputeHelpers.open[Object, ElementKey]",
                 "INPUT: Object ComputeHelpers.input[Object, Object, Object, ElementKey]",

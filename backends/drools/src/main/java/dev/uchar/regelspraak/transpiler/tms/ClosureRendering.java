@@ -448,6 +448,7 @@ final class ClosureRendering {
             case CONSTRUCT -> x -> ComputeHelpers.construct((String) x[0], x[1]);
             case PAYLOAD -> x -> ComputeHelpers.payload(x[0], (String) x[1]);
             case COUNT -> x -> ComputeHelpers.countOf(x[0]);
+            case STANDING_COUNT -> x -> ComputeHelpers.standingCount(x[0], x[1]);
             case FOLD_VALUE -> x -> ComputeHelpers.foldValue(x[0], x[1], x[2]);
             case OWN_TOTAL -> x -> ComputeHelpers.ownTotal(x[0], x[1], x[2], (String) x[3], (String) x[4], (String) x[5],
                     (String) x[6]);
@@ -481,6 +482,9 @@ final class ClosureRendering {
             case CHANNEL -> x -> ComputeHelpers.channel(x[0]);
             case NIET -> x -> ComputeHelpers.not(x[0]);
             case NEGATED_OVER_OPEN -> x -> ComputeHelpers.negatedOverOpen((Callable<?>) x[0]);
+            case ATOM -> x -> ComputeHelpers.atom((Callable<?>) x[0]);
+            case QUANTIFIER_VERDICT_OVER_OPEN -> x -> ComputeHelpers.quantifierVerdictOverOpen(x[0], x[1], x[2],
+                    (Condition.Quantifier) x[3], (Integer) x[4]);
             case BUCKET_SCALAR -> x -> ComputeHelpers.bucketScalar(x[0], (Boolean) x[1]);
             case OPEN_NONZERO -> x -> PeriodArithmetic.openNonZero(x[0]);
             case DIFFER -> x -> ComputeHelpers.differ(x[0]);

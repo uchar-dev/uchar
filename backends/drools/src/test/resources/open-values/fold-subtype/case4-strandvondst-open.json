@@ -1,0 +1,120 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandvoogd",
+        "attributes": {},
+        "roles": {
+          "beheerde jutter": [
+            "J1",
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "ervaring": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "vindloon": {
+            "number": "7"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Strandvondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": [
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "vindloon": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "V2",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "vindloon",
+      "value": {
+        "number": "3"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S1",
+      "characteristic": "vol"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "bodem"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "mindering"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "aantal zware vondsten"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

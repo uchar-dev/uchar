@@ -365,6 +365,23 @@ public sealed interface Consequence {
         }
     }
 
+    /**
+     * The contribution {@code contributes} of a member to a fold over a set whose filter, the condition {@code filter}, can
+     * be undetermined (RUNTIME-SEMANTICS ch. 1.5, "A fold over a set"): the test of the rule asked whether the filter is
+     * not false for another form ({@link TestItem.Role#ACTS}), and the consequence evaluates it again over the bound values
+     * of {@code contributes} and inserts what the member gives its fold by that judgement: the contribution where the
+     * filter is true for the form itself, and a {@code FoldOpen} where it does not stand for another, made by the route
+     * {@link Route#CONTRIBUTED}.
+     */
+    record FilteredContribution(Term filter, Contribution contributes) implements Consequence {
+        public FilteredContribution {
+            if (!(contributes.input() instanceof Input.Count || contributes.input() instanceof Input.MemberValue
+                    || contributes.input() instanceof Input.IncompleteInput))
+                throw new IllegalArgumentException("a filter that can be undetermined is that of a fold over a set, not of "
+                        + contributes.input());
+        }
+    }
+
     /** What a member contributes to its fold, as the analysis decided from the fold's function. */
     sealed interface Input {
         /** The member itself, without a value: a count of the members. */
@@ -397,9 +414,24 @@ public sealed interface Consequence {
             }
         }
 
+        /** The member's value as {@code of} says it, where that is the input of {@code member}, which no form writes and
+         *  which need not be complete (RUNTIME-SEMANTICS ch. 1.5): where the bean of the member holds none and the
+         *  session's {@code OpenInput} in slot {@code openInput} names it, the value is open. */
+        record IncompleteInput(MemberValue of, int openInput, ElementKey member) implements Input {
+            public IncompleteInput {
+                if (of.total() != null || of.cell() != null || of.whole())
+                    throw new IllegalArgumentException("a member that holds one value can be open as an input, not " + of);
+            }
+        }
+
         /** The verdict of the matrix of a quantifier fold for the member, the condition {@code matrix}, which cannot
          *  fault or deposit: 1 where it holds, 0 where it does not. */
         record Verdict(Term matrix) implements Input {}
+
+        /** The judgement of the matrix of a quantifier fold for the member, the condition {@code matrix}, which cannot fault
+         *  or deposit and can be undetermined (RUNTIME-SEMANTICS ch. 1.5): the verdict where it stands for another form, and
+         *  else a {@code FoldOpen}, made by the route {@link Route#JUDGED}. */
+        record Judged(Term matrix) implements Input {}
 
         /** The test of the member by the matrix of a quantifier fold, the condition {@code matrix}, which can fault or
          *  deposit, as a {@code MemberTest}: the member's {@code place} in the order of the members, then the verdict or

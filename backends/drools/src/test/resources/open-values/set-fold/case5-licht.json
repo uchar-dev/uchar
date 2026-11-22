@@ -1,0 +1,85 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "4"
+          },
+          "taxatie": {
+            "number": "50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "5"
+          },
+          "taxatie": {
+            "number": "50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "totaalgewicht",
+      "value": {
+        "number": "9"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "zwaargewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "zwaaraantal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "rijk"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

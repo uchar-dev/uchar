@@ -1,0 +1,128 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "bonus": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "V1",
+            "V2",
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "30"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aantal gewogen vondsten",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "gewogen totaal",
+      "value": {
+        "number": "50"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "gewogen aantal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "gemiddeld gewicht",
+      "value": {
+        "number": "25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aandeel",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "premie",
+      "value": {
+        "number": "7"
+      }
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "J1",
+      "characteristic": "volledig gewogen"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "meervoudig gewogen"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "J1",
+      "characteristic": "ongewogen"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "J1",
+      "characteristic": "gewogen"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

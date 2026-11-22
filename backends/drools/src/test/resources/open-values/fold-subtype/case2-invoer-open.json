@@ -1,0 +1,81 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandvoogd",
+        "attributes": {},
+        "roles": {
+          "beheerde jutter": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "ervaring": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "6"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Strandvondst",
+        "attributes": {
+          "taxatie": {
+            "number": "2000"
+          },
+          "gewicht": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "S1",
+      "characteristic": "vol"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

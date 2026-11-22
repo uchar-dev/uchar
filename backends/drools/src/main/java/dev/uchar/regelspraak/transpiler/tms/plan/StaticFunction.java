@@ -291,6 +291,10 @@ public enum StaticFunction {
     FALLBACK(ComputeHelpers.class, "fallback", false),
     /** A count bound off an accumulate, as a number. */
     COUNT(ComputeHelpers.class, "countOf", false),
+    /** The count bound off an accumulate of a fold over a set that can be open, from that count and the list of the fold's
+     *  {@code FoldOpen} facts (ch. 1.5): an open read that breaks the evaluation off where the fold is open, and where a
+     *  closure decided a member, the boundary of the evaluation told. */
+    STANDING_COUNT(ComputeHelpers.class, "standingCount", false),
     /** The value of a fold from its count, its folded value and its fallback: the fallback over no contribution. */
     FOLD_VALUE(ComputeHelpers.class, "foldValue", false),
     /** The subject's own total over time without a clip (ch. 3.6): from the asOfDate-bucket scalar of the input, on the
@@ -371,6 +375,10 @@ public enum StaticFunction {
      *  contributors and the sum of their verdicts, 1 or 0 each, under a {@code Condition.Quantifier} constant with an
      *  {@code Integer} threshold; over no contributor the sum is not read. */
     QUANTIFIER_VERDICT(ComputeHelpers.class, "quantifierVerdict", false),
+    /** As {@link #QUANTIFIER_VERDICT}, where the matrix can be undetermined on a member (ch. 1.5): the list of the fold's
+     *  {@code FoldOpen} facts after the sum, and no truth value but the judgement where the verdict does not stand for
+     *  another form. */
+    QUANTIFIER_VERDICT_OVER_OPEN(ComputeHelpers.class, "quantifierVerdictOverOpen", false),
     /** The verdict of a quantifier fold whose matrix can fault or deposit, read over the outcome per contributor in
      *  the contributors' order and stopped as ch. 5.10 says; a contributor that is reached deposits to the probe and
      *  raises its fault. The function of a {@link Term.QuantifierRead}. */
@@ -384,6 +392,9 @@ public enum StaticFunction {
     /** The negation of a condition whose judgement can be undetermined, a {@link Term.Deferred}: its judgement with the
      *  truth for the form itself negated (ch. 1.5). */
     NEGATED_OVER_OPEN(ComputeHelpers.class, "negatedOverOpen", false),
+    /** An atomic condition, a {@link Term.Deferred}, in which a fold can apply a closure to an open value (ch. 1.5): its
+     *  truth, and the judgement that it stands for the form itself alone where one did. */
+    ATOM(ComputeHelpers.class, "atom", false),
     /** Whether a value is the asOfDate-bucket scalar a case gives for a timeline (ch. 8.4), which a {@code Boolean}
      *  constant must equal: a part of a test a form composes itself. */
     BUCKET_SCALAR(ComputeHelpers.class, "bucketScalar", false),
@@ -448,6 +459,7 @@ public enum StaticFunction {
     /** Whether a call can raise an evaluation fault. */
     public boolean canFail() { return canFail; }
 
-    /** Whether a call is the read of a member that can be open, which breaks the evaluation off where it is. */
-    public boolean readsOpen() { return this == READ || this == READ_INPUT; }
+    /** Whether a call is the read of a member or of a fold that can be open, which breaks the evaluation off where it
+     *  is. */
+    public boolean readsOpen() { return this == READ || this == READ_INPUT || this == STANDING_COUNT; }
 }

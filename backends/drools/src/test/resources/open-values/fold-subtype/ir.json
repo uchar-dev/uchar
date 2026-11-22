@@ -1,0 +1,717 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "ervaring",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "grens",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vindloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "aantal zware vondsten",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "bodem",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "mindering",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "vol",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "taxatie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vindloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "plural": "vindlonen"
+          },
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "plural": "gewichten"
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Strandvondst",
+        "supertype": "Vondst",
+        "animate": false,
+        "plural": "Strandvondsten",
+        "attributes": [],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Strandvoogd",
+        "animate": true,
+        "plural": "Strandvoogden",
+        "attributes": [],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "vol",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vinding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "strandbeheer",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "beheerder",
+            "objectType": "Strandvoogd",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "beheerde jutter",
+            "objectType": "Jutter",
+            "plural": "beheerde jutters",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vindloon van een strandvondst",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vindloon",
+              "subjectType": "Strandvondst",
+              "source": {
+                "snippet": "Het vindloon van een Strandvondst"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "10"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "10"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "taxatie",
+                "subjectType": "Strandvondst",
+                "source": {
+                  "snippet": "zijn taxatie"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "1000"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "1000"
+                }
+              },
+              "source": {
+                "snippet": "zijn taxatie groter is dan 1000"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vindloon van een jutter",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vindloon",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het vindloon van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vindloon",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het vindloon van alle vondsten van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het vindloon van alle vondsten van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "grens",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "grens",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De grens van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "number": "5"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "5"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "ervaring",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn ervaring"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "3"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "3"
+                }
+              },
+              "source": {
+                "snippet": "zijn ervaring groter is dan 3"
+              }
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "aantal zware vondsten",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "aantal zware vondsten",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het aantal zware vondsten van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "vondsten",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht is groter dan de grens van de Jutter zelf"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Comparison",
+                    "op": "greater",
+                    "left": {
+                      "node": "AttributeReference",
+                      "attribute": "gewicht",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn gewicht"
+                      }
+                    },
+                    "right": {
+                      "node": "AttributeReference",
+                      "attribute": "grens",
+                      "subjectType": "Jutter",
+                      "anchor": "form",
+                      "source": {
+                        "snippet": "de grens van de Jutter zelf"
+                      }
+                    },
+                    "source": {
+                      "snippet": "zijn gewicht is groter dan de grens van de Jutter zelf"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: zijn gewicht is groter dan de grens van de Jutter zelf"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              },
+              "source": {
+                "snippet": "het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht is groter dan de grens van de Jutter zelf"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "bodem",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "bodem",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De bodem van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht is gevuld"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "Predicate",
+                    "kind": "filled",
+                    "operand": {
+                      "node": "AttributeReference",
+                      "attribute": "gewicht",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "zijn gewicht"
+                      }
+                    },
+                    "negated": false,
+                    "digits": 0,
+                    "source": {
+                      "snippet": "zijn gewicht is gevuld"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: zijn gewicht is gevuld"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht is gevuld"
+              }
+            },
+            "initialisation": true
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "mindering",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "mindering",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De mindering van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "reducedBy",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "ervaring",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn ervaring"
+                }
+              },
+              "right": {
+                "node": "Aggregation",
+                "kind": "minimum",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "het gewicht van alle vondsten van de Jutter"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "vinding",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "de minimale waarde van het gewicht van alle vondsten van de Jutter"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn ervaring verminderd met de minimale waarde van het gewicht van alle vondsten van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vol",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vol",
+              "subjectType": "Strandvoogd",
+              "source": {
+                "snippet": "Een Strandvoogd is vol"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Jutter",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "Aggregation",
+                  "kind": "sum",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "vindloon",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "het vindloon van alle vondsten van de Jutter"
+                      }
+                    }
+                  ],
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "vinding",
+                    "role": "vondst"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "de som van het vindloon van alle vondsten van de Jutter"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "10"
+                  }
+                },
+                "source": {
+                  "snippet": "het vindloon van alle beheerde jutters van de Strandvoogd groter is dan 10"
+                }
+              },
+              "source": {
+                "snippet": "het vindloon van alle beheerde jutters van de Strandvoogd groter is dan 10"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "strandbeheer",
+                "role": "beheerde jutter"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

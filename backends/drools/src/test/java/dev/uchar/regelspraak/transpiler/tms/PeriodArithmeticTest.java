@@ -176,7 +176,7 @@ class PeriodArithmeticTest {
                 null)), "MAAND", null, null, "bedrag", "A1")));
         assertEquals(exact(BigDecimal.ZERO), exact(ComputeHelpers.ownTotal(null, "A1", d("2024-03-15"), "bedrag", "MAAND",
                 null, null)));
-        assertEquals(exact(BigDecimal.ZERO), exact(ComputeHelpers.contribution("vouw", "S1", "A1", null, "MAAND", null,
-                false, false).value()));
+        assertEquals(exact(BigDecimal.ZERO), exact(((Contribution) ComputeHelpers.contribution("vouw", "S1", "A1", null,
+                "MAAND", null, false, false)).value()));
     }
 }

@@ -52,6 +52,8 @@ public enum ReadKind {
     FILTER_DEPOSIT,
     /** The least member fault of a fold on the subject ({@code vouw}). */
     MEMBER_FAULT,
+    /** The list of the {@code FoldOpen} facts of a fold on the subject that can be open ({@code vouw}). */
+    FOLD_OPEN,
     /** The standing of the §9.5 channel of a form, through its {@code ChannelState} ({@code kanaal}). */
     CHANNEL,
     /** The number of the creation phase the driver opened ({@code creatiefase}). */

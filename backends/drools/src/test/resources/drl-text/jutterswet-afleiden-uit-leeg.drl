@@ -14,7 +14,7 @@ import dev.uchar.regelspraak.transpiler.tms.Value;
 global OpenInput open_invoer;
 
 // zijn taxatie groter is dan 1000
-function Boolean oordeel_kostbaarheid(Object $taxatie, Object open_invoer, Object $onderwerp) {
+function Object oordeel_kostbaarheid(Object $taxatie, Object open_invoer, Object $onderwerp) {
     return ComputeHelpers.judge(() -> RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($taxatie, open_invoer, $onderwerp, ElementKey.of("vondst", "taxatie", false)), new java.math.BigDecimal("1000"), ">"), false);
 }
 
@@ -33,7 +33,7 @@ end
 
 // zijn gewicht plus 10
 function Object waarde_vindloon(Object $gewicht, Object open_invoer, Object $onderwerp) {
-    return ComputeHelpers.valued(() -> ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), new java.math.BigDecimal("10")), Integer.valueOf(0), "vindloon", null));
+    return ComputeHelpers.valued(() -> ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), new java.math.BigDecimal("10")), Integer.valueOf(0), "vindloon", null), null);
 }
 
 rule "vindloon"
@@ -54,13 +54,13 @@ then
 end
 
 // hij niet kostbaar is
-function Boolean oordeel_bewakingstoeslag(Object $kostbaar) {
+function Object oordeel_bewakingstoeslag(Object $kostbaar) {
     return ComputeHelpers.judge(() -> ComputeHelpers.characteristic(ComputeHelpers.read($kostbaar), Boolean.FALSE), false);
 }
 
 // 5
 function Object waarde_bewakingstoeslag(Object $kostbaar) {
-    return ComputeHelpers.decided(oordeel_bewakingstoeslag($kostbaar), () -> ComputeHelpers.fitTarget(new java.math.BigDecimal("5"), Integer.valueOf(0), "bewakingstoeslag", null));
+    return ComputeHelpers.decided(oordeel_bewakingstoeslag($kostbaar), () -> ComputeHelpers.fitTarget(new java.math.BigDecimal("5"), Integer.valueOf(0), "bewakingstoeslag", null), null);
 }
 
 rule "bewakingstoeslag"
@@ -83,7 +83,7 @@ then
 end
 
 // zijn taxatie leeg is
-function Boolean oordeel_ongetaxeerd(Object $taxatie, Object open_invoer, Object $onderwerp) {
+function Object oordeel_ongetaxeerd(Object $taxatie, Object open_invoer, Object $onderwerp) {
     return ComputeHelpers.judge(() -> ComputeHelpers.emptyTestOverOpen(() -> ComputeHelpers.readInput($taxatie, open_invoer, $onderwerp, ElementKey.of("vondst", "taxatie", false)), Boolean.TRUE, null), false);
 }
 
@@ -101,13 +101,13 @@ then
 end
 
 // hij gemeld is
-function Boolean oordeel_meldloon(Object $gemeld, Object open_invoer, Object $onderwerp) {
+function Object oordeel_meldloon(Object $gemeld, Object open_invoer, Object $onderwerp) {
     return ComputeHelpers.judge(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($gemeld, open_invoer, $onderwerp, ElementKey.of("vondst", "gemeld", true)), Boolean.TRUE), false);
 }
 
 // 3
 function Object waarde_meldloon(Object $gemeld, Object open_invoer, Object $onderwerp) {
-    return ComputeHelpers.decided(oordeel_meldloon($gemeld, open_invoer, $onderwerp), () -> ComputeHelpers.fitTarget(new java.math.BigDecimal("3"), Integer.valueOf(0), "meldloon", null));
+    return ComputeHelpers.decided(oordeel_meldloon($gemeld, open_invoer, $onderwerp), () -> ComputeHelpers.fitTarget(new java.math.BigDecimal("3"), Integer.valueOf(0), "meldloon", null), null);
 }
 
 rule "meldloon"
@@ -129,7 +129,7 @@ then
 end
 
 // hij betwist is
-function Boolean oordeel_defaultsAVondstPremieDefault0(Object $betwist, Object open_invoer, Object $onderwerp) {
+function Object oordeel_defaultsAVondstPremieDefault0(Object $betwist, Object open_invoer, Object $onderwerp) {
     return ComputeHelpers.judge(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($betwist, open_invoer, $onderwerp, ElementKey.of("vondst", "betwist", true)), Boolean.TRUE), false);
 }
 

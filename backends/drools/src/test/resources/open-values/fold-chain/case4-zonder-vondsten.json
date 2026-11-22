@@ -1,0 +1,84 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandvoogd",
+        "attributes": {},
+        "roles": {
+          "beheerde jutter": [
+            "J1",
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "opgave": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "vondst": []
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": []
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "jutgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "jutgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "S1",
+      "attribute": "strandgewicht"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "S1",
+      "characteristic": "druk"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "keuraantal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "loon",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

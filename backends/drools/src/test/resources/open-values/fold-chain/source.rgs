@@ -1,0 +1,66 @@
+Afleiden uit leeg: nee
+
+Objecttype de Strandvoogd (mv: Strandvoogden) (bezield)
+    het strandgewicht Numeriek (geheel getal);
+    het jutgewicht Numeriek (geheel getal);
+    het zwaarste gewicht Numeriek (geheel getal);
+    is druk kenmerk (bijvoeglijk);
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het jutgewicht Numeriek (geheel getal);
+    het keuraantal Numeriek (geheel getal);
+    het loon Numeriek (geheel getal);
+    de opgave Numeriek (geheel getal) (volledig);
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht (mv: gewichten) Numeriek (geheel getal);
+    het berekend gewicht (mv: berekende gewichten) Numeriek (geheel getal);
+    de meting Numeriek (geheel getal);
+    is gemerkt kenmerk (bijvoeglijk);
+    is gekeurd kenmerk (bijvoeglijk);
+
+Feittype vinding
+    de vinder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
+
+Feittype strandbeheer
+    de beheerder Strandvoogd
+    de beheerde jutter (mv: beheerde jutters) Jutter
+Eén beheerder heeft meerdere beheerde jutters
+
+Regel jutgewicht van een jutter
+    geldig altijd
+        Het jutgewicht van een Jutter moet berekend worden als de som van het berekend gewicht van alle vondsten van de Jutter.
+
+Regel berekend gewicht
+    geldig altijd
+        Het berekend gewicht van een Vondst moet berekend worden als zijn meting maal 2 indien hij gemerkt is.
+
+Regel jutgewicht van een strandvoogd
+    geldig altijd
+        Het jutgewicht van een Strandvoogd moet berekend worden als de som van het jutgewicht van alle beheerde jutters van de Strandvoogd.
+
+Regel strandgewicht
+    geldig altijd
+        Het strandgewicht van een Strandvoogd moet berekend worden als de som van het gewicht van alle vondsten van alle beheerde jutters van de Strandvoogd.
+
+Regel zwaarste gewicht
+    geldig altijd
+        Het zwaarste gewicht van een Strandvoogd moet berekend worden als de maximale waarde van het berekend gewicht van alle vondsten van alle beheerde jutters van de Strandvoogd.
+
+Regel druk
+    geldig altijd
+        Een Strandvoogd is druk indien het jutgewicht van ten minste 1 van de beheerde jutters van de Strandvoogd groter is dan 10.
+
+Regel keuraantal
+    geldig altijd
+        Het keuraantal van een Jutter moet berekend worden als het aantal vondsten van de Jutter die gemerkt zijn en vondsten van de Jutter die gekeurd zijn.
+
+Regel loon
+    geldig altijd
+        Het loon van een Jutter moet berekend worden als het aantal vondsten van de Jutter die gemerkt zijn.
+
+Uitzondering op loon: opgegeven loon
+    geldig altijd
+        Het loon van een Jutter moet gesteld worden op zijn opgave indien de som van het gewicht van alle vondsten van de Jutter groter is dan 10.

@@ -1,0 +1,718 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gift",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "complete": true
+          },
+          {
+            "node": "Attribute",
+            "name": "keurgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "dubbelgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "giftdeel",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gul",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "karig",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "krap",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            },
+            "plural": "gewichten"
+          },
+          {
+            "node": "Attribute",
+            "name": "getuigen",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vinding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "keurgewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "keurgewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het keurgewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "binder": "gemeten gewicht",
+              "value": {
+                "node": "Aggregation",
+                "kind": "sum",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn getuigen is gevuld"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "filter": {
+                  "node": "Compound",
+                  "quantifier": "the",
+                  "threshold": 0,
+                  "parts": [
+                    {
+                      "node": "Predicate",
+                      "kind": "filled",
+                      "operand": {
+                        "node": "AttributeReference",
+                        "attribute": "getuigen",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "zijn getuigen"
+                        }
+                      },
+                      "negated": false,
+                      "digits": 0,
+                      "source": {
+                        "snippet": "zijn getuigen is gevuld"
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "aan de volgende voorwaarde voldoen: zijn getuigen is gevuld"
+                  }
+                },
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "vinding",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "de som van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn getuigen is gevuld"
+                }
+              },
+              "body": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "BinderRef",
+                  "name": "gemeten gewicht",
+                  "source": {
+                    "snippet": "het gemeten gewicht"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "1"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "1"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "het gemeten gewicht plus 1"
+                }
+              },
+              "source": {
+                "snippet": "het gemeten gewicht is de som van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn getuigen is gevuld"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "dubbelgewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "dubbelgewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het dubbelgewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "binder": "gemeten gewicht",
+              "value": {
+                "node": "Aggregation",
+                "kind": "sum",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "het gewicht van alle vondsten van de Jutter"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "vinding",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "de som van het gewicht van alle vondsten van de Jutter"
+                }
+              },
+              "body": {
+                "node": "Binary",
+                "op": "plus",
+                "left": {
+                  "node": "BinderRef",
+                  "name": "gemeten gewicht",
+                  "source": {
+                    "snippet": "het gemeten gewicht"
+                  }
+                },
+                "right": {
+                  "node": "BinderRef",
+                  "name": "gemeten gewicht",
+                  "source": {
+                    "snippet": "het gemeten gewicht"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "het gemeten gewicht plus het gemeten gewicht"
+                }
+              },
+              "source": {
+                "snippet": "het gemeten gewicht is de som van het gewicht van alle vondsten van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "giftdeel",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "giftdeel",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het giftdeel van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Let",
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "binder": "getelde aantal",
+              "value": {
+                "node": "Aggregation",
+                "kind": "filledCount",
+                "arguments": [
+                  {
+                    "node": "AttributeReference",
+                    "attribute": "gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "het gewicht van alle vondsten van de Jutter"
+                    }
+                  }
+                ],
+                "elementType": "Vondst",
+                "sourceRole": {
+                  "node": "RoleBinding",
+                  "factType": "vinding",
+                  "role": "vondst"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "nonNegative"
+                },
+                "source": {
+                  "snippet": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter"
+                }
+              },
+              "body": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gift",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn gift"
+                  }
+                },
+                "right": {
+                  "node": "BinderRef",
+                  "name": "getelde aantal",
+                  "source": {
+                    "snippet": "het getelde aantal"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn gift gedeeld door het getelde aantal"
+                }
+              },
+              "source": {
+                "snippet": "het getelde aantal is het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "gul",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gul",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is gul"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gift",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn gift"
+                  }
+                },
+                "right": {
+                  "node": "Aggregation",
+                  "kind": "filledCount",
+                  "arguments": [
+                    {
+                      "node": "AttributeReference",
+                      "attribute": "gewicht",
+                      "subjectType": "Vondst",
+                      "source": {
+                        "snippet": "het gewicht van alle vondsten van de Jutter"
+                      }
+                    }
+                  ],
+                  "elementType": "Vondst",
+                  "sourceRole": {
+                    "node": "RoleBinding",
+                    "factType": "vinding",
+                    "role": "vondst"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "nonNegative"
+                  },
+                  "source": {
+                    "snippet": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter"
+                  }
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn gift gedeeld door (het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter)"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "5"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "5"
+                }
+              },
+              "source": {
+                "snippet": "zijn gift gedeeld door (het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter) groter is dan 5"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "karig",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "karig",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is karig"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [
+                {
+                  "node": "Comparison",
+                  "op": "less",
+                  "left": {
+                    "node": "Aggregation",
+                    "kind": "filledCount",
+                    "arguments": [
+                      {
+                        "node": "AttributeReference",
+                        "attribute": "gewicht",
+                        "subjectType": "Vondst",
+                        "source": {
+                          "snippet": "het gewicht van alle vondsten van de Jutter"
+                        }
+                      }
+                    ],
+                    "elementType": "Vondst",
+                    "sourceRole": {
+                      "node": "RoleBinding",
+                      "factType": "vinding",
+                      "role": "vondst"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "nonNegative"
+                    },
+                    "source": {
+                      "snippet": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "2"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "2"
+                    }
+                  },
+                  "source": {
+                    "snippet": "het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter is kleiner dan 2"
+                  }
+                },
+                {
+                  "node": "Comparison",
+                  "op": "less",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "gift",
+                    "subjectType": "Jutter",
+                    "source": {
+                      "snippet": "zijn gift"
+                    }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": {
+                      "number": "5"
+                    },
+                    "type": {
+                      "node": "Number",
+                      "whole": true,
+                      "decimals": 0,
+                      "sign": "unspecified"
+                    },
+                    "source": {
+                      "snippet": "5"
+                    }
+                  },
+                  "source": {
+                    "snippet": "zijn gift is kleiner dan 5"
+                  }
+                }
+              ],
+              "source": {
+                "snippet": "hij aan alle volgende voorwaarden voldoet: - het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter is kleiner dan 2 - zijn gift is kleiner dan 5"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "krap",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "krap",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is krap"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "karig",
+              "negated": true,
+              "source": {
+                "snippet": "hij niet karig is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

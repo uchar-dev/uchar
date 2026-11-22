@@ -1,0 +1,28 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandvoogd",
+        "attributes": {},
+        "roles": {
+          "beheerde jutter": []
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "vol"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

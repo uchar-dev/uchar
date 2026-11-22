@@ -1,0 +1,102 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "20"
+          },
+          "taxatie": {
+            "number": "2000"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "totaalgewicht"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "zwaargewicht"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "kleinste gewicht"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "grootste gewicht"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "zwaaraantal"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "aangemeld gewicht"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "uiterste gewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "vondstaantal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "vindloon",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

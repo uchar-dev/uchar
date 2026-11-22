@@ -66,8 +66,14 @@ public enum Route {
      *  rest is in another unit than its pot; a payout in one unit keeps the shorter call. */
     PAYOUT_RESTATED(ComputeHelpers.class, "payoutRestated"),
     /** The contribution of a member to a fold by its value, or none where the value is leeg or the member's timeline
-     *  stands as the asOfDate-bucket scalar, which {@link Consequence.Input.MemberValue} inserts. */
+     *  stands as the asOfDate-bucket scalar, which {@link Consequence.Input.MemberValue} inserts; where the value is open,
+     *  the fact that says so. */
     CONTRIBUTION(ComputeHelpers.class, "contribution"),
+    /** What a member inserts for its fold by the judgement of the fold's filter, which
+     *  {@link Consequence.FilteredContribution} inserts. */
+    CONTRIBUTED(ComputeHelpers.class, "contributed"),
+    /** What a member inserts for a quantifier fold by the judgement of the matrix ({@link Consequence.Input.Judged}). */
+    JUDGED(ComputeHelpers.class, "judged"),
     /** The place of a member in a fold's order from the places its rule binds ({@link Consequence.FoldPlace}), which a
      *  filter fault, a member fault and a quantifier fold's test of a member carry; where the input states no place,
      *  the broken contract, named after what the rule needs the place for. */
@@ -136,17 +142,17 @@ public enum Route {
     EMPTY_TEST_OVER_OPEN(ComputeHelpers.class, "emptyTestOverOpen"),
     /** Whether a condition whose judgement can be undetermined holds for the form itself ({@link TestItem#open}). */
     HOLDS_FOR_ITSELF(ComputeHelpers.class, "holdsForItself"),
-    /** The outcome of a writer whose condition can be undetermined ({@link TestItem.Role#ACTS}). */
+    /** The judgement of a condition that can be undetermined ({@link TestItem.Role#ACTS}, {@link Consequence.Input.Judged}). */
     JUDGE(ComputeHelpers.class, "judge"),
-    /** Whether an outcome of a writer is not that it fills nothing ({@link TestItem.Role#ACTS}). */
+    /** Whether a form acts on the judgement of its condition, which is not false for another ({@link TestItem.Role#ACTS}). */
     ACTS(ComputeHelpers.class, "acts"),
-    /** Whether an outcome of a writer is that it decides ({@link Consequence.Writer}). */
+    /** Whether a judgement is true for the form itself, so that a writer decides ({@link Consequence.Writer}). */
     DECIDES(ComputeHelpers.class, "decides"),
     /** Whether a condition whose judgement can be undetermined faults ({@link TestItem#open}). */
     FAULTED(ComputeHelpers.class, "faulted"),
     /** Whether a condition whose judgement can be undetermined deposits ({@link TestItem#open}). */
     DEPOSITED(ComputeHelpers.class, "deposited"),
-    /** The outcome of a value that can read an open value: the value, the open read or the evaluation fault
+    /** The outcome of a value that can read an open value: the value, the evaluation fault, or that it does not stand
      *  ({@link Consequence.Writer}). */
     VALUED(ComputeHelpers.class, "valued"),
     /** The outcome of the value of a writer whose condition can be undetermined ({@link Consequence.Writer}). */

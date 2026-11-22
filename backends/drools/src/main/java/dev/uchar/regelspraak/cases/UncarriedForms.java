@@ -25,9 +25,21 @@ import java.util.Set;
  * document before it builds anything, naming the first form of {@link #SLUGS} the document holds
  * ({@code DroolsBackend.build}, {@code DROOLS-370}). The list opens with the table of ch. 1.5, in its order, the forms
  * whose reading is not defined; then come the forms whose reading ch. 1.5 defines and this backend does not carry
- * yet, under slugs of its own; and last {@code reading}, the build with readings ({@code DroolsBackend.build(…,
+ * yet, under slugs of its own; then {@code reading}, the build with readings ({@code DroolsBackend.build(…,
  * readings)}), which reads no such document yet. A document whose forms are all outside the list is built and played
  * with the reading of ch. 1.5.
+ *
+ * <p>The last three slugs depend on what the parts of a form can read and how their evaluation can end, which the analysis
+ * knows ({@code TmsTranspiler}); it refuses the form where it lowers it, with the same code, so a document that holds a form
+ * before them in the list is refused by that:
+ * <ul>
+ *   <li>{@code quantifier-fold}: a quantifier fold whose filter reads a member that can be open, or whose matrix reads one
+ *       and can fault or deposit;</li>
+ *   <li>{@code set-fold}: a fold over a set whose filter reads a member that can be open and can fault or deposit, or
+ *       holds a fold that can be open; the same over the filters of an instance-set union together; and a sum whose fallback
+ *       reads a member that can be open;</li>
+ *   <li>{@code anchored-read}: an anchored read of an input member that can be open (IR-SPEC ch. 4.1a).</li>
+ * </ul>
  *
  * <p>The loader refuses some forms of the table in every document, before this list is read: a function definition,
  * a variable reference, a temporal read, a match, a record, the list family and an invoke ({@code IrLoader}). Their
@@ -44,9 +56,11 @@ final class UncarriedForms {
             "variable-reference", "unresolved", "temporal-read", "match", "record", "list-family", "invoke",
             "whole-period", "time-window", "rule-status-check", "let-in-composite",
             // what ch. 1.5 defines and this backend does not carry yet
-            "defaults-group", "quantifier-fold", "set-fold", "if-then-else", "object-creation", "fact-creation",
+            "defaults-group", "if-then-else", "object-creation", "fact-creation",
             // the build with readings
-            "reading");
+            "reading",
+            // what the analysis refuses where it lowers the form
+            "quantifier-fold", "set-fold", "anchored-read");
 
     /** The number of slugs of the table of ch. 1.5 at the head of {@link #SLUGS}. */
     static final int TABLE = 23;
@@ -193,8 +207,9 @@ final class UncarriedForms {
             if (f.dimensionSelections() != null) found.add("dimension-fold");
             else if (f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL) found.add("time-proportional-part");
             else if (f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN) found.add("day-kind");
-            else if (fold && ranged || union) found.add("set-fold");
-            else if (switch (f.kind()) {
+            else if (fold && ranged || union) {
+                // a fold over a set is carried, but for what the analysis refuses where it lowers it
+            } else if (switch (f.kind()) {
                 case SOM, TOTAAL, AANTAL, AANTAL_GEVULDE -> true;
                 default -> false;
             }) found.add("temporal-total");
@@ -228,7 +243,6 @@ final class UncarriedForms {
                         (i == 0 ? this : past()).condition(s.components().get(i));
                 }
                 case Condition.QuantifierFold q -> {
-                    found.add("quantifier-fold");
                     past().condition(q.filter());
                     past().condition(q.test());
                 }

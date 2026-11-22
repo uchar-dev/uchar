@@ -60,13 +60,19 @@ marker would say so. The analysis refuses it in the words of Drools' DRL compile
 "exec-model: Duplicate rule name: actief — …" (witness `DuplicateRuleNameWitnessTest`). A document that carries
 `inferFromEmpty: false` — the choice that nothing follows from an empty value, which RegelSpraak writes as
 `Afleiden uit leeg: nee` — is built with the reading of RUNTIME-SEMANTICS ch. 1.5 (below, "Open values"). One that holds
-a form whose reading this backend does not carry is refused on both branches, before a bean is generated, with
+a form whose reading this backend does not carry is refused on both branches with
 DROOLS-370 and the slug of the form (`EXCLUDE DROOLS-370: …`), since an answer in the reading of ch. 1.2–1.4 would be a
 wrong answer without a word. `UncarriedForms` is the one place that lists those forms, in the order by which the first
 a document holds is named: the table "Forms without the reading" of ch. 1.5; the forms whose reading ch. 1.5 defines
 and this backend does not carry, `defaults-group` (groups without an order between them of which one has an
-initialisation), `quantifier-fold`, `set-fold`, `if-then-else`, `object-creation` and `fact-creation`; and `reading`, the
-build with readings. The loader reads the property into the model
+initialisation), `if-then-else`, `object-creation` and `fact-creation`; and `reading`, the
+build with readings. Those are refused before a bean is generated. The last three slugs depend on what a part can read
+and how its evaluation can end, and the analysis refuses them where it lowers the form, so after the others:
+`quantifier-fold`, whose filter reads a member that can be open, or whose matrix reads one and can fault or deposit;
+`set-fold`, a fold over a set whose filter reads a member that can be open and can fault or deposit or holds a fold that
+can be open, the same over the selections of a union together, and a sum whose fallback reads a member that can be open;
+and `anchored-read`, an anchored read of an input member that can be open. A read of a parameter and of the evaluation
+date can fault. The loader reads the property into the model
 (`RegelSpraakModel.inferFromEmpty()`) and refuses no document for it, so the rule graph reads such a document as any
 other; every other value of the property is a `DocumentError` at `/inferFromEmpty` (witnesses
 `InferFromEmptyLoaderWitnessTest`, `InferFromEmptyRefusalWitnessTest`).
@@ -462,10 +468,10 @@ member after one that is undetermined for another provisionally (ch. 1.5); where
 5.10.
 
 `Reads.conditionTest` is the one place where a condition becomes the test of a rule. A form whose condition always
-stands tests that it holds. The rule of a writer whose condition can be undetermined has one function with the three
-outcomes of ch. 1.5 (`ComputeHelpers.judge`): its test asks that the writer acts, that the outcome is not that it fills
-nothing, and its consequence asks which of the other two it is (`plan.Consequence.Writer`): it decides, or it inserts
-its `LeftOpen`, which it does as well where its value reads an open one. So such a rule fires where the form decides and
+stands tests that it holds. The rule of a writer whose condition can be undetermined has one function with the judgement
+of its condition (`ComputeHelpers.judge`): its test asks that the writer acts, that the condition is not false for
+another form, and its consequence asks which of the other two outcomes it is (`plan.Consequence.Writer`): it decides, or
+it inserts its `LeftOpen`, which it does as well where its value reads an open one or is leeg after a closure. So such a rule fires where the form decides and
 where it leaves its target open, and not where it fills nothing. The rule of a condition's fault and that of its
 deposits stand beside it as for any form. A consistency tests the negation of its assertion, which keeps the judgement
 where that can be undetermined.
@@ -478,9 +484,25 @@ initialisation of a stack closes over an open default above it: its `not` asks o
 and its `Value` fills the target beside the `LeftOpen`. A reconciliation over a member that is `OPEN` decides nothing:
 the rule of the agreement stands under a `not` over an `OPEN` member, and one rule more (`reconcile-open`) settles the
 default `OPEN`, or at the root inserts the `LeftOpen` of the target, unless a member conflicts or two decide
-differently. A stack of which no default can be open is lowered as any stack. Witnesses `OpenableMembersWitnessTest`,
-`OpenValuesWitnessTest` (the examples of ch. 1.5) and `OpenValuesRefWitnessTest` (the witnesses of the reference
-interpreter).
+differently. A stack of which no default can be open is lowered as any stack.
+
+A fold over a set whose members can be open keeps the contributions and the accumulate of any fold; the rule of a
+member's contribution says beside or in place of it, with a `FoldOpen(fold, subject, member, own, read)`, that what the
+member gives the fold does not stand: its filter is undetermined or its value open (`own` null), or a closure decided it,
+a filter on gevuld or a filled-value count over an open value (`own` true or false, as the member counts or not). Where
+the filter can be undetermined, the rule tests and evaluates its judgement as a writer does its condition
+(`plan.Consequence.FilteredContribution`). The rule that reads the fold lists those facts in one accumulate more, and
+the count of the contributions is taken through them (`ComputeHelpers.standingCount`), before the fallback: an
+undetermined member is an open read there, and a closure is told to the boundary around it (`Boundary`), one per value
+and one per atomic condition in which a fold can close (`StaticFunction.ATOM`). A condition that closed stands for the
+form itself alone, and a value that is leeg after a closure leaves its target open and deposits as it stands. A quantifier
+fold counts by Kleene's table over the contributors on which the matrix stands and the `FoldOpen` facts of the others
+(`ComputeHelpers.quantifierVerdictOverOpen`): a matrix that can neither fault nor deposit shows no order. A fold none of
+whose members can be open is lowered as any fold.
+
+Witnesses `OpenableMembersWitnessTest`, `OpenValuesWitnessTest` (the examples of ch. 1.5), `OpenValuesRefWitnessTest` (the
+witnesses of the reference interpreter) and `InferFromEmptyRefusalWitnessTest` (what is refused, each beside a document that
+is carried).
 
 **Initialisations, consistencies, defaults.** An initialisation fires where the target is empty in the input on the
 bean and no other writer holds a `Value` on it; its guard excludes its own write, since a guard that counted its own

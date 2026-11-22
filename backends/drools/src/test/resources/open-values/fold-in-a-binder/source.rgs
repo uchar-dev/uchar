@@ -1,0 +1,52 @@
+Afleiden uit leeg: nee
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de gift Numeriek (geheel getal) (volledig);
+    het keurgewicht Numeriek (geheel getal);
+    het dubbelgewicht Numeriek (geheel getal);
+    het giftdeel Numeriek (getal);
+    is gul kenmerk (bijvoeglijk);
+    is karig kenmerk (bijvoeglijk);
+    is krap kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht (mv: gewichten) Numeriek (geheel getal);
+    de getuigen Numeriek (geheel getal);
+
+Feittype vinding
+    de vinder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
+
+Regel keurgewicht
+    geldig altijd
+        Het keurgewicht van een Jutter moet berekend worden als het gemeten gewicht plus 1.
+        Daarbij geldt:
+            het gemeten gewicht is de som van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn getuigen is gevuld.
+
+Regel dubbelgewicht
+    geldig altijd
+        Het dubbelgewicht van een Jutter moet berekend worden als het gemeten gewicht plus het gemeten gewicht.
+        Daarbij geldt:
+            het gemeten gewicht is de som van het gewicht van alle vondsten van de Jutter.
+
+Regel giftdeel
+    geldig altijd
+        Het giftdeel van een Jutter moet berekend worden als zijn gift gedeeld door het getelde aantal.
+        Daarbij geldt:
+            het getelde aantal is het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter.
+
+Regel gul
+    geldig altijd
+        Een Jutter is gul indien zijn gift gedeeld door (het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter) groter is dan 5.
+
+Regel karig
+    geldig altijd
+        Een Jutter is karig
+        indien hij aan alle volgende voorwaarden voldoet:
+        - het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter is kleiner dan 2
+        - zijn gift is kleiner dan 5.
+
+Regel krap
+    geldig altijd
+        Een Jutter is krap indien hij niet karig is.

@@ -1,0 +1,131 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "20"
+          },
+          "taxatie": {
+            "number": "2000"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "5"
+          },
+          "taxatie": {
+            "number": "50"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "totaalgewicht",
+      "value": {
+        "number": "25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "zwaargewicht",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "kleinste gewicht",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "grootste gewicht",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "zwaaraantal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "vondstaantal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aangemeld gewicht",
+      "value": {
+        "number": "25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "uiterste gewicht",
+      "value": {
+        "number": "25"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "vindloon",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "rijk"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

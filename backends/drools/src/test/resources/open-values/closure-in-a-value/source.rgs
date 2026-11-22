@@ -1,0 +1,66 @@
+Afleiden uit leeg: nee
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het aantal gewogen vondsten Numeriek (geheel getal);
+    het gewogen totaal Numeriek (geheel getal);
+    het gewogen aantal Numeriek (geheel getal);
+    het gemiddeld gewicht Numeriek (getal);
+    het aandeel Numeriek (getal);
+    de premie Numeriek (geheel getal);
+    de bonus Numeriek (geheel getal);
+    is volledig gewogen kenmerk (bijvoeglijk);
+    is meervoudig gewogen kenmerk (bijvoeglijk);
+    is ongewogen kenmerk (bijvoeglijk);
+    is gewogen kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht (mv: gewichten) Numeriek (geheel getal);
+
+Feittype vinding
+    de vinder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
+
+Regel aantal gewogen vondsten
+    geldig altijd
+        Het aantal gewogen vondsten van een Jutter moet berekend worden als het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter.
+
+Regel gewogen totaal
+    geldig altijd
+        Het gewogen totaal van een Jutter moet berekend worden als de som van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht is gevuld.
+
+Regel gewogen aantal
+    geldig altijd
+        Het gewogen aantal van een Jutter moet berekend worden als het aantal vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht is gevuld.
+
+Regel gemiddeld gewicht
+    geldig altijd
+        Het gemiddeld gewicht van een Jutter moet berekend worden als (de som van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht is gevuld) gedeeld door (het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter).
+
+Regel aandeel
+    geldig altijd
+        Het aandeel van een Jutter moet berekend worden als zijn bonus gedeeld door (het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter).
+
+Regel premie
+    geldig altijd
+        De premie van een Jutter moet gesteld worden op 7 indien het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter groter is dan 1.
+
+Regel volledig gewogen
+    geldig altijd
+        Een Jutter is volledig gewogen indien het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter gelijk is aan 3.
+
+Regel meervoudig gewogen
+    geldig altijd
+        Een Jutter is meervoudig gewogen indien het aantal gevulde waarden van het gewicht van alle vondsten van de Jutter groter is dan 1.
+
+Regel ongewogen
+    geldig altijd
+        Een Jutter is ongewogen indien de som van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: zijn gewicht is gevuld leeg is.
+
+Regel gewogen
+    geldig altijd
+        Een Jutter is gewogen indien hij niet ongewogen is.
+
+Regel weging
+    geldig altijd
+        Het gewogen aantal van een Jutter moet groter of gelijk zijn aan 1.

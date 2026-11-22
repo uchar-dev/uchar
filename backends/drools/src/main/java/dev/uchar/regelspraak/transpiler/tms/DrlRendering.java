@@ -955,13 +955,14 @@ final class DrlRendering {
             return "eval( " + name + "(" + c.arguments() + ") )";
         }
 
-        /** The test that the writer of the rule acts: the function of its outcome ({@code ComputeHelpers.judge}), which
-         *  the consequence calls again ({@link Consequence.Writer}). */
+        /** The test that the form of the rule acts: the function of the judgement of its condition
+         *  ({@code ComputeHelpers.judge}), which the consequence calls again ({@link Consequence.Writer},
+         *  {@link Consequence.FilteredContribution}). */
         private String acts(TestItem t) {
             int place = reserveer();
             String name = name("oordeel", place);
             Context c = context(t.slots(), -1, null, t.test());
-            fill(place, t.test().source(), "Boolean " + name + "(" + c.declaration() + ")", "    return "
+            fill(place, t.test().source(), "Object " + name + "(" + c.declaration() + ")", "    return "
                     + route(Route.JUDGE) + "(" + lambda(t.test(), c) + ", "
                     + (t.role() == TestItem.Role.ACTS_WITHOUT_FAULT) + ");\n");
             outcome = name + "(" + c.arguments() + ")";
@@ -1396,6 +1397,7 @@ final class DrlRendering {
                                         ? input(variable(x.value()), x.reached(), x.member()) : variable(x.value()))
                                         + ", " + x.reached()) + ")");
                 case Consequence.Contribution x -> contribution(x, b);
+                case Consequence.FilteredContribution x -> filteredContribution(x, b);
                 case Consequence.FilterDeposit x -> insert(b, "    ", x.insertion(), "new "
                         + typeName(FilterDeposit.class) + "(" + str(x.fold()) + ", " + x.subject() + ", "
                         + variable(x.member()) + ", " + depositCodesAgain(x.filter(), x.depositFlag(), x.slots(), false,
@@ -1486,16 +1488,16 @@ final class DrlRendering {
                 Context c = context(slots, d == null ? -1 : d.depositFlag(), DEPOSIT_FLAG, x.value());
                 Expr e = value(x.value(), c);
                 String v = x.collapse() ? call(StaticFunction.COLLAPSE, List.of(e)).text() : e.text();
+                String flag = d == null ? "null" : DEPOSIT_FLAG;
                 fill(place, x.value().source(), "Object " + name + "(" + c.declaration() + ")", outcome != null
-                        ? "    return " + route(Route.DECIDED) + "(" + outcome + ", () -> " + v + ");\n"
-                        : opens != null ? "    return " + route(Route.VALUED) + "(() -> " + v + ");\n"
+                        ? "    return " + route(Route.DECIDED) + "(" + outcome + ", () -> " + v + ", " + flag + ");\n"
+                        : opens != null ? "    return " + route(Route.VALUED) + "(() -> " + v + ", " + flag + ");\n"
                         : tryCatch("        return " + v + ";\n", "        return " + route(Route.CAUGHT) + "(e);\n"));
                 b.append("    Object v = ").append(name).append("(").append(c.arguments()).append(");\n");
                 b.append("    if (").append(route(Route.IS_EVALUATION_FAULT)).append("(v)) {\n");
                 insert(b, "        ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
                         + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().rule()) + "))");
-                // an open read breaks the value off, and what it deposited is dropped (RUNTIME-SEMANTICS ch. 1.5)
-                if (opens != null) {
+                if (opens != null && d == null) {
                     b.append("    } else if (").append(route(Route.IS_OPEN)).append("(v)) {\n");
                     leaveOpen(opens, b, "        ");
                 }
@@ -1508,12 +1510,19 @@ final class DrlRendering {
                         + x.subject() + ", " + route(Route.DEPOSIT_CODES) + "(" + DEPOSIT_FLAG + "))");
                 b.append(in).append("}\n");
             }
+            // a value that is leeg after a closure leaves the target open and deposits (RUNTIME-SEMANTICS ch. 1.5)
+            if (opens != null && d != null) {
+                b.append(in).append("if (").append(route(Route.IS_OPEN)).append("(v)) {\n");
+                leaveOpen(opens, b, in + "    ");
+                b.append(in).append("} else ");
+            }
             String fact = "new " + typeName(Value.class) + "(" + x.subject() + ", " + key(x.target()) + ", v, "
                     + str(x.writer()) + ")";
             if (x.writesEmpty()) {
+                if (opens != null) throw new IllegalStateException("a writer that can be open writes no leeg value");
                 insert(b, in, x.insertion(), fact);
             } else {
-                b.append(in).append("if (!").append(route(Route.IS_EMPTY)).append("(v)) {\n");
+                b.append(opens != null && d != null ? "" : in).append("if (!").append(route(Route.IS_EMPTY)).append("(v)) {\n");
                 insert(b, in + "    ", x.insertion(), fact);
                 b.append(in).append("}\n");
             }
@@ -1580,30 +1589,17 @@ final class DrlRendering {
         }
 
         /** The contribution of {@link Consequence.Contribution} on the fold's subject: the member itself; its value through
-         *  the route, which gives nothing where it is leeg; the verdict of the matrix of a quantifier fold, a function
-         *  of the rule; or its test of the member, a function of the rule that takes the member's place first, then
-         *  evaluates the matrix with the probe where the plan names one, and gives the verdict or the evaluation
-         *  fault. */
+         *  the route, which gives nothing where it is leeg; the verdict of the matrix of a quantifier fold or its
+         *  judgement, a function of the rule; or its test of the member, a function of the rule that takes the member's
+         *  place first, then evaluates the matrix with the probe where the plan names one, and gives the verdict or the
+         *  evaluation fault. */
         private void contribution(Consequence.Contribution x, StringBuilder b) {
             String fresh = "new " + typeName(Contribution.class) + "(" + str(x.fold()) + ", " + x.subject() + ", "
                     + variable(x.member()) + ", ";
             switch (x.input()) {
-                case Consequence.Input.Count t -> insert(b, "    ", x.insertion(), fresh + "null)");
-                case Consequence.Input.MemberValue l -> {
-                    b.append("    Object v = ").append(route(Route.CONTRIBUTION)).append("(").append(str(x.fold()))
-                            .append(", ").append(x.subject()).append(", ").append(variable(x.member())).append(", ")
-                            .append(l.cell() != null ? route(Route.CELL) + "(" + variable(l.value()) + ", "
-                                    + consequenceConstant(l.cell()).text() + ")"
-                                    : l.payload() != null ? route(Route.PAYLOAD) + "(" + variable(l.value()) + ", "
-                                    + str(l.payload()) + ")" : variable(l.value()))
-                            .append(", ")
-                            .append(l.total() == null ? "null" : str(l.total())).append(", ")
-                            .append(l.fixed() == null ? "null" : str(l.fixed())).append(", ").append(l.filled())
-                            .append(", ").append(l.whole()).append(");\n");
-                    b.append("    if (v != null) {\n");
-                    insert(b, "        ", x.insertion(), "v");
-                    b.append("    }\n");
-                }
+                case Consequence.Input.Count t -> insert(b, "    ", x.insertion(), memberOf(x));
+                case Consequence.Input.MemberValue l -> contributedValue(x, b);
+                case Consequence.Input.IncompleteInput l -> contributedValue(x, b);
                 case Consequence.Input.Verdict o -> {
                     int place = reserveer();
                     String name = name("matrix", place);
@@ -1612,6 +1608,15 @@ final class DrlRendering {
                             returning(o.matrix(), c, "    "));
                     insert(b, "    ", x.insertion(), fresh + route(Route.VERDICT) + "(" + name + "(" + c.arguments()
                             + ")))");
+                }
+                case Consequence.Input.Judged o -> {
+                    int place = reserveer();
+                    String name = name("matrix", place);
+                    Context c = context(x.slots(), -1, null, o.matrix());
+                    fill(place, o.matrix().source(), "Object " + name + "(" + c.declaration() + ")", "    return "
+                            + route(Route.JUDGE) + "(" + lambda(o.matrix(), c) + ", false);\n");
+                    insert(b, "    ", x.insertion(), route(Route.JUDGED) + "(" + str(x.fold()) + ", " + x.subject() + ", "
+                            + variable(x.member()) + ", " + name + "(" + c.arguments() + "))");
                 }
                 case Consequence.Input.MemberTest l -> {
                     int place = reserveer();
@@ -1629,6 +1634,41 @@ final class DrlRendering {
                     insert(b, "    ", x.insertion(), fresh + name + "(" + c.arguments() + "))");
                 }
             }
+        }
+
+        /** What the member of {@code x} gives a fold over a set by its value, inserted where it gives something. */
+        private void contributedValue(Consequence.Contribution x, StringBuilder b) {
+            b.append("    Object v = ").append(memberOf(x)).append(";\n    if (v != null) {\n");
+            insert(b, "        ", x.insertion(), "v");
+            b.append("    }\n");
+        }
+
+        /** The expression of what the member of {@code x} gives a fold over a set: the contribution of the member itself, or
+         *  that of its value through the route, the value of its input where it need not be complete. */
+        private String memberOf(Consequence.Contribution x) {
+            if (x.input() instanceof Consequence.Input.Count)
+                return "new " + typeName(Contribution.class) + "(" + str(x.fold()) + ", " + x.subject() + ", "
+                        + variable(x.member()) + ", null)";
+            Consequence.Input.IncompleteInput i = x.input() instanceof Consequence.Input.IncompleteInput o ? o : null;
+            Consequence.Input.MemberValue l = i != null ? i.of() : (Consequence.Input.MemberValue) x.input();
+            String value = i == null ? variable(l.value()) : input(variable(l.value()), variable(x.member()), i.member());
+            return route(Route.CONTRIBUTION) + "(" + str(x.fold()) + ", " + x.subject() + ", " + variable(x.member()) + ", "
+                    + (l.cell() != null ? route(Route.CELL) + "(" + value + ", " + consequenceConstant(l.cell()).text() + ")"
+                            : l.payload() != null ? route(Route.PAYLOAD) + "(" + value + ", " + str(l.payload()) + ")" : value)
+                    + ", " + (l.total() == null ? "null" : str(l.total())) + ", "
+                    + (l.fixed() == null ? "null" : str(l.fixed())) + ", " + l.filled() + ", " + l.whole() + ")";
+        }
+
+        /** The facts of {@link Consequence.FilteredContribution}, through the route, by the judgement that the test of the
+         *  rule asked ({@link #acts}). */
+        private void filteredContribution(Consequence.FilteredContribution x, StringBuilder b) {
+            if (outcome == null) throw new IllegalStateException(plan.name() + " does not test the judgement of its filter");
+            Consequence.Contribution c = x.contributes();
+            b.append("    for (Object f : ").append(route(Route.CONTRIBUTED)).append("(").append(outcome).append(", ")
+                    .append(str(c.fold())).append(", ").append(c.subject()).append(", ").append(variable(c.member()))
+                    .append(", ").append(memberOf(c)).append(")) {\n");
+            insert(b, "        ", c.insertion(), "f");
+            b.append("    }\n");
         }
 
         /** The keys of {@link Consequence.UniquenessKey}: a function of the rule gives the key components, each the
@@ -1688,8 +1728,8 @@ final class DrlRendering {
             Expr e = value(x.value(), c);
             String v = x.collapse() ? call(StaticFunction.COLLAPSE, List.of(e)).text() : e.text();
             fill(place, x.value().source(), "Object " + name + "(" + c.declaration() + ")",
-                    outcome != null ? "    return " + route(Route.DECIDED) + "(" + outcome + ", () -> " + v + ");\n"
-                    : opens != null ? "    return " + route(Route.VALUED) + "(() -> " + v + ");\n"
+                    outcome != null ? "    return " + route(Route.DECIDED) + "(" + outcome + ", () -> " + v + ", null);\n"
+                    : opens != null ? "    return " + route(Route.VALUED) + "(() -> " + v + ", null);\n"
                     : x.fault() == null ? "    return " + v + ";\n"
                     : tryCatch("        return " + v + ";\n", "        return " + route(Route.CAUGHT) + "(e);\n"));
             b.append("    Object v = ").append(name).append("(").append(c.arguments()).append(");\n");

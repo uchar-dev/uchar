@@ -1,0 +1,125 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandvoogd",
+        "attributes": {},
+        "roles": {
+          "beheerde jutter": [
+            "J1",
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "opgave": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "8"
+          },
+          "meting": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": [
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "meting": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemerkt",
+          "gekeurd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "berekend gewicht"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "jutgewicht"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "S1",
+      "characteristic": "druk"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "S1",
+      "attribute": "strandgewicht"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "keuraantal"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "keuraantal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "loon"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J2",
+      "attribute": "loon"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

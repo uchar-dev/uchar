@@ -22,7 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * {@code inferFromEmpty: false} read with the three states of a member, filled, settled leeg and open. The documents
  * stand in {@code src/test/resources/open-values/<name>/}, written in RegelSpraak ({@code source.rgs}) and taken to the
  * wire by the frontend ({@code ir.json}), but the four of a stack with an initialisation, which the dialect writes only
- * beside an opgave and which stand as the frontend's document with that default added; their cases carry the expectations of the spec's example, and the reference
+ * beside an opgave and which stand as the frontend's document with that default added, {@code quantifier-fold}, with
+ * a consistency rule over a quantifier fold added, and {@code fold-subtype}, with a fold as the left side of the matrix of
+ * one; their cases carry the expectations of the spec's example, and the reference
  * interpreter plays every one of them ({@code runner}, {@code runner --closed-inputs} for a case named
  * {@code closed*}), so a case here is the outcome of ref beside that of this backend. Every case plays on both branches
  * and must meet its expectations there; a case named {@code closed*} plays in a session that treats every input
@@ -31,7 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  *
  * <p><b>Red</b> on the code before the reading was carried: every document with the property was refused with
  * DROOLS-370 and {@code form=document} before it was built, and the two documents without it played as now. Every
- * document {@code stack-*} was refused with {@code form=defaults-group} before the stack was carried.
+ * document {@code stack-*} was refused with {@code form=defaults-group} before the stack was carried, and every
+ * document with a fold with {@code form=set-fold} or {@code form=quantifier-fold} before the folds were.
  */
 class OpenValuesWitnessTest {
 
@@ -269,6 +272,47 @@ class OpenValuesWitnessTest {
         assertEquals(4, play("stack-deposit", "case"));
     }
 
+    /** WV-1.5-set-fold*: a sum, a minimum, a maximum, a listed fold and a count under a filter over members that can be
+     *  open, the members of a derived member among them: an open member makes the fold open, a count reads no value, a
+     *  settled leeg member is skipped, and over no member the fold is settled leeg or its fallback. */
+    @Test void wv_1_5_set_fold() throws Exception {
+        assertEquals(5, play("set-fold", "case"));
+    }
+
+    /** WV-1.5-closure-in-a-value: a filled-value count and a filter on gevuld are closures: they decide for the form
+     *  itself, a comparison of one that is false leaves its target open, and so does a value that is leeg after one, with
+     *  what it deposited. */
+    @Test void wv_1_5_closure_in_a_value() throws Exception {
+        assertEquals(5, play("closure-in-a-value", "case"));
+    }
+
+    /** WV-1.5-closure-before-a-barrier and WV-1.5-reached, over a fold: the barrier of a Let over a binder that is leeg
+     *  after a closure leaves the target open, and a closure the evaluation does not reach, in the divisor of a leeg
+     *  dividend or an unread binder, does not count. */
+    @Test void wv_1_5_fold_in_a_binder() throws Exception {
+        assertEquals(7, play("fold-in-a-binder", "case"));
+    }
+
+    /** WV-1.5-quantifier-fold-*, without a filter or under one that stands: each quantifier by Kleene's table, over no
+     *  member, over a matrix that closes, in a composite and in a consistency rule. */
+    @Test void wv_1_5_quantifier_fold() throws Exception {
+        assertEquals(9, play("quantifier-fold", "case"));
+    }
+
+    /** WV-1.5-open-passes-on, over folds: over a derived member whose writer stands after the fold, over a fold, over a
+     *  path of two steps, in a quantifier fold, over an instance-set union, and in the justification and the base of a
+     *  stack. */
+    @Test void wv_1_5_fold_chain() throws Exception {
+        assertEquals(5, play("fold-chain", "case"));
+    }
+
+    /** WV-1.5-input-per-object in a fold: over a member that is input on the objects of one type and derived on those of
+     *  its subtype; an anchored read of a derived member in a filter; a fold in an initialisation and under a "verminderd
+     *  met"; a fold nested in the matrix of a quantifier fold. */
+    @Test void wv_1_5_fold_subtype() throws Exception {
+        assertEquals(6, play("fold-subtype", "case"));
+    }
+
     /** A value a consumer puts on a bean between two fires fills an input that is not complete, and one it takes away
      *  leaves it open again: a read takes the bean beside the {@code OpenInput} that {@code insert} stated once, also of
      *  a bean a path reaches. */
@@ -279,6 +323,10 @@ class OpenValuesWitnessTest {
             between("link", "case1-links.json", branch, "V2", "vindpremie", "J1", "setBonus", 20, "open", "120");
             between("stack-first-decides", "case5-basis-open.json", branch, "V1", "vindloon", "V1", "setGewicht", 50, "open",
                     "100");
+            between("set-fold", "case2-gewicht-open.json", branch, "J1", "totaalgewicht", "V2", "setGewicht", 5, "open", "25");
+            between("set-fold", "case2-gewicht-open.json", branch, "J1", "zwaargewicht", "V2", "setGewicht", 5, "open", "20");
+            between("closure-in-a-value", "case2-alle-open.json", branch, "J1", "gewogen totaal", "V2", "setGewicht", 5, "open",
+                    "5");
         }
     }
 
@@ -360,12 +408,12 @@ class OpenValuesWitnessTest {
             s.filter(Files::isDirectory).forEach(p -> names.add(p.getFileName().toString()));
         }
         names.sort(null);
-        assertEquals(List.of("boundary-after", "boundary-before", "complete", "complete-derived", "composite-tables",
-                "consistency", "derived", "filled-test", "initialisation", "initialisation-condition", "input-per-object",
-                "instance-ordered", "link",
+        assertEquals(List.of("boundary-after", "boundary-before", "closure-in-a-value", "complete", "complete-derived",
+                "composite-tables", "consistency", "derived", "filled-test", "fold-chain", "fold-in-a-binder", "fold-subtype",
+                "initialisation", "initialisation-condition", "input-per-object", "instance-ordered", "link",
                 "no-open-without-the-property", "open-input", "outside-the-window", "past-undetermined-deposit",
-                "past-undetermined-fault", "reach", "reach-without-the-property", "read-for-another", "rule",
-                "stack-characteristic", "stack-deposit", "stack-exception-groups",
+                "past-undetermined-fault", "quantifier-fold", "reach", "reach-without-the-property", "read-for-another", "rule",
+                "set-fold", "stack-characteristic", "stack-deposit", "stack-exception-groups",
                 "stack-exception-groups-initialisation", "stack-exception-groups-nested",
                 "stack-first-decides", "stack-gives-way", "stack-initialisation", "stack-initialisation-value",
                 "stack-opgave", "stack-opgave-complete", "stack-outside-the-window", "stack-two-initialisations",

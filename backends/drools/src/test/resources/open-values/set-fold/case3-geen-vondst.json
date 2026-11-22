@@ -1,0 +1,82 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": []
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "totaalgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "zwaargewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "kleinste gewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "grootste gewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "zwaaraantal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "vondstaantal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "aangemeld gewicht",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "uiterste gewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "rijk"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

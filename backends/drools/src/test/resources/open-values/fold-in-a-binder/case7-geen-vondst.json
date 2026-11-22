@@ -1,0 +1,55 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "gift": {
+            "number": "20"
+          }
+        },
+        "roles": {
+          "vondst": []
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "keurgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "dubbelgewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "giftdeel"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "gul"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "karig"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "giftdeel",
+      "label": "J1",
+      "code": "EF-005"
+    }
+  ]
+}

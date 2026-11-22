@@ -1,0 +1,156 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "S1",
+        "objectType": "Strandvoogd",
+        "attributes": {},
+        "roles": {
+          "beheerde jutter": [
+            "J1",
+            "J2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "opgave": {
+            "number": "4"
+          }
+        },
+        "roles": {
+          "vondst": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "8"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemerkt",
+          "gekeurd"
+        ]
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ],
+        "characteristicsAbsent": [
+          "gemerkt"
+        ]
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondst": [
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "7"
+          },
+          "meting": {
+            "number": "6"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gemerkt"
+        ],
+        "characteristicsAbsent": [
+          "gekeurd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "berekend gewicht"
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "berekend gewicht"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "jutgewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "jutgewicht",
+      "value": {
+        "number": "12"
+      }
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "S1",
+      "attribute": "jutgewicht"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "S1",
+      "attribute": "strandgewicht",
+      "value": {
+        "number": "19"
+      }
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "S1",
+      "attribute": "zwaarste gewicht"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "S1",
+      "characteristic": "druk"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "keuraantal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
