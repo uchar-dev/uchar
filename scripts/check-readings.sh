@@ -65,13 +65,14 @@
 # The tripwire holds on a case in DEVIATIONS too.
 #
 # The traces and the readings are collected, then judged (scripts/lib/parallel.sh): first every
-# `runner --trace` runs, one process per core, then every `--readings` of both branches, one process per two
-# cores (replay JVMs with PARALLEL_JVM_FLAGS, measured there), then the plain replay of each golden whose
-# readings end in EXCLUDE or ERROR, each call into files of its own; then the loop of checks 1 and 2 reads
-# those files in the order of the corpus and judges them as the calls one after the other would. The goldens
-# and their case files are listed once, before the first call, and every loop reads that list. A process
-# that crashes or does not start leaves an exit status other than 0 or an output without its last line,
-# which the loop meets at its golden or case and fails by name.
+# `runner --trace` runs, one process per core, then every `--readings` of both branches, in batches of one
+# JVM each, one process per two cores (replay JVMs with PARALLEL_JVM_FLAGS, measured there), then, in batches
+# too, the plain replay of each golden whose readings end in EXCLUDE or ERROR, each call into files of its
+# own; then the loop of checks 1 and 2 reads those files in the order of the corpus and judges them as the
+# calls one after the other would. The goldens and their case files are listed once, before the first call,
+# and every loop reads that list. A runner that crashes or does not start leaves an exit status other than 0
+# or an output without its last line, which the loop meets at its case and fails by name; a JVM that ends
+# before all its calls are done fails the gate with the call it ran (parallel_batch).
 #
 # An empty comparison is a failure, never silently green. Report: goldens and cases traced, compared per
 # branch, excluded (per first word of the reason), and the counts the floors hold.
@@ -220,11 +221,12 @@ while IFS= read -r ir; do
     j=$((j + 1))
     parallel_task "$work/traces" "$i.$j" err "$BIN" --trace "$ir" "$c"
   done
-  parallel_task "$work/readings" "exec.$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --readings "$ir" $cases
-  parallel_task "$work/readings" "drl.$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --readings --drl "$ir" $cases
+  parallel_batch_task "$work/readings" "exec.$i" --readings "$ir" $cases
+  parallel_batch_task "$work/readings" "drl.$i" --readings --drl "$ir" $cases
 done < "$work/goldens"
 parallel_run "$work/traces" "$traces" || fail "parallel_run failed over the traces (the parallel line above says why)"
-parallel_run "$work/readings" "$jvms" || fail "parallel_run failed over the readings (the parallel line above says why)"
+parallel_batch "$work/readings" "$jvms" java $PARALLEL_BATCH_JVM_FLAGS -jar "$JAR" --batch \
+  || fail "parallel_batch failed over the readings (the parallel line above says why)"
 # the plain replay that check 2 asks of a golden whose readings end in EXCLUDE or ERROR
 i=0
 while IFS= read -r ir; do
@@ -233,10 +235,11 @@ while IFS= read -r ir; do
   case "$(tail -1 "$work/readings/exec.$i.out")" in
     EXCLUDE*|ERROR*)
       cases=$(cat "$work/cases/$i")
-      parallel_task "$work/replays" "$i" null java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" $cases ;;
+      parallel_batch_task "$work/replays" "$i" "$ir" $cases ;;
   esac
 done < "$work/goldens"
-parallel_run "$work/replays" "$jvms" || fail "parallel_run failed over the replays (the parallel line above says why)"
+parallel_batch "$work/replays" "$jvms" java $PARALLEL_BATCH_JVM_FLAGS -jar "$JAR" --batch \
+  || fail "parallel_batch failed over the replays (the parallel line above says why)"
 
 i=0
 while IFS= read -r ir; do
