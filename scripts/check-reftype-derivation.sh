@@ -291,7 +291,7 @@
 # combined copy with every field changed at once, with the executors and the comparison of the origin
 # leg (ref and clingo per case against the pinned expectations; the two Drools branches print their own
 # untouched status line). One copy per golden instead of one per field: the fields sit on nearly every
-# golden (the rule presentation on 342 of 419), so a replay per field would multiply the leg's JVMs by
+# golden (the rule presentation on 342 of 419), so a replay per field would multiply the leg's replays by
 # up to three. A difference on the combined copy is then assigned to a field: the executor that
 # differed runs again on the copies of that golden with one field changed each, and the report names
 # the fields whose own copy moves its outcome away from the untouched one, or says that only the
@@ -1169,11 +1169,32 @@ mention() {
     [ -n "$matched" ]
 }
 
+# The replays of a leg in the backend run in batches (parallel_batch, scripts/lib/parallel.sh), the leg's loop
+# reads them. Two batches per leg, the untouched documents and the copies: a copy never shares a JVM with a
+# document it must answer like, so nothing the JVM keeps of the one can give the answer of the other.
+replays_begin() {   # <leg>
+    mkdir "$WORK/$1.untouched" "$WORK/$1.copy" || exit 2
+}
+replay_both() {   # <leg> <untouched|copy> <key> <ir.json> <case>...: on both branches, read by replay_line <key>.exec and .drl
+    rb_batch=$WORK/$1.$2 rb_key=$3
+    shift 3
+    parallel_batch_task "$rb_batch" "$rb_key.exec" "$@"
+    parallel_batch_task "$rb_batch" "$rb_key.drl" --drl "$@"
+}
+replays_run() {   # <leg> <number of processes>
+    for rr_part in untouched copy; do
+        parallel_batch "$WORK/$1.$rr_part" "$2" java $PARALLEL_BATCH_JVM_FLAGS -jar "$JAR" --batch || exit 2
+    done
+}
+replay_line() {   # <leg> <untouched|copy> <key>
+    tail -1 "$WORK/$1.$2/$3.out"
+}
+
 # The status line DroolsBackendMain prints last: `PLAYED <n>`, `FAIL <detail>`, `EXCLUDE DROOLS-###: <reason>`
 # or `ERROR <detail>`. Each leg compares the line of a run on a changed copy with the line of the run on the
-# untouched ir.json, so two runs whose JVMs both crashed, were killed or did not start would compare equal,
-# empty against empty. An untouched run that ends in any other line therefore fails the gate by golden, leg
-# and executor, and the leg compares nothing with it. ref needs no such check: the legs judge it by its exit
+# untouched ir.json, so two runs that both left no line would compare equal, empty against empty. An
+# untouched run that ends in any other line therefore fails the gate by golden, leg and executor, and the leg
+# compares nothing with it. ref needs no such check: the legs judge it by its exit
 # status, and a process that crashed, was killed or did not start does not end with 0. clingo is judged the
 # same way, except on a golden in gate 6's refusal channel (clingo_same below).
 drools_status() {
@@ -1292,6 +1313,8 @@ find corpus/golden -name ir.json 2>/dev/null | sort > "$LIST"
 # --- the unit leg (the twist; see the script header) -------------------------------------------
 leg_twist() {
     CASES=$WORK/twist.cases
+    replays_begin twist
+    : > "$WORK/twist.list"
     n_goldens=0
     n_twists=0
     n_checked=0
@@ -1321,7 +1344,19 @@ leg_twist() {
         [ -s "$CASES" ] || continue                # no case file: not replayable (gate 5 lists those)
         n_goldens=$((n_goldens + 1))
         n_twists=$((n_twists + hits_list))
+        printf '%s %s\n' "$n_goldens" "$dir" >> "$WORK/twist.list"
+        set --
+        while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
+        replay_both twist untouched "$n_goldens" "$ir" "$@"
+        replay_both twist copy "$n_goldens" "$tw" "$@"
+    done < "$LIST"
+    replays_run twist 1
 
+    while read -r i dir; do
+        ident=${dir#corpus/golden/}
+        ir=$dir/ir.json
+        tw="$WORK/$dir/ir.json"
+        find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
         # ref and clingo: exit 0 on the untouched ir.json is what gates 5 and 6 pin, so the twisted
         # run must exit 0 too, or, for a golden in gate 6's refusal channel, give clingo's refusal of
         # the untouched run (clingo_same). Any other outcome is the executor reading the repetition.
@@ -1349,11 +1384,9 @@ leg_twist() {
         # untouched file. Comparing against the BASELINE rather than against PLAYED is deliberate —
         # a golden gate 12 auto-refuses per form, or carries in its value-divergence list, must stay
         # exactly as refusing/diverging under the twist, and this harness must not re-litigate that.
-        set --
-        while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
         n_checked=$((n_checked + 1))
-        base_expr=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
-        twisted=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$tw" "$@" 2>/dev/null | tail -1)
+        base_expr=$(replay_line twist untouched "$i.exec")
+        twisted=$(replay_line twist copy "$i.exec")
         [ "${base_expr%% *}" = PLAYED ] && n_exec_played=$((n_exec_played + 1))
         if ! drools_status "$base_expr"; then
             no_status "$ident" unit Drools "$base_expr"
@@ -1372,8 +1405,8 @@ leg_twist() {
         # untouched line must be the exec-model branch's untouched line (the two render one analysis; gate 12
         # holds this over the whole corpus), and its twisted line its own untouched one.
         n_checked=$((n_checked + 1))
-        drl_baseline=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
-        d_twisted=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$tw" "$@" 2>/dev/null | tail -1)
+        drl_baseline=$(replay_line twist untouched "$i.drl")
+        d_twisted=$(replay_line twist copy "$i.drl")
         if ! drools_status "$drl_baseline"; then
             no_status "$ident" unit "the DRL-text branch" "$drl_baseline"
         elif drools_status "$base_expr" && [ "$drl_baseline" != "$base_expr" ]; then
@@ -1391,7 +1424,7 @@ leg_twist() {
                 status=1
             fi
         fi
-    done < "$LIST"
+    done < "$WORK/twist.list"
     printf 'leg_status=%s n_goldens=%s n_twists=%s n_checked=%s n_survivors=%s n_drl=%s n_exec_played=%s n_unit=%s n_exempt=%s n_without_sister=%s\n' \
         "$status" "$n_goldens" "$n_twists" "$n_checked" "$n_survivors" "$n_drl" "$n_exec_played" "$n_unit" "$n_exempt" "$n_without_sister" > "$WORK/twist.counts"
 }
@@ -1399,6 +1432,8 @@ leg_twist() {
 # --- the vocabulary leg (see the script header) ---------------------------------------------------
 leg_vocabulary() {
     CASES=$WORK/vocabulary.cases
+    replays_begin vocabulary
+    : > "$WORK/vocabulary.list"
     n_vgoldens=0
     n_v_stripped=0
     n_v_swapped=0
@@ -1417,10 +1452,23 @@ leg_vocabulary() {
         n_v_stripped=$((n_v_stripped + $2))
         n_v_swapped=$((n_v_swapped + $3))
         n_v_rotated=$((n_v_rotated + $4))
+        printf '%s %s\n' "$n_vgoldens" "$dir" >> "$WORK/vocabulary.list"
         set --
         while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
-        base_expr=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
-        drl_baseline=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
+        replay_both vocabulary untouched "$n_vgoldens" "$ir" "$@"
+        for variant in stripped swapped rotated; do
+            replay_both vocabulary copy "$n_vgoldens.$variant" "$vdir/$variant.json" "$@"
+        done
+    done < "$LIST"
+    replays_run vocabulary 1
+
+    while read -r i dir; do
+        ident=${dir#corpus/golden/}
+        ir=$dir/ir.json
+        vdir="$WORK/vocabulaire/$ident"
+        find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
+        base_expr=$(replay_line vocabulary untouched "$i.exec")
+        drl_baseline=$(replay_line vocabulary untouched "$i.drl")
         drools_status "$base_expr" || no_status "$ident" vocabulary Drools "$base_expr"
         drools_status "$drl_baseline" || no_status "$ident" vocabulary "the DRL-text branch" "$drl_baseline"
         for variant in stripped swapped rotated; do
@@ -1437,20 +1485,20 @@ leg_vocabulary() {
                 fi
             done < "$CASES"
             n_vreplays=$((n_vreplays + 2))
-            v=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$vir" "$@" 2>/dev/null | tail -1)
+            v=$(replay_line vocabulary copy "$i.$variant.exec")
             if drools_status "$base_expr" && [ "$v" != "$base_expr" ]; then
                 printf 'FAIL: %s — Drools answers differently on the %s copy (vocabulary leg):\n  untouched: %s\n  %s: %s\n' \
                     "$ident" "$variant" "$base_expr" "$variant" "$v" >&2
                 status=1
             fi
-            dv=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$vir" "$@" 2>/dev/null | tail -1)
+            dv=$(replay_line vocabulary copy "$i.$variant.drl")
             if drools_status "$drl_baseline" && [ "$dv" != "$drl_baseline" ]; then
                 printf 'FAIL: %s — the DRL-text branch answers differently on the %s copy (vocabulary leg):\n  untouched: %s\n  %s: %s\n' \
                     "$ident" "$variant" "$drl_baseline" "$variant" "$dv" >&2
                 status=1
             fi
         done
-    done < "$LIST"
+    done < "$WORK/vocabulary.list"
     printf 'leg_status=%s n_vgoldens=%s n_v_stripped=%s n_v_swapped=%s n_v_rotated=%s n_vreplays=%s\n' \
         "$status" "$n_vgoldens" "$n_v_stripped" "$n_v_swapped" "$n_v_rotated" "$n_vreplays" > "$WORK/vocabulary.counts"
 }
@@ -1458,6 +1506,8 @@ leg_vocabulary() {
 # --- the origin leg (see the script header) --------------------------------------------------------
 leg_origin() {
     CASES=$WORK/origin.cases
+    replays_begin origin
+    : > "$WORK/origin.list"
     n_hgoldens=0
     n_h_stripped=0
     n_hreplays=0
@@ -1471,6 +1521,19 @@ leg_origin() {
         [ -s "$CASES" ] || continue                # no case file: not replayable
         n_hgoldens=$((n_hgoldens + 1))
         n_h_stripped=$((n_h_stripped + stripped))
+        printf '%s %s\n' "$n_hgoldens" "$dir" >> "$WORK/origin.list"
+        set --
+        while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
+        replay_both origin untouched "$n_hgoldens" "$ir" "$@"
+        replay_both origin copy "$n_hgoldens" "$hir" "$@"
+    done < "$LIST"
+    replays_run origin 1
+
+    while read -r i dir; do
+        ident=${dir#corpus/golden/}
+        ir=$dir/ir.json
+        hir="$WORK/herkomst/$ident/gestript.json"
+        find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
         while IFS= read -r case; do
             n_hreplays=$((n_hreplays + 2))
             if ! report_line=$("$RUNNER_REF" "$hir" "$case" 2>&1); then
@@ -1482,11 +1545,9 @@ leg_origin() {
                 status=1
             fi
         done < "$CASES"
-        set --
-        while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
         n_hreplays=$((n_hreplays + 2))
-        base_expr=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
-        h=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$hir" "$@" 2>/dev/null | tail -1)
+        base_expr=$(replay_line origin untouched "$i.exec")
+        h=$(replay_line origin copy "$i.exec")
         if ! drools_status "$base_expr"; then
             no_status "$ident" origin Drools "$base_expr"
         elif [ "$h" != "$base_expr" ]; then
@@ -1494,8 +1555,8 @@ leg_origin() {
                 "$ident" "$base_expr" "$h" >&2
             status=1
         fi
-        drl_baseline=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
-        dh=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$hir" "$@" 2>/dev/null | tail -1)
+        drl_baseline=$(replay_line origin untouched "$i.drl")
+        dh=$(replay_line origin copy "$i.drl")
         if ! drools_status "$drl_baseline"; then
             no_status "$ident" origin "the DRL-text branch" "$drl_baseline"
         elif [ "$dh" != "$drl_baseline" ]; then
@@ -1503,7 +1564,7 @@ leg_origin() {
                 "$ident" "$drl_baseline" "$dh" >&2
             status=1
         fi
-    done < "$LIST"
+    done < "$WORK/origin.list"
     printf 'leg_status=%s n_hgoldens=%s n_h_stripped=%s n_hreplays=%s\n' \
         "$status" "$n_hgoldens" "$n_h_stripped" "$n_hreplays" > "$WORK/origin.counts"
 }
@@ -1511,6 +1572,8 @@ leg_origin() {
 # --- the name leg (see the script header) ----------------------------------------------------------
 leg_name() {
     CASES=$WORK/name.cases
+    replays_begin name
+    : > "$WORK/name.list"
     n_ngoldens=0
     n_n_stripped=0
     n_a_stripped=0
@@ -1528,6 +1591,19 @@ leg_name() {
         n_ngoldens=$((n_ngoldens + 1))
         n_n_stripped=$((n_n_stripped + stripped))
         n_a_stripped=$((n_a_stripped + annotations))
+        printf '%s %s\n' "$n_ngoldens" "$dir" >> "$WORK/name.list"
+        set --
+        while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
+        replay_both name untouched "$n_ngoldens" "$ir" "$@"
+        replay_both name copy "$n_ngoldens" "$nir" "$@"
+    done < "$LIST"
+    replays_run name 1
+
+    while read -r i dir; do
+        ident=${dir#corpus/golden/}
+        ir=$dir/ir.json
+        nir="$WORK/naam/$ident/gestript.json"
+        find "$dir" -maxdepth 1 -name 'case*.json' 2>/dev/null | sort > "$CASES"
         while IFS= read -r case; do
             n_nreplays=$((n_nreplays + 2))
             if ! report_line=$("$RUNNER_REF" "$nir" "$case" 2>&1); then
@@ -1539,11 +1615,9 @@ leg_name() {
                 status=1
             fi
         done < "$CASES"
-        set --
-        while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
         n_nreplays=$((n_nreplays + 2))
-        base_expr=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" "$@" 2>/dev/null | tail -1)
-        nm=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" "$nir" "$@" 2>/dev/null | tail -1)
+        base_expr=$(replay_line name untouched "$i.exec")
+        nm=$(replay_line name copy "$i.exec")
         if ! drools_status "$base_expr"; then
             no_status "$ident" name Drools "$base_expr"
         elif [ "$nm" != "$base_expr" ]; then
@@ -1551,8 +1625,8 @@ leg_name() {
                 "$ident" "$base_expr" "$nm" >&2
             status=1
         fi
-        drl_baseline=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "$@" 2>/dev/null | tail -1)
-        dn=$(java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$nir" "$@" 2>/dev/null | tail -1)
+        drl_baseline=$(replay_line name untouched "$i.drl")
+        dn=$(replay_line name copy "$i.drl")
         if ! drools_status "$drl_baseline"; then
             no_status "$ident" name "the DRL-text branch" "$drl_baseline"
         elif [ "$dn" != "$drl_baseline" ]; then
@@ -1560,7 +1634,7 @@ leg_name() {
                 "$ident" "$drl_baseline" "$dn" >&2
             status=1
         fi
-    done < "$LIST"
+    done < "$WORK/name.list"
     printf 'leg_status=%s n_ngoldens=%s n_n_stripped=%s n_a_stripped=%s n_nreplays=%s\n' \
         "$status" "$n_ngoldens" "$n_n_stripped" "$n_a_stripped" "$n_nreplays" > "$WORK/name.counts"
 }
@@ -1634,6 +1708,7 @@ leg_presentation() {
     TASKS=$WORK/presentation.tasks
     ONE=$WORK/presentation.one
     mkdir -p "$TASKS" || exit 2
+    replays_begin presentation
     jobs=$(parallel_jobs 2) || exit 2
     : > "$WORK/presentation.list"
     i=0
@@ -1656,12 +1731,11 @@ leg_presentation() {
         done < "$CASES"
         set --
         while IFS= read -r case; do set -- "$@" "$case"; done < "$CASES"
-        parallel_task "$TASKS" "$i.exec" null java $PARALLEL_JVM_FLAGS -jar "$JAR" "$ir" "$@"
-        parallel_task "$TASKS" "$i.exec.copy" null java $PARALLEL_JVM_FLAGS -jar "$JAR" "$pdir/combined.json" "$@"
-        parallel_task "$TASKS" "$i.drl" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$ir" "$@"
-        parallel_task "$TASKS" "$i.drl.copy" null java $PARALLEL_JVM_FLAGS -jar "$JAR" --drl "$pdir/combined.json" "$@"
+        replay_both presentation untouched "$i" "$ir" "$@"
+        replay_both presentation copy "$i" "$pdir/combined.json" "$@"
     done < "$LIST"
     parallel_run "$TASKS" "$jobs" || exit 2
+    replays_run presentation "$jobs"
 
     n_pgoldens=0
     n_kind_goldens=0 n_kind=0
@@ -1708,10 +1782,10 @@ leg_presentation() {
             fi
         done < "$pdir/cases"
         n_preplays=$((n_preplays + 2))
-        base_expr=$(tail -1 "$TASKS/$i.exec.out")
-        p=$(tail -1 "$TASKS/$i.exec.copy.out")
-        drl_baseline=$(tail -1 "$TASKS/$i.drl.out")
-        dp=$(tail -1 "$TASKS/$i.drl.copy.out")
+        base_expr=$(replay_line presentation untouched "$i.exec")
+        p=$(replay_line presentation copy "$i.exec")
+        drl_baseline=$(replay_line presentation untouched "$i.drl")
+        dp=$(replay_line presentation copy "$i.drl")
         if ! drools_status "$base_expr"; then
             no_status "$ident" presentation Drools "$base_expr"
         elif [ "$p" != "$base_expr" ]; then
@@ -1748,10 +1822,11 @@ leg_presentation() {
 # so they run as five processes at once, with its report into $WORK/<leg>.log, its exit status into
 # $WORK/<leg>.rc and its counts into $WORK/<leg>.counts. The gate then reads them in the order of the legs,
 # each report and the checks after it in the place they have, so the report and the first failure are those
-# of the five legs one after the other. The first four go one golden after the other; a replay JVM with
-# PARALLEL_JVM_FLAGS uses 1.5 cores (scripts/lib/parallel.sh), so they keep about 6 cores busy. The
-# presentation leg replays nearly every golden, too many for one process, so it runs its calls through
-# scripts/lib/parallel.sh on one process per two cores, as gates 12 and 17 do, and judges them in corpus order.
+# of the five legs one after the other. The first four run their replays in one JVM at a time, and ref and
+# clingo one golden after the other; a replay JVM with PARALLEL_JVM_FLAGS uses 1.5 cores
+# (scripts/lib/parallel.sh). The presentation leg replays nearly every golden, so it runs its calls and its
+# replays through scripts/lib/parallel.sh on one process per two cores, as gates 12 and 17 do, and judges them
+# in corpus order.
 echo "  legs: 5 processes (unit, vocabulary, origin, name, presentation)"
 for leg in twist vocabulary origin name presentation; do
     { ( "leg_$leg" ) > "$WORK/$leg.log" 2>&1; echo $? > "$WORK/$leg.rc"; } &
