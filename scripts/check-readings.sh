@@ -24,8 +24,8 @@
 #      both branches, `--readings [--drl]` ends in `READINGS <n>`, n its number of case files, or in
 #      `EXCLUDE`, and both branches end in the same line. A golden the readings exclude is one the replay
 #      excludes in the same line (the plain replay is asked), so no golden the square plays escapes the
-#      comparison. An `ERROR` fails, unless the golden stands in READINGS_ERROR_KNOWN below, whose replay
-#      must then exclude it;
+#      comparison, but those READINGS_REFUSED names with the code of the refusal. An `ERROR` fails, unless
+#      the golden stands in READINGS_ERROR_KNOWN below, whose replay must then exclude it;
 #   3. per case file of a golden both branches read, the lines of ref and of each branch are equal, by
 #      the comparison rule below; a case that differs fails unless DEVIATIONS lists it for that branch,
 #      and a listed case that agrees, or that is not compared, fails as stale. On every case file, listed
@@ -99,6 +99,14 @@ DEVIATIONS=(
 # reading open, and the next form's `beginReading` refused the build with readings. `meet` closes that
 # reading now, and the four are compared as `EXCLUDE`, like every golden the replay excludes.
 READINGS_ERROR_KNOWN=(
+)
+# A golden the replay plays and the backend does not read, with the code of the refusal of its build with
+# readings: '<golden>|DROOLS-###|<reason>'. Its readings end in EXCLUDE with that code on both branches, its
+# replay in PLAYED and the number of its case files; it is compared with nothing. A listed golden whose
+# readings are read, refused with another code, or whose replay does not play it, fails as stale.
+READINGS_REFUSED=(
+  "jutterswet-afleiden-uit-leeg|DROOLS-370|the document carries inferFromEmpty false: the backend plays it with the reading of RUNTIME-SEMANTICS ch. 1.5, and the readings of an open member at the fixpoint (ch. 5.12, 'Open values') are a later part of card open-values-in-drools, so the build with readings is refused (form: reading); ref traces its cases"
+  "jutterswet-volledig-gegeven|DROOLS-370|as jutterswet-afleiden-uit-leeg"
 )
 # A golden case file whose end state differs between ref and the backend, per branch:
 # '<golden>/<case file>|<branch>|<reason>', branch `exec` or `drl`. Empty since the comparison began
@@ -180,6 +188,17 @@ for e in "${TRACE_REFUSED[@]+"${TRACE_REFUSED[@]}"}"; do
   trace_refused[$t_name]=$t_code
 done
 declare -A trace_refused_seen=()
+
+# --- the list of refused readings, read once: each entry three fields, a DROOLS code, a reason, a golden named once ---
+declare -A readings_refused=()
+for e in "${READINGS_REFUSED[@]+"${READINGS_REFUSED[@]}"}"; do
+  IFS='|' read -r r_name r_code r_why <<< "$e"
+  [ -n "$r_name" ] && [ -n "${r_why// /}" ] || fail "READINGS_REFUSED entry without a golden or a reason: '$e'"
+  [[ "$r_code" =~ ^DROOLS-[0-9]{3}$ ]] || fail "READINGS_REFUSED entry '$r_name' pins '$r_code', which is no DROOLS code"
+  [ -z "${readings_refused[$r_name]+x}" ] || fail "READINGS_REFUSED names '$r_name' twice — the first entry would silently win"
+  readings_refused[$r_name]=$r_code
+done
+declare -A readings_refused_seen=()
 
 # --- 1 and 2: the trace and the readings, per golden ----------------------------------------------------
 n_traced=0; n_trace_refused=0; nocase=''
@@ -265,13 +284,24 @@ while IFS= read -r ir; do
     EXCLUDE*|ERROR*)
       # a golden the readings do not read is one the replay does not play, in the same line
       replay=$(tail -1 "$work/replays/$i.out")
-      case "$replay" in EXCLUDE*) ;; *) fail "$name: the readings end in '$exec_last', but the replay plays it ('$replay') — a golden the square plays is read" ;; esac
-      if [ "${exec_last%% *}" = EXCLUDE ]; then
-        [ "$replay" = "$exec_last" ] \
-          || fail "$name: the readings exclude it as '$exec_last', the replay as '$replay'"
+      refused_readings=${readings_refused[$name]-}
+      if [ -n "$refused_readings" ]; then
+        case "$exec_last" in
+          "EXCLUDE $refused_readings: "*) ;;
+          *) fail "$name: READINGS_REFUSED lists it with $refused_readings, but the readings end in '$exec_last'" ;;
+        esac
+        [ "$replay" = "PLAYED $ncases" ] || fail "$name: READINGS_REFUSED lists it, but the replay ends in '$replay' — the entry is stale, remove it"
+        readings_refused_seen[$name]=1
         status="EXCLUDE ${exec_last#EXCLUDE }"
       else
-        status="ERROR ${exec_last#ERROR }"
+        case "$replay" in EXCLUDE*) ;; *) fail "$name: the readings end in '$exec_last', but the replay plays it ('$replay') — a golden the square plays is read" ;; esac
+        if [ "${exec_last%% *}" = EXCLUDE ]; then
+          [ "$replay" = "$exec_last" ] \
+            || fail "$name: the readings exclude it as '$exec_last', the replay as '$replay'"
+          status="EXCLUDE ${exec_last#EXCLUDE }"
+        else
+          status="ERROR ${exec_last#ERROR }"
+        fi
       fi ;;
     *) fail "$name: the readings end in '$exec_last' — neither READINGS nor EXCLUDE" ;;
   esac
@@ -285,6 +315,10 @@ while IFS= read -r ir; do
   printf '%s\t%s\t%s\n' "$name" "$file" "$status" >> "$manifest"
 done < "$work/goldens"
 elapsed=$(( $(date +%s) - start ))
+for r_name in "${!readings_refused[@]}"; do
+  [ -n "${readings_refused_seen[$r_name]+x}" ] \
+    || fail "stale READINGS_REFUSED entry: '$r_name' is read, or is no golden with case files under corpus/golden — remove it"
+done
 for t_name in "${!trace_refused[@]}"; do
   [ -n "${trace_refused_seen[$t_name]+x}" ] \
     || fail "stale TRACE_REFUSED entry: '$t_name' is no golden with case files under corpus/golden — remove it"
