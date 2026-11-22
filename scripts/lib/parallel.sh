@@ -44,8 +44,9 @@
 #   number of cores fails the call (status 1, a `parallel: FAIL — …` line).
 # PARALLEL_JVM_FLAGS
 #   the flags of every replay JVM of gates 12, 13 and 17, `java $PARALLEL_JVM_FLAGS -jar "$JAR" …` (unquoted:
-#   two words); gate 6 starts no JVM. They stop the JIT compiler at its first tier and take the
-#   single-threaded collector, and change no result. Measured 2026-10-25 on 16 cores, 54 goldens (every
+#   three words); gate 6 starts no JVM. They stop the JIT compiler at its first tier, take the
+#   single-threaded collector and cap the heap, so a replay that does not end fails as that golden instead of
+#   taking the machine's memory, and change no result. Measured 2026-10-25 on 16 cores, 54 goldens (every
 #   sixth with a case file), one `java -jar` per golden, the wall clock, and for one process also the CPU
 #   time (user+sys):
 #                          1 process          4 processes    8 processes    16 processes
@@ -55,7 +56,7 @@
 #     --drl, these flags   31.7 s (49 s cpu)   9.1 s          5.5 s          4.6 s
 #   A replay JVM without them keeps 3.5 cores busy, with them 1.5; every golden ended in the same status
 #   line either way. Hence D = 2 for a loop of replay JVMs: eight at once fill 16 cores.
-PARALLEL_JVM_FLAGS='-XX:TieredStopAtLevel=1 -XX:+UseSerialGC'
+PARALLEL_JVM_FLAGS='-XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Xmx3g'
 
 # the shell that runs one task: $1 the directory, $2 the key
 _parallel_worker='
