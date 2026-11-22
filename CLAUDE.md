@@ -427,7 +427,7 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
     `EXPECTED_MIN_READINGS`, `EXPECTED_MIN_NODE_LINES`, `EXPECTED_MIN_UNREACHED`, `EXPECTED_MIN_CONTRIBUTOR_LINES`,
     `EXPECTED_MIN_TIMELINE_LINES`, `EXPECTED_MIN_UNREACHED_CONTRIBUTORS`, `EXPECTED_MIN_OBJECT_LINES`,
     `EXPECTED_MIN_DISPLACED_NODE_LINES`, `EXPECTED_MIN_STATE_OBJECTS`, `EXPECTED_MIN_STATE_MEMBERS`,
-    `EXPECTED_MIN_STATE_MADE`.
+    `EXPECTED_MIN_STATE_MADE`, `EXPECTED_MIN_UNDETERMINED_LINES`, `EXPECTED_MIN_STATE_OPEN`.
 
 **Counting floors (maintainer decision 2026-09-09).** Beside the non-empty checks and the name-carrying lists, every
 gate whose count could shrink unseen carries an `EXPECTED_MIN_<name>` constant in its own script, with its reason and
