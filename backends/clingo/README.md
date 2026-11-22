@@ -475,26 +475,30 @@ spec bug.
   nothing (`wnil<i>/1`, `grp<g>_nil/1`: its condition is false for
   another form, its value is settled leeg, or the date lies outside its
   window). The case's value of such a member stands where each computing
-  rule fills nothing (`wnila/2`).
+  rule fills nothing (`wnila/2`). A read asks whether the attribute
+  stands (`stands/2`); one whose state the case alone decides stands in
+  facts of its own (`given/2`), so that grounding decides the read.
   - *A value and an atomic condition* are translated as in any other
     document, each as one boundary (`ob<n>`) that holds where a read the
-    evaluation reaches does not stand (`stands/2`): a divisor only past a
-    filled dividend, the body of a Let only past its binder, the chosen
-    branch of an IfThenElse only past its condition. A value, a judgement
-    and a §9.5 deposit arise only outside it, and a fault after an open
-    read within it does not. A closure inside it (a filled-value count, a
+    evaluation reaches does not stand: a divisor only past a filled
+    dividend, the body of a Let only past its binder, the chosen branch
+    of an IfThenElse only past its condition. A value, a judgement and a
+    §9.5 deposit arise only outside it, and a fault after an open read
+    within it does not. A closure inside it (a filled-value count, a
     filter on gevuld) sets `oc<n>` beside it: what it gives stands for
     the form itself only.
   - *A condition* is judged as a pair (`judge`), for the form itself and
-    for another form, each side established true or false: a composite by
-    Kleene's strong table over its members, a quantifier fold by the same
-    table over the members of its range. A test on leeg or gevuld closes
-    over an open value for the form itself. A member read after one that
-    does not stand is read provisionally: its deposits and its faults
-    wait for the gate that says it is read as ch. 5.10 reads it
-    (`member_gate`), and a fault leaves the member undetermined. A limit
-    of this encoding in such a member fires (`limit_gate`): it is no
-    fault of the member, and the program does not answer.
+    for another form, each side established true or false: a composite
+    by Kleene's strong table over its members, a quantifier fold by the
+    same table over the members of its range. A test on leeg or gevuld
+    closes over an open value for the form itself; where no closure
+    stands in a condition the two walks share their predicates. A member
+    read after one that does not stand is read provisionally: its
+    deposits and its faults wait for the gate that says it is read as
+    ch. 5.10 reads it (`member_gate`), and a fault leaves the member
+    undetermined. A limit of this encoding in such a member fires
+    (`limit_gate`): it is no fault of the member, and the program does
+    not answer.
   - *A filter or a quantifier test* can read the form subject (a form
     anchor, an identity check, a binder of an enclosing Let), so a
     judgement and a boundary there hold of the pair of form subject and
