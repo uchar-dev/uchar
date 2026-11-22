@@ -229,6 +229,11 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
      inferFromEmpty false has open members *)
   let strict = not doc.infer_from_empty in
   let settled label attr = has model "settled" [ A_str label; A_str (norm attr) ] in
+  (* what an attribute without a value is: in a document with inferFromEmpty
+     false settled leeg or open (ch. 1.5), in any other underived, leeg *)
+  let without_value label attr =
+    if not strict then "underived (leeg)" else if settled label attr then "settled leeg" else "open"
+  in
   let scaled_expect ~label ~attr (v : Value.t) =
     let i = Uchar_ref.World.SMap.find label case.world.Uchar_ref.World.instances in
     let ot = i.Uchar_ref.World.otype in
@@ -307,7 +312,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
           | [ got ] when got = because -> None
           | [] ->
               Some
-                (Printf.sprintf "%s.%s is underived (leeg), expected %s" label attr
+                (Printf.sprintf "%s.%s is %s, expected %s" label attr (without_value label attr)
                    (render_term because))
           | got ->
               Some
@@ -320,7 +325,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
           | [ got ] when got = because -> None
           | [] ->
               Some
-                (Printf.sprintf "%s.%s is underived (leeg), expected %s" label attr
+                (Printf.sprintf "%s.%s is %s, expected %s" label attr (without_value label attr)
                    (render_term because))
           | got ->
               Some
@@ -347,7 +352,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
           | [ got ] when got = because -> None
           | [] ->
               Some
-                (Printf.sprintf "%s.%s is underived (leeg), expected %s" label attr
+                (Printf.sprintf "%s.%s is %s, expected %s" label attr (without_value label attr)
                    (render_arg because))
           | got ->
               Some
@@ -365,7 +370,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
           | [ got ] when got = because -> None
           | [] ->
               Some
-                (Printf.sprintf "%s.%s is underived (leeg), expected %s" label attr
+                (Printf.sprintf "%s.%s is %s, expected %s" label attr (without_value label attr)
                    (render_term because))
           | got ->
               Some
@@ -376,7 +381,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
           let because = scaled_expect ~label ~attr value in
           match val_of model label attr with
           | [ got ] when got = because -> None
-          | [] -> Some (Printf.sprintf "%s.%s is underived (leeg), expected %d" label attr because)
+          | [] -> Some (Printf.sprintf "%s.%s is %s, expected %d" label attr (without_value label attr) because)
           | got ->
               Some
                 (Printf.sprintf "%s.%s = [%s], expected %d" label attr
@@ -418,7 +423,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
           let because = scaled_expect ~label ~attr value in
           match val_of model label member with
           | [ got ] when got = because -> None
-          | [] -> Some (Printf.sprintf "%s.%s is underived (leeg), expected %d" label member because)
+          | [] -> Some (Printf.sprintf "%s.%s is %s, expected %d" label member (without_value label member) because)
           | got ->
               Some
                 (Printf.sprintf "%s.%s = [%s], expected %d" label member
@@ -429,7 +434,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
           let because = arg_of_term (parse_term (Translate.symbolic_value_term value)) in
           match val_present model label member with
           | [ got ] when got = because -> None
-          | [] -> Some (Printf.sprintf "%s.%s is underived (leeg), expected %s" label member (render_arg because))
+          | [] -> Some (Printf.sprintf "%s.%s is %s, expected %s" label member (without_value label member) (render_arg because))
           | got ->
               Some
                 (Printf.sprintf "%s.%s = [%s], expected %s" label member
@@ -443,7 +448,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
           let because = ctor_expect ~label ~attr value in
           match term_of model label member with
           | [ got ] when got = because -> None
-          | [] -> Some (Printf.sprintf "%s.%s is underived (leeg), expected %s" label member (render_term because))
+          | [] -> Some (Printf.sprintf "%s.%s is %s, expected %s" label member (without_value label member) (render_term because))
           | got ->
               Some
                 (Printf.sprintf "%s.%s = [%s], expected %s" label member

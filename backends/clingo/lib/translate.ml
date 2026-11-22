@@ -455,7 +455,20 @@ type guards = (string, guard_code option) Hashtbl.t
    adds a rule of its own as well ([bd_reads], in the order of evaluation), so
    a fault that would come after an open read can wait for the reads before
    it *)
-type boundary = { bd_pred : string; bd_subject : string; bd_base : string; mutable bd_reads : string list }
+type boundary = {
+  bd_pred : string;
+  bd_subject : string;
+  bd_base : string;
+  mutable bd_reads : string list;
+  (* the predicate that holds where the evaluation applied a closure to an
+     open value inside the boundary (ch. 1.5, "A closure inside a value"):
+     its outcome stands for the form itself and not for another *)
+  bd_closed : string;
+}
+
+(* the judgement of a condition in a document with inferFromEmpty false
+   ([judge]): per side the body that holds over the subject where it stands *)
+type judgement = { own_t : string list; own_f : string list; other_t : string list; other_f : string list }
 
 type ctx = {
   doc : document;
@@ -629,6 +642,9 @@ type ctx = {
   (* per writer of a member, by its index in the document, the predicate that
      says of a subject that the writer fills nothing there *)
   mutable fills_nothing : (int * string) list;
+  (* inside the translation of a fold over a set whose member reads its
+     boundary already has ([fold_reads]): a read there adds none *)
+  mutable fold_reads : bool;
   (* per defaults group, its concrete type, its target, whether that is a
      characteristic, and the predicate that says of a subject that the group
      fills nothing there ([translate_defaults_group]) *)
@@ -1181,7 +1197,10 @@ let emit_viol ctx ?code ?(parts = []) ~subject reason body =
   let body =
     match ctx.boundary with
     | Some b ->
-        let body = body @ List.map (fun r -> Printf.sprintf "not %s(%s)" r b.bd_subject) b.bd_reads in
+        (* a fence over a member of a fold binds the member alone: the
+           boundary's subject is then bound by its type *)
+        let opening = if List.exists (fun a -> List.mem b.bd_subject (asp_variables a)) body then [] else [ b.bd_base ] in
+        let body = opening @ body @ List.map (fun r -> Printf.sprintf "not %s(%s)" r b.bd_subject) b.bd_reads in
         emit_rule ctx ~head:(Printf.sprintf "%s(%s)" b.bd_pred b.bd_subject) ~body:(b.bd_base :: body);
         body @ ctx.member_gate
     | None -> body
@@ -1219,31 +1238,44 @@ let deposit ctx ~code ~rule ~subject (body : string list) =
    boundary's subject) binds: where the evaluation reaches it and the member does
    not stand, the boundary has an open read. A link that is absent reads a
    settled leeg value (ch. 1.5, "A read over a link") *)
-let open_read ctx ~holder ~attribute path =
-  if ctx.strict then
+let boundary_read ctx ~what body =
+  if ctx.strict && not ctx.fold_reads then
     match ctx.boundary with
-    | None -> fault "the read of %S stands outside one value or one atomic condition (ch. 1.5)" attribute
+    | None -> fault "the read of %s stands outside one value or one atomic condition (ch. 1.5)" what
     | Some b ->
         ctx.fresh <- ctx.fresh + 1;
         let r = Printf.sprintf "%s_r%d" b.bd_pred ctx.fresh in
-        emit_rule ctx ~head:(Printf.sprintf "%s(%s)" r b.bd_subject)
-          ~body:((b.bd_base :: ctx.reach) @ path @ [ Printf.sprintf "not stands(%s,%s)" holder (str attribute) ]);
+        emit_rule ctx ~head:(Printf.sprintf "%s(%s)" r b.bd_subject) ~body:((b.bd_base :: ctx.reach) @ body);
         emit_rule ctx ~head:(Printf.sprintf "%s(%s)" b.bd_pred b.bd_subject)
           ~body:[ Printf.sprintf "%s(%s)" r b.bd_subject ];
         b.bd_reads <- b.bd_reads @ [ r ]
 
-(* [f] translated as one boundary over [subject]: its result and the atom that
-   holds where it reached an open value. No boundary stands inside another in
-   the forms this translation carries in such a document: a condition inside a
-   value (an IfThenElse, a fold filter) is refused ([refuse_uncarried]) *)
-let within_boundary ctx ~subject ~subject_ot (f : unit -> 'a) : 'a * string =
+let open_read ctx ~holder ~attribute path =
+  boundary_read ctx ~what:(Printf.sprintf "%S" attribute)
+    (path @ [ Printf.sprintf "not stands(%s,%s)" holder (str attribute) ])
+
+(* a read over the relation [rel] (a role term) from [holder], which [path]
+   binds: a relation is complete, but where a creation left it open there
+   (ropen/2, ch. 1.5, "A creation") the read is open. Only a document with a
+   creation has an open relation *)
+let open_relation ctx ~holder ~rel path =
+  if ctx.doc.object_creations <> [] || ctx.doc.fact_creations <> [] then
+    boundary_read ctx ~what:("the relation " ^ rel) (path @ [ Printf.sprintf "ropen(%s,%s)" holder rel ])
+
+(* [f] translated as one boundary over [subject]: its result, the atom that
+   holds where it reached an open value, and the atom that holds where it
+   applied a closure to one. A condition inside a value (a fold filter) is
+   judged with boundaries of its own, which the value reads as one read
+   ([fold_reads]); no boundary is translated inside another *)
+let within_boundary ctx ~subject ~subject_ot (f : unit -> 'a) : 'a * string * string =
   if ctx.boundary <> None then fault "a boundary inside a boundary (ch. 1.5): a condition inside a value";
   ctx.fresh <- ctx.fresh + 1;
   let b =
     { bd_pred = Printf.sprintf "ob%d" ctx.fresh; bd_subject = subject;
-      bd_base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot); bd_reads = [] }
+      bd_base = Printf.sprintf "isa(%s,%s)" subject (str subject_ot); bd_reads = [];
+      bd_closed = Printf.sprintf "oc%d" ctx.fresh }
   in
-  emit ctx "#defined %s/1." b.bd_pred;
+  emit ctx "#defined %s/1. #defined %s/1." b.bd_pred b.bd_closed;
   let saved_b = ctx.boundary and saved_r = ctx.reach in
   ctx.boundary <- Some b;
   ctx.reach <- [];
@@ -1253,7 +1285,7 @@ let within_boundary ctx ~subject ~subject_ot (f : unit -> 'a) : 'a * string =
       ctx.reach <- saved_r)
     (fun () ->
       let x = f () in
-      (x, Printf.sprintf "%s(%s)" b.bd_pred subject))
+      (x, Printf.sprintf "%s(%s)" b.bd_pred subject, Printf.sprintf "%s(%s)" b.bd_closed subject))
 
 (* what the evaluation must have read for [f]'s nodes to be reached, beside
    what reaches the node they belong to *)
@@ -4163,6 +4195,7 @@ let rec member_read ?(scaled = true) ctx ~subject ~subject_ot ~member (e : expr)
                 List.fold_left
                   (fun (atoms, cur) rb ->
                     let n = fresh ctx "N" in
+                    open_relation ctx ~holder:cur ~rel:(bound_role_term ctx.doc rb) atoms;
                     (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur (bound_role_term ctx.doc rb) n ], n))
                   ([], subject) rbs
               in
@@ -5375,6 +5408,86 @@ let param_read ctx ~subject ~subject_ot (e : expr) name : string list * string =
       ([ Printf.sprintf "param(%s,%s)" (str name) v ], v)
   | None -> fault "unknown parameter %S" name
 
+(* [judge], which a fold over a set asks of its filter ([fold_reads]); the
+   judgement is defined with the conditions, after the expressions *)
+let judge_ref : (ctx -> subject:string -> subject_ot:string -> condition_expr -> judgement) ref =
+  ref (fun _ ~subject:_ ~subject_ot:_ _ -> fault "the judgement of a condition is asked before it is defined")
+
+(* [read] each body that holds where a hop of the range of a fold from
+   [subject] crosses a relation a creation left open (ch. 1.5, "A creation") *)
+let range_open_reads ctx ~subject ~source_role ~source_path read =
+  if ctx.doc.object_creations <> [] || ctx.doc.fact_creations <> [] then
+    ignore
+      (List.fold_left
+         (fun (atoms, cur) rb ->
+           let rel = bound_role_term ctx.doc rb in
+           read (atoms @ [ Printf.sprintf "ropen(%s,%s)" cur rel ]);
+           let n = fresh ctx "M" in
+           (atoms @ [ Printf.sprintf "role(%s,%s,%s)" cur rel n ], n))
+         ([], subject)
+         (Option.to_list source_role @ Option.value source_path ~default:[]))
+
+(* ch. 1.5, "A fold over a set": a member whose filter is undetermined, or
+   whose value is open, makes the fold open, and a count reads no value; the
+   filled-value count, and a filter established for the form itself and not
+   for another, are closures inside the value. Each member's filter is judged
+   with boundaries of its own, and what makes the fold open is one read of the
+   fold's boundary; the fold's own translation then reads its members without
+   adding reads of its own ([fold_reads], [open_read]) *)
+let fold_reads ctx ~subject ~subject_ot ~el ~kind ~call_arguments ~filter ~source_role ~source_path =
+  let b =
+    match ctx.boundary with
+    | Some b -> b
+    | None -> fault "a fold over a set stands outside one value or one atomic condition (ch. 1.5)"
+  in
+  if subject <> b.bd_subject then
+    fault "a fold over a set read from a member of another fold: what makes it open is not carried (ch. 1.5)";
+  let x = fresh ctx "X" in
+  let join = source_join ctx ~subject ~subject_ot ~el ~source_role ~source_path ~x in
+  range_open_reads ctx ~subject ~source_role ~source_path (fun body ->
+      boundary_read ctx ~what:"the range of a fold" body);
+  let member body = (b.bd_base :: ctx.reach) @ join @ body in
+  let read body =
+    ctx.fresh <- ctx.fresh + 1;
+    let r = Printf.sprintf "%s_r%d" b.bd_pred ctx.fresh in
+    emit_rule ctx ~head:(Printf.sprintf "%s(%s)" r subject) ~body:(member body);
+    emit_rule ctx ~head:(Printf.sprintf "%s(%s)" b.bd_pred subject) ~body:[ Printf.sprintf "%s(%s)" r subject ];
+    b.bd_reads <- b.bd_reads @ [ r ]
+  and closure body = emit_rule ctx ~head:(Printf.sprintf "%s(%s)" b.bd_closed subject) ~body:(member body) in
+  let not_false =
+    match filter with
+    | None -> []
+    | Some c ->
+        let saved_b = ctx.boundary and saved_r = ctx.reach in
+        ctx.boundary <- None;
+        ctx.reach <- [];
+        let j =
+          Fun.protect
+            ~finally:(fun () ->
+              ctx.boundary <- saved_b;
+              ctx.reach <- saved_r)
+            (fun () -> with_member_reach ctx ~subject ~subject_ot ~join:(fun () -> join) (fun () -> !judge_ref ctx ~subject:x ~subject_ot:el c))
+        in
+        let side body =
+          ctx.fresh <- ctx.fresh + 1;
+          let p = Printf.sprintf "fj%d" ctx.fresh in
+          emit ctx "#defined %s/1." p;
+          emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p x) ~body:(Printf.sprintf "isa(%s,%s)" x (str el) :: body);
+          Printf.sprintf "%s(%s)" p x
+        in
+        let own_t = side j.own_t and own_f = side j.own_f and other_t = side j.other_t and other_f = side j.other_f in
+        read [ "not " ^ own_t; "not " ^ own_f ];
+        closure [ own_t; "not " ^ other_t ];
+        closure [ own_f; "not " ^ other_f ];
+        [ "not " ^ own_f ]
+  in
+  match (kind, call_arguments) with
+  | Count, _ -> ()
+  | _, [ Attribute_reference { attribute_ref = Some a; navigation_bindings = None; _ } ] ->
+      let open_value = not_false @ [ Printf.sprintf "not stands(%s,%s)" x (str a) ] in
+      if kind = Filled_count then closure open_value else read open_value
+  | _ -> fault "a fold over a set whose source is no attribute of its member (ch. 1.5)"
+
 let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * int =
   (* the rounding's mark is for its base alone, the node translated first here *)
   let calendar_ok = ctx.calendar_rounding in
@@ -5389,6 +5502,13 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
   | Some inner -> at_form ctx (fun subject subject_ot -> expr_term ctx ~subject ~subject_ot inner)
   | None ->
   match e with
+  | Function_call
+      { kind = (Sum_function | Total | Count | Filled_count | Minimum | Maximum | First | Last) as kind;
+        element_object_type = Some el; call_arguments; filter; source_role; source_path; dimension_selections = None; _ }
+    when ctx.strict && (not ctx.fold_reads) && (source_role <> None || source_path <> None) ->
+      fold_reads ctx ~subject ~subject_ot ~el ~kind ~call_arguments ~filter ~source_role ~source_path;
+      ctx.fold_reads <- true;
+      Fun.protect ~finally:(fun () -> ctx.fold_reads <- false) (fun () -> expr_term ctx ~subject ~subject_ot e)
   | Function_call { kind; grain = Some _; _ } when not (bucketing kind) -> foreign_granularity ()
   | Function_call { kind = Time_proportional_part | Day_count; grain = Some _; _ } ->
       fault
@@ -9626,6 +9746,7 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
            the subject there"
           subject_ot role fact_type;
       let canonical = role_term ~fact_type other in
+      open_relation ctx ~holder:subject ~rel:canonical [];
       (match counterpart_type with
       | None -> ()
       | Some ct ->
@@ -11328,7 +11449,8 @@ and translate_ite ctx ~subject ~subject_ot ~typ ~condition ~then_ ~else_ ~before
   let arm name extra e =
     ctx.rule_guard <- saved @ catoms @ [ extra ];
     if before <> [] then ctx.before_arm <- (before, List.length saved, List.length catoms + 1) :: saved_b;
-    let atoms, term, scale = expr_term ctx ~subject ~subject_ot e in
+    (* the chosen branch alone is read (ch. 1.5, "An IfThenElse in a value") *)
+    let atoms, term, scale = reached_after ctx (catoms @ [ extra ]) (fun () -> expr_term ctx ~subject ~subject_ot e) in
     let body = (base :: ctx.rule_guard) @ atoms in
     ctx.rule_guard <- saved;
     ctx.before_arm <- saved_b;
@@ -11428,7 +11550,8 @@ let rec value_branches ctx ~subject ~subject_ot (e : expr) : vbranch list =
       let arm extra e =
         ctx.rule_guard <- saved @ catoms @ [ extra ];
         if before <> [] then ctx.before_arm <- (before, List.length saved, List.length catoms + 1) :: saved_b;
-        let branches = value_branches ctx ~subject ~subject_ot e in
+        (* the chosen branch alone is read (ch. 1.5, "An IfThenElse in a value") *)
+        let branches = reached_after ctx (catoms @ [ extra ]) (fun () -> value_branches ctx ~subject ~subject_ot e) in
         ctx.rule_guard <- saved;
         ctx.before_arm <- saved_b;
         List.map
@@ -12788,6 +12911,22 @@ let translate_timeline_initialisation ctx (r : resolved_rule) ~subject ~ot ~a ~c
   emit_rule ctx ~head:(Printf.sprintf "%s(S)" decides)
     ~body:[ Printf.sprintf "initpiece(S,%s,_,_,X,Y)" a; Printf.sprintf "not initdecided(S,%s,X,Y)" a ]
 
+(* whether a rule or a defaults group writes the member [member] on an object
+   of the concrete type [otype]: a member none writes there is an input member
+   of that object (RUNTIME-SEMANTICS ch. 1.5, "The three states") *)
+let written_on ctx ~otype member =
+  List.exists
+    (fun (r : resolved_rule) ->
+      match target_member ctx.doc r.objective with
+      | Some (ot, _, a) -> norm a = norm member && isa ctx otype ot
+      | None -> false)
+    ctx.doc.resolved_rules
+  || List.exists
+       (fun (l : prioritized_defaults) ->
+         List.exists (fun t -> norm t = norm member) (Option.to_list l.pd_attribute @ Option.to_list l.pd_characteristic)
+         && isa ctx otype l.pd_subject)
+       ctx.doc.prioritized_defaults
+
 (* --- the judgement of a condition (RUNTIME-SEMANTICS ch. 1.5) -------------
    In a document with inferFromEmpty false a condition is established true,
    established false or undetermined, and its judgement is a pair: for the form
@@ -12798,7 +12937,6 @@ let translate_timeline_initialisation ctx (r : resolved_rule) ~subject ~ot ~a ~c
    only over a test on leeg or gevuld that closed over an open value. An atomic
    condition is translated as in any other document ([cond_atoms]), within a
    boundary of its own. *)
-type judgement = { own_t : string list; own_f : string list; other_t : string list; other_f : string list }
 
 (* the ch. 5.10 stop of a composite over [n] members read as ch. 5.10 reads
    them, negated: after [i] members of which [h] hold, the outcome does not
@@ -12856,23 +12994,36 @@ let rec judge ctx ~subject ~subject_ot (c : condition_expr) : judgement =
       let none = [ "not " ^ List.hd (helper [ [ link "_" ] ]) ] in
       let holds = [ link n; Printf.sprintf "has(%s,%s)" n k ]
       and absent = [ link n; Printf.sprintf "hasnot(%s,%s)" n k ] in
-      if negation then same (helper [ absent ]) (helper [ none; holds ])
-      else same (helper [ holds ]) (helper [ none; absent ])
+      (* over a relation a creation left open nothing stands (ch. 1.5, "A
+         creation") *)
+      let closed =
+        if ctx.doc.object_creations <> [] || ctx.doc.fact_creations <> [] then
+          [ Printf.sprintf "not ropen(%s,%s)" subject (role_term ~fact_type:rb.rb_fact_type role) ]
+        else []
+      in
+      let j =
+        if negation then same (helper [ absent ]) (helper [ none; holds ])
+        else same (helper [ holds ]) (helper [ none; absent ])
+      in
+      same (j.own_t @ closed) (j.own_f @ closed)
   (* the test on leeg and gevuld (ch. 1.5): over an open value, or a computed
      value whose evaluation reads one, a closure for the form itself and
      undetermined for another. A negated test is its sister test *)
   | Predicate ({ variety = (Empty_predicate | Filled) as variety; negation; day_kind = None; time_period = None; _ } as p)
     ->
-      let atoms, opened =
+      let atoms, opened, closed =
         within_boundary ctx ~subject ~subject_ot (fun () ->
             cond_atoms ctx ~subject ~subject_ot (Predicate { p with variety = Filled; negation = false }))
       in
       let valued = helper [ atoms ] in
       let filled = valued @ [ "not " ^ opened ] and leeg = [ "not " ^ List.hd valued; "not " ^ opened ] in
       let leeg_closed = helper [ [ "not " ^ List.hd valued ]; [ opened ] ] in
-      let filled_test = { own_t = filled; own_f = leeg_closed; other_t = filled; other_f = leeg } in
+      (* a closure inside the operand: what the test answers stands for the
+         form itself only *)
+      let other side = side @ [ "not " ^ closed ] in
+      let filled_test = { own_t = filled; own_f = leeg_closed; other_t = other filled; other_f = other leeg } in
       if (variety = Filled) <> negation then filled_test
-      else { own_t = leeg_closed; own_f = filled; other_t = leeg; other_f = filled }
+      else { own_t = leeg_closed; own_f = filled; other_t = other leeg; other_f = other filled }
   (* a composite by Kleene's strong table over its members' judgements (ch.
      1.5); each member is read as ch. 5.10 reads it where every member before
      it stands for another form, and provisionally after one that does not
@@ -12962,6 +13113,12 @@ let rec judge ctx ~subject ~subject_ot (c : condition_expr) : judgement =
       let at name = Printf.sprintf "%s_%s(%s,%s)" q name subject x in
       List.iter (fun p -> emit ctx "#defined %s_%s/2." q p) [ "ft"; "ff"; "fu"; "tt"; "tf"; "tu"; "ot"; "of"; "xt"; "xf"; "pv" ];
       emit_rule ctx ~head:(at "m") ~body:(base :: join);
+      (* the range is read as one judgement: where a creation left its relation
+         open, the fold is undetermined *)
+      let range_open = Printf.sprintf "%s_ro(%s)" q subject in
+      emit ctx "#defined %s_ro/1." q;
+      range_open_reads ctx ~subject ~source_role:kv_source_role ~source_path:kv_source_path (fun body ->
+          emit_rule ctx ~head:range_open ~body:(base :: body));
       let side name body = emit_rule ctx ~head:(at name) ~body:(at "m" :: body) in
       let member f = with_member_reach ctx ~subject ~subject_ot ~join:(fun () -> join) ~part:(new_part ctx ro) f in
       (* the filter of every member, own and for another *)
@@ -13032,7 +13189,7 @@ let rec judge ctx ~subject ~subject_ot (c : condition_expr) : judgement =
           Printf.sprintf "H = #count { %s : %s_%s(%s,%s) }" x q mt subject x;
           Printf.sprintf "F = #count { %s : %s_%s(%s,%s) }" x q mf subject x ]
       in
-      let verdict mt mf bodies = helper (List.map (fun b -> count mt mf @ b) bodies) in
+      let verdict mt mf bodies = helper (List.map (fun b -> (count mt mf @ b) @ [ "not " ^ range_open ]) bodies) in
       (* the stop and the provisional read of a matrix: the members whose filter
          is false for another are counted first, then the members before it in
          the order of the range *)
@@ -13065,12 +13222,39 @@ let rec judge ctx ~subject ~subject_ot (c : condition_expr) : judgement =
   | Comparison { time_period = None; _ }
   | Predicate { time_period = None; day_kind = None; _ }
   | Role_membership _ | Identity_check _ ->
-      let atoms, opened = within_boundary ctx ~subject ~subject_ot (fun () -> cond_atoms ctx ~subject ~subject_ot c) in
+      let atoms, opened, closed =
+        within_boundary ctx ~subject ~subject_ot (fun () -> cond_atoms ctx ~subject ~subject_ot c)
+      in
       let holds = helper [ atoms ] in
-      same (holds @ [ "not " ^ opened ]) [ "not " ^ List.hd holds; "not " ^ opened ]
+      let t = holds @ [ "not " ^ opened ] and f = [ "not " ^ List.hd holds; "not " ^ opened ] in
+      (* established for the form itself and undetermined for another where a
+         closure inside a value decided it (ch. 1.5) *)
+      { own_t = t; own_f = f; other_t = t @ [ "not " ^ closed ]; other_f = f @ [ "not " ^ closed ] }
   | _ ->
       fault "the %s has no judgement here: refused before translation in a document with inferFromEmpty false"
         (Ir_v0.Spelling.cond_node c)
+
+let () = judge_ref := judge
+
+(* the condition of a creation over [subject] (ch. 1.5, "A creation"): the
+   body where it is established true for the creation itself, and, in a
+   document with inferFromEmpty false, the body where it is undetermined, so
+   that what the creation would make is open; [None] in a document without
+   the property, where the condition is read as cond_atoms reads it *)
+let creation_condition ctx ~subject ~subject_ot (c : condition_expr) =
+  if ctx.strict then begin
+    let j = judge ctx ~subject ~subject_ot c in
+    let atom body =
+      ctx.fresh <- ctx.fresh + 1;
+      let p = Printf.sprintf "cc%d" ctx.fresh in
+      emit ctx "#defined %s/1." p;
+      emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p subject) ~body:(Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: body);
+      Printf.sprintf "%s(%s)" p subject
+    in
+    let holds = atom j.own_t and fails = atom j.other_f in
+    ([ holds ], Some [ "not " ^ holds; "not " ^ fails ])
+  end
+  else (cond_atoms ctx ~subject ~subject_ot c, None)
 
 (* the three outcomes of a writer (ch. 1.5, "A rule"), in a document with
    inferFromEmpty false: [write] emits where the rule decides, within the
@@ -13088,14 +13272,16 @@ let fills_nothing ctx (r : resolved_rule) ~subject ~ot ~cond ~fails_for_another 
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   let head = Printf.sprintf "wnil%d(%s)" index subject in
   emit ctx "#defined wnil%d/1." index;
-  let (), opened = within_boundary ctx ~subject ~subject_ot:ot write in
+  let (), opened, closed = within_boundary ctx ~subject ~subject_ot:ot write in
   List.iter (fun f -> emit_rule ctx ~head ~body:(base :: f)) fails_for_another;
   if r.rr_presentation <> Some Characteristic_attribution then begin
     ctx.fresh <- ctx.fresh + 1;
     let defined = Printf.sprintf "vdef%d(%s)" ctx.fresh subject in
     emit ctx "#defined vdef%d/1." ctx.fresh;
     List.iter (fun body -> emit_rule ctx ~head:defined ~body) !valued;
-    emit_rule ctx ~head ~body:((base :: cond) @ [ "not " ^ defined; "not " ^ opened ])
+    (* a value that is leeg after a closure over an open value fills nothing
+       for the rule itself only: for another it leaves the target open *)
+    emit_rule ctx ~head ~body:((base :: cond) @ [ "not " ^ defined; "not " ^ opened; "not " ^ closed ])
   end;
   List.iter (fun g -> ungated ctx (fun () -> emit_rule ctx ~head ~body:[ base; "not " ^ g ])) ctx.form_gate;
   ctx.fills_nothing <- (index, Printf.sprintf "wnil%d" index) :: ctx.fills_nothing
@@ -13558,10 +13744,10 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
         | Error e -> fault "%s" e)
     | None -> connecting_pair ctx.doc ~from_type:subject_ot ~to_type:created
   in
-  let cond =
+  let cond, undetermined =
     match oc.oc_condition with
-    | Some c -> cond_atoms ctx ~subject ~subject_ot c
-    | None -> []
+    | Some c -> creation_condition ctx ~subject ~subject_ot c
+    | None -> ([], None)
   in
   let guard =
     match pair with
@@ -13569,6 +13755,13 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
         [ Printf.sprintf "not inputrole(%s,%s,_)" subject (role_term ~fact_type new_role) ]
     | _ -> []
   in
+  (* where the condition is undetermined, the relation over which the
+     creation would link its object to the subject is open there (ch. 1.5) *)
+  (match (undetermined, pair) with
+  | Some u, Some (fact_type, new_role, _) ->
+      head_body ctx (Printf.sprintf "ropen(%s,%s)" subject (role_term ~fact_type new_role))
+        ((Printf.sprintf "isa(%s,%s)" subject (str subject_ot) :: u) @ guard)
+  | _ -> ());
   let stratum =
     if has_recursive_creation ctx.doc then
       match List.assoc_opt oc.oc_pointer ctx.oc_strata with
@@ -13609,6 +13802,8 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
      initialisation's guard reads, as a case input does ([translate_case]) *)
   let member_head m tm b =
     let pred = if defeasible_input ctx ~otype:created ~attr:m then "inputval" else "val" in
+    (* within the boundary of the value (ch. 1.5, "An object made") *)
+    let b = match ctx.boundary with Some bd -> b @ [ Printf.sprintf "not %s(%s)" bd.bd_pred subject ] | None -> b in
     head_body ctx (Printf.sprintf "%s(%s,%s,%s)" pred term (str m) tm) b;
     if init_target ctx ~otype:created ~attr:m then
       head_body ctx (Printf.sprintf "inputfilled(%s,%s)" term (str m)) b
@@ -13663,28 +13858,65 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
         member_head m tm (body @ bindings)
       end
       else begin
-        let target_scale = pow10 (attr_decimals ctx ~otype:created ~attr:m) in
-        units_identical_ok
-          ~what:(Printf.sprintf "the initialisation of %S" m)
-          (attr_unit ctx ~otype:created ~attr:m)
-          (Option.bind t.to_value (eff_unit ctx));
-        let unbounded = unbounded_datatype (attr_datatype ctx ~otype:created ~attr:m) in
-        ctx.rule_guard <- cond @ guard @ depth_guard;
-        ctx.write_scale <- target_scale;
-        ctx.write_unbounded <- unbounded;
-        ctx.write_value <- t.to_value;
-        let bindings, tm, scale =
-          expr_term ctx ~subject ~subject_ot (req "MemberAssignment.value" t.to_value)
+        let assign () =
+          let target_scale = pow10 (attr_decimals ctx ~otype:created ~attr:m) in
+          units_identical_ok
+            ~what:(Printf.sprintf "the initialisation of %S" m)
+            (attr_unit ctx ~otype:created ~attr:m)
+            (Option.bind t.to_value (eff_unit ctx));
+          let unbounded = unbounded_datatype (attr_datatype ctx ~otype:created ~attr:m) in
+          ctx.rule_guard <- cond @ guard @ depth_guard;
+          ctx.write_scale <- target_scale;
+          ctx.write_unbounded <- unbounded;
+          ctx.write_value <- t.to_value;
+          let bindings, tm, scale =
+            expr_term ctx ~subject ~subject_ot (req "MemberAssignment.value" t.to_value)
+          in
+          ctx.rule_guard <- [];
+          ctx.write_scale <- 1;
+          ctx.write_unbounded <- false;
+          ctx.write_value <- None;
+          let wbody = body @ bindings in
+          let tm, fit_guards = fitted ~unbounded ctx ~subject ~what:m ~body:wbody tm scale target_scale in
+          member_head m tm (wbody @ fit_guards);
+          wbody
         in
-        ctx.rule_guard <- [];
-        ctx.write_scale <- 1;
-        ctx.write_unbounded <- false;
-        ctx.write_value <- None;
-        let wbody = body @ bindings in
-        let tm, fit_guards = fitted ~unbounded ctx ~subject ~what:m ~body:wbody tm scale target_scale in
-        member_head m tm (wbody @ fit_guards)
+        if ctx.strict then begin
+          (* an object made has the member values its creation assigns, as the
+             input of an object: settled leeg where the value is (ch. 1.5, "An
+             object made"); a member a form writes follows its writers *)
+          let valued, opened, closed = within_boundary ctx ~subject ~subject_ot assign in
+          if not (written_on ctx ~otype:created m) then begin
+            ctx.fresh <- ctx.fresh + 1;
+            let defined = Printf.sprintf "vdef%d(%s)" ctx.fresh subject in
+            emit ctx "#defined vdef%d/1." ctx.fresh;
+            head_body ctx defined valued;
+            head_body ctx (Printf.sprintf "settled(%s,%s)" term (str m)) (body @ [ "not " ^ defined; "not " ^ opened; "not " ^ closed ])
+          end
+        end
+        else ignore (assign ())
       end)
     oc.assignments;
+  (* a member that no one assigns and no form writes is settled leeg on an
+     object made: no case gives it its input (ch. 1.5, "An object made") *)
+  if ctx.strict then begin
+    let assigned = List.map (fun (t : assignment) -> norm (assigned_member ctx.doc ~created t)) oc.assignments in
+    let free m = (not (List.mem (norm m) assigned)) && not (written_on ctx ~otype:created m) in
+    let ot = object_type ctx created in
+    List.iter (fun (a, _) -> if free a then head_body ctx (Printf.sprintf "settled(%s,%s)" term (str a)) body) ot.attributes;
+    List.iter
+      (function
+        | Some k when free k -> head_body ctx (Printf.sprintf "hasnot(%s,%s)" term (str k)) body
+        | _ -> ())
+      ot.characteristics;
+    List.iter
+      (fun (t : assignment) ->
+        match t.to_value with
+        | Some (Literal { variant = Lv_boolean false; _ }) when t.to_characteristic ->
+            head_body ctx (Printf.sprintf "hasnot(%s,%s)" term (str (assigned_member ctx.doc ~created t))) body
+        | _ -> ())
+      oc.assignments
+  end;
   (match pair with
   | None -> ()
   | Some (fact_type, new_role, subj_role) ->
@@ -13726,10 +13958,10 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
      generated program for every document that predates the rule is unchanged
      down to its fresh-name numbering. *)
   let on_objective = guard_on_target ctx.doc fc in
-  let cond_anchor =
+  let cond_anchor, open_anchor =
     match fc.fc_condition with
-    | Some c when not on_objective -> cond_atoms ctx ~subject ~subject_ot:anchor_point c
-    | _ -> []
+    | Some c when not on_objective -> creation_condition ctx ~subject ~subject_ot:anchor_point c
+    | _ -> ([], None)
   in
   let hop (atoms, cur) rb =
     let v = fresh ctx "H" in
@@ -13743,17 +13975,27 @@ let translate_fact_creation ctx (fc : resolved_fact_creation) =
       ([], subject) fc.intermediates
   in
   let chain, target = hop mids fc.join_role in
-  let cond_target =
+  let cond_target, open_target =
     match fc.fc_condition with
     | Some c when on_objective ->
-        cond_atoms ctx ~subject:target ~subject_ot:(req "the target type of a fact creation (the declared filler of its targetRole)" fc.fc_target) c
-    | _ -> []
+        creation_condition ctx ~subject:target ~subject_ot:(req "the target type of a fact creation (the declared filler of its targetRole)" fc.fc_target) c
+    | _ -> ([], None)
   in
   let body =
     (Printf.sprintf "isa(%s,%s)" subject (str anchor_point) :: cond_anchor) @ chain @ cond_target
   in
   head_body ctx (Printf.sprintf "role(%s,%s,%s)" subject (role_term ~fact_type:ftn objective_role) target) body;
   head_body ctx (Printf.sprintf "role(%s,%s,%s)" target (role_term ~fact_type:ftn anchor_role) subject) body;
+  (* where the condition is undetermined the relation is open on the anchor
+     and on every object the chain reaches (ch. 1.5, "A creation") *)
+  List.iter
+    (fun undetermined ->
+      let at_anchor = Printf.sprintf "isa(%s,%s)" subject (str anchor_point) in
+      head_body ctx (Printf.sprintf "ropen(%s,%s)" subject (role_term ~fact_type:ftn objective_role))
+        ((at_anchor :: (if open_anchor <> None then undetermined else chain @ undetermined)));
+      head_body ctx (Printf.sprintf "ropen(%s,%s)" target (role_term ~fact_type:ftn anchor_role))
+        ((at_anchor :: (if open_anchor <> None then undetermined @ chain else chain @ undetermined))))
+    (Option.to_list open_anchor @ Option.to_list open_target);
   (* a second distinct filler on a to-one end faults in ref/
      (World.add_link, ch. 5.5); a viol/2 witness plus the global
      integrity constraint makes clingo fail identically (UNSAT) instead
@@ -13970,13 +14212,13 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
         body
       in
       if ctx.strict then begin
-        let body, opened = within_boundary ctx ~subject ~subject_ot:(ot_at n) consequence in
+        let body, opened, closed = within_boundary ctx ~subject ~subject_ot:(ot_at n) consequence in
         ctx.fresh <- ctx.fresh + 1;
         let valued = Printf.sprintf "vdef%d(%s)" ctx.fresh subject in
         emit ctx "#defined vdef%d/1." ctx.fresh;
         head_body ctx valued body;
         head_body ctx (Printf.sprintf "%s(%s)" (gw n) subject)
-          ((base :: just) @ extra @ [ "not " ^ valued; "not " ^ opened ])
+          ((base :: just) @ extra @ [ "not " ^ valued; "not " ^ opened; "not " ^ closed ])
       end
       else ignore (consequence ())
     end;
@@ -15267,22 +15509,6 @@ let reify_list ctx ~one_member ~element (xs : Value.t list) =
 
 (* --- case facts ---------------------------------------------------------- *)
 
-(* whether a rule or a defaults group writes the member [member] on an object
-   of the concrete type [otype]: a member none writes there is an input member
-   of that object (RUNTIME-SEMANTICS ch. 1.5, "The three states") *)
-let written_on ctx ~otype member =
-  List.exists
-    (fun (r : resolved_rule) ->
-      match target_member ctx.doc r.objective with
-      | Some (ot, _, a) -> norm a = norm member && isa ctx otype ot
-      | None -> false)
-    ctx.doc.resolved_rules
-  || List.exists
-       (fun (l : prioritized_defaults) ->
-         List.exists (fun t -> norm t = norm member) (Option.to_list l.pd_attribute @ Option.to_list l.pd_characteristic)
-         && isa ctx otype l.pd_subject)
-       ctx.doc.prioritized_defaults
-
 (* the standing states of the input members of [i] (ch. 1.5): an attribute the
    case gives no value is settled leeg where its declaration says that its input
    is complete (IR-SPEC ch. 2.2; the effective type carries an inherited
@@ -16394,8 +16620,10 @@ let uncarried_forms =
     (* a Let whose body reads something before its binder: the lowering keeps
        the binder's value beside every read of the body, so a read its first
        read of the binder does not reach would count (README [S1], [L3]) *)
-    "let-binder-not-first"; "set-fold"; "if-then-else"; "object-creation";
-    "fact-creation" ]
+    "let-binder-not-first";
+    (* the union of instance sets (ch. 3.4d), whose members are read by no
+       join of one range *)
+    "instance-set-union" ]
 
 (* what the evaluation of an expression reads first, in the order of ch.
    5.11: nothing, the binder [b], or something else *)
@@ -16416,6 +16644,7 @@ let rec first_read (e : expr) =
   | Let { binder; value; body; _ } -> (
       match first_read body with Binder b when b = norm binder -> first_read value | x -> x)
   | If_then_else { condition = Comparison { left_side; right_side; _ }; _ } -> first [ left_side; right_side ]
+  | If_then_else { condition = Predicate { operand; _ }; _ } -> first [ operand ]
   | _ -> Other
 
 let refuse_uncarried (doc : document) =
@@ -16470,18 +16699,17 @@ let refuse_uncarried (doc : document) =
           | Time_proportional_part -> refuse "time-proportional-part"
           | Day_count -> refuse "day-kind"
           | (Sum_function | Total | Count | Filled_count | Minimum | Maximum | First | Last) when ranged ->
-              refuse "set-fold";
               Option.iter cond filter;
               List.iter expr call_arguments;
               opt empty_fallback
           | Count when (match call_arguments with [ Instance_set_union _ ] -> filter = None | _ -> false) ->
-              refuse "set-fold"
+              refuse "instance-set-union"
           | Sum_function | Total | Count | Filled_count -> refuse "temporal-total"
           | _ when filter <> None || grain <> None -> refuse "builtin-filter"
           | Minimum | Maximum | First | Last | Square_root | Absolute_value | Concatenation | Duration
           | Absolute_duration | Easter_sunday | Year_of | Month_of | Day_of | Date_with | Date_time_with ->
               List.iter expr call_arguments)
-      | Instance_set_union _ -> refuse "set-fold"
+      | Instance_set_union _ -> refuse "instance-set-union"
       | Dimension_cell_read _ -> refuse "dimension-cell"
       | Variable_reference _ -> refuse "variable-reference"
       | Expr_unresolved _ -> refuse "unresolved"
@@ -16491,7 +16719,6 @@ let refuse_uncarried (doc : document) =
       | Struct_literal _ | Field_access _ -> refuse "record"
       | List_literal _ | Lambda _ | Fold _ | Map_list _ | Filter_list _ | List_length _ -> refuse "list-family"
       | If_then_else { condition; then_; else_; _ } ->
-          refuse "if-then-else";
           cond condition;
           expr then_;
           expr else_
@@ -16535,8 +16762,6 @@ let refuse_uncarried (doc : document) =
         List.iter (fun (t : assignment) -> Option.iter expr t.to_value) oc.assignments)
       doc.object_creations;
     List.iter (fun (fc : resolved_fact_creation) -> Option.iter cond fc.fc_condition) doc.fact_creations;
-    some "object-creation" doc.object_creations;
-    some "fact-creation" doc.fact_creations;
     match List.find_opt (fun form -> List.mem form !found) uncarried_forms with
     | None -> ()
     | Some form ->
@@ -16603,7 +16828,7 @@ let translate_guarded ?(closed_inputs = false) (doc : document) (case : Case.t) 
       demand_reaches = []; order_guards = []; order_asks = []; hoisted = [];
       before_arm = []; signs = []; sign_helpers = []; oc_strata;
       form_subject = None; anchored = []; member_reach = lazy []; calendar_rounding = false; form_gate = [];
-      windows = 0; strict; closed_inputs; boundary = None; reach = []; member_gate = []; fills_nothing = []; group_writers = [] }
+      windows = 0; strict; closed_inputs; boundary = None; reach = []; member_gate = []; fills_nothing = []; fold_reads = false; group_writers = [] }
   in
   check_parameter_set wire_doc case;
   emit ctx "%% generated by backends/clingo from uchar-ir-v1 + uchar-case-v0.";
@@ -16613,7 +16838,7 @@ let translate_guarded ?(closed_inputs = false) (doc : document) (case : Case.t) 
   emit ctx "#defined inputval/3. #defined inputtl/5. #defined viol/2. #defined inputrole/3.";
   (* ch. 1.5: an attribute stands where it has a value or is settled leeg *)
   if strict then begin
-    emit ctx "#defined settled/2. #defined hasnot/2. #defined wnila/2.";
+    emit ctx "#defined settled/2. #defined hasnot/2. #defined wnila/2. #defined ropen/2.";
     emit_rule ctx ~head:"stands(I,A)" ~body:[ "val(I,A,_)" ];
     emit_rule ctx ~head:"stands(I,A)" ~body:[ "settled(I,A)" ]
   end;

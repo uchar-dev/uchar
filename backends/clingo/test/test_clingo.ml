@@ -20504,7 +20504,6 @@ let () =
     ov_rule ~name:"vindloon" "vindloon"
       (Some (ov_let "g" (ov_attr "gewicht") (ite (ov_cmp "greater" (ov_binder "g") (ov_lit "0")) (ov_lit "1") (ov_lit "0"))))
   in
-  refused ~name:"if-then-else" ~ir:(ov_doc [ vondst ] [ ite_rule ]) "if-then-else";
   (* where a document holds several, the first of the list: a Let that reads
      something before its binder before an IfThenElse, and a parameter with a
      timeline, a form of the table, before both *)
@@ -20831,6 +20830,220 @@ let () =
   frame "WV-1.5-past-undetermined-filter (at least two, V2 not gemerkt)" (ir ~filter:gemerkt "atLeast" 2)
     [ v1 [ "gemerkt" ] []; v2 [] [ "gemerkt" ] ] "not" false
 
+(* a fold of [kind] over the vondsten of a Jutter: of their [a], or of the
+   vondsten themselves for a count *)
+let ov_fold ?filter ?fallback kind a =
+  let arg = if kind = "count" then {|{"node": "AttributeReference", "attribute": "vondsten", "subjectType": "Jutter", "source": {"snippet": "vondsten"}}|} else ov_attr a in
+  let typ = if kind = "count" || kind = "filledCount" then {|{"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}|} else ov_num in
+  Printf.sprintf {|{"node": "Aggregation", "kind": "%s", "arguments": [%s], "elementType": "Vondst"%s%s, %s, "type": %s, %s}|} kind arg
+    (match filter with Some f -> {|, "filter": |} ^ f | None -> "")
+    (match fallback with Some v -> {|, "emptyFallback": |} ^ v | None -> "")
+    ov_range typ (ov_src kind)
+
+(* WV-1.5-set-fold: "het totaalgewicht van een Jutter is de som van het
+   gewicht van zijn vondsten", "het zwaargewicht … van zijn vondsten die een
+   gewicht groter dan 10 hebben", their minimum, "het zwaaraantal" and "het
+   vondstaantal", and "de som … of 0 als die er niet zijn": a member whose
+   value is open makes the fold open; a count reads no value *)
+let () =
+  let zwaar = ov_gt "gewicht" "10" in
+  let folds =
+    [ ("totaalgewicht", ov_fold "sum" "gewicht"); ("zwaargewicht", ov_fold ~filter:zwaar "sum" "gewicht");
+      ("minimumgewicht", ov_fold "minimum" "gewicht"); ("zwaaraantal", ov_fold ~filter:zwaar "count" "");
+      ("vondstaantal", ov_fold "count" ""); ("nulgewicht", ov_fold ~fallback:(ov_lit "0") "sum" "gewicht") ]
+  in
+  let ir =
+    ov_doc ~fact_types:[ ov_aanmelding ]
+      [ ov_type "Jutter" (List.map fst folds) []; ov_type "Vondst" [ "gewicht" ] [] ]
+      (List.map (fun (a, v) -> ov_rule ~ty:"Jutter" ~name:a a (Some v)) folds)
+  in
+  let v l g = (l, (match g with Some g -> [ ("gewicht", g) ] | None -> []), [], []) in
+  List.iter
+    (fun (name, vs, want) ->
+      ov_frame ~name:("WV-1.5-set-fold (" ^ name ^ ")") ~ir
+        ~case_text:(ov_case (ov_jutter vs) (List.map2 (fun (a, _) w -> ov_attr_is ~label:"J1" a w) folds want)) ())
+    [ ("20 and 5", [ v "V1" (Some "20"); v "V2" (Some "5") ], [ "25"; "20"; "5"; "1"; "2"; "25" ]);
+      ("20 and open", [ v "V1" (Some "20"); v "V2" None ], [ "open"; "open"; "open"; "open"; "2"; "open" ]);
+      ("no vondst", [], [ "leeg"; "leeg"; "leeg"; "0"; "0"; "0" ]) ]
+
+(* WV-1.5-closure-in-a-value: "het aantal gewogen vondsten van een Jutter is
+   het aantal gevulde gewichten van zijn vondsten", "een Jutter is volledig
+   gewogen indien dat aantal gelijk is aan 3", "gedeeltelijk gewogen indien
+   het groter is dan 1", and "het gewogen totaal is de som van het gewicht van
+   zijn vondsten waarvan het gewicht gevuld is": for the form itself an open
+   value is leeg, and for another what the closure gives does not stand *)
+let () =
+  let gewogen = ov_fold "filledCount" "gewicht" in
+  let ir =
+    ov_doc ~fact_types:[ ov_aanmelding ]
+      [ ov_type "Jutter" [ "gewogen"; "gewogen totaal" ] [ "volledig gewogen"; "gedeeltelijk gewogen" ];
+        ov_type "Vondst" [ "gewicht" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"gewogen" "gewogen" (Some gewogen);
+        ov_rule ~ty:"Jutter" ~name:"volledig gewogen" ~cond:(ov_cmp "equal" gewogen (ov_lit "3")) "volledig gewogen" None;
+        ov_rule ~ty:"Jutter" ~name:"gedeeltelijk gewogen" ~cond:(ov_cmp "greater" gewogen (ov_lit "1")) "gedeeltelijk gewogen" None;
+        ov_rule ~ty:"Jutter" ~name:"gewogen totaal" "gewogen totaal"
+          (Some (ov_fold ~filter:(ov_test "filled" (ov_attr "gewicht")) "sum" "gewicht")) ]
+  in
+  let v l g = (l, (match g with Some g -> [ ("gewicht", g) ] | None -> []), [], []) in
+  List.iter
+    (fun (name, vs, want) ->
+      ov_frame ~name:("WV-1.5-closure-in-a-value (" ^ name ^ ")") ~ir ~case_text:(ov_case (ov_jutter vs) want) ())
+    [ ("20, open, 30", [ v "V1" (Some "20"); v "V2" None; v "V3" (Some "30") ],
+       [ ov_attr_is ~label:"J1" "gewogen" "2"; ov_char_is ~label:"J1" "volledig gewogen" "open";
+         ov_char_is ~label:"J1" "gedeeltelijk gewogen" "holds"; ov_attr_is ~label:"J1" "gewogen totaal" "50" ]);
+      ("all open", [ v "V1" None; v "V2" None ],
+       [ ov_attr_is ~label:"J1" "gewogen" "0"; ov_attr_is ~label:"J1" "gewogen totaal" "open" ]);
+      ("no vondst", [], [ ov_attr_is ~label:"J1" "gewogen totaal" "leeg" ]) ]
+
+(* WV-1.5-if-then-else: "het vindloon van een Vondst is 10 als zijn taxatie
+   groter is dan 1000, anders zijn gewicht", the condition over a binder of
+   the taxatie (WF-077): an undetermined condition leaves the value open, and
+   only the chosen branch is read. "De bergtoeslag is 5 als zijn taxatie leeg
+   is, anders 0" is a test on leeg in the condition of a value, which this
+   encoding translates in no document (CLINGO-023) *)
+let ov_ite c t e = Printf.sprintf {|{"node": "IfThenElse", "type": %s, "condition": %s, "then": %s, "else": %s, %s}|} ov_num c t e (ov_src "als")
+
+let () =
+  let vindloon =
+    ov_let "t" (ov_attr "taxatie") (ov_ite (ov_cmp "greater" (ov_binder "t") (ov_lit "1000")) (ov_lit "10") (ov_attr "gewicht"))
+  in
+  let ir = ov_doc [ ov_vondst [ "taxatie"; "gewicht"; "vindloon" ] [] ] [ ov_rule ~name:"vindloon" "vindloon" (Some vindloon) ] in
+  List.iter
+    (fun (name, attrs, want) ->
+      ov_frame ~name:("WV-1.5-if-then-else (" ^ name ^ ")") ~ir ~case_text:(ov_case (ov_v1 attrs) [ ov_attr_is "vindloon" want ]) ())
+    [ ("then", [ ("taxatie", "2000") ], "10");
+      ("else", [ ("taxatie", "50"); ("gewicht", "3") ], "3");
+      ("else open", [ ("taxatie", "50") ], "open");
+      ("condition open", [ ("gewicht", "3") ], "open") ];
+  let bergtoeslag = ov_let "t" (ov_attr "taxatie") (ov_ite (ov_test "empty" (ov_binder "t")) (ov_lit "5") (ov_lit "0")) in
+  List.iter
+    (fun strict ->
+      let ir = ov_doc ~strict [ ov_vondst [ "taxatie"; "bergtoeslag" ] [] ] [ ov_rule ~name:"bergtoeslag" "bergtoeslag" (Some bergtoeslag) ] in
+      let doc, case = load_pair ~ir ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "bergtoeslag" "5" ]) in
+      check (Printf.sprintf "WV-1.5-if-then-else (a test on leeg, %s): CLINGO-023" (if strict then "with the property" else "without it"))
+        (match Translate.translate doc case with
+         | _ -> false
+         | exception Uchar_ref.Value.Fault { code; _ } -> code = Some "CLINGO-023"))
+    [ true; false ]
+
+(* --- the creations (ch. 1.5, "A creation", "An object made") -------------- *)
+let ov_role_check ft role =
+  Printf.sprintf {|{"node": "RoleMembership", "factType": "%s", "role": "%s", "negated": false, %s}|} ft role (ov_src role)
+
+let ov_creation ?cond ~name ~ft ~role assignments =
+  Printf.sprintf
+    {|{"node": "ObjectCreation", "name": "%s", "versions": [{"createdType": "Vondst", "subject": "Jutter", "assignments": [%s]%s, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "%s", "role": "%s"}}]}|}
+    name
+    (String.concat ", "
+       (List.map (fun (m, v) -> Printf.sprintf {|{"node": "MemberAssignment", "member": "%s", "value": %s, "characteristic": false}|} m v) assignments))
+    (match cond with Some c -> {|, "condition": |} ^ c | None -> "")
+    ft role
+
+(* WV-1.5-creation-condition, WV-1.5-creation-open: "een Jutter heeft een
+   proefvondst met gewicht gelijk aan 3 indien hij niet ervaren is", "een
+   Jutter is ervaren indien zijn ervaring groter is dan 5", the number of his
+   vondsten, the sum of their gewicht and "een Jutter is vindend indien hij een
+   vondst heeft": where the condition is undetermined the relation is open on
+   the Jutter, and a count, a fold and a role check over it are open reads *)
+let () =
+  let vangst = {|"sourceRole": {"node": "RoleBinding", "factType": "vangst", "role": "vondst"}|} in
+  let fold kind =
+    let arg = if kind = "count" then {|{"node": "AttributeReference", "attribute": "vondsten", "subjectType": "Jutter", "source": {"snippet": "vondsten"}}|} else ov_attr "gewicht" in
+    Printf.sprintf {|{"node": "Aggregation", "kind": "%s", "arguments": [%s], "elementType": "Vondst", %s, "type": %s, %s}|} kind arg vangst
+      (if kind = "count" then {|{"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}|} else ov_num) (ov_src kind)
+  in
+  let ir =
+    ov_doc ~fact_types:[ ov_vangst ]
+      ~object_creations:[ ov_creation ~cond:(ov_check ~negated:true "ervaren") ~name:"proefvondst" ~ft:"vangst" ~role:"vondst" [ ("gewicht", ov_lit "3") ] ]
+      [ ov_type "Jutter" [ "ervaring"; "vondstaantal"; "totaalgewicht" ] [ "ervaren"; "vindend" ]; ov_type "Vondst" [ "gewicht" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"ervaren" ~cond:(ov_cmp "greater" (ov_attr ~ty:"Jutter" "ervaring") (ov_lit "5")) "ervaren" None;
+        ov_rule ~ty:"Jutter" ~name:"vindend" ~cond:(ov_role_check "vangst" "vinder") "vindend" None;
+        ov_rule ~ty:"Jutter" ~name:"vondstaantal" "vondstaantal" (Some (fold "count"));
+        ov_rule ~ty:"Jutter" ~name:"totaalgewicht" "totaalgewicht" (Some (fold "sum")) ]
+  in
+  List.iter
+    (fun (name, attrs, vondsten, (n, sum, vindend)) ->
+      ov_frame ~name ~ir
+        ~case_text:
+          (ov_case
+             (ov_obj ~ty:"Jutter" ~roles:(if vondsten = [] then [] else [ ("vondsten", vondsten) ]) "J1" attrs
+             :: List.map (fun l -> ov_obj l [ ("gewicht", "4") ]) vondsten)
+             [ ov_attr_is ~label:"J1" "vondstaantal" n; ov_attr_is ~label:"J1" "totaalgewicht" sum; ov_char_is ~label:"J1" "vindend" vindend ])
+        ())
+    [ ("WV-1.5-creation-condition (makes)", [ ("ervaring", "2") ], [], ("1", "3", "holds"));
+      ("WV-1.5-creation-condition (makes nothing)", [ ("ervaring", "8") ], [], ("0", "leeg", "not"));
+      ("WV-1.5-creation-open (no vondst)", [], [], ("open", "open", "open"));
+      ("WV-1.5-creation-open (beside a vondst)", [], [ "V1" ], ("open", "open", "open")) ]
+
+(* WV-1.5-creation-member: "een Jutter heeft een proefvondst met gewicht
+   gelijk aan zijn ervaring en taxatie gelijk aan zijn bonus", "de bonus van
+   een Jutter is 5 indien zijn ervaring groter is dan 10", read on the Jutter
+   over the link to his proefvondst: an assigned member is filled, settled leeg
+   or open as its value; one no one assigns, the schade, is settled leeg. The
+   gewicht of a Vondst the case gives without one is open *)
+let () =
+  let proef a = ov_attr ~path:[ ("proefvangst", "proefvondst") ] a in
+  let ir =
+    ov_doc
+      ~fact_types:
+        [ {|{"node": "FactType", "name": "proefvangst", "reciprocal": false, "roles": [{"node": "Role", "name": "jutter", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "proefvondst", "objectType": "Vondst", "many": false}]}|} ]
+      ~object_creations:
+        [ ov_creation ~name:"proefvondst" ~ft:"proefvangst" ~role:"proefvondst"
+            [ ("gewicht", ov_attr ~ty:"Jutter" "ervaring"); ("taxatie", ov_attr ~ty:"Jutter" "bonus") ] ]
+      [ ov_type "Jutter" [ "ervaring"; "bonus"; "proefgewicht"; "prooftaxatie"; "proefschade" ] [];
+        ov_type "Vondst" [ "gewicht"; "taxatie"; "schade" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"bonus" ~cond:(ov_cmp "greater" (ov_attr ~ty:"Jutter" "ervaring") (ov_lit "10")) "bonus" (Some (ov_lit "5"));
+        ov_rule ~ty:"Jutter" ~name:"proefgewicht" "proefgewicht" (Some (proef "gewicht"));
+        ov_rule ~ty:"Jutter" ~name:"prooftaxatie" "prooftaxatie" (Some (proef "taxatie"));
+        ov_rule ~ty:"Jutter" ~name:"proefschade" "proefschade" (Some (proef "schade")) ]
+  in
+  List.iter
+    (fun (name, attrs, (g, t, sch)) ->
+      ov_frame ~name:("WV-1.5-creation-member (" ^ name ^ ")") ~ir
+        ~case_text:
+          (ov_case
+             [ ov_obj ~ty:"Jutter" "J1" attrs; ov_obj "V9" [ ("taxatie", "1") ] ]
+             [ ov_attr_is ~label:"J1" "proefgewicht" g; ov_attr_is ~label:"J1" "prooftaxatie" t;
+               ov_attr_is ~label:"J1" "proefschade" sch; ov_attr_is ~label:"V9" "gewicht" "open" ])
+        ())
+    [ ("filled", [ ("ervaring", "12") ], ("12", "5", "leeg")); ("settled leeg", [ ("ervaring", "2") ], ("2", "leeg", "leeg"));
+      ("open", [], ("open", "open", "leeg")) ]
+
+(* WV-1.5-fact-creation: "een hulpvondst van een Jutter is een vondst van de
+   Jutter indien de Jutter niet gemeld is", "het hulptal van een Jutter is het
+   aantal hulpvondsten" and "een Vondst is geholpen indien hij een hulpjutter
+   heeft", over two vondsten: an undetermined condition leaves the relation open
+   on the Jutter and on every vondst it could reach *)
+let () =
+  let hulp =
+    {|{"node": "FactType", "name": "hulp", "reciprocal": false, "roles": [{"node": "Role", "name": "helper", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "hulpvondst", "objectType": "Vondst", "plural": "hulpvondsten", "many": true}]}|}
+  in
+  let creation =
+    {|{"node": "FactCreation", "name": "hulp", "versions": [{"factType": "hulp", "anchorRole": "helper", "targetRole": "hulpvondst", "anchor": "Jutter", "path": [{"node": "RoleBinding", "factType": "aanmelding", "role": "vondst"}], "condition": |}
+    ^ ov_check ~negated:true "gemeld" ^ {|, "validity": {"node": "Validity"}}]}|}
+  in
+  let hulptal =
+    Printf.sprintf
+      {|{"node": "Aggregation", "kind": "count", "arguments": [{"node": "AttributeReference", "attribute": "hulpvondsten", "subjectType": "Jutter", "source": {"snippet": "hulpvondsten"}}], "elementType": "Vondst", "sourceRole": {"node": "RoleBinding", "factType": "hulp", "role": "hulpvondst"}, "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}, %s}|}
+      (ov_src "aantal")
+  in
+  let ir =
+    ov_doc ~fact_types:[ ov_aanmelding; hulp ] ~fact_creations:[ creation ]
+      [ ov_type "Jutter" [ "hulptal" ] [ "gemeld" ]; ov_type "Vondst" [ "gewicht" ] [ "geholpen" ] ]
+      [ ov_rule ~ty:"Jutter" ~name:"hulptal" "hulptal" (Some hulptal);
+        ov_rule ~name:"geholpen" ~cond:(ov_role_check "hulp" "hulpvondst") "geholpen" None ]
+  in
+  List.iter
+    (fun (name, chars, absent, (n, v1)) ->
+      ov_frame ~name:("WV-1.5-fact-creation (" ^ name ^ ")") ~ir
+        ~case_text:
+          (ov_case
+             [ ov_obj ~ty:"Jutter" ~chars ~absent ~roles:[ ("vondsten", [ "V1"; "V2" ]) ] "J1" []; ov_obj "V1" []; ov_obj "V2" [] ]
+             [ ov_attr_is ~label:"J1" "hulptal" n; ov_char_is "geholpen" v1 ])
+        ())
+    [ ("not gemeld", [], [ "gemeld" ], ("2", "holds")); ("gemeld", [ "gemeld" ], [], ("0", "not"));
+      ("gemeld not named", [], [], ("open", "open")) ]
+
 (* WV-1.5-witness-*: the witnesses of ref's suite (ref/test/fixtures/strict-
    empty/), read where they stand, each with its case files and their
    expectations. A witness whose forms this encoding carries plays every case;
@@ -20844,13 +21057,9 @@ let () =
       "compound-all"; "compound-any"; "compound-counting"; "compound-none"; "consistency"; "defaults-characteristic";
       "defaults-stack"; "defaults-subtype"; "filled-test"; "filled-test-not-closure"; "initialisation";
       "input-above-computation"; "input-above-computation-open"; "let"; "marker"; "navigated-read"; "settled-empty";
-      "quantifier-fold"; "settled-empty-date"; "settled-empty-stack" ]
-  and refused =
-    [ ("arithmetic", "CLINGO-005", None); ("empty-by-fault", "CLINGO-049", Some "set-fold");
-      ("exact-digits", "CLINGO-046", None); ("fact-creation", "CLINGO-049", Some "set-fold");
-      ("listed-fold", "CLINGO-049", Some "set-fold"); ("object-creation", "CLINGO-049", Some "object-creation");
-      ("set-fold", "CLINGO-049", Some "set-fold");
-      ("settled-empty-fold", "CLINGO-049", Some "set-fold") ]
+      "quantifier-fold"; "settled-empty-date"; "settled-empty-stack"; "empty-by-fault"; "listed-fold"; "set-fold";
+      "settled-empty-fold"; "fact-creation"; "object-creation" ]
+  and refused = [ ("arithmetic", "CLINGO-005", None); ("exact-digits", "CLINGO-046", None) ]
   in
   let root = if Sys.file_exists dir then dir else Filename.concat "../../../../.." dir in
   let present = List.sort compare (List.filter (fun n -> Sys.is_directory (Filename.concat root n)) (Array.to_list (Sys.readdir root))) in
