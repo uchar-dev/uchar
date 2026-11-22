@@ -115,14 +115,21 @@ class InferFromEmptyRefusalWitnessTest {
             assertEquals(false, table.contains(own), own);
     }
 
-    /** WV-1.5-let-in-composite-*: a Let whose binder a member of a composite other than the first reads, at any depth,
-     *  is named {@code let-in-composite}, on the documents of the reference interpreter's suite ({@code ref/test}): "de
-     *  uitkering van een Vondst is, daarbij geldt: de toeslag is zijn vindloon, 10 als [condition]; anders 0". The slug
+    /** WV-1.5-let-in-composite-*: a Let whose binder a member of a composite with more than one member reads, at any
+     *  depth, is named {@code let-in-composite}, on the documents of the reference interpreter's suite ({@code ref/test}):
+     *  "de uitkering van een Vondst is, daarbij geldt: de toeslag is zijn vindloon, 10 als [condition]; anders 0". The slug
      *  stands before the slugs of this backend's own, so it is named although the document holds an IfThenElse. */
-    @Test void a_let_read_in_a_later_member_of_a_composite_is_named() throws Exception {
+    @Test void a_let_read_in_a_member_of_a_composite_is_named() throws Exception {
         String toeslag = greater(binder("toeslag"), "5"), gewicht = greater(attribute("gewicht"), "10"),
                 schade = greater(attribute("schade"), "1");
         Map<String, String> bodies = new LinkedHashMap<>();
+        bodies.put("first-member", choice(any(toeslag, gewicht), literal("10"), literal("0")));
+        bodies.put("first-member-of-a-first-member", choice(all(any(toeslag, gewicht), schade), literal("10"), literal("0")));
+        bodies.put("one-member-in-a-first-member", choice(all(any(toeslag), gewicht), literal("10"), literal("0")));
+        bodies.put("choice-in-a-first-member",
+                choice(all(greater(choice(toeslag, literal("1"), literal("0")), "0"), gewicht), literal("10"), literal("0")));
+        bodies.put("let-value-in-a-first-member", choice(all(
+                greater(let("verhoogd", plus(binder("toeslag"), literal("1")), binder("verhoogd")), "5"), gewicht), literal("10"), literal("0")));
         bodies.put("later-member", choice(any(gewicht, toeslag), literal("10"), literal("0")));
         bodies.put("later-member-of-a-first-member", choice(all(any(gewicht, toeslag), schade), literal("10"), literal("0")));
         bodies.put("first-member-of-a-later-member", choice(all(gewicht, any(toeslag, schade)), literal("10"), literal("0")));
@@ -135,10 +142,55 @@ class InferFromEmptyRefusalWitnessTest {
         for (Map.Entry<String, String> e : bodies.entrySet())
             assertEquals("let-in-composite", first(uitkering(e.getValue())), e.getKey());
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
-            CaseRunner.Excluded refused = assertThrows(CaseRunner.Excluded.class,
-                    () -> DroolsBackend.build(uitkering(bodies.get("later-member")), branch, false), branch::name);
-            assertEquals(DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "let-in-composite").text(), refused.getMessage());
+            for (String member : List.of("first-member", "later-member")) {
+                CaseRunner.Excluded refused = assertThrows(CaseRunner.Excluded.class,
+                        () -> DroolsBackend.build(uitkering(bodies.get(member)), branch, false), branch::name);
+                assertEquals(DroolsCode.INFER_FROM_EMPTY_FALSE.reason("form", "let-in-composite").text(), refused.getMessage());
+            }
         }
+    }
+
+    /** WV-1.5-let-in-composite-filter-*: the same in the filter of a fold over a set, on the rule 3 of the golden
+     *  {@code jutterswet-grens-per-jutter} with the property, which reads the binder in the one member of the filter of a
+     *  count: not named, as that condition alone is not, and named beside another member. */
+    @Test void a_let_read_in_a_composite_filter_is_named() throws Exception {
+        JsonNode parts = count(grens(3)).at("/filter/parts");
+        assertEquals(1, parts.size(), "the filter of rule 3 is a composite of one condition");
+        ObjectNode atom = (ObjectNode) parts.get(0);
+        ObjectNode alone = grens(3);
+        count(alone).set("filter", atom.deepCopy());
+        assertEquals(null, first(alone));
+        ObjectNode other = atom.deepCopy();
+        other.set("right", JSON.readTree(literal("3")));
+        for (String quantifier : List.of("all", "none")) {
+            ObjectNode one = grens(3);
+            composite(one, quantifier, List.of(atom));
+            assertEquals(null, first(one), quantifier + " over one member");
+            for (List<ObjectNode> members : List.of(List.of(atom, other), List.of(other, atom),
+                    List.of(composed("all", List.of(atom)), other))) {
+                ObjectNode more = grens(3);
+                composite(more, quantifier, members);
+                assertEquals("let-in-composite", first(more), quantifier + " over " + members);
+            }
+        }
+    }
+
+    /** The count in the body of the Let of {@code ir}, its one fold with a filter. */
+    private static ObjectNode count(ObjectNode ir) {
+        List<JsonNode> folds = ir.get("rules").findParents("filter");
+        assertEquals(1, folds.size(), "one fold with a filter");
+        return (ObjectNode) folds.get(0);
+    }
+
+    private static void composite(ObjectNode ir, String quantifier, List<ObjectNode> parts) {
+        count(ir).set("filter", composed(quantifier, parts));
+    }
+
+    private static ObjectNode composed(String quantifier, List<ObjectNode> parts) {
+        ObjectNode composed = JSON.createObjectNode().put("node", "Compound").put("quantifier", quantifier).put("threshold", 0);
+        ArrayNode members = composed.putArray("parts");
+        for (ObjectNode p : parts) members.add(p.deepCopy());
+        return composed;
     }
 
     /** WV-1.5-let-in-composite-quantifier-fold-*: the same in the filter and in the matrix of a quantifier fold, the
@@ -204,15 +256,15 @@ class InferFromEmptyRefusalWitnessTest {
                 Path.of("src", "test", "resources", "open-values", name, "ir.json")));
     }
 
-    /** WV-1.5-let-in-composite-not-*: a Let whose binder is read in a first member only, outside every condition, under
-     *  an inner Let of the same name, or inside the later member that holds the Let, is not named: the document holds
-     *  the IfThenElse this backend does not carry, or no form it does not carry. */
+    /** WV-1.5-let-in-composite-not-*: a Let whose binder is read in the one member of a composite, outside every
+     *  condition, under an inner Let of the same name, or inside the member that holds the Let, is not named: the document
+     *  holds the IfThenElse this backend does not carry, or no form it does not carry. */
     @Test void a_let_read_elsewhere_is_not_named() throws Exception {
         String toeslag = greater(binder("toeslag"), "5"), gewicht = greater(attribute("gewicht"), "10"),
                 schade = greater(attribute("schade"), "1");
         Map<String, String> bodies = new LinkedHashMap<>();
-        bodies.put("first-member", choice(any(toeslag, gewicht), literal("10"), literal("0")));
-        bodies.put("first-of-a-first", choice(all(any(toeslag, gewicht), schade), literal("10"), literal("0")));
+        bodies.put("one-member", choice(any(toeslag), literal("10"), literal("0")));
+        bodies.put("one-member-in-one-member", choice(all(any(toeslag)), literal("10"), literal("0")));
         bodies.put("outside-a-condition", choice(all(gewicht, schade), literal("7"), binder("toeslag")));
         bodies.put("shadowed", choice(all(gewicht, greater(let("toeslag", attribute("schade"), binder("toeslag")), "1")),
                 literal("7"), binder("toeslag")));

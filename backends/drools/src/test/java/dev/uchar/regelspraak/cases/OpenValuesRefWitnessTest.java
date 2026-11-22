@@ -46,6 +46,7 @@ class OpenValuesRefWitnessTest {
                 "settled-empty-date", "settled-empty-fold", "settled-empty-stack"))
             WITNESS.put(plays, null);
         for (String slug : List.of("fact-creation", "object-creation")) WITNESS.put(slug, slug);
+        WITNESS.put("let-closure", "if-then-else");
     }
 
     @Test void every_witness_plays_or_is_refused_with_the_slug_of_its_form() throws Exception {

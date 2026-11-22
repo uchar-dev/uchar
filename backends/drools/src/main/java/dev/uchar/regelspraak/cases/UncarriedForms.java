@@ -109,7 +109,7 @@ final class UncarriedForms {
 
     /** The walk over the conditions and expressions of a document that notes the slugs of the forms it meets.
      *  {@code lets} holds the binders of the Lets around, each with whether the place is, within the body of its Let, in
-     *  a member of a composite other than its first or in the filter or the matrix of a quantifier fold: a read there is
+     *  a member of a composite with more than one or in the filter or the matrix of a quantifier fold: a read there is
      *  {@code let-in-composite}. */
     private record Walk(Set<String> found, Map<String, Boolean> lets) {
 
@@ -120,10 +120,10 @@ final class UncarriedForms {
             return new Walk(found, inner);
         }
 
-        /** The walk in a later member of a composite, or in the filter or the matrix of a quantifier fold. */
-        private Walk past() {
+        /** The walk in a member of a composite with more than one, or in the filter or the matrix of a quantifier fold. */
+        private Walk besideOthers() {
             Map<String, Boolean> inner = new HashMap<>(lets);
-            inner.replaceAll((binder, late) -> true);
+            inner.replaceAll((binder, beside) -> true);
             return new Walk(found, inner);
         }
 
@@ -226,12 +226,12 @@ final class UncarriedForms {
                 case Condition.FarRoleMembership r -> { }
                 case Condition.IdentityCheck i -> { }
                 case Condition.Compound s -> {
-                    for (int i = 0; i < s.components().size(); i++)
-                        (i == 0 ? this : past()).condition(s.components().get(i));
+                    Walk members = s.components().size() == 1 ? this : besideOthers();
+                    for (Condition member : s.components()) members.condition(member);
                 }
                 case Condition.QuantifierFold q -> {
-                    past().condition(q.filter());
-                    past().condition(q.test());
+                    besideOthers().condition(q.filter());
+                    besideOthers().condition(q.test());
                 }
                 case Condition.TimeWindow t -> found.add("time-window");
                 case Condition.RuleStatusCheck r -> found.add("rule-status-check");
