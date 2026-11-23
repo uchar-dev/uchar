@@ -1,5 +1,30 @@
 # strict-scenarios: een toetsscenario voor een strikt document
 
+Goal: de scenariolaag van de RegelSpraak-frontend schrijft voor een document met `Afleiden uit leeg: nee` wat het
+caseschema al kent: `characteristicsAbsent` uit "- is niet X", "- heeft geen X" en "- heeft niet het X" in een situatie,
+en `attributeOpen` en `characteristicOpen` uit "staat niet vast" in een verwachting. De golden
+`jutterswet-afleiden-uit-leeg` krijgt een `scenario.rgs` dat zijn zes handgeschreven cases byte voor byte geeft.
+
+Acceptance: `bash scripts/check-scenario.sh` PASS met 49 scenario-goldens en zes case files meer, en geen case file of
+`ir.json` in het corpus veranderd (`git diff --stat main -- corpus` toont alleen `scenario.rgs` en `NOTE.md`);
+`bash scripts/check-regelspraak.sh` PASS (de JUnit-suite zonder overgeslagen test, plus het register), met tests voor de
+drie situatievormen, de tegenstrijdigheid in één blok, `gebaseerd op` in beide richtingen, de periode en het
+tijdsafhankelijke kenmerk, "staat niet vast" over een attribuut (`de`/`het`) en over een bijvoeglijk en een bezittelijk
+kenmerk (met en zonder lidwoord en komma), de weigering in een gewoon document, de tokens, en een bestaande naam met
+`staat`, `vast`, `of` of `niet` die leest als voorheen; `sh scripts/check-self-contained.sh` PASS; `make gates` groen
+(de hoofdsessie, vóór de landing).
+
+May touch: `frontends/regelspraak/grammar/RegelSpraak.g4`, `frontends/regelspraak/grammar/DIVERGENCES.md`,
+`frontends/regelspraak/src/main/java/dev/uchar/regelspraak/resolver/ScenarioResolver.java`,
+`.../resolver/SemanticTokens.java`, `.../ir/ResolvedScenario.java`, `.../emit/CaseEmitter.java`,
+`frontends/regelspraak/src/main/resources/dev/uchar/regelspraak/diagnostic-codes.tsv` en de twee catalogi onder
+`.../regelspraak/message/`, `frontends/regelspraak/src/test/java/dev/uchar/regelspraak/`,
+`corpus/golden/jutterswet-afleiden-uit-leeg/` (`scenario.rgs` nieuw, `NOTE.md`), deze kaart.
+
+Out of scope: de toolchain (`ScenarioData`, `SituationToRequest`, playground: eigen kaart, één pin-bump later); de
+markers (`afwezigheidsWaarde` en alles van `one-empty` deel 1 blijft staan); "- X is leeg" in een situatie
+(`attributesEmpty`, kaart `settled-empty-input`, geparkeerd); spec, schema's, executors en `scripts/`.
+
 *Besloten door de eigenaar, 2026-11-23 (de zinnen en de volgorde); nog niet begonnen. Volgt uit het besluit `one-empty`:
 "nog niet" en "nooit" op één attribuut scheidt voortaan een strikt document, en een toetsdocument daarvan moet dat kunnen
 zeggen. Bijgewerkt na een tweede review (extern model, 2026-11-23).*
