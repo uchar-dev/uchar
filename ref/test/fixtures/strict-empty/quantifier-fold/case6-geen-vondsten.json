@@ -32,27 +32,12 @@
     {
       "kind": "characteristicAbsent",
       "label": "J1",
-      "characteristic": "vinder"
-    },
-    {
-      "kind": "characteristicAbsent",
-      "label": "J1",
-      "characteristic": "verzamelaar"
-    },
-    {
-      "kind": "characteristicAbsent",
-      "label": "J1",
       "characteristic": "verzamelaar"
     },
     {
       "kind": "characteristicPresent",
       "label": "J1",
       "characteristic": "matig"
-    },
-    {
-      "kind": "characteristicAbsent",
-      "label": "J1",
-      "characteristic": "eenling"
     },
     {
       "kind": "characteristicAbsent",

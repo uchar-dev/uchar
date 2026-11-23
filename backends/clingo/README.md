@@ -470,10 +470,13 @@ spec bug.
   member where the session treats it as complete, the runner's
   `--closed-inputs`); for a member a rule or a defaults group writes, per
   concrete type, from its writers, each of which states where it fills
-  nothing (`wnil<i>/1`, `grp<g>_nil/1`: its condition is false for
-  another form, its value is settled leeg, or the date lies outside its
-  window). The case's value of such a member stands where each computing
-  rule fills nothing (`wnila/2`). A read asks whether the attribute
+  nothing (`wnil<i>/1`, `grp<g>_nil/1`: its condition is false, its
+  value is settled leeg, or the date lies outside its window). The case's
+  value of such a member stands where each computing rule fills nothing
+  (`wnila/2`). An attribute that only an initialisation writes, a rule
+  or the one default of a defaults group, is an input member with a
+  default value: where the case gives it no value and it is not
+  complete, it is open (`iopen/2`). A read asks whether the attribute
   stands (`stands/2`); one whose state the case alone decides stands in
   facts of its own (`given/2`), so that grounding decides the read.
   - *A value and an atomic condition* are translated as in any other
@@ -482,19 +485,15 @@ spec bug.
     dividend, the body of a Let only past its binder, the chosen branch
     of an IfThenElse only past its condition. A value, a judgement and a
     §9.5 deposit arise only outside it, and a fault after an open read
-    within it does not. A closure inside it (a filled-value count, a
-    filter on gevuld) sets `oc<n>` beside it: what it gives stands for
-    the form itself only. The computation of the binder of a Let has an
-    `oc<n>` of its own (`computation`), which every read of the binder
-    tells to the boundary it stands in, that of a filter in the body
-    among them.
-  - *A condition* is judged as a pair (`judge`), for the form itself and
-    for another form, each side established true or false: a composite
-    by Kleene's strong table over its members, a quantifier fold by the
-    same table over the members of its range. A test on leeg or gevuld
-    closes over an open value for the form itself; where no closure
-    stands in a condition the two walks share their predicates. A member
-    read after one that does not stand is read provisionally: its
+    within it does not. The computation of the binder of a Let stands in
+    the boundary of the Let, so a binder computed from an open value
+    leaves every read of it open.
+  - *A condition* is judged (`judge`) as one value of Kleene's strong
+    table, established true, established false, or neither: an atomic
+    condition, the test on leeg and gevuld among them, by its boundary;
+    a composite by the table over its members, a quantifier fold by the
+    same table over the members of its range. A member read after one
+    that is undetermined is read provisionally: its
     deposits and its faults wait for the gate that says it is read as
     ch. 5.10 reads it (`member_gate`), and a fault leaves the member
     undetermined. A limit of this encoding in such a member fires
@@ -506,19 +505,21 @@ spec bug.
     member (`judged_at`).
   - *A fold over a set* reads the filter of every member and then its
     value (`fold_reads`); a filter that is undetermined or a value that
-    is open is an open read of the fold's boundary, and the fold counts
-    the members its filter holds of for the value itself. What a filter
+    is open is an open read of the fold's boundary, the value of the
+    filled-value count and a filter on gevuld over an open value among
+    them, and the fold counts the members its filter holds of. What a filter
     deposits waits until the fold's boundary reaches no open value, and a
     fault of it until no filter of a member before it is undetermined.
   - *A stack* reads each default with three outcomes: it decides, it
     stands that it gives way (`<chain>_gw<n>`), or it is open, and a
-    default is reached where every higher one gave way. An
-    initialisation of a stack closes over the first default that is
-    open, where no initialisation between the two decides. Exception
-    groups and the members of an unordered group decide beside members
-    that stand. The ch. 7.7 desugaring is not applied: an initialisation
-    beside a computation is read natively, as a closure over the writers
-    of its target.
+    default is reached where every higher one gave way, the
+    initialisation default as any other; it is not at its turn over an
+    open input (`grp<g>_has_input/1`). Exception groups and the members
+    of an unordered group decide beside members that stand. The ch. 7.7
+    desugaring is not applied: an initialisation beside a computation is
+    read natively, as the lowest writer of its target, which writes
+    where the input fills nothing (no value, no `iopen/2`, no `aopen/2`)
+    and every computing rule fills nothing (`wnila/2`).
   - *A creation* whose condition is undetermined leaves the relation it
     would lay open (`ropen/2`) on the subject, and for a fact creation on
     what it could reach; every read over an open relation is an open

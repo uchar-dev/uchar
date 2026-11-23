@@ -24,11 +24,6 @@
       "characteristic": "ervaren"
     },
     {
-      "kind": "characteristicAbsent",
-      "label": "J1",
-      "characteristic": "ervaren"
-    },
-    {
       "kind": "attributeValue",
       "label": "J1",
       "attribute": "ontvangen taxatie",

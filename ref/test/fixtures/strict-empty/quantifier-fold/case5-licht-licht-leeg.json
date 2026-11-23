@@ -61,11 +61,6 @@
       "characteristic": "kundig"
     },
     {
-      "kind": "characteristicAbsent",
-      "label": "J1",
-      "characteristic": "kundig"
-    },
-    {
       "kind": "characteristicOpen",
       "label": "J1",
       "characteristic": "beginner"
@@ -81,11 +76,6 @@
       "characteristic": "verzamelaar"
     },
     {
-      "kind": "characteristicAbsent",
-      "label": "J1",
-      "characteristic": "verzamelaar"
-    },
-    {
       "kind": "characteristicPresent",
       "label": "J1",
       "characteristic": "matig"
@@ -94,11 +84,6 @@
       "kind": "characteristicOpen",
       "label": "J1",
       "characteristic": "eenling"
-    },
-    {
-      "kind": "characteristicAbsent",
-      "label": "J1",
-      "characteristic": "keurder"
     },
     {
       "kind": "characteristicAbsent",

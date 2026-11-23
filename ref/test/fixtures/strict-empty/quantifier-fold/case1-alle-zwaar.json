@@ -70,11 +70,6 @@
       "characteristic": "beginner"
     },
     {
-      "kind": "characteristicAbsent",
-      "label": "J1",
-      "characteristic": "beginner"
-    },
-    {
       "kind": "characteristicPresent",
       "label": "J1",
       "characteristic": "vinder"
@@ -88,16 +83,6 @@
       "kind": "characteristicAbsent",
       "label": "J1",
       "characteristic": "matig"
-    },
-    {
-      "kind": "characteristicAbsent",
-      "label": "J1",
-      "characteristic": "matig"
-    },
-    {
-      "kind": "characteristicAbsent",
-      "label": "J1",
-      "characteristic": "eenling"
     },
     {
       "kind": "characteristicAbsent",

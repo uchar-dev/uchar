@@ -24,11 +24,6 @@
       "characteristic": "vindgerechtigd"
     },
     {
-      "kind": "characteristicAbsent",
-      "label": "J1",
-      "characteristic": "vindgerechtigd"
-    },
-    {
       "kind": "attributeEmpty",
       "label": "J1",
       "attribute": "vindpremie"

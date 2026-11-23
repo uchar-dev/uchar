@@ -20392,7 +20392,7 @@ let () =
     [ ("TTU", "holds", "not", "not"); ("TFU", "open", "open", "open"); ("FFU", "not", "holds", "open") ]
 
 (* WV-1.5-past-undetermined-deposit, WV-1.5-past-undetermined-fault: a member
-   after one undetermined for another form is read provisionally, its deposit
+   after an undetermined one is read provisionally, its deposit
    dropped and its fault leaving it undetermined. "De vrijstelling is 1 indien
    alle van: zijn gewicht is groter dan 10, zijn taxatie gedeeld door zijn
    getuigen is groter dan 3", taxatie 50 and getuigen 0: settled leeg without
@@ -20515,12 +20515,13 @@ let () =
         ~case_text:(ov_case (ov_v1 ~absent:[ "kostbaar" ] attrs) [ ov_char_is "kostbaar" want ]) ())
     [ ([], "open"); ([ ("taxatie", "50") ], "not"); ([ ("taxatie", "2000") ], "holds") ]
 
-(* WV-1.5-filled-test-*, WV-1.5-filled-guard, WV-1.5-own-negation: "getaxeerd
-   indien zijn taxatie gevuld is", "ongetaxeerd indien zijn taxatie leeg is",
-   "kostbaar indien zijn taxatie gevuld is en zijn taxatie groter is dan 1000"
-   with "de bewakingstoeslag is 5 indien hij niet kostbaar is", "verweesd
-   indien geen van: zijn taxatie is gevuld": at taxatie 50, at an open taxatie,
-   and at a settled leeg one (the session treats the input as complete) *)
+(* WV-1.5-filled-test-*, WV-1.5-filled-guard, WV-1.5-negated-filled-test:
+   "getaxeerd indien zijn taxatie gevuld is", "ongetaxeerd indien zijn taxatie
+   leeg is", "kostbaar indien zijn taxatie gevuld is en zijn taxatie groter is
+   dan 1000" with "de bewakingstoeslag is 5 indien hij niet kostbaar is",
+   "verweesd indien geen van: zijn taxatie is gevuld": at taxatie 50, at an
+   open taxatie, where every test is undetermined, and at a settled leeg one
+   (the session treats the input as complete) *)
 let () =
   work @@ fun () ->
   let ir =
@@ -20538,15 +20539,15 @@ let () =
   ov_frame ~name:"WV-1.5-filled-test-two-valued" ~ir
     ~case_text:(ov_case (ov_v1 [ ("taxatie", "50") ]) (expect ~getaxeerd:"holds" ~ongetaxeerd:"not" ~kostbaar:"not" ~toeslag:"5" ~verweesd:"not")) ();
   ov_frame ~name:"WV-1.5-filled-test-open" ~ir
-    ~case_text:(ov_case (ov_v1 []) (expect ~getaxeerd:"open" ~ongetaxeerd:"holds" ~kostbaar:"open" ~toeslag:"open" ~verweesd:"holds")) ();
+    ~case_text:(ov_case (ov_v1 []) (expect ~getaxeerd:"open" ~ongetaxeerd:"open" ~kostbaar:"open" ~toeslag:"open" ~verweesd:"open")) ();
   ov_frame ~closed:true ~name:"WV-1.5-filled-test-settled" ~ir
     ~case_text:(ov_case (ov_v1 []) (expect ~getaxeerd:"not" ~ongetaxeerd:"holds" ~kostbaar:"not" ~toeslag:"5" ~verweesd:"holds")) ()
 
 (* WV-1.5-filled-test-computed: "de getuigentoeslag is 7 indien zijn gewicht
-   gedeeld door zijn getuigen leeg is": 7 where the gewicht or the getuigen is
-   open, without a fact, and 7 with the EF-005 fact at gewicht 10 and getuigen
-   0; "de schadetoeslag is 3 indien zijn gewicht plus zijn schade gevuld is" is
-   open where the gewicht is open *)
+   gedeeld door zijn getuigen leeg is": open where the gewicht or the getuigen
+   is open, without a fact, and 7 with the EF-005 fact at gewicht 10 and
+   getuigen 0; "de schadetoeslag is 3 indien zijn gewicht plus zijn schade
+   gevuld is" is open where the gewicht is open *)
 let () =
   work @@ fun () ->
   let ir =
@@ -20555,30 +20556,51 @@ let () =
         ov_rule ~name:"schadetoeslag" ~cond:(ov_test "filled" (ov_bin "plus" (ov_attr "gewicht") (ov_attr "schade"))) "schadetoeslag" (Some (ov_lit "3")) ]
   in
   ov_frame ~name:"WV-1.5-filled-test-computed (gewicht open)" ~ir
-    ~case_text:(ov_case (ov_v1 [ ("getuigen", "2"); ("schade", "1") ]) [ ov_attr_is "getuigentoeslag" "7"; ov_attr_is "schadetoeslag" "open"; ov_consistent ]) ();
+    ~case_text:(ov_case (ov_v1 [ ("getuigen", "2"); ("schade", "1") ]) [ ov_attr_is "getuigentoeslag" "open"; ov_attr_is "schadetoeslag" "open"; ov_consistent ]) ();
   ov_frame ~name:"WV-1.5-filled-test-computed (getuigen open)" ~ir
-    ~case_text:(ov_case (ov_v1 [ ("gewicht", "10"); ("schade", "1") ]) [ ov_attr_is "getuigentoeslag" "7"; ov_attr_is "schadetoeslag" "3"; ov_consistent ]) ();
+    ~case_text:(ov_case (ov_v1 [ ("gewicht", "10"); ("schade", "1") ]) [ ov_attr_is "getuigentoeslag" "open"; ov_attr_is "schadetoeslag" "3"; ov_consistent ]) ();
   ov_frame ~name:"WV-1.5-filled-test-computed (getuigen 0)" ~ir
     ~case_text:(ov_case (ov_v1 [ ("gewicht", "10"); ("getuigen", "0"); ("schade", "1") ])
                   [ ov_attr_is "getuigentoeslag" "7"; ov_inconsistent ~code:"EF-005" "getuigentoeslag" ]) ()
 
 (* WV-1.5-initialisation: "het strandloon is zijn vangst maal 2 indien hij
    gemeld is" and "het strandloon moet geïnitialiseerd worden op 5": 8 with
-   vangst 4 and gemeld named, 5 where the case does not name gemeld; with "… op
-   5 indien zijn vangst groter is dan 1" it stays open without a vangst *)
+   vangst 4 and gemeld named; where the case does not name gemeld the rule
+   leaves the strandloon open, and the initialisation below it is not at its
+   turn: open; with gemeld complete and not named the rule fills nothing, and
+   the strandloon is 5. With "… op 5 indien zijn vangst groter is dan 1" and
+   gemeld complete it is open without a vangst and 5 at vangst 4.
+   WV-1.5-initialisation-input: with the initialisation alone the strandloon
+   is an input member with a default value: open where the case gives it no
+   value, 7 where the case gives 7, and 5 where it is complete *)
 let () =
   work @@ fun () ->
-  let ir init_cond =
-    ov_doc [ ov_vondst [ "vangst"; "strandloon" ] [ "gemeld" ] ]
+  let ir ?(complete = []) init_cond =
+    ov_doc [ ov_type ~complete "Vondst" [ "vangst"; "strandloon" ] [ "gemeld" ] ]
       [ ov_rule ~name:"strandloon" ~cond:(ov_check "gemeld") "strandloon" (Some (ov_bin "times" (ov_attr "vangst") (ov_lit "2")));
         ov_rule ~init:true ?cond:init_cond ~name:"standaardstrandloon" "strandloon" (Some (ov_lit "5")) ]
   in
   ov_frame ~name:"WV-1.5-initialisation (gemeld)" ~ir:(ir None)
     ~case_text:(ov_case (ov_v1 ~chars:[ "gemeld" ] [ ("vangst", "4") ]) [ ov_attr_is "strandloon" "8" ]) ();
-  ov_frame ~name:"WV-1.5-initialisation (gemeld open)" ~ir:(ir None)
+  ov_frame ~name:"WV-1.5-initialisation (gemeld not named)" ~ir:(ir None)
+    ~case_text:(ov_case (ov_v1 [ ("vangst", "4") ]) [ ov_attr_is "strandloon" "open" ]) ();
+  ov_frame ~name:"WV-1.5-initialisation (gemeld complete)" ~ir:(ir ~complete:[ "gemeld" ] None)
     ~case_text:(ov_case (ov_v1 [ ("vangst", "4") ]) [ ov_attr_is "strandloon" "5" ]) ();
-  ov_frame ~name:"WV-1.5-initialisation (conditional, no vangst)" ~ir:(ir (Some (ov_gt "vangst" "1")))
-    ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "strandloon" "open" ]) ()
+  let conditional = ir ~complete:[ "gemeld" ] (Some (ov_gt "vangst" "1")) in
+  ov_frame ~name:"WV-1.5-initialisation (its condition open)" ~ir:conditional
+    ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "strandloon" "open" ]) ();
+  ov_frame ~name:"WV-1.5-initialisation (its condition true)" ~ir:conditional
+    ~case_text:(ov_case (ov_v1 [ ("vangst", "4") ]) [ ov_attr_is "strandloon" "5" ]) ();
+  let alone ?(complete = []) () =
+    ov_doc [ ov_type ~complete "Vondst" [ "strandloon" ] [] ]
+      [ ov_rule ~init:true ~name:"standaardstrandloon" "strandloon" (Some (ov_lit "5")) ]
+  in
+  ov_frame ~name:"WV-1.5-initialisation-input (no value)" ~ir:(alone ())
+    ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "strandloon" "open" ]) ();
+  ov_frame ~name:"WV-1.5-initialisation-input (a value)" ~ir:(alone ())
+    ~case_text:(ov_case (ov_v1 [ ("strandloon", "7") ]) [ ov_attr_is "strandloon" "7" ]) ();
+  ov_frame ~name:"WV-1.5-initialisation-input (complete)" ~ir:(alone ~complete:[ "strandloon" ] ())
+    ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "strandloon" "5" ]) ()
 
 (* WV-1.5-consistency: "het gewicht van een Vondst moet groter of gelijk zijn
    aan 0" reports at gewicht −1, and not without a gewicht *)
@@ -20816,34 +20838,52 @@ let () =
       ("WV-1.5-stack-settled-leeg", [ "gemeld" ], [], [ ("gewicht", "50"); ("taxatie", "2000") ], "leeg");
       ("WV-1.5-stack-settled-leeg (whatever the gewicht)", [ "gemeld" ], [], [], "leeg") ]
 
-(* WV-1.5-stack-initialisation: "… moet geïnitialiseerd worden op 5" below
-   the stack of the vindloon closes over it: it decides where nothing above it
-   decides, also where a default above it is open; a value the case gives the
-   vindloon stands above it *)
+(* WV-1.5-stack-initialisation: "… moet geïnitialiseerd worden op 5" is the
+   lowest default of the stack of the vindloon, "zijn gewicht maal 2 indien
+   zijn gewicht groter is dan 10" below "… op 0 indien hij betwist is": it
+   decides where it stands of every default above it that it gives way, and
+   below a default that is open the vindloon is open; a value the case gives
+   the vindloon stands above it.
+   WV-1.5-stack-initialisation-alone: a stack whose one default is its
+   initialisation makes no member derived: the strandloon is input, open where
+   the case gives it no value, 7 where the case gives 7, and 5 where it is
+   complete *)
 let () =
   work @@ fun () ->
+  let base = ov_dflt ~justification:(ov_gt "gewicht" "10") ~consequence:(ov_bin "times" (ov_attr "gewicht") (ov_lit "2")) () in
   let ir ?(init = ov_lit "5") complete =
     ov_doc
-      ~defaults:[ ov_stack ~attribute:"vindloon" [ ov_betwist; ov_stack_base; ov_dflt ~init:true ~consequence:init () ] ]
+      ~defaults:[ ov_stack ~attribute:"vindloon" [ ov_betwist; base; ov_dflt ~init:true ~consequence:init () ] ]
       [ ov_type ~complete "Vondst" [ "gewicht"; "vindloon"; "schatting" ] [ "betwist" ] ] []
   in
   List.iter
     (fun (name, init, complete, chars, attrs, want) ->
       ov_frame ~name:("WV-1.5-stack-initialisation (" ^ name ^ ")") ~ir:(ir ?init complete)
         ~case_text:(ov_case (ov_v1 ~chars attrs) [ ov_attr_is "vindloon" want ]) ())
-    [ ("below an open exception", None, [], [], [ ("gewicht", "50") ], "5");
-      ("below an open base", None, [ "betwist" ], [], [], "5");
+    [ ("at its turn", None, [ "betwist" ], [], [ ("gewicht", "5") ], "5");
+      ("below an open exception", None, [], [], [ ("gewicht", "5") ], "open");
+      ("below an open base", None, [ "betwist" ], [], [], "open");
       ("below the base", None, [ "betwist" ], [], [ ("gewicht", "50") ], "100");
       ("below the exception", None, [], [ "betwist" ], [], "0");
-      ("with an open value", Some (ov_attr "schatting"), [], [], [ ("gewicht", "50") ], "open");
-      ("with a value", Some (ov_attr "schatting"), [], [], [ ("gewicht", "50"); ("schatting", "4") ], "4");
+      ("with an open value", Some (ov_attr "schatting"), [ "betwist" ], [], [ ("gewicht", "5") ], "open");
+      ("with a value", Some (ov_attr "schatting"), [ "betwist" ], [], [ ("gewicht", "5"); ("schatting", "4") ], "4");
       ("below the input", None, [], [], [ ("gewicht", "50"); ("vindloon", "7") ], "open");
-      ("below the input, given way", None, [ "betwist" ], [], [ ("gewicht", "50"); ("vindloon", "7") ], "100") ]
+      ("below the input, given way", None, [ "betwist" ], [], [ ("gewicht", "50"); ("vindloon", "7") ], "100") ];
+  let alone complete =
+    ov_doc ~defaults:[ ov_stack ~attribute:"strandloon" [ ov_dflt ~init:true ~consequence:(ov_lit "5") () ] ]
+      [ ov_type ~complete "Vondst" [ "strandloon" ] [] ] []
+  in
+  List.iter
+    (fun (name, complete, attrs, want) ->
+      ov_frame ~name:("WV-1.5-stack-initialisation-alone (" ^ name ^ ")") ~ir:(alone complete)
+        ~case_text:(ov_case (ov_v1 attrs) [ ov_attr_is "strandloon" want ]) ())
+    [ ("no value", [], [], "open"); ("a value", [], [ ("strandloon", "7") ], "7"); ("complete", [ "strandloon" ], [], "5") ]
 
 (* WV-1.5-stack-opgave: "het bergloon is zijn opgegeven bergloon" above "…
    zijn gewicht maal 2": the opgave is an input member, open where the case
-   gives it no value; declared complete it is settled leeg there and gives way;
-   an initialisation closes over an open opgave *)
+   gives it no value, and no default below it decides, an initialisation among
+   them; declared complete it is settled leeg there and gives way, and the
+   computation decides above the initialisation *)
 let () =
   work @@ fun () ->
   let opgave = ov_dflt ~justification:ov_always ~consequence:(ov_attr "opgegeven bergloon") () in
@@ -20859,7 +20899,9 @@ let () =
       ("not given", [], [], [ ("gewicht", "10") ], "open");
       ("complete", [], [ "opgegeven bergloon" ], [ ("gewicht", "10") ], "20");
       ("complete, given", [], [ "opgegeven bergloon" ], [ ("gewicht", "10"); ("opgegeven bergloon", "30") ], "30");
-      ("below an initialisation", [ ov_dflt ~init:true ~consequence:(ov_lit "25") () ], [], [ ("gewicht", "10") ], "25") ]
+      ("below an initialisation", [ ov_dflt ~init:true ~consequence:(ov_lit "25") () ], [], [ ("gewicht", "10") ], "open");
+      ("complete, above an initialisation", [ ov_dflt ~init:true ~consequence:(ov_lit "25") () ], [ "opgegeven bergloon" ],
+       [ ("gewicht", "10") ], "20") ]
 
 (* WV-1.5-stack-characteristic: "een Vondst is beloonbaar indien zijn gewicht
    groter is dan 2", with above it "niet beloonbaar indien hij betwist is en
@@ -20964,8 +21006,9 @@ let () =
 (* WV-1.5-stack-two-initialisations: the effective stack of a Wrakvondst holds
    the default "op 0 indien hij betwist is", the initialisation it inherits from
    the Vondst, "op 2 maal zijn gewicht indien zijn gewicht groter is dan 10", and
-   its own, "op 5". Each decides where nothing above it decides, also where a
-   default or an initialisation above it is open *)
+   its own, "op 5". Each decides where it stands of every default above it,
+   the inherited initialisation among them, that it gives way, and below a
+   default that is open the bergloon is open *)
 let () =
   work @@ fun () ->
   let ir complete =
@@ -20982,12 +21025,13 @@ let () =
   List.iter
     (fun (row, complete, chars, attrs, want) ->
       ov_frame ~name:(name row) ~ir:(ir complete) ~case_text:(case chars attrs want) ())
-    [ ("the inherited under an open default", [], [], [ ("gewicht", "20") ], "40");
+    [ ("the inherited under an open default", [], [], [ ("gewicht", "20") ], "open");
       ("the inherited", settled, [], [ ("gewicht", "20") ], "40");
       ("the own below one that gives way", settled, [], [ ("gewicht", "5") ], "5");
-      ("the own below one that is open", settled, [], [], "5");
-      ("the own under an open default, below one that gives way", [], [], [ ("gewicht", "5") ], "5");
-      ("the own under an open default, below one that is open", [], [], [], "5");
+      ("the own below one that is open", settled, [], [], "open");
+      ("the own below one that gives way, its gewicht complete", [ "betwist"; "gewicht" ], [], [], "5");
+      ("the own under an open default, below one that gives way", [], [], [ ("gewicht", "5") ], "open");
+      ("the own under an open default, below one that is open", [], [], [], "open");
       ("the default", [], [ "betwist" ], [], "0");
       ("input under an open default", [], [], [ ("gewicht", "5"); ("bergloon", "7") ], "open");
       ("input", settled, [], [ ("gewicht", "5"); ("bergloon", "7") ], "7") ]
@@ -21081,8 +21125,8 @@ let () =
 
 (* WV-1.5-past-undetermined-fold, WV-1.5-past-undetermined-filter: "een
    Jutter is gelijkmatig indien al zijn vondsten een gewicht gedeeld door hun
-   deelnemers groter dan 2 hebben"; a matrix after a member undetermined for
-   another, or beside a filter that is, is read provisionally and deposits
+   deelnemers groter dan 2 hebben"; a matrix after an undetermined member, or
+   beside a filter that is undetermined, is read provisionally and deposits
    nothing *)
 let () =
   work @@ fun () ->
@@ -21151,19 +21195,21 @@ let () =
       ("20 and open", [ v "V1" (Some "20"); v "V2" None ], [ "open"; "open"; "open"; "open"; "2"; "open" ]);
       ("no vondst", [], [ "leeg"; "leeg"; "leeg"; "0"; "0"; "0" ]) ]
 
-(* WV-1.5-closure-in-a-value: "het aantal gewogen vondsten van een Jutter is
+(* WV-1.5-filled-in-a-fold: "het aantal gewogen vondsten van een Jutter is
    het aantal gevulde gewichten van zijn vondsten", "een Jutter is volledig
    gewogen indien dat aantal gelijk is aan 3", "gedeeltelijk gewogen indien
    het groter is dan 1", and "het gewogen totaal is de som van het gewicht van
-   zijn vondsten waarvan het gewicht gevuld is": for the form itself an open
-   value is leeg, and for another what the closure gives does not stand *)
+   zijn vondsten waarvan het gewicht gevuld is": the filled-value count reads
+   an open value as a sum does, and the filter on gevuld is undetermined for a
+   member whose value is open, so all four are open over a vondst without a
+   gewicht; with the gewicht complete that vondst is settled leeg *)
 let () =
   work @@ fun () ->
   let gewogen = ov_fold "filledCount" "gewicht" in
-  let ir =
+  let ir complete =
     ov_doc ~fact_types:[ ov_aanmelding ]
       [ ov_type "Jutter" [ "gewogen"; "gewogen totaal" ] [ "volledig gewogen"; "gedeeltelijk gewogen" ];
-        ov_type "Vondst" [ "gewicht" ] [] ]
+        ov_type ~complete "Vondst" [ "gewicht" ] [] ]
       [ ov_rule ~ty:"Jutter" ~name:"gewogen" "gewogen" (Some gewogen);
         ov_rule ~ty:"Jutter" ~name:"volledig gewogen" ~cond:(ov_cmp "equal" gewogen (ov_lit "3")) "volledig gewogen" None;
         ov_rule ~ty:"Jutter" ~name:"gedeeltelijk gewogen" ~cond:(ov_cmp "greater" gewogen (ov_lit "1")) "gedeeltelijk gewogen" None;
@@ -21172,21 +21218,27 @@ let () =
   in
   let v l g = (l, (match g with Some g -> [ ("gewicht", g) ] | None -> []), [], []) in
   List.iter
-    (fun (name, vs, want) ->
-      ov_frame ~name:("WV-1.5-closure-in-a-value (" ^ name ^ ")") ~ir ~case_text:(ov_case (ov_jutter vs) want) ())
-    [ ("20, open, 30", [ v "V1" (Some "20"); v "V2" None; v "V3" (Some "30") ],
-       [ ov_attr_is ~label:"J1" "gewogen" "2"; ov_char_is ~label:"J1" "volledig gewogen" "open";
+    (fun (name, complete, vs, want) ->
+      ov_frame ~name:("WV-1.5-filled-in-a-fold (" ^ name ^ ")") ~ir:(ir complete) ~case_text:(ov_case (ov_jutter vs) want) ())
+    [ ("20, open, 30", [], [ v "V1" (Some "20"); v "V2" None; v "V3" (Some "30") ],
+       [ ov_attr_is ~label:"J1" "gewogen" "open"; ov_char_is ~label:"J1" "volledig gewogen" "open";
+         ov_char_is ~label:"J1" "gedeeltelijk gewogen" "open"; ov_attr_is ~label:"J1" "gewogen totaal" "open" ]);
+      ("20, complete, 30", [ "gewicht" ], [ v "V1" (Some "20"); v "V2" None; v "V3" (Some "30") ],
+       [ ov_attr_is ~label:"J1" "gewogen" "2"; ov_char_is ~label:"J1" "volledig gewogen" "not";
          ov_char_is ~label:"J1" "gedeeltelijk gewogen" "holds"; ov_attr_is ~label:"J1" "gewogen totaal" "50" ]);
-      ("all open", [ v "V1" None; v "V2" None ],
-       [ ov_attr_is ~label:"J1" "gewogen" "0"; ov_attr_is ~label:"J1" "gewogen totaal" "open" ]);
-      ("no vondst", [], [ ov_attr_is ~label:"J1" "gewogen totaal" "leeg" ]) ]
+      ("all open", [], [ v "V1" None; v "V2" None ],
+       [ ov_attr_is ~label:"J1" "gewogen" "open"; ov_attr_is ~label:"J1" "gewogen totaal" "open" ]);
+      ("no vondst", [], [], [ ov_attr_is ~label:"J1" "gewogen" "0"; ov_attr_is ~label:"J1" "gewogen totaal" "leeg" ]) ]
 
 (* WV-1.5-if-then-else: "het vindloon van een Vondst is 10 als zijn taxatie
    groter is dan 1000, anders zijn gewicht", the condition over a binder of
    the taxatie (WF-077): an undetermined condition leaves the value open, and
-   only the chosen branch is read. "De bergtoeslag is 5 als zijn taxatie leeg
-   is, anders 0" is a test on leeg in the condition of a value, which this
-   encoding translates in no document (CLINGO-023) *)
+   only the chosen branch is read. A test on leeg or gevuld in the condition,
+   over the binder of the taxatie, which RegelSpraak does not write: "de
+   bergtoeslag is 5 als t leeg is, anders 0" and "de keurtoeslag is 1 als t
+   gevuld is, anders 0" are open over an open taxatie and 0 and 1 at taxatie
+   50; over a settled leeg taxatie the read of the binder ends the Let (ch.
+   10.6), and both are settled leeg, as they are leeg without the property *)
 let ov_ite c t e = Printf.sprintf {|{"node": "IfThenElse", "type": %s, "condition": %s, "then": %s, "else": %s, %s}|} ov_num c t e (ov_src "als")
 
 let () =
@@ -21202,16 +21254,21 @@ let () =
       ("else", [ ("taxatie", "50"); ("gewicht", "3") ], "3");
       ("else open", [ ("taxatie", "50") ], "open");
       ("condition open", [ ("gewicht", "3") ], "open") ];
-  let bergtoeslag = ov_let "t" (ov_attr "taxatie") (ov_ite (ov_test "empty" (ov_binder "t")) (ov_lit "5") (ov_lit "0")) in
+  let toeslag kind v = ov_let "t" (ov_attr "taxatie") (ov_ite (ov_test kind (ov_binder "t")) (ov_lit v) (ov_lit "0")) in
+  let ir ?(strict = true) complete =
+    ov_doc ~strict
+      [ ov_type ~complete "Vondst" [ "taxatie"; "bergtoeslag"; "keurtoeslag" ] [] ]
+      [ ov_rule ~name:"bergtoeslag" "bergtoeslag" (Some (toeslag "empty" "5"));
+        ov_rule ~name:"keurtoeslag" "keurtoeslag" (Some (toeslag "filled" "1")) ]
+  in
   List.iter
-    (fun strict ->
-      let ir = ov_doc ~strict [ ov_vondst [ "taxatie"; "bergtoeslag" ] [] ] [ ov_rule ~name:"bergtoeslag" "bergtoeslag" (Some bergtoeslag) ] in
-      let doc, case = load_pair ~ir ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "bergtoeslag" "5" ]) in
-      check (Printf.sprintf "WV-1.5-if-then-else (a test on leeg, %s): CLINGO-023" (if strict then "with the property" else "without it"))
-        (match Translate.translate doc case with
-         | _ -> false
-         | exception Uchar_ref.Value.Fault { code; _ } -> code = Some "CLINGO-023"))
-    [ true; false ]
+    (fun (name, ir, attrs, (berg, keur)) ->
+      ov_frame ~name:("WV-1.5-if-then-else (a test on leeg and gevuld, " ^ name ^ ")") ~ir
+        ~case_text:(ov_case (ov_v1 attrs) [ ov_attr_is "bergtoeslag" berg; ov_attr_is "keurtoeslag" keur ]) ())
+    [ ("taxatie open", ir [], [], ("open", "open"));
+      ("taxatie 50", ir [], [ ("taxatie", "50") ], ("0", "1"));
+      ("taxatie complete", ir [ "taxatie" ], [], ("leeg", "leeg"));
+      ("without the property", ir ~strict:false [], [], ("leeg", "leeg")) ]
 
 (* --- the creations (ch. 1.5, "A creation", "An object made") -------------- *)
 let ov_role_check ft role =
@@ -21455,9 +21512,9 @@ let () =
         ())
     [ ("every gewicht given", [ ("gewicht", "5") ], [ ("gewicht", "1") ], ("2", "2"));
       ("a filter open", [], [ ("gewicht", "1") ], ("open", "open"));
-      ("a member without a filter open", [ ("gewicht", "11") ], [], ("3", "2")) ]
+      ("a member without a filter open", [ ("gewicht", "11") ], [], ("3", "open")) ]
 
-(* --- what the filter of a fold deposits, faults and closes over ----------- *)
+(* --- what the filter of a fold deposits and faults ------------------------ *)
 
 (* a filter's deposit is dropped with those of the value where the fold is
    open, whichever member makes it so *)
@@ -21504,23 +21561,25 @@ let () =
   ov_fault_frame ~name:"WV-1.5-set-fold (a fault before an open read)" ~ir:(ir (ov_bin "plus" fold (ov_attr ~ty:"Jutter" "bonus")))
     ~case_text:(ov_case (ov_jutter [ v2 ]) is_open) "EF-014"
 
-(* a gevuld test on a computed value in a filter: a closure, so a member whose
-   computed value reads an open one is left out, also where the sum would stand
-   without it *)
+(* a gevuld test on a computed value in a filter is undetermined for a member
+   whose computed value reads an open one, and the fold is open; with the
+   schade complete it is settled leeg and counts as 0 in the plus *)
 let () =
   work @@ fun () ->
-  let ir =
+  let ir complete =
     ov_doc ~fact_types:[ ov_aanmelding ]
-      [ ov_type "Jutter" [ "totaal" ] []; ov_type "Vondst" [ "gewicht"; "schade" ] [] ]
+      [ ov_type "Jutter" [ "totaal" ] []; ov_type ~complete "Vondst" [ "gewicht"; "schade" ] [] ]
       [ ov_rule ~ty:"Jutter" ~name:"totaal" "totaal"
           (Some (ov_fold ~filter:(ov_test "filled" (ov_bin "plus" (ov_attr "gewicht") (ov_attr "schade"))) "sum" "gewicht")) ]
   in
+  let two = [ ("V1", [ ("gewicht", "3") ], [], []); ("V2", [ ("gewicht", "4"); ("schade", "1") ], [], []) ] in
   List.iter
-    (fun (name, vs, want) ->
-      ov_frame ~name:("WV-1.5-closure-in-a-value (a computed value, " ^ name ^ ")") ~ir
+    (fun (name, complete, vs, want) ->
+      ov_frame ~name:("WV-1.5-filled-in-a-fold (a computed value, " ^ name ^ ")") ~ir:(ir complete)
         ~case_text:(ov_case (ov_jutter vs) [ ov_attr_is ~label:"J1" "totaal" want ]) ())
-    [ ("one member left out", [ ("V1", [ ("gewicht", "3") ], [], []); ("V2", [ ("gewicht", "4"); ("schade", "1") ], [], []) ], "4");
-      ("every member left out", [ ("V1", [ ("gewicht", "3") ], [], []) ], "open") ]
+    [ ("one member open", [], two, "open");
+      ("every member open", [], [ ("V1", [ ("gewicht", "3") ], [], []) ], "open");
+      ("the schade complete", [ "schade" ], two, "7") ]
 
 (* a limit of this encoding in a member read after one undetermined is no
    undetermined member: the program says that it cannot tell. A member that is
@@ -21548,13 +21607,14 @@ let () =
            (Solve.diagnostic program)
      | _ -> false)
 
-(* WV-1.5-read-for-another: the first member is true for the form itself and
-   undetermined for another, so the second is read, and what it deposits is
-   dropped; with the gewicht complete the read stops at the first *)
+(* WV-1.5-filled-test-in-a-composite: over an open gewicht the first member is
+   undetermined, so the second is read, and what it deposits is dropped: the
+   vrijstelling is open; with the gewicht complete the first member is true,
+   the read stops there, and the vrijstelling is 1 *)
 let () =
   work @@ fun () ->
   List.iter
-    (fun complete ->
+    (fun (complete, want) ->
       let ir =
         ov_doc
           [ ov_type ~complete "Vondst" [ "gewicht"; "taxatie"; "getuigen"; "vrijstelling" ] [] ]
@@ -21564,9 +21624,9 @@ let () =
                    [ ov_test "empty" (ov_attr "gewicht"); ov_cmp "greater" (ov_div (ov_attr "taxatie") (ov_attr "getuigen")) (ov_lit "3") ])
               "vrijstelling" (Some (ov_lit "1")) ]
       in
-      ov_frame ~name:(Printf.sprintf "WV-1.5-read-for-another (%d complete)" (List.length complete)) ~ir
-        ~case_text:(ov_case (ov_v1 [ ("taxatie", "50") ]) [ ov_attr_is "vrijstelling" "1"; ov_consistent ]) ())
-    [ [ "getuigen" ]; [ "getuigen"; "gewicht" ] ]
+      ov_frame ~name:(Printf.sprintf "WV-1.5-filled-test-in-a-composite (%d complete)" (List.length complete)) ~ir
+        ~case_text:(ov_case (ov_v1 [ ("taxatie", "50") ]) [ ov_attr_is "vrijstelling" want; ov_consistent ]) ())
+    [ ([ "getuigen" ], "open"); ([ "getuigen"; "gewicht" ], "1") ]
 
 (* --- a binder of a Let in the filter of a fold in its body ----------------- *)
 
@@ -21645,18 +21705,18 @@ let () =
         all [ schade; ov_cmp "greater" (ov_let "maat" (ov_attr "gewicht") (ov_bin "plus" (ov_binder "maat") (ov_lit "1"))) (ov_lit "5") ],
         [ ("given", [ ("gewicht", "30"); ("schade", "0") ], "35"); ("gewicht open", [ ("schade", "0") ], "35") ] ) ]
 
-(* WV-1.5-closure-of-a-binder: a binder whose computation applied a closure
-   rests on it at every read. "De grens is de som van het gewicht van zijn
+(* WV-1.5-filled-filter-in-a-binder: a binder whose computation reads an open
+   value is open at every read. "De grens is de som van het gewicht van zijn
    vondsten waarvan getuigen gevuld is", over a vondst of gewicht 20 with
-   getuigen and one of gewicht 30 without: "een Jutter is ruim indien (daarbij
-   geldt …, de grens plus de som van het gewicht van zijn vondsten waarvan het
-   gewicht groter is dan de grens) groter is dan 60" reads 50, after a closure:
-   false for the form itself and undetermined for another, so ruim is open; with
-   the getuigen complete no closure is applied, and it stands not to hold. "…
-   groter is dan 45" holds in both, and the grenstotaal is 50. The same over a
-   binder of the binder, "de maat is de grens plus 1", and over a Let in the value
-   of the Let. The document of ch. 1.5 itself is the fixture let-closure, played
-   below.
+   getuigen and one of gewicht 30 without: the filter is undetermined for the
+   second, so the grens is open, and so are the grenstotaal and "een Jutter is
+   ruim indien (daarbij geldt …, de grens plus de som van het gewicht van zijn
+   vondsten waarvan het gewicht groter is dan de grens) groter is dan 60", and
+   "… groter is dan 45". With the getuigen complete the grens is 20, the
+   grenstotaal 50, ruim stands not to hold at 60 and holds at 45. The same over
+   a binder of the binder, "de maat is de grens plus 1", and over a Let in the
+   value of the Let. The document of ch. 1.5 with the filled-value count in
+   its binder is the fixture let-closure, played below.
    A member of a composite that reads the grens, where the member beside it
    deposits (EF-005) or faults (EF-014) over the vondst of gewicht 30 and schade
    0, is let-in-composite, and so is one that reads the grens as a divisor; without
@@ -21675,7 +21735,7 @@ let () =
     [ ov_attr_is ~label:"J1" "grenstotaal" want;
       (if channel then ov_inconsistent ~label:"J1" ~code:"EF-005" "grenstotaal" else ov_consistent) ]
   in
-  let ruim name value want above =
+  let ruim name value total above =
     let ir complete limit =
       ov_doc ~fact_types:[ ov_aanmelding ]
         [ ov_type "Jutter" [ "grenstotaal" ] [ "ruim" ]; ov_type ~complete "Vondst" [ "gewicht"; "schade"; "getuigen"; "taxatie" ] [] ]
@@ -21683,14 +21743,14 @@ let () =
           ov_rule ~ty:"Jutter" ~name:"ruim" ~cond:(ov_cmp "greater" value (ov_lit limit)) "ruim" None ]
     in
     List.iter
-      (fun (row, complete, limit, state) ->
+      (fun (row, complete, limit, want, state) ->
         ov_frame
-          ~name:(Printf.sprintf "WV-1.5-closure-of-a-binder (%s, %s)" name row)
+          ~name:(Printf.sprintf "WV-1.5-filled-filter-in-a-binder (%s, %s)" name row)
           ~ir:(ir complete limit)
           ~case_text:(case [ ov_attr_is ~label:"J1" "grenstotaal" want; ov_char_is ~label:"J1" "ruim" state; ov_consistent ])
           ())
-      [ ("the getuigen open", [], "60", "open"); ("the getuigen complete", [ "getuigen" ], "60", "not");
-        ("the getuigen open, true", [], above, "holds"); ("the getuigen complete, true", [ "getuigen" ], above, "holds") ]
+      [ ("the getuigen open", [], "60", "open", "open"); ("the getuigen complete", [ "getuigen" ], "60", total, "not");
+        ("the getuigen open, above", [], above, "open", "open"); ("the getuigen complete, above", [ "getuigen" ], above, total, "holds") ]
   in
   ruim "an atom" (direct ov_boven_grens) "50" "45";
   ruim "one member" (direct (ov_compound "all" 0 [ ov_boven_grens ])) "50" "45";
@@ -21701,7 +21761,7 @@ let () =
   and boven_tarief = ov_cmp "less" (ov_attr "gewicht") (ov_param "TARIEF") in
   let all = ov_compound "all" 0 and any = ov_compound "atLeast" 1 and none = ov_compound "none" 0 in
   let refused ?parameters ?v2 name value ordinary =
-    let name = Printf.sprintf "WV-1.5-let-in-composite (a binder after a closure, %s)" name in
+    let name = Printf.sprintf "WV-1.5-let-in-composite (a binder over a filter on gevuld, %s)" name in
     ov_refused ~name ~ir:(ov_grens_doc ?parameters value) "let-in-composite";
     let ir = ov_grens_doc ~strict:false ?parameters value and name = name ^ ", without the property" in
     match ordinary with
@@ -21748,39 +21808,43 @@ let () =
        ("a binder multiplied", against "times" (ov_binder "grens") "60", "30", "1");
        ("an anchored read", against "plus" (ov_anchored drempel) "12", "35", "1") ])
 
-(* WV-1.5-closure-before-a-barrier: the closure applied in the computation of a
-   binder that comes out leeg counts for the value of its Let: "het
-   keurgewicht van een Jutter is, daarbij geldt: t is de som van het gewicht
-   van zijn vondsten waarvan getuigen gevuld (leeg) is, 1 als t gelijk is aan 3,
-   anders t", and "een Jutter is keurig indien (daarbij geldt …) groter is dan 4".
-   The test "1 als t gevuld is" is CLINGO-023 in every document *)
+(* WV-1.5-filled-filter-in-a-binder: a fold filter that tests on gevuld or leeg
+   in the computation of a binder is undetermined over an open value, so the
+   binder is open, and where the filter stands the barrier of a leeg binder
+   ends the condition that reads it (ch. 10.6): "het keurgewicht van een Jutter
+   is, daarbij geldt: t is de som van het gewicht van zijn vondsten waarvan
+   getuigen gevuld (leeg) is, 1 als t gelijk is aan 3 (gevuld is), anders t",
+   and "een Jutter is keurig indien (daarbij geldt …) groter is dan 4" *)
 let () =
   work @@ fun () ->
-  let keurgewicht variety =
+  let keurgewicht condition variety =
     ov_let "t"
       (ov_fold ~filter:(ov_test variety (ov_attr "getuigen")) "sum" "gewicht")
-      (ov_ite (ov_cmp "equal" (ov_binder "t") (ov_lit "3")) (ov_lit "1") (ov_binder "t"))
+      (ov_ite condition (ov_lit "1") (ov_binder "t"))
   in
-  let ir ?(complete = []) variety =
+  let ir ?(complete = []) ?(condition = ov_cmp "equal" (ov_binder "t") (ov_lit "3")) variety =
     ov_doc ~fact_types:[ ov_aanmelding ]
       [ ov_type "Jutter" [ "keurgewicht" ] [ "keurig" ]; ov_type ~complete "Vondst" [ "gewicht"; "getuigen" ] [] ]
-      [ ov_rule ~ty:"Jutter" ~name:"keurgewicht" "keurgewicht" (Some (keurgewicht variety));
-        ov_rule ~ty:"Jutter" ~name:"keurig" ~cond:(ov_cmp "greater" (keurgewicht variety) (ov_lit "4")) "keurig" None ]
+      [ ov_rule ~ty:"Jutter" ~name:"keurgewicht" "keurgewicht" (Some (keurgewicht condition variety));
+        ov_rule ~ty:"Jutter" ~name:"keurig" ~cond:(ov_cmp "greater" (keurgewicht condition variety) (ov_lit "4")) "keurig" None ]
   in
   List.iter
     (fun (name, ir, v1, want, keurig) ->
-      ov_frame ~name:("WV-1.5-closure-before-a-barrier (" ^ name ^ ")") ~ir
+      ov_frame ~name:("WV-1.5-filled-filter-in-a-binder (" ^ name ^ ")") ~ir
         ~case_text:
           (ov_case (ov_jutter [ ("V1", v1, [], []) ]) [ ov_attr_is ~label:"J1" "keurgewicht" want; ov_char_is ~label:"J1" "keurig" keurig ])
         ())
-    (let filled = ir "filled" and empty = ir ~complete:[ "gewicht" ] "empty" in
+    (let filled = ir "filled" and empty = ir ~complete:[ "gewicht" ] "empty"
+     and gevuld = ir ~condition:(ov_test "filled" (ov_binder "t")) "filled" in
      [ ("open", filled, [ ("gewicht", "5") ], "open", "open");
        ("filled", filled, [ ("gewicht", "5"); ("getuigen", "2") ], "5", "holds");
        ("a leeg test, open", empty, [], "open", "open");
        ("a leeg test, false", empty, [ ("getuigen", "2") ], "leeg", "not");
        ("a leeg test, false beside a gewicht", empty, [ ("gewicht", "4"); ("getuigen", "2") ], "leeg", "not");
-       ("a leeg test, filled", empty, [ ("gewicht", "4") ], "4", "open");
-       ("a leeg test, three", empty, [ ("gewicht", "3") ], "1", "open") ])
+       ("a leeg test, filled", empty, [ ("gewicht", "4") ], "open", "open");
+       ("a leeg test, three", empty, [ ("gewicht", "3") ], "open", "open");
+       ("a gevuld test, open", gevuld, [ ("gewicht", "5") ], "open", "open");
+       ("a gevuld test, filled", gevuld, [ ("gewicht", "5"); ("getuigen", "2") ], "1", "not") ])
 
 (* a Let in the filter of a fold whose binder a filter inside its body reads:
    "de som van het gewicht van zijn vondsten waarvan (daarbij geldt: de maat is
@@ -21824,9 +21888,24 @@ let ov_strict_corpus rel =
   | first :: second :: rest when second = prefix -> String.concat "\n" (first :: second :: {|  "inferFromEmpty": false,|} :: rest)
   | _ -> invalid_arg (rel ^ " starts otherwise")
 
+(* WV-1.5-three-forms: the golden jutterswet-heffing-strikt, one choice in
+   three forms (a rule above an initialisation, a stack, a helper attribute):
+   its cases hold all three open over an open taxatie and 0 at a given one;
+   with every input complete the taxatie is settled leeg, the rule and the
+   exception fill nothing, the leeg test holds, and all three are 25 *)
+let () =
+  work @@ fun () ->
+  ov_frame ~closed:true ~name:"WV-1.5-three-forms (taxatie complete)"
+    ~ir:(corpus_file "corpus/golden/jutterswet-heffing-strikt/ir.json")
+    ~case_text:
+      (ov_case (ov_v1 [])
+         [ ov_attr_is "heffing" "25"; ov_attr_is "stapelheffing" "25"; ov_attr_is "heffingscode" "1"; ov_attr_is "codeheffing" "25";
+           ov_consistent ])
+    ()
+
 (* WV-1.5-instance-ordered: the restant of V1 is open without its stopdag, and
-   the einddag of V2 comes from "einddag zonder restant", whose leeg test closes
-   over it *)
+   so is the einddag of V2: the leeg test of "einddag zonder restant" over the
+   open restant of V1 is undetermined *)
 let () =
   work @@ fun () ->
   let ir = ov_strict_corpus "corpus/golden/jutterswet-vergunningketen/ir.json" in
@@ -21835,7 +21914,10 @@ let () =
       (String.concat ", " (List.map (fun (a, d) -> Printf.sprintf {|"%s": {"date": "%s"}|} a d) dates))
       roles
   in
-  let einddag label d = Printf.sprintf {|{"kind": "attributeValue", "label": "%s", "attribute": "einddag", "value": {"date": "%s"}}|} label d in
+  let einddag label d =
+    if d = "open" then ov_attr_is ~label "einddag" "open"
+    else Printf.sprintf {|{"kind": "attributeValue", "label": "%s", "attribute": "einddag", "value": {"date": "%s"}}|} label d
+  in
   List.iter
     (fun (name, stopdag, restant, v2) ->
       ov_frame ~name:("WV-1.5-instance-ordered (" ^ name ^ ")") ~ir
@@ -21845,7 +21927,7 @@ let () =
                vergunning ~roles:{|"vorige vergunning": ["V1"]|} "V2" [ ("basiseinddag", "2026-12-01") ] ]
              [ einddag "V1" "2026-06-01"; ov_attr_is "restant" restant; einddag "V2" v2; ov_attr_is ~label:"V2" "restant" "open" ])
         ())
-    [ ("stopdag of V1 open", [], "open", "2026-12-01"); ("stopdag of V1 given", [ ("stopdag", "2026-03-01") ], "92", "2027-03-03") ]
+    [ ("stopdag of V1 open", [], "open", "open"); ("stopdag of V1 given", [ ("stopdag", "2026-03-01") ], "92", "2027-03-03") ]
 
 (* whether a matrix over members a creation adds reads the evaluation date
    hangs on their order, which this encoding does not carry: CLINGO-035, as in
