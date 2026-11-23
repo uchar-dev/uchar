@@ -58,17 +58,25 @@ import static dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic.params;
  * Every defect is an ERROR with its source line in the model's diagnostics; the lowering writes nothing for a model
  * that carries one. The sentences are the extension's own and Dutch: no reader refuses a case file for these defects,
  * because a case file that carries one is never written (grammar/DIVERGENCES.md, "Producer refusals without a reader
- * sentence").
+ * sentence"). A sentence that changes no outcome is a WARNING beside the model ({@link ScenarioBundle#warnings}).
  */
 public final class ScenarioResolver {
 
-    /** The resolver's output: the model (carrying every diagnostic, the scenario ones included) and the scenarios. */
-    public record ScenarioBundle(RegelSpraakModel model, List<ResolvedScenario> scenarios) {
+    /** The resolver's output: the model (carrying every diagnostic of the rule blocks and every ERROR of the scenario
+     *  layer), the scenarios, and the WARNINGs of the scenario layer. Those speak of the test document only, so they
+     *  stand beside the model: the IR document carries the model's diagnostics. */
+    public record ScenarioBundle(RegelSpraakModel model, List<ResolvedScenario> scenarios, List<Diagnostic> warnings) {
         public boolean isOk() { return model.isOk(); }
     }
 
     private final RegelSpraakModel model;
     private final TestDocumentContext test;
+    /** In a document without 'Afleiden uit leeg: nee': each bullet that gives a characteristic as not holding, by its
+     *  line, with what it writes after the bullet; and the lines of those that replace, in the merge of some scenario,
+     *  the characteristic as holding from a block merged before them. */
+    private final Map<Integer, String> absentBullets = new LinkedHashMap<>();
+    private final Set<Integer> replacesHolding = new java.util.HashSet<>();
+    private final List<Diagnostic> warnings = new ArrayList<>();
     /** Situation definitions by normalised name, the first declaration of a name. */
     private final Map<String, SituatieDefinitieContext> situations = new LinkedHashMap<>();
     /** Each situation's own block, validated once. */
@@ -120,8 +128,9 @@ public final class ScenarioResolver {
             syntax.add(new Diagnostic(Severity.ERROR, "RGS-216", params("message", e.message()), e.line()));
         RegelSpraakModel model = Resolver.build(production, p.tokens(), syntax);
         ScenarioResolver r = new ScenarioResolver(model, test);
+        List<ResolvedScenario> scenarios = r.resolveScenarios();
         return new Read(test, p.tokens(), production, !p.errors().isEmpty(),
-                new ScenarioBundle(model, r.resolveScenarios()));
+                new ScenarioBundle(model, scenarios, List.copyOf(r.warnings)));
     }
 
     /** The non-scenario blocks of {@code test} as a {@code regelSpraakDocument} of their own, in document order. The
@@ -161,6 +170,14 @@ public final class ScenarioResolver {
         for (ParseTree kind : children)
             if (kind instanceof ScenarioContext sc) { result.add(resolveScenario(sc)); contexts.add(sc); }
         oneIrDocument(result, contexts);
+        // there characteristicsAbsent changes no outcome (RUNTIME-SEMANTICS ch. 1.5, "The case"): a characteristic
+        // the situation does not name does not hold, so the bullet counts only where it replaces one inherited as
+        // holding
+        absentBullets.forEach((line, written) -> {
+            if (!replacesHolding.contains(line))
+                warnings.add(new Typing.Coded("RGS-469", params("written", written)).frame("scenario")
+                        .at(Severity.WARNING, line));
+        });
         return result;
     }
 
@@ -880,6 +897,12 @@ public final class ScenarioResolver {
                 return;
             }
             characteristics.add(new CharacteristicValue(characteristic, false, null, line));
+            if (model.inferFromEmpty()) {
+                Token verb = (possessive ? k.HEEFT() : k.IS()).getSymbol();
+                absentBullets.put(line, k.getStart().getInputStream()
+                        .getText(org.antlr.v4.runtime.misc.Interval.of(verb.getStartIndex(), k.kaleNaam().getStop().getStopIndex()))
+                        .replaceAll("\\s+", " ").trim());
+            }
             return;
         }
         if (k.periode() == null) {
@@ -1286,7 +1309,8 @@ public final class ScenarioResolver {
                 }
                 frag.attributes().forEach(builder::setAttribute);
                 frag.roles().forEach(builder::setRole);
-                frag.characteristics().forEach(builder::setCharacteristic);
+                for (CharacteristicValue k : frag.characteristics())
+                    if (builder.setCharacteristic(k)) replacesHolding.add(k.line());
             }
             for (ParameterValue pw : block.parameters()) parameters.put(norm(pw.parameter()), pw);
         }
@@ -1336,7 +1360,11 @@ public final class ScenarioResolver {
             attributes.put(norm(w.attribute()), new AttributeValue(earlier.attribute(), null, null, merged, earlier.line()));
         }
         void setRole(RoleAssignment t) { roles.put(norm(t.role()), t.value()); }
-        void setCharacteristic(CharacteristicValue w) { characteristics.put(norm(w.characteristic()), w); }
+        /** Whether {@code w} gives as not holding a characteristic that a block merged before it gives as holding. */
+        boolean setCharacteristic(CharacteristicValue w) {
+            CharacteristicValue earlier = characteristics.put(norm(w.characteristic()), w);
+            return !w.holds() && earlier != null && earlier.holds();
+        }
 
         Instance build() {
             return new Instance(label, objectType, new ArrayList<>(attributes.values()),

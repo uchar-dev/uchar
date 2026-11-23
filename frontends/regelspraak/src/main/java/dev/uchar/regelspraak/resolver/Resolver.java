@@ -198,8 +198,10 @@ public final class Resolver {
             ScenarioResolver.Read r = ScenarioResolver.read(text);
             RegelSpraakModel m = r.bundle().model();
             requireScenario(r.bundle());
+            java.util.List<Diagnostic> diagnostics = new java.util.ArrayList<>(m.diagnostics);
+            diagnostics.addAll(r.bundle().warnings());
             return SemanticTokens.of(files, text, firstLines, r.tokens(), r.production(), r.test(), m,
-                    new java.util.ArrayList<>(m.diagnostics), r.recovered());
+                    diagnostics, r.recovered());
         }
         Parse p = parse(text, IntStream.UNKNOWN_SOURCE_NAME, false);
         RegelSpraakDocumentContext doc = (RegelSpraakDocumentContext) p.document();
@@ -476,11 +478,13 @@ public final class Resolver {
             return "  " + d.severity() + " (" + files.get(i) + ":" + (d.line() - firstLines.get(i) + 1) + "): "
                     + d.message();
         };
+        java.util.List<Diagnostic> printed = new java.util.ArrayList<>(m.diagnostics);
+        printed.addAll(b.warnings());
         if (!m.isOk()) {
-            m.diagnostics.forEach(d -> System.out.println(message.apply(d)));
+            printed.forEach(d -> System.out.println(message.apply(d)));
             return 1;
         }
-        m.diagnostics.stream().filter(d -> !d.isError()).forEach(d -> System.err.println(message.apply(d)));
+        printed.stream().filter(d -> !d.isError()).forEach(d -> System.err.println(message.apply(d)));
         // Everything is decided before anything is written: the IR document and every case file as text, and the
         // case files the map already holds that this run would not write — a case left there beside the new ones
         // would be replayed against an IR document it was not written for. Written file by file, a refusal

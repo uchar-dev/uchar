@@ -3415,8 +3415,15 @@ scenario blocks then resolve against that model (`ScenarioResolver`):
   one timeline stand in order and do not overlap. A characteristic after
   `niet` or `geen`, where the whole name names none, does not hold, the case
   file's `characteristicsAbsent`
-  (RUNTIME-SEMANTICS ch. 1.5; in a document without `Afleiden uit leeg: nee`
-  it changes no outcome, and the lowering writes it there all the same). It
+  (RUNTIME-SEMANTICS ch. 1.5). In a document without `Afleiden uit leeg:
+  nee` a characteristic the situation does not name does not hold already,
+  so there the bullet counts only where it replaces the characteristic as
+  holding from a block merged before it. Elsewhere the lowering writes it all
+  the same, with a WARNING (RGS-469): `scenario: '<zin>' verandert in een
+  document zonder 'Afleiden uit leeg: nee' niets: daar geldt een kenmerk dat
+  de situatie niet noemt al niet; de zin telt alleen in een document met
+  'Afleiden uit leeg: nee'`. The warning speaks of the test document, so it
+  stays out of `ir.json`, which carries the diagnostics of the rule blocks. It
   is static: with a period, or on a time-dependent characteristic, which does
   not hold outside its periods, it is refused. Within one situation block a
   characteristic holds or does not, also over two openers of one label; a

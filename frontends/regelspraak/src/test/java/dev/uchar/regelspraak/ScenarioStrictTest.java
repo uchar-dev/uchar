@@ -1,10 +1,14 @@
 package dev.uchar.regelspraak;
 
 import dev.uchar.regelspraak.emit.CaseEmitter;
+import dev.uchar.regelspraak.emit.IrEmitter;
 import dev.uchar.regelspraak.ir.ResolvedScenario;
 import dev.uchar.regelspraak.model.RegelSpraakModel.Diagnostic;
+import dev.uchar.regelspraak.model.RegelSpraakModel.Severity;
+import dev.uchar.regelspraak.resolver.Resolver;
 import dev.uchar.regelspraak.resolver.ScenarioResolver;
 import dev.uchar.regelspraak.resolver.ScenarioResolver.ScenarioBundle;
+import dev.uchar.regelspraak.resolver.SemanticTokens;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -141,6 +145,57 @@ class ScenarioStrictTest {
      *  it there all the same. */
     @Test void a_document_that_infers_from_empty_writes_the_same_case_file() {
         assertEquals(THREE_FORMS_CASE, CaseEmitter.emit(only(MODEL + THREE_FORMS)));
+    }
+
+    /** The WARNINGs of the scenario layer, each as its line, its code and its parameters. */
+    private static List<String> warnings(ScenarioBundle b) {
+        List<String> result = new ArrayList<>();
+        for (Diagnostic d : b.warnings()) {
+            assertEquals(Severity.WARNING, d.severity());
+            result.add(d.line() + " " + d.code() + " " + new TreeMap<>(d.args()));
+        }
+        return result;
+    }
+
+    /** There each of the three forms is a WARNING (RGS-469): a characteristic the situation does not name does not
+     *  hold already. The warnings stand beside the model, so the IR document stays the production route's, and the
+     *  semantic tokens carry them as the route prints them. */
+    @Test void a_document_that_infers_from_empty_warns_that_the_sentence_changes_nothing() {
+        String text = MODEL + THREE_FORMS;
+        ScenarioBundle b = ScenarioResolver.resolve(text);
+        assertTrue(b.isOk(), () -> b.model().errors().toString());
+        List<String> expected = List.of(
+                ScenarioFixture.lineOf(text, "- is niet drijfhout") + " RGS-469 {written=is niet drijfhout}",
+                ScenarioFixture.lineOf(text, "- heeft geen strandrecht") + " RGS-469 {written=heeft geen strandrecht}",
+                ScenarioFixture.lineOf(text, "- heeft niet het strandrecht") + " RGS-469 {written=heeft niet het strandrecht}");
+        assertEquals(expected, warnings(b));
+        assertTrue(b.model().diagnostics.stream().noneMatch(d -> "RGS-469".equals(d.code())), () -> b.model().diagnostics.toString());
+        assertEquals(IrEmitter.emit(Resolver.resolve(MODEL)), IrEmitter.emit(b.model()));
+        assertEquals("scenario: 'is niet drijfhout' verandert in een document zonder 'Afleiden uit leeg: nee' niets: daar "
+                        + "geldt een kenmerk dat de situatie niet noemt al niet; de zin telt alleen in een document met "
+                        + "'Afleiden uit leeg: nee'",
+                b.warnings().get(0).message());
+        List<String> tokens = new ArrayList<>();
+        for (SemanticTokens.FileDiagnostic d : Resolver.tokens(List.of(new SemanticTokens.SourceFile("t.rgs", text))).diagnostics())
+            if (d.severity() == Severity.WARNING) tokens.add(d.line() + " " + d.code() + " " + new TreeMap<>(d.params()));
+        assertEquals(expected, tokens);
+    }
+
+    @Test void a_strict_document_gives_no_warning() {
+        ScenarioBundle b = ScenarioResolver.resolve(NEE + MODEL + THREE_FORMS);
+        assertTrue(b.isOk(), () -> b.model().errors().toString());
+        assertEquals(List.of(), warnings(b));
+    }
+
+    /** Where the bullet replaces a characteristic a block merged before it gives as holding, it counts in every
+     *  document and gives no warning: "Scenario niet meer" on the situation drijfhout. The bullet of the situation
+     *  geen drijfhout replaces nothing (a later block replaces it), and warns. */
+    @Test void a_bullet_that_replaces_an_inherited_characteristic_gives_no_warning() {
+        String text = MODEL + BASES;
+        ScenarioBundle b = ScenarioResolver.resolve(text);
+        assertTrue(b.isOk(), () -> b.model().errors().toString());
+        assertEquals(List.of(ScenarioFixture.lineOf(text, "- is niet drijfhout") + " RGS-469 {written=is niet drijfhout}"),
+                warnings(b));
     }
 
     @Test void a_characteristic_that_holds_and_does_not_in_one_block_is_refused() {

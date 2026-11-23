@@ -414,3 +414,4 @@ RGS-465	characteristic-holds-and-not-in-block	ERROR	characteristic,label
 RGS-466	characteristic-absent-with-period	ERROR	characteristic
 RGS-467	open-expectation-without-open-members	ERROR	label,member
 RGS-468	open-expectation-on-dimensioned-attribute	ERROR	attribute,written
+RGS-469	characteristic-absent-changes-nothing	WARNING	written
