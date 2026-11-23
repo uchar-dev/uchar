@@ -15,9 +15,11 @@ domain of the Jutterswet.*
 of 2026-11-23 (card `one-empty`, part 2): a test on leeg or gevuld, the filled-value count and a fold filter that
 tests on gevuld are undetermined or open over an open value, for every form, and an initialisation is the lowest
 writer of its target and no closure. Every judgement is one value of Kleene's strong table; the pair "for the form
-that wrote it / for another form" and the closures of §1 point 3, §5.4 and §7.4 are not part of it, and only
-`(volledig gegeven)` on an input member closes. Where an example below rests on such a closure, ch. 1.5 and the
-witnesses under `ref/test/fixtures/strict-empty/` give its outcome.*
+that wrote it / for another form" and the closures the trial made are not part of it, and only `(volledig gegeven)` on
+an input member closes. §5 and §7.4 give that reading, with the outcomes the witnesses under
+`ref/test/fixtures/strict-empty/` pin; the other sections keep the trial's closures where they name one (§1, §6, §7.1,
+§8, §9, and the measurements and decisions of §10–§12), and where an example there rests on one, ch. 1.5 and those
+witnesses give its outcome.*
 
 ## 1. The rule in three sentences
 
@@ -156,8 +158,7 @@ conditions under which every value `e` reads **stands** — is filled or settled
 `d(e)` holds, both readings compute the same value, leeg included. An executor that applies the reading in its own
 lowering needs the same `c+`, `c-` and `d` per form; it need not write them as nodes.
 
-**Whose decision: two walks.** `c+` and `c-` are built in two kinds of walk, and they differ in one place only, the
-side of a test that says "X is leeg" (§5.4):
+**One judgement, two walks.** The trial built `c+` and `c-` in two kinds of walk:
 
 - the **own walk** builds the condition on which a form decides itself: `c+` of a rule, a default and a creation, and
   `a-` of a consistency rule (§5.9);
@@ -165,8 +166,10 @@ side of a test that says "X is leeg" (§5.4):
   (§5.6), "a derived attribute is settled leeg" `A (leeg)` (§5.6a), "no higher default decides" (§7.1), "no own
   exception" (§7.5), and a shared condition built from them.
 
-Inside a walk both polarities occur: `c+` of "geen van: X is gevuld" is `c-` of "X is gevuld", and in the own walk that
-is the author's own negation.
+In the trial the two differed in one place, the side of a test that says "X is leeg", which the own walk read as a
+closure over an open X. In the reading of RUNTIME-SEMANTICS ch. 1.5 there is no such closure (§5.4), so both walks build
+the same conditions: one judgement per condition, one value of Kleene's strong table. Inside a condition both
+polarities occur: `c+` of "geen van: X is gevuld" is `c-` of "X is gevuld".
 
 ### 5.1 d(e): what an expression depends on
 
@@ -247,38 +250,33 @@ the ordinary reading has it; with taxatie leeg it is undetermined.
 
 ### 5.4 A leeg or gevuld test
 
-A test "X is leeg" or "X is gevuld" reads the state of X:
+A test "X is leeg" or "X is gevuld" reads the state of X (RUNTIME-SEMANTICS ch. 1.5, "The test on leeg and gevuld"):
 
-| state of X | `X is gevuld` | `X is leeg` |
-|---|---|---|
-| filled | true | false |
-| settled leeg | false | true |
-| open | undetermined | undetermined; **except** in the own decision condition of the form that wrote the test: there it is a closure, and true |
-
-The exception in the last cell is the one closure a leeg test makes: an outcome follows from the absence of a value
-that is not established. The strict reading keeps it for the form that wrote the test, and for no other:
-
-- **The side that says "X is gevuld"** is, in both walks, the test on gevuld.
-- **The side that says "X is leeg"** is, in the own walk, the closure as the author wrote it: directly ("is leeg", "is
-  niet gevuld") or through a negation of its own ("geen van: X is gevuld"). In the other walk it is established only
-  where X is settled leeg: an input the caller closes (§9), a read over a link that is absent (§5.8), a derived
-  attribute that no writer fills (§5.6a) and that the case gives no value. A negation built for another form does not
-  conclude from an open X that X is leeg.
-
-So an author who writes "is gevuld" to keep a rule away from an open value gets exactly that: the rule does not decide
-on it, and neither does its negation; where X is settled leeg, both decide as the ordinary reading does.
-
-| rule, with X leeg | X open: the form itself | X open: the opposite, for another form | X settled leeg |
+| state of X | `X is gevuld` | `X is leeg` | `X moet gevuld zijn` |
 |---|---|---|---|
-| "K indien X gevuld is en X groter is dan 1000" | K is not attributed | `K (niet)` is not attributed: K is undetermined | `K (niet)` |
-| "K indien X leeg is" | K holds (the closure the form wrote) | — (`K (niet)` holds where X is gevuld) | K holds |
-| an exception "50 indien X gevuld is en X groter is dan 100" above a base 10 | the exception does not decide | the base does not decide either: the target is open | the base decides: 10 |
-| a consistency rule "X moet gevuld zijn" | reports: its own decision is "the assertion is established false" | — | reports |
+| filled | true | false | holds |
+| settled leeg | false | true | reports |
+| open | undetermined | undetermined | reports nothing |
+
+The test asks whether a value is there, and of an open value that does not stand: over an open X it is undetermined for
+the form that wrote it and for every form that reads its outcome, and so is a negation of the author's own ("geen van: X
+is gevuld"). The trial kept one closure here, "X is leeg" true over an open X in the own decision condition of the form
+that wrote the test; ch. 1.5 does not. X is settled leeg where it is an input member declared complete (§9) that the
+case gives no value, a read over a link that is absent (§5.8), or a derived attribute that no writer fills (§5.6a);
+there both tests decide as the ordinary reading does. Where the author wants the test to decide over a value the case
+does not give, the author declares the input member complete.
+
+| rule, with X leeg | X open | X settled leeg |
+|---|---|---|
+| "K indien X gevuld is en X groter is dan 1000" | K undetermined | `K (niet)` |
+| "K indien X leeg is" | K undetermined | K holds |
+| an exception "50 indien X gevuld is en X groter is dan 100" above a base 10 | the exception does not decide, and the base does not either: the target is open | the base decides: 10 |
+| a consistency rule "X moet gevuld zijn" | reports nothing | reports |
 
 Example (witness `settled-empty`): "een Vondst is beloonbaar indien zijn vindloon gevuld is", read as "niet
 beloonbaar" by a wachttoeslag 4. With taxatie 50,00 the vindloon is settled leeg: `beloonbaar (niet)` and wachttoeslag
 **4**, as in the ordinary reading; with taxatie leeg the vindloon is open: beloonbaar undetermined, wachttoeslag
-**leeg** (ordinary: 4). "Een Vondst is beloond indien zijn vindloon gevuld is en zijn vindloon groter is dan 5" reads
+**open** (ordinary: 4). "Een Vondst is beloond indien zijn vindloon gevuld is en zijn vindloon groter is dan 5" reads
 the same way.
 
 Example (witness `filled-test-not-closure`), with the input taxatie and the derived schatting (zijn waarde maal 2), each
@@ -286,43 +284,35 @@ read by the four forms above (thresholds 1000,00 and 100,00 for taxatie, 100,00 
 
 | case | kostbaar (taxatie gevuld en > 1000,00), bewakingstoeslag 5 if niet kostbaar | ongetaxeerd (taxatie leeg) | vindloon | consistency on taxatie |
 |---|---|---|---|---|
-| taxatie leeg | undetermined, toeslag **leeg** (ordinary: 5) | holds | **leeg** (ordinary: 10) | reports |
+| taxatie leeg | undetermined, toeslag **open** (ordinary: 5) | **undetermined** | **open** (ordinary: 10) | reports nothing |
 | taxatie 2000,00 | holds, toeslag leeg | `ongetaxeerd (niet)` | 50 | consistent |
 | taxatie 50,00 | `kostbaar (niet)`, toeslag 5 | `ongetaxeerd (niet)` | 10 | consistent |
 
 The same rules over schatting give the same columns where waarde is leeg (the schatting is open), 60,00 (schatting
 120,00) and 2,00 (schatting 4,00).
 
-**A closure over a derived member.** A test "X is leeg" the author writes over a member a form writes stays a closure,
-and where X is open it closes over everything that member depends on. The trial counts it (`note
-closure-over-derived`); an executor can name it in the explanation.
-
-**A computed value.** A test of a computed value reads the value in the strict reading. Gevuld is `d(value)` and the
-test. Leeg, for the form that wrote the test, is "at least one of: the first value it reads does not stand, the
-second, …, the test itself"; the composite reads its members in order and stops at the first that holds
-(RUNTIME-SEMANTICS ch. 5.10), so a division is evaluated only on standing operands. For another form, leeg is
-`d(value)` and the leeg test: established only where the value is settled leeg. "Does not stand" is the negation of
-`d` of a read, which for a derived attribute reads its generated characteristic `(leeg)` negatively. That, and a leeg
-test of a value whose fold filter reads a characteristic, are where the trial can read a characteristic negatively
-outside a defaults group; the graph stays stratified (WF-046), and §10.3 counts the places.
+**A derived member and a computed value.** Over a member a form writes, the test reads the member's state as any read
+does: undetermined while the member is open, as the ordinary reading where it stands. A test of a computed value reads
+the value in the strict reading: gevuld is `d(value)` and the test, leeg is `d(value)` and the leeg test, so both are
+undetermined where the evaluation has an open read, and a division is evaluated only on standing operands.
 
 Example (witness `composite-filled-test`): "de getuigentoeslag is 7 indien zijn gewicht gedeeld door zijn aantal
 getuigen leeg is", "de schadetoeslag is 3 indien zijn gewicht plus zijn schade gevuld is", and "het vindloon is 1", by
 a deviation 9 under the same leeg test. With gewicht leeg, aantal getuigen 2 and schade 1,00 the ordinary reading writes
-getuigentoeslag **leeg** (0 / 2 is gevuld), schadetoeslag **3** and vindloon **1**; the transformed document writes
-**7**, **leeg** and **9**. With aantal getuigen leeg the ordinary reading deposits EF-031 for both forms; the transformed
-document writes 7, 3 and 9 and stays **consistent**. With aantal getuigen 0 both readings deposit EF-005 and write 7:
-a division by 0 of filled operands is settled leeg, with its fault, in the strict reading too.
+getuigentoeslag **leeg** (0 / 2 is gevuld), schadetoeslag **3** and vindloon **1**; the strict reading leaves all three
+**open**. With aantal getuigen leeg the ordinary reading deposits EF-031 for both forms; the strict reading leaves the
+getuigentoeslag and the vindloon open, writes the schadetoeslag 3 and stays **consistent**. With aantal getuigen 0 both
+readings deposit EF-005 and write 7: a division by 0 of filled operands is settled leeg, with its fault, in the strict
+reading too.
 
-**The same rule elsewhere.** A filled-value count (§8.2) counts what is filled: for the form that wrote it a closure,
-for another form established only where every member's value stands. A fold filter that tests on gevuld excludes a
-leeg member for the form that wrote the fold; for another form that exclusion is established only for a member whose
-value is settled leeg. The opgave is closed by its declaration, not by a test, and keeps its closure in both walks (§7.4).
+**The same rule elsewhere.** A filled-value count (§8.2) is open where a member's value is open, and a fold filter that
+tests on gevuld is undetermined for such a member, so the fold is open (RUNTIME-SEMANTICS ch. 1.5, "A fold over a
+set"). The opgave is no test: it reads as any default over an input member (§7.4).
 
 Example (witness `filled-test`): "een Vondst is vrijgesteld indien zijn gewicht leeg is of kleiner dan 10,00" and "een
-Vondst is licht indien zijn gewicht kleiner is dan 10,00". With gewicht leeg: vrijgesteld **holds** (the closure
-decides), licht is **undetermined**, so "de vrachttoeslag is 3 indien hij niet licht is" writes **leeg** where the
-ordinary reading writes **3**.
+Vondst is licht indien zijn gewicht kleiner is dan 10,00". With gewicht leeg: vrijgesteld is **undetermined** (both
+members are), licht is **undetermined**, so "de vrachttoeslag is 3 indien hij niet licht is" leaves the vrachttoeslag
+**open** where the ordinary reading writes **3**.
 
 ### 5.5 The composite condition
 
@@ -447,9 +437,9 @@ that is present and whose attribute is open is open. In detail:
   carries `ervaren (niet)`". `c+` of "de vinder is niet ervaren" is "the object on the other side carries `ervaren
   (niet)`" (false where the link is absent, as in the ordinary reading), and its `c-` is "the link is absent, or the
   object carries `ervaren`".
-- **A leeg or gevuld test** over a read over a path: the gevuld side is the test (false where the link is absent); the
-  leeg side is, for the form that wrote it, the test (true where the link is absent), and for another form the absence
-  of the link or a settled leeg attribute at its end (§5.4).
+- **A leeg or gevuld test** over a read over a path reads the state of the read (§5.4): where the link is absent the
+  read is settled leeg, so the gevuld test is false and the leeg test true; where the attribute at its end is open,
+  both are undetermined.
 - A role check and an identity check stay two-valued: `c-` is the check turned around.
 - The exact-digit test: `c+` is `d(operand)` and the test, `c-` is `d(operand)` and the test turned around. Witness
   `exact-digits`: a leeg registratienummer leaves geregistreerd undetermined.
@@ -477,7 +467,8 @@ as in the ordinary reading; a vinder without leeftijd → undetermined, toeslag 
 A consistency rule reports only where its assertion is established false: its assertion becomes `none [a-]`, and `a-`
 is built in the own walk. Witness `consistency`: "het gewicht van een Vondst moet groter of gelijk zijn aan 0" with
 gewicht leeg reports nothing (ordinary: a channel fact); with gewicht −1,00 it reports. Witness
-`filled-test-not-closure`: "de taxatie van een Vondst moet gevuld zijn" reports where the taxatie is leeg.
+`filled-test-not-closure`: "de taxatie van een Vondst moet gevuld zijn" reports nothing where the taxatie is open
+(§5.4).
 
 ### 5.10 An object creation and a fact creation
 
@@ -489,10 +480,10 @@ there. Witness
 `object-creation`: "een Jutter heeft een proefvondst met taxatie gelijk aan 12,50 indien hij niet ervaren is", with
 ervaren "indien zijn ervaring groter is dan 5": ervaring leeg → no proefvondst (ordinary: one is made).
 
-The relation a creation makes is closed like any relation: a count over it counts the links that stand. Witness
-`fact-creation`: "een hulpvondst van een Jutter is een vondst van de Jutter indien de Jutter niet gemeld is" and "het
-hulptal is het aantal hulpvondsten van de Jutter", two vondsten: `gemeld (niet)` → **2**, `gemeld` → **0**, gemeld not
-named → **0** (ordinary: 2). That 0 is a closure over the creation's condition (§12.7).
+A creation whose condition is undetermined leaves the relation it would lay open, and a count over an open relation is
+open (RUNTIME-SEMANTICS ch. 1.5, "A creation", "A read over a link"). Witness `fact-creation`: "een hulpvondst van een
+Jutter is een vondst van de Jutter indien de Jutter niet gemeld is" and "het hulptal is het aantal hulpvondsten van de
+Jutter", two vondsten: `gemeld (niet)` → **2**, `gemeld` → **0**, gemeld not named → **open** (ordinary: 2).
 
 ### 5.11 What stays where
 
@@ -514,7 +505,7 @@ wrote the fold, whichever walk reads the fold's `d`.
   defaults group reads every justification read negatively (WF-051), the generated characteristics of §7 included.
   Outside a defaults group the transformed document reads a characteristic negatively only in a leeg test of a computed
   value (§5.4): where the value reads a fold whose filter checks a characteristic, or, for the form that wrote the test,
-  through the negation of `A (leeg)`. The verifier refuses such an edge on a cycle, and the trial writes no document the
+  through the negation of `A (leeg)`, which the trial's closure needed and the reading of ch. 1.5 does not. The verifier refuses such an edge on a cycle, and the trial writes no document the
   verifier refuses (§12.5); §10.3 counts them.
 - **A fault deposit is repeated where a condition is.** The transformed document evaluates a condition or value of a
   form again in a generated form: `K (niet)`, `A (leeg)`, or the justification of a lower default ("no higher default
@@ -530,9 +521,9 @@ wrote the fold, whichever walk reads the fold's `d`.
   the deviation "de meldtermijn is zijn vergunningseinde indien zijn vergunningseinde gevuld is": where the
   vergunningseinde is open, the deviation does not decide and the base below it does not either, so the meldtermijn is
   open (§5.4); where it is settled leeg, the deviation gives way and the base decides. A rule set says "the base
-  applies where nothing is given" with the opgave form (§7.4), with an explicit closure in the base ("indien zijn
-  vergunningseinde leeg is"), or by closing the member (§9). Measured: one corpus case rests on this idiom over an open
-  input (§11.2).
+  applies where nothing is given" by declaring the member complete (§9): a test "indien zijn vergunningseinde leeg is"
+  in the base is undetermined over an open vergunningseinde, and so is the opgave form over an open opgave (§7.4).
+  Measured: one corpus case rests on this idiom over an open input (§11.2).
 
 ## 6. What the trial refuses
 
@@ -654,28 +645,32 @@ base's), "de vindpremie is 10 indien hij vindgerechtigd is" and "de wachtpremie 
 
 ### 7.4 The initialisation and the opgave
 
-**The initialisation stays the lowest default and is a closure.** It decides where nothing above it decides, also where
-a default above it is undetermined or holds with an open consequence: the author has said what the target is when
-nothing else establishes it (§1 rule 3). The target is settled leeg only where every default above gives way and the
-initialisation's own value is settled leeg (§5.6a). The transformation leaves an initialisation default as it is, gives
-an initialisation rule `c+` and `d(value)` as its condition, and notes both (`note initialisation`). An initialisation
-default carries no justification (WF-050), so nothing keeps it from writing what the ordinary reading computes: where
-its value does not pass leeg on by itself (a fold that skips a leeg member, a sum that counts one as 0), the
-transformation refuses it (`initialisation-value`); a literal or a read passes. The owner decided this reading
-(§12).
+**The initialisation is the lowest writer of its target, and no closure** (RUNTIME-SEMANTICS ch. 1.5, "An
+initialisation", "The initialisation of a stack"). It decides where it stands of every writer above it, the input among
+them, that it fills nothing; there its condition and value are read as a rule's. Below a default that is undetermined
+or holds with an open consequence the target is open, and where the target is an open input member, or another writer
+leaves it open, the initialisation is not at its turn either. The target is settled leeg where every writer above gives
+way and the initialisation fills nothing (§5.6a). An initialisation makes no member derived: a member that only an
+initialisation writes is an input member with a default value, open where the case gives it no value, unless it is
+declared complete (§9); then it is settled leeg above the initialisation, which gives its value. The trial read the
+initialisation as a closure that decides also below a default that is undetermined; the owner's decision of 2026-11-23
+(card `one-empty`, part 2) replaced that with the reading here, and §12 records the earlier one. The trial left an
+initialisation default as it is: it carries no justification (WF-050), so where its value does not pass leeg on by
+itself (a fold that skips a leeg member, a sum that counts one as 0) the trial refused it (`initialisation-value`, §6).
 
-**The opgave is closed by its declaration.** In a group of form `inputAboveComputation` (IR-SPEC ch. 2.13), recognised by
-the origin of the group and of the opgave attribute (`opgegeven X`, which no form writes), the opgave is established
-not to apply where it is leeg: whoever marks an attribute "mag opgegeven worden" says that a missing opgave is no
-opgave, and the computation below it decides. The default of the opgave gets that "is leeg" as its `c-`, in both walks:
-it is the closure of the declaration, not a test (§5.4). The transformation notes it (`note input-above-computation`).
-Example (witness `input-above-computation`): "het bergloon (mag opgegeven worden) is zijn gewicht plus zijn schade",
-initialisation 25,00: opgave 30,00 → **30,00** and an inconsistency of the opgave against the computed 12,00; no opgave,
-gewicht 10,00, schade 2,00 → **12,00**; no opgave, schade leeg → the computation holds with an open value, nothing above
-the initialisation decides, so **25,00** (ordinary: 10,00); nothing given → **25,00**.
+**The opgave reads as any default over an input member** (ch. 1.5, "An opgave"). In a group of form
+`inputAboveComputation` (IR-SPEC ch. 2.13) the opgave is an input member (`opgegeven X`, which no form writes): where the
+case gives it no value it is open, and no default below it decides, an initialisation among them. An opgave declared
+complete (§9) is settled leeg where the case gives it no value: its default gives way, and the computation decides. The
+trial closed the opgave by its declaration; ch. 1.5 does not. Example (witness `input-above-computation`, the opgave
+declared complete): "het bergloon (mag opgegeven worden) is zijn gewicht plus zijn schade", initialisation 25,00:
+opgave 30,00 → **30,00** and an inconsistency of the opgave against the computed 12,00; no opgave, gewicht 10,00, schade
+2,00 → **12,00**; no opgave, schade leeg → the computation reads an open value, so the initialisation below it does not
+decide: **open** (ordinary: 10,00); nothing given → **open**. Witness `input-above-computation-open`: an opgave not
+declared complete and not given leaves the bergloon **open**.
 
 Example (witness `initialisation`): "het strandloon is zijn vangst maal 2 indien hij gemeld is" and "het strandloon moet
-geïnitialiseerd worden op 5 indien hij niet gemeld is": gemeld not named → **leeg** (ordinary: 5); `gemeld (niet)` →
+geïnitialiseerd worden op 5 indien hij niet gemeld is": gemeld not named → **open** (ordinary: 5); `gemeld (niet)` →
 **5**; input strandloon 7 and `gemeld (niet)` → **7**.
 
 ### 7.5 A stack composed over a type chain
