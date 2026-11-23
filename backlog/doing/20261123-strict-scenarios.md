@@ -69,34 +69,68 @@ heeft daarom alleen handgeschreven cases.
 Result (2026-11-23):
 
 - **Wat landde.** Situatie: geen nieuwe grammatica; `niet`/`geen` rijden in de `kaleNaam` van `kenmerkToewijzing`, en
-  `ScenarioResolver.characteristic` haalt ze af zoals `expectCharacteristic` (één helper `withoutNegation` voor beide),
-  met dezelfde controle van het werkwoord. `CharacteristicValue` kreeg `holds`; `CaseEmitter` schrijft
+  `ScenarioResolver.characteristic` leest de naam zoals `expectCharacteristic` (één helper `readCharacteristic` voor
+  beide): eerst de hele naam, zoals `CharacteristicMatcher.bind` in een regel, dan pas `niet`/`geen` als ontkenning, met
+  dezelfde controle van het werkwoord. `CharacteristicValue` kreeg `holds`; `CaseEmitter` schrijft
   `characteristicsAbsent` na `characteristics` en vóór `characteristicTimelines`, alleen als de lijst niet leeg is (de
   javadoc en `DIVERGENCES.md` noemden nog een afwijkende corpusvolgorde; nu staat er de volgorde van het schema).
   Verwachting: twee alternatieven in `verwachting`, `verwachtAttribuutOpen` en `verwachtKenmerkOpen`, met `staatWoord` en
   `vastWoord` op hun tekst (zoals `volgensWoord`); `ExpectationKind` kreeg `ATTRIBUTE_OPEN` en `CHARACTERISTIC_OPEN`.
-  `SemanticTokens`: de ontkenning in een situatie zoals in een verwachting, `staat` en `vast` als `keyword`. De golden
+  `SemanticTokens`: de ontkenning in een situatie zoals in een verwachting (ook daar eerst de hele naam), `staat` en
+  `vast` als `keyword` waar hun predicaat slaagde. De golden
   `jutterswet-afleiden-uit-leeg` heeft een `scenario.rgs` (zes scenario's, twee op één gedeelde situatie) die zijn zes
   cases en `ir.json` byte voor byte geeft; `NOTE.md` zegt dat in één zin. `DIVERGENCES.md`, "Scenariotoetsen": de
   situatievormen, twee rijen in de tabel, de weigeringen, de tokens, de getuigen; de telling 49 goldens (2026-11-23).
 - **Vier codes, niet drie.** RGS-465 (een kenmerk geldend en niet geldend in één situatieblok, ook over twee openers van
   één label in dat blok), RGS-466 (niet geldend met een periode of op een tijdsafhankelijk kenmerk), RGS-467 ("staat niet
-  vast" in een document zonder `Afleiden uit leeg: nee`, beide vormen), en RGS-468: "staat niet vast" op een cel van een
-  gedimensioneerd attribuut. `attributeOpen` noemt geen cel; zonder die weigering zou de cel als het hele attribuut in de
-  case belanden. Op een tijdsafhankelijk attribuut of kenmerk weigert de resolver met RGS-399 en RGS-400, zoals gevraagd.
+  vast" in een document zonder `Afleiden uit leeg: nee`, beide vormen), en RGS-468: "staat niet vast" op een
+  gedimensioneerd attribuut, met of zonder cel, vóór RGS-467 en vóór de RGS-364 van een cel zonder labels.
+  `attributeOpen` noemt een attribuut zonder dimensies en geen cel, en `ref` weigert het op een gedimensioneerd
+  attribuut; zonder die weigering zou de cel als het hele attribuut in de case belanden. Op een tijdsafhankelijk attribuut of kenmerk weigert de resolver met RGS-399 en RGS-400, zoals gevraagd.
   De open kenmerkvorm neemt geen ontkenning: "of V1 niet afhaalbaar is, staat niet vast" zoekt een kenmerk
   "niet afhaalbaar" (RGS-241).
 - **Gate 16:** `check-scenario: PASS — 49 scenario golden(s) (floor 7) regenerate 182 case file(s) (floor 31) and their
   ir.json byte-identically` (op main 48 en 176). `git diff --stat main -- corpus`: alleen `NOTE.md` en `scenario.rgs`.
 - **Gate 10:** `check-rgs-codes: PASS — 418 codes, 451 sites, every code used and every parameter set equal, no site
   without a code or with a text, both catalogues held to the register, the Dutch one Dutch (floors 347, 363 and 4)` en
-  `check-regelspraak: PASS — JUnit suite green (1728 tests, floor 173); 223 rgs golden(s) re-emit byte-identically
-  (floor 80)`. Nieuw: `ScenarioStrictTest` (9 tests: de drie situatievormen in een handgeschreven case, dezelfde case in
+  `check-regelspraak: PASS — JUnit suite green (1736 tests, floor 173); 223 rgs golden(s) re-emit byte-identically
+  (floor 80)` (na de review; ervoor 1728). Nieuw: `ScenarioStrictTest` (14 tests: de drie situatievormen in een handgeschreven case, dezelfde case in
   een gewoon document, RGS-465 in één opener en over twee, `gebaseerd op` in beide richtingen, RGS-466 drie keer, "staat
   niet vast" over een attribuut met `de` en `het` en over een bijvoeglijk en een bezittelijk kenmerk met en zonder
   lidwoord en komma, RGS-467, RGS-399/400/468/244/241, en de namen `de staat`, `het gewicht of volume`, `de niet
   uitgekeerde premie` en `vast` die lezen als voorheen) en `SemanticTokensScenarioTest.the_words_of_a_strict_scenario_are_keywords`.
   Gate 1 PASS.
+- **Na de review** (extern model, 2026-11-23, nagerekend door de hoofdsessie; tweede bouwer). Hersteld:
+  1. `- of` in een verwachting liet `--cases` en de semantic tokens vallen op een NullPointerException (ANTLR kiest
+     `verwachtKenmerkOpen` al op `OF`, de recovery laat het label weg). De twee nieuwe alternatieven lezen niets meer uit
+     een context die de recovery afbrak of aanvulde (`DefinitionResolver.recovered`, en bij de kenmerkvorm een werkwoord
+     dat de recovery verzon en dat geen token achterlaat): alleen de syntaxfout (RGS-216) blijft, ook zonder de RGS-244
+     op `- of V1 strandrecht` en de RGS-467 op `staat niet zeker` en `blijft niet vast` in een gewoon document die er
+     eerst naast stonden.
+  2. Een kenmerk dat met `niet` of `geen` begint (`is niet drijfhout kenmerk`): de scenariolaag haalde de ontkenning
+     altijd af, dus zo'n kenmerk alleen gaf RGS-241, en naast `drijfhout` gaf `- is niet drijfhout` stil
+     `characteristicsAbsent: ["drijfhout"]`. Nu eerst de hele naam, in een situatie, in een verwachting en in de tokens
+     (`SemanticTokens.withoutNegation` kreeg het objecttype). Voor de verwachting verandert dit ook iets tegenover main:
+     daar las `- V1 is niet drijfhout` altijd een ontkenning, ook als `niet drijfhout` gedeclareerd was.
+  3. `staat` en `vast` zijn alleen nog `keyword` in een context zonder `exception`; een woord dat het predicaat niet
+     haalde (`zeker`, `blijft`) houdt zijn lexicale soort `word`.
+  4. RGS-468 op elk gedimensioneerd attribuut, met of zonder cel en in beide soorten document, vóór RGS-467 en vóór de
+     RGS-364 van een cel zonder labels; de melding in beide catalogi en de sleutel in het register
+     (`open-expectation-on-dimensioned-attribute`) zeggen dat.
+  5. Meldingen: RGS-241 in een verwachting noemt het kenmerk zonder lidwoord, zoals in een situatie; RGS-465 noemt wat
+     een geërfd kenmerk vervangt (een later blok: een volgende situatie waarop het scenario of de situatie gebaseerd is,
+     of het eigen blok); RGS-467 noemt ook `'heeft niet het'`. `DIVERGENCES.md` volgt (de hele naam eerst, RGS-468, de
+     drie meldingen, de getuigen).
+  6. Tests: in `ScenarioStrictTest` een situatie op een situatie en een scenario met twee bases in beide richtingen, de
+     sleutelvolgorde naast `characteristicTimelines`, `niet drijfhout` alleen en naast `drijfhout`, RGS-241 zonder
+     lidwoord, RGS-468 met en zonder labels in beide documenten, RGS-467 ook met `Afleiden uit leeg: ja`;
+     `ScenarioRecoveryTest` de vier afgebroken regels in beide documenten (alleen RGS-216); `SemanticTokensRecoveryTest`
+     hun tokens; `SemanticTokensScenarioTest` de binding van `niet drijfhout` en `drijfhout`. Van de acht nieuwe tests
+     falen de zes voor punt 1 tot 5 op de vorige tip `c162d747a` (gemeten met een build van die tip buiten de repo); de
+     twee voor wat al gebouwd was (de bases, de sleutelvolgorde) slagen daar ook.
+  Bewust niet (besluit hoofdsessie): `- is niet een drijfhout`, de ruime lidwoorden, het advies van RGS-244 bij een
+  ontkenning, RGS-466 splitsen. Gate 16 na het herstel: `check-scenario: PASS — 49 scenario golden(s) (floor 7)
+  regenerate 182 case file(s) (floor 31) and their ir.json byte-identically`; gate 10 zoals hierboven; gate 1 PASS.
 - **Handcontrole (punt 1)**, buiten de repo in `werk/strict-scenarios/handcheck`, met de binaries en de jar van de
   hoofdcheckout (de executors zijn op deze branch niet veranderd). Golden `jutterswet-bergingsdrempel` (gewoon document):
   `case3-onder-quotum` met en zonder `characteristicsAbsent: ["noodweer verklaard"]`, en `case1-quotum` met en zonder
