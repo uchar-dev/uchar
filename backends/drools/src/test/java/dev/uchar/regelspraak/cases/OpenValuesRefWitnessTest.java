@@ -39,7 +39,8 @@ class OpenValuesRefWitnessTest {
     static {
         for (String plays : List.of("absent-link", "absent-link-path", "arithmetic", "characteristic", "closed-input",
                 "comparison", "composite-filled-test", "compound-all", "compound-any", "compound-counting", "compound-none",
-                "consistency", "defaults-characteristic", "defaults-initialisation-only", "defaults-stack", "defaults-subtype",
+                "consistency", "defaults-characteristic", "defaults-initialisation-exception", "defaults-initialisation-only",
+                "defaults-stack", "defaults-subtype",
                 "empty-by-fault", "exact-digits",
                 "filled-test", "filled-test-not-closure", "initialisation", "input-above-computation",
                 "input-above-computation-open", "let", "listed-fold", "navigated-read", "quantifier-fold", "set-fold",

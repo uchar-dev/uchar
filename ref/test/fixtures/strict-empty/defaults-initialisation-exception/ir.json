@@ -1,0 +1,122 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "strandloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gemeld",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "strandloon",
+        "subject": "Vondst",
+        "attribute": "strandloon",
+        "defaults": [
+          {
+            "node": "Default",
+            "name": "standaardstrandloon",
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "5"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "5"
+              }
+            },
+            "initialisation": true,
+            "exceptions": {
+              "unordered": true,
+              "members": [
+                {
+                  "node": "ExceptionGroup",
+                  "defaults": [
+                    {
+                      "node": "Default",
+                      "name": "meldstrandloon",
+                      "justification": {
+                        "node": "CharacteristicCheck",
+                        "characteristic": "gemeld",
+                        "negated": false,
+                        "source": {
+                          "snippet": "hij gemeld is"
+                        }
+                      },
+                      "consequence": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "8"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "8"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
+  },
+  "diagnostics": []
+}

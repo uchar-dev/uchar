@@ -16143,6 +16143,37 @@ let () =
   row "a-value" (ov_v1 [ ("strandloon", "7") ]) "7";
   row "complete" ~complete:[ "strandloon" ] (ov_v1 []) "5"
 
+(* WV-1.5-stack-initialisation-exception: an initialisation default that
+   carries an exception group makes the member derived: its exceptions decide
+   above the input (ch. 7.9). "Het strandloon van een Vondst moet
+   geïnitialiseerd worden op 5" as the one default of a stack, with the
+   exception "… op 8 indien hij gemeld is": the strandloon is 8 where gemeld
+   holds, also with 7 in the case; 5 where gemeld stands not to hold and the
+   case gives no strandloon, 7 where it gives 7; open where gemeld is open *)
+let () =
+  let doc =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"strandloon"
+            [ ov_dflt ~init:true ~consequence:(ov_lit "5")
+                ~exceptions:(ov_groups [ [ ov_dflt ~justification:(ov_check "gemeld") ~consequence:(ov_lit "8") () ] ])
+                () ] ]
+      [ ov_vondst [ "strandloon" ] [ "gemeld" ] ] []
+  in
+  let row name ?(complete = []) input want =
+    let id = "stack-initialisation-exception-" ^ name in
+    ov_row ("WV-1.5-" ^ id)
+      (fun () -> ov_run id (ov_complete complete doc) input)
+      (fun w -> ov_attr w "V1" "strandloon")
+      want
+  in
+  row "the-exception" (ov_v1 ~chars:[ "gemeld" ] []) "8";
+  row "the-exception-above-the-input" (ov_v1 ~chars:[ "gemeld" ] [ ("strandloon", "7") ]) "8";
+  row "given-way" ~complete:[ "gemeld" ] (ov_v1 []) "5";
+  row "given-way-below-the-input" ~complete:[ "gemeld" ] (ov_v1 [ ("strandloon", "7") ]) "7";
+  row "the-exception-open" (ov_v1 []) "open";
+  row "the-exception-open-beside-the-input" (ov_v1 [ ("strandloon", "7") ]) "open"
+
 (* WV-1.5-stack-two-initialisations: a stack with an inherited initialisation
    above its own (ch. 7.10): each decides where it stands of every default
    above it that it gives way, the lower one also of the upper one, and below
@@ -17151,7 +17182,8 @@ let () =
   let witnesses =
     [ "absent-link"; "absent-link-path"; "arithmetic"; "characteristic"; "closed-input"; "comparison"; "composite-filled-test";
       "compound-all"; "compound-any"; "compound-counting"; "compound-none"; "consistency"; "defaults-characteristic";
-      "defaults-initialisation-only"; "defaults-stack"; "defaults-subtype"; "empty-by-fault"; "exact-digits"; "fact-creation"; "filled-test";
+      "defaults-initialisation-exception"; "defaults-initialisation-only"; "defaults-stack"; "defaults-subtype"; "empty-by-fault";
+      "exact-digits"; "fact-creation"; "filled-test";
       "filled-test-not-closure"; "initialisation"; "input-above-computation"; "input-above-computation-open"; "let";
       "let-closure"; "listed-fold"; "navigated-read"; "object-creation"; "quantifier-fold"; "set-fold"; "settled-empty"; "settled-empty-date";
       "settled-empty-fold"; "settled-empty-stack" ]
@@ -17640,8 +17672,8 @@ let () =
    neither is a value the case gives a member a rule writes on the object's
    type: that is no input member, and its value stands in place of settled
    leeg where every writer fills nothing (ch. 7.8). An initialisation is no
-   such writer, a rule or the initialisation default of a stack: a member it
-   alone writes is an input member. *)
+   such writer, a rule or the initialisation default of a stack without an
+   exception group: a member it alone writes is an input member. *)
 let () =
   let written (doc : Ir_v0.Ast.document) (i : ov_input) ~characteristic member =
     let named m = Ir_v0.Checks.norm m = Ir_v0.Checks.norm member in
@@ -17660,7 +17692,9 @@ let () =
          (fun (l : Ir_v0.Ast.prioritized_defaults) ->
            Option.fold ~none:false ~some:named (if characteristic then l.pd_characteristic else l.pd_attribute)
            && Eval.isa (env_of doc) i.ov_type l.pd_subject
-           && List.exists (fun (d : Ir_v0.Ast.default) -> not d.default_initialisation) l.defaults)
+           && List.exists
+                (fun (d : Ir_v0.Ast.default) -> (not d.default_initialisation) || d.default_exceptions <> None)
+                l.defaults)
          doc.prioritized_defaults
   in
   let complete (doc : Ir_v0.Ast.document) (i : ov_input) ~characteristic member =

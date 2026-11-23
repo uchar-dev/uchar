@@ -6203,8 +6203,10 @@ let instance_depth env world0 (o : Ir_v0.Checks.instance_order) =
    RUNTIME-SEMANTICS ch. 1.5). A member is input on an object where nothing but
    an initialisation writes it on the object's type: no rule other than an
    initialisation, and no defaults group with a default other than its
-   initialisation default. An initialisation is its lowest writer, below the
-   input, so a member it alone writes is an input member with a default value.
+   initialisation default or with an exception group, whose members decide
+   above the input ([run_defaults_group]). An initialisation is its lowest
+   writer, below the input, so a member it alone writes is an input member
+   with a default value.
    A member another writer writes there follows its writers, also where the
    case gives it no value, and its field changes nothing there. [closed_inputs]
    treats every input member as complete (runner --closed-inputs, the
@@ -6228,7 +6230,9 @@ let open_inputs env ~closed_inputs (world : World.t) =
              (Option.map World.attribute l.pd_attribute = Some m
              || Option.map World.characteristic l.pd_characteristic = Some m)
              && isa env otype l.pd_subject
-             && List.exists (fun (d : default) -> not d.default_initialisation) l.defaults)
+             && List.exists
+                  (fun (d : default) -> (not d.default_initialisation) || d.default_exceptions <> None)
+                  l.defaults)
            env.doc.prioritized_defaults
     in
     SMap.fold

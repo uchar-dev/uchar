@@ -503,32 +503,38 @@ def chain(doc, otype):
 
 
 def writers(doc):
-    # (subject type, kind, member) of every writer that makes a member derived: a rule version other than an
-    # initialisation (a version without a presentation assigns a characteristic), and a defaults group with a default
-    # other than its initialisation default
+    # (subject type, kind, member, derives) of every writer: a rule version (one that is neither an initialisation nor
+    # carries a presentation assigns a characteristic, WF-022) and a defaults group. Every writer derives the member
+    # but an initialisation: a rule version marked so, or a defaults group whose defaults are its initialisation
+    # default alone, without an exception group (an exception group decides above the input)
     for rule in doc["rules"]["rules"]:
         for v in rule["versions"]:
-            if v.get("initialisation") is True:
-                continue
             t = v["target"]["attribute"] if v["target"]["node"] == "DimensionCellRead" else v["target"]
-            yield t["subjectType"], "attribute" if "presentation" in v else "characteristic", t["attribute"]
+            init = v.get("initialisation") is True
+            yield (t["subjectType"], "attribute" if init or "presentation" in v else "characteristic", t["attribute"],
+                   not init)
     for group in doc["rules"].get("prioritizedDefaults", []):
-        if any(d.get("initialisation") is not True for d in group["defaults"]):
-            kind = "characteristic" if "characteristic" in group else "attribute"
-            yield group["subject"], kind, group[kind]
+        kind = "characteristic" if "characteristic" in group else "attribute"
+        yield (group["subject"], kind, group[kind],
+               any(d.get("initialisation") is not True or "exceptions" in d for d in group["defaults"]))
 
 
 def standing(doc, otype, kind, member):
-    # what the member [member] of an object of [otype] is without a value, "derived", "complete" or "input", and the
-    # name its declaration gives it, by which the end state names it (a case may spell it otherwise)
+    # what the member [member] of an object of [otype] is without a value — "derived"; "input"; "complete", declared
+    # complete with no writer, settled leeg; or "initialised", declared complete with an initialisation as its one
+    # writer, settled leeg below the initialisation, which then gives its value — and the name its declaration gives
+    # it, by which the end state names it (a case may spell it otherwise)
     declared = [m for o in chain(doc, otype) for m in o["attributes" if kind == "attribute" else "characteristics"]
                 if norm(m["name"]) == norm(member)]
     if not declared:
         raise ValueError("%s has no %s %r" % (otype, kind, member))
     names = {norm(o["name"]) for o in chain(doc, otype)}
-    if any(k == kind and norm(m) == norm(member) and norm(t) in names for t, k, m in writers(doc)):
+    on = [derives for t, k, m, derives in writers(doc) if k == kind and norm(m) == norm(member) and norm(t) in names]
+    if any(on):
         return "derived", declared[0]["name"]
-    return ("complete" if declared[0].get("complete") is True else "input"), declared[0]["name"]
+    if declared[0].get("complete") is not True:
+        return "input", declared[0]["name"]
+    return ("initialised" if on else "complete"), declared[0]["name"]
 
 
 def number(n):
@@ -549,41 +555,55 @@ def target(subject, member):
 row_doc = {
     "model": {"objectTypes": [
         ot("Vondst", [{"name": "taxatie"}, {"name": "toeslag", "complete": True}, {"name": "strandloon"},
-                      {"name": "meldloon"}, {"name": "vindloon"}, {"name": "bergloon"}], ["kostbaar", "gemeld"]),
+                      {"name": "meldloon"}, {"name": "vindloon"}, {"name": "bergloon"},
+                      {"name": "premie", "complete": True}, {"name": "keurloon"}], ["kostbaar", "gemeld", "Gekeurd"]),
         ot("Strandvondst", [], [], "Vondst")]},
     "rules": {
         "rules": [
             {"versions": [{"target": target("Vondst", "strandloon"), "initialisation": True}]},
             {"versions": [{"target": target("Vondst", "vindloon"), "presentation": "calculation"}]},
             {"versions": [{"target": target("Vondst", "kostbaar")}]},
-            {"versions": [{"target": target("Strandvondst", "bergloon"), "presentation": "calculation"}]}],
+            {"versions": [{"target": target("Strandvondst", "bergloon"), "presentation": "calculation"}]},
+            {"versions": [{"target": target("Vondst", "premie"), "initialisation": True}]}],
         "prioritizedDefaults": [
             {"subject": "Vondst", "attribute": "meldloon", "defaults": [{"consequence": number("3"), "initialisation": True}]},
             {"subject": "Vondst", "attribute": "taxatie", "defaults": [{"consequence": number("5")},
-                                                                      {"consequence": number("3"), "initialisation": True}]}]}}
+                                                                      {"consequence": number("3"), "initialisation": True}]},
+            {"subject": "Vondst", "attribute": "keurloon",
+             "defaults": [{"consequence": number("3"), "initialisation": True,
+                           "exceptions": {"unordered": True, "members": [{"defaults": [{"consequence": number("8")}]}]}}]}]}}
 standing_rows = [
-    ("an input member", "Strandvondst", "characteristic", "gemeld", "input"),
-    ("an input member the case spells otherwise", "Vondst", "characteristic", " GEMELD", "input"),
-    ("a member declared complete, on a subtype", "Strandvondst", "attribute", "toeslag", "complete"),
-    ("a member that only an initialisation rule writes", "Vondst", "attribute", "strandloon", "input"),
-    ("a member that only the initialisation default of a stack writes", "Vondst", "attribute", "meldloon", "input"),
-    ("a member a stack with another default writes", "Vondst", "attribute", "taxatie", "derived"),
-    ("a member a calculation writes", "Strandvondst", "attribute", "vindloon", "derived"),
-    ("a characteristic an attribution writes", "Vondst", "characteristic", "kostbaar", "derived"),
-    ("a member a rule on a subtype writes, on the supertype", "Vondst", "attribute", "bergloon", "input"),
-    ("a member a rule on a subtype writes, on the subtype", "Strandvondst", "attribute", "bergloon", "derived"),
+    ("an input member", "Strandvondst", "characteristic", "gemeld", "input", "gemeld"),
+    ("an input member the case spells otherwise", "Vondst", "characteristic", " GEMELD", "input", "gemeld"),
+    ("a declaration with capitals, the case spelling it otherwise", "Vondst", "characteristic", "gekeurd", "input",
+     "Gekeurd"),
+    ("a member declared complete, on a subtype", "Strandvondst", "attribute", "toeslag", "complete", "toeslag"),
+    ("a member declared complete that only an initialisation writes", "Vondst", "attribute", "premie", "initialised",
+     "premie"),
+    ("a member that only an initialisation rule writes", "Vondst", "attribute", "strandloon", "input", "strandloon"),
+    ("a member that only the initialisation default of a stack writes", "Vondst", "attribute", "meldloon", "input",
+     "meldloon"),
+    ("a member a stack with another default writes", "Vondst", "attribute", "taxatie", "derived", "taxatie"),
+    ("a member a stack writes whose initialisation default carries an exception group", "Vondst", "attribute",
+     "keurloon", "derived", "keurloon"),
+    ("a member a calculation writes", "Strandvondst", "attribute", "vindloon", "derived", "vindloon"),
+    ("a characteristic an attribution writes", "Vondst", "characteristic", "kostbaar", "derived", "kostbaar"),
+    ("a member a rule on a subtype writes, on the supertype", "Vondst", "attribute", "bergloon", "input", "bergloon"),
+    ("a member a rule on a subtype writes, on the subtype", "Strandvondst", "attribute", "bergloon", "derived",
+     "bergloon"),
 ]
-for name, otype, kind, member, want in standing_rows:
+for name, otype, kind, member, want, want_declared in standing_rows:
     got, declared = standing(row_doc, otype, kind, member)
-    if got != want or declared != member.strip().lower():
+    if got != want or declared != want_declared:
         problems.append('the reading of the document fails its row "%s": it says %s, declared as %r' % (name, got, declared))
 
 
 def judge(standing_of, state, kind, label, member):
     # what a run without the input does in the comparison: "compare"; "apart" (a member that is not open without its
     # value); or a failure, "closed" (an open input member ref does not name open) or "opened" (a member declared
-    # complete, which no writer makes derived, that ref names open). A derived member ref names open is compared all
-    # the same: its run can only add to the comparison
+    # complete that no writer writes, which ref names open). A derived member, and a complete member below an
+    # initialisation, which reads what it reads, that ref names open is compared all the same: its run can only add to
+    # the comparison
     named_open = "%s %s %s open" % (kind, quote(label), quote(member)) in state
     if standing_of == "input":
         return "compare" if named_open else "closed"
@@ -601,6 +621,10 @@ judge_rows = [
     ("an open input member ref closes (red)", "input", ['attribute "V1" "strandloon" 5'], "closed"),
     ("a member declared complete", "complete", [], "apart"),
     ("a member declared complete ref names open (red)", "complete", ['attribute "V1" "strandloon" open'], "opened"),
+    ("a complete member below an initialisation ref names open", "initialised", ['attribute "V1" "strandloon" open'],
+     "compare"),
+    ("a complete member below an initialisation ref does not name open", "initialised",
+     ['attribute "V1" "strandloon" 5'], "apart"),
     ("a derived member ref names open", "derived", ['attribute "V1" "strandloon" open'], "compare"),
     ("a derived member ref does not name open", "derived", ['attribute "V1" "strandloon" 5'], "apart"),
 ]
@@ -671,7 +695,7 @@ for line in open(os.path.join(work, "mono", "tasks.tsv"), encoding="utf-8"):
             counts["derived"] += 1
             continue
         found = {"closed": ["ref does not name the open input member open"],
-                 "opened": ["ref names the member open, which is declared complete"]}.get(verdict) or lost(state, full[case])
+                 "opened": ["ref names the member open, which is declared complete and has no writer"]}.get(verdict) or lost(state, full[case])
     else:
         found = ["the run without the input faults (exit %s)" % rc]
     counts["runs"] += 1

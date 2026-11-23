@@ -698,10 +698,10 @@ object where it is input and the case gives it no value or does not name it;
 with the field it is settled leeg there, and a characteristic the case does
 not name stands not to hold (`RUNTIME-SEMANTICS.md` ch. 1.5, "Complete
 input"). On an object where a rule other than an initialisation, or a
-defaults group with a default other than its initialisation default, writes
-the member, the member follows its writers and the field changes nothing; a
-member that only an initialisation writes, a rule or the initialisation
-default of a defaults group, is input, and with the field it is settled leeg below the case and above the
+defaults group with a default other than its initialisation default or with an
+exception group, writes the member, the member follows its writers and the
+field changes nothing; a member that only an initialisation writes, a rule or
+the initialisation default of a defaults group, is input, and with the field it is settled leeg below the case and above the
 initialisation, which gives its value; in a document
 without `inferFromEmpty: false` nothing is open, and the field changes no
 outcome. A subtype inherits the member with the field, as it inherits its

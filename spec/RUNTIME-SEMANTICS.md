@@ -496,11 +496,13 @@ has no value, or that the characteristic does not hold) or *open* (neither
 stands). An input member — an attribute or a characteristic that nothing but
 an initialisation writes on the object's type: no rule other than an
 initialisation, and no defaults group with a default other than its
-initialisation default — is open where the case gives it no value or does not
-name it, unless its declaration says that its input is complete (below). An
-initialisation — a rule, or the initialisation default of a stack — is the
-lowest writer of its target, below the input, and makes no member derived
-(below). A document without the property has no open member: a member without
+initialisation default or with an exception group — is open where the case
+gives it no value or does not name it, unless its declaration says that its
+input is complete (below). An initialisation — a rule, or the initialisation
+default of a stack — is the lowest writer of its target, below the input, and
+makes no member derived (below); an exception group of the initialisation
+default decides above the input (ch. 7.9), so a stack with one makes its member
+derived. A document without the property has no open member: a member without
 a value is settled leeg, and the rest of this section then reads as ch.
 1.2–1.4. Example
 (WV-1.5-open-input, WV-1.5-no-open-without-the-property): "de uitbetaling van
@@ -676,8 +678,8 @@ where the case gives it no value, 7 where the case gives 7, and 5 where it is
 declared complete and the case gives it none.
 
 **A derived member** — one a rule other than an initialisation, or a defaults
-group with a default other than its initialisation default, writes on the
-object's type — follows its writers, also where the case
+group with a default other than its initialisation default or with an
+exception group, writes on the object's type — follows its writers, also where the case
 gives it no value: it is filled where a writer decides with a value, settled
 leeg where it stands of every writer that it fills nothing or decides with a
 leeg value, and open otherwise; a characteristic holds, stands not to hold, or
@@ -825,7 +827,12 @@ initialisation** above. Example (WV-1.5-stack-initialisation-alone): with
 "het strandloon van een Vondst moet geïnitialiseerd worden op 5" as the one
 default of a stack, the strandloon is open where the case gives it no value,
 7 where the case gives 7, and 5 where it is declared complete and the case
-gives it none.
+gives it none. An initialisation default with an exception group makes the
+member derived, since the exceptions decide above the input (ch. 7.9).
+Example (WV-1.5-stack-initialisation-exception): with that stack and the
+exception "… op 8 indien hij gemeld is", the strandloon is 8 where gemeld
+holds, also with 7 in the case; 5 where gemeld stands not to hold and the case
+gives no strandloon, 7 where it gives 7; and open where gemeld is open.
 
 **An opgave** — a stack whose highest default is the value the case may give
 for its target, "het bergloon (mag opgegeven worden)" — reads as any default
@@ -1025,7 +1032,8 @@ inherits the member with it. On an object where the member is input, a
 complete member without a value is settled leeg, and a complete
 characteristic the case does not name stands not to hold. On an object where a
 rule other than an initialisation, or a defaults group with a default other
-than its initialisation default, writes the member, it follows its writers and
+than its initialisation default or with an exception group, writes the member,
+it follows its writers and
 the field changes nothing; a member that only an initialisation writes is
 input, and declared complete it is settled leeg above the initialisation,
 which gives its value (WV-1.5-initialisation-input,
@@ -1088,8 +1096,10 @@ member complete; and per case and per input member it gives, the end state
 without that input (ch. 5.12a) keeps its every outcome in the end state with
 it. Whether the member left out is an open input member is read off the
 document: an open input member is open in the end state without its input, and
-a run that leaves out a member declared complete, or a derived member that is
-not open there, is counted apart.
+a member declared complete that nothing writes is not. A run that leaves out a
+derived member, or a member declared complete that an initialisation writes, is
+compared where that member is open in the end state without its input (its
+writers read an open value) and counted apart where it is not.
 
 Broader examples, a document per form with cases whose expectations were
 computed by hand (`spec/proposals/STRICT-EMPTY.md` §5), are in the suite
@@ -9608,9 +9618,11 @@ embodying it. In a document with `inferFromEmpty: false` the initialisation
 default is read as any default (ch. 1.5): it decides where it stands of every
 default above it that it gives way, and below a default that is open the
 target is open (WV-1.5-stack-initialisation). A stack whose one default is the
-initialisation makes no member derived: the member is input, and where it is
-open the initialisation default is not at its turn, and the target is open
-(WV-1.5-stack-initialisation-alone).
+initialisation, without an exception group, makes no member derived: the
+member is input, and where it is open the initialisation default is not at its
+turn, and the target is open (WV-1.5-stack-initialisation-alone); with an
+exception group, which decides above the input, the member is derived
+(WV-1.5-stack-initialisation-exception).
 
 ### 7.4 What defeasibility is *not* — and what it must not break
 

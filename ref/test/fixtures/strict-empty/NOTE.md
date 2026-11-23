@@ -28,3 +28,8 @@ niet gemeld is", which does not decide where gemeld is open.
 "op 3" for the meldloon: such a stack makes no member derived (ch. 1.5, "The initialisation of a stack"), so both are
 input. Without a value the strandloon is open, and the meldloon, declared complete, is settled leeg above its
 initialisation, which gives 3; with the values 7 and 4 in the case they are 7 and 4.
+
+`defaults-initialisation-exception` has one stack whose one default is its initialisation "op 5", with the exception
+"op 8 indien hij gemeld is": the exception decides above the input (ch. 7.9), so the stack makes the strandloon derived
+(ch. 1.5, "The three states"). It is 8 where gemeld holds, also with 7 in the case; 5 where gemeld stands not to hold and
+the case gives no strandloon, 7 where it gives 7; and open where gemeld is open, with or without 7 in the case.

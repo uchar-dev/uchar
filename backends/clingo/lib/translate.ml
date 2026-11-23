@@ -12993,9 +12993,10 @@ let written_on ctx ~otype ~characteristic member =
 
 (* whether a form other than an initialisation writes the attribute [member] on
    an object of the concrete type [otype]: a rule other than an initialisation,
-   or a defaults group with a default other than its initialisation default.
-   An attribute that only an initialisation writes is an input member with a
-   default value (RUNTIME-SEMANTICS ch. 1.5, "The three states") *)
+   or a defaults group with a default other than its initialisation default or
+   with an exception group, whose members decide above the input. An attribute
+   that only an initialisation writes is an input member with a default value
+   (RUNTIME-SEMANTICS ch. 1.5, "The three states") *)
 let derived_on ctx ~otype member =
   List.exists
     (fun (r : resolved_rule) ->
@@ -13009,7 +13010,7 @@ let derived_on ctx ~otype member =
        (fun (l : prioritized_defaults) ->
          List.exists (fun t -> norm t = norm member) (Option.to_list l.pd_attribute)
          && isa ctx otype l.pd_subject
-         && List.exists (fun (d : default) -> not d.default_initialisation) l.defaults)
+         && List.exists (fun (d : default) -> (not d.default_initialisation) || d.default_exceptions <> None) l.defaults)
        ctx.doc.prioritized_defaults
 
 (* --- the judgement of a condition (RUNTIME-SEMANTICS ch. 1.5) -------------
