@@ -65,3 +65,46 @@ heeft daarom alleen handgeschreven cases.
 - De zinnen: "- is niet X" en "- heeft geen X" in een situatie, "staat niet vast" in een verwachting.
 - De volgorde: deze kaart eerst, dan `one-empty` deel 1 en deel 2, dan de toolchain in één pin-bump; daarna zet de werkbank
   de regelset om die nu `niet van toepassing` gebruikt.
+
+Result (2026-11-23):
+
+- **Wat landde.** Situatie: geen nieuwe grammatica; `niet`/`geen` rijden in de `kaleNaam` van `kenmerkToewijzing`, en
+  `ScenarioResolver.characteristic` haalt ze af zoals `expectCharacteristic` (één helper `withoutNegation` voor beide),
+  met dezelfde controle van het werkwoord. `CharacteristicValue` kreeg `holds`; `CaseEmitter` schrijft
+  `characteristicsAbsent` na `characteristics` en vóór `characteristicTimelines`, alleen als de lijst niet leeg is (de
+  javadoc en `DIVERGENCES.md` noemden nog een afwijkende corpusvolgorde; nu staat er de volgorde van het schema).
+  Verwachting: twee alternatieven in `verwachting`, `verwachtAttribuutOpen` en `verwachtKenmerkOpen`, met `staatWoord` en
+  `vastWoord` op hun tekst (zoals `volgensWoord`); `ExpectationKind` kreeg `ATTRIBUTE_OPEN` en `CHARACTERISTIC_OPEN`.
+  `SemanticTokens`: de ontkenning in een situatie zoals in een verwachting, `staat` en `vast` als `keyword`. De golden
+  `jutterswet-afleiden-uit-leeg` heeft een `scenario.rgs` (zes scenario's, twee op één gedeelde situatie) die zijn zes
+  cases en `ir.json` byte voor byte geeft; `NOTE.md` zegt dat in één zin. `DIVERGENCES.md`, "Scenariotoetsen": de
+  situatievormen, twee rijen in de tabel, de weigeringen, de tokens, de getuigen; de telling 49 goldens (2026-11-23).
+- **Vier codes, niet drie.** RGS-465 (een kenmerk geldend en niet geldend in één situatieblok, ook over twee openers van
+  één label in dat blok), RGS-466 (niet geldend met een periode of op een tijdsafhankelijk kenmerk), RGS-467 ("staat niet
+  vast" in een document zonder `Afleiden uit leeg: nee`, beide vormen), en RGS-468: "staat niet vast" op een cel van een
+  gedimensioneerd attribuut. `attributeOpen` noemt geen cel; zonder die weigering zou de cel als het hele attribuut in de
+  case belanden. Op een tijdsafhankelijk attribuut of kenmerk weigert de resolver met RGS-399 en RGS-400, zoals gevraagd.
+  De open kenmerkvorm neemt geen ontkenning: "of V1 niet afhaalbaar is, staat niet vast" zoekt een kenmerk
+  "niet afhaalbaar" (RGS-241).
+- **Gate 16:** `check-scenario: PASS — 49 scenario golden(s) (floor 7) regenerate 182 case file(s) (floor 31) and their
+  ir.json byte-identically` (op main 48 en 176). `git diff --stat main -- corpus`: alleen `NOTE.md` en `scenario.rgs`.
+- **Gate 10:** `check-rgs-codes: PASS — 418 codes, 451 sites, every code used and every parameter set equal, no site
+  without a code or with a text, both catalogues held to the register, the Dutch one Dutch (floors 347, 363 and 4)` en
+  `check-regelspraak: PASS — JUnit suite green (1728 tests, floor 173); 223 rgs golden(s) re-emit byte-identically
+  (floor 80)`. Nieuw: `ScenarioStrictTest` (9 tests: de drie situatievormen in een handgeschreven case, dezelfde case in
+  een gewoon document, RGS-465 in één opener en over twee, `gebaseerd op` in beide richtingen, RGS-466 drie keer, "staat
+  niet vast" over een attribuut met `de` en `het` en over een bijvoeglijk en een bezittelijk kenmerk met en zonder
+  lidwoord en komma, RGS-467, RGS-399/400/468/244/241, en de namen `de staat`, `het gewicht of volume`, `de niet
+  uitgekeerde premie` en `vast` die lezen als voorheen) en `SemanticTokensScenarioTest.the_words_of_a_strict_scenario_are_keywords`.
+  Gate 1 PASS.
+- **Handcontrole (punt 1)**, buiten de repo in `werk/strict-scenarios/handcheck`, met de binaries en de jar van de
+  hoofdcheckout (de executors zijn op deze branch niet veranderd). Golden `jutterswet-bergingsdrempel` (gewoon document):
+  `case3-onder-quotum` met en zonder `characteristicsAbsent: ["noodweer verklaard"]`, en `case1-quotum` met en zonder
+  `["noodweer verklaard", "bergingsbevoegd"]` (het tweede een kenmerk dat een regel afleidt). Alle vier: ref
+  `oracle: PASS (2 expectations)` met dezelfde `--end-state` met en zonder het veld; clingo `clingo: PASS (2
+  expectations)`; Drools exec-model en DRL-tekst `PLAYED 1`, `--readings` dezelfde eindstand met en zonder.
+- **Bewust liggen gebleven.** De toolchain: `ScenarioData` en `SituationToRequest` lezen `i.characteristics()` en
+  nemen elk element als geldend; na een pin-bump op deze commit leest hij een kenmerk met `holds() == false` als
+  geldend tot de toolchainkaart op `holds()` filtert, dus die filter hoort in dezelfde pin-bump. Verder "- X is leeg" in
+  een situatie (`settled-empty-input`), de markers, spec, schema's, executors en `scripts/`. Geen voorstel voor
+  `spec/CONSTRUCTS.md` of `spec/PLAN.md`: de draad verandert niet.
