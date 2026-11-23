@@ -142,3 +142,7 @@ Result (2026-11-23):
   geldend tot de toolchainkaart op `holds()` filtert, dus die filter hoort in dezelfde pin-bump. Verder "- X is leeg" in
   een situatie (`settled-empty-input`), de markers, spec, schema's, executors en `scripts/`. Geen voorstel voor
   `spec/CONSTRUCTS.md` of `spec/PLAN.md`: de draad verandert niet.
+- **Landing (hoofdsessie, 2026-11-23).** Een externe review (xhigh) vond na het herstel nog één punt: in een gewoon
+  document kreeg "staat niet vast" op een tijdsafhankelijk lid RGS-467, waar RGS-399 of RGS-400 de regel in beide
+  soorten document weigert; die gaan nu voor (`34e8372f4`, de test `staat_niet_vast_on_a_timeline_…` draait over beide
+  documenten). `make gates` op `34e8372f4`: alle zeventien gates groen in 315 s (red=0).
