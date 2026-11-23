@@ -24,8 +24,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * The marker {@code (volledig gegeven)} (grammar/DIVERGENCES.md, "Volledig gegeven"): on an attribute or a characteristic it
  * writes {@code complete: true} on the member's declaration (IR-SPEC ch. 2.2), after its timeline; the two attributes
  * an opgave marker generates carry the field always; {@code (volledig gegeven)} beside {@code (mag opgegeven worden)} is RGS-463,
- * and on a member a rule or a defaults group writes on the declaring type itself RGS-464, a writer on a subtype alone
- * no reason; the token reserves no word; and it is a keyword to the semantic tokens. Measured before this card: every
+ * and on a member a writer other than an initialisation writes on the declaring type itself RGS-464, a writer on a
+ * subtype alone and an initialisation no reason; the token reserves no word; and it is a keyword to the semantic tokens. Measured before this card: every
  * document below that writes the marker was a syntax error on it.
  */
 class CompleteMarkerTest {
@@ -276,6 +276,32 @@ class CompleteMarkerTest {
                         Het vindloon van een Strandvondst moet gesteld worden op 10 indien zijn taxatie groter is dan 1000.
                 """).document();
         assertEquals(List.of("Attribute vindloon"), complete(ir));
+    }
+
+    /** A member that only an initialisation writes is input (RUNTIME-SEMANTICS ch. 1.5, "The three states"): the marker
+     *  stands there, and the field is written; beside a computing rule on the same target the rule is the writer
+     *  RGS-464 names. */
+    @Test void an_initialisation_is_no_reason() {
+        String model = """
+                Afleiden uit leeg: nee
+
+                Objecttype de Vondst (mv: Vondsten)
+                    de vangst Numeriek (geheel getal);
+                    het strandloon Numeriek (geheel getal) (volledig gegeven);
+
+                Regel strandloon aanvankelijk
+                    geldig altijd
+                        Het strandloon van een Vondst moet geïnitialiseerd worden op 5.
+                %s""";
+        assertEquals(List.of("Attribute strandloon"), complete(clean(model.formatted("")).document()));
+        Diagnostic d = refused(model.formatted("""
+
+                Regel strandloon
+                    geldig altijd
+                        Het strandloon van een Vondst moet berekend worden als zijn vangst maal 2.
+                """), "RGS-464");
+        assertTrue(d.message(Locale.forLanguageTag("nl")).contains("regel 'strandloon' op Vondst zelf schrijft"),
+                d.message(Locale.forLanguageTag("nl")));
     }
 
     // ---------------- the token ----------------

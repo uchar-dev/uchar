@@ -4717,6 +4717,15 @@ extension gives the dialect one line for it, and the wire one property on the ro
 evaluation is the executors', and an executor that does not carry that reading refuses the document by name
 (`backends/drools/README.md`).
 
+In such a document a judgement is one value of Kleene's strong table (RUNTIME-SEMANTICS ch. 1.5), whatever form reads
+it: over a value the case does not give, a test on leeg or gevuld ("indien zijn taxatie leeg is") is undetermined, as
+the comparison above is, and so are the filled-value count and a filter on gevuld; "de vrijstelling van een Vondst moet
+gesteld worden op 1 indien zijn taxatie leeg is" leaves the vrijstelling open there. Only the author closes, by declaring
+that the input of a member is complete (`(volledig gegeven)`, section "Volledig gegeven"). An initialisation is the
+lowest writer of its target and makes no member derived: with "het strandloon van een Vondst moet geïnitialiseerd
+worden op 5" alone, the strandloon is an input member with a default value, open where the case gives it none and 5
+where it is declared complete; a rule above the initialisation that is undetermined leaves it open.
+
 ### Surface syntax (additive; a new definition)
 
 ```
@@ -4781,7 +4790,10 @@ re-emits and whose cases pin the reading of RUNTIME-SEMANTICS ch. 1.5.
 uchar DIALECT EXTENSION (decision of the maintainer, 2026-11-21). In a document with `Afleiden uit leeg: nee` an input
 member the case gives no value, or a characteristic it does not name, is open: nothing stands about it, and what reads
 it does not stand either (RUNTIME-SEMANTICS ch. 1.5). For some members the author knows that the input is complete:
-where the case gives no value, there is none. Official RegelSpraak v2.3.0 has no way to write that; this extension
+where the case gives no value, there is none. That is the one way a document closes: over a member declared complete
+and given no value a test on leeg holds and the member counts as leeg, where over any other open member it is
+undetermined; a member that only an initialisation writes is input as well, and declared complete it is settled leeg
+there, where the initialisation gives its value. Official RegelSpraak v2.3.0 has no way to write that; this extension
 gives the dialect one marker on a member declaration, and the wire one field on the declaration, `complete: true`
 (IR-SPEC ch. 2.2). The frontend writes the field and gives it no meaning of its own: what it means for an evaluation is
 the executors' (RUNTIME-SEMANTICS ch. 1.5, "Complete input"), and in a document without `Afleiden uit leeg: nee` it
@@ -4848,8 +4860,9 @@ Each is one ERROR at the line of the marked declaration (witness: `CompleteMarke
   volledig; schrijf alleen '(mag opgegeven worden)' (dialect, Volledig gegeven)`. The attribute is the target of the
   generated stack, which writes it, so it is input on no object; the opgave the marker generates carries the field
   already. The marker then marks nothing.
-- RGS-464: `(volledig gegeven)` on a member that a rule or a defaults group writes on the declaring type itself, as
-  RUNTIME-SEMANTICS ch. 1.5 counts a writer: `attribuut 'vindloon' van Vondst: '(volledig gegeven)' staat op een lid
+- RGS-464: `(volledig gegeven)` on a member that a writer other than an initialisation writes on the declaring type
+  itself, as RUNTIME-SEMANTICS ch. 1.5 counts a writer (a rule other than an initialisation, or a defaults group with a
+  default other than its initialisation default or with an exception group): `attribuut 'vindloon' van Vondst: '(volledig gegeven)' staat op een lid
   dat regel 'vindloon' op Vondst zelf schrijft — het lid volgt dan op elk object van Vondst zijn schrijvers en is
   nergens invoer, dus de markering doet niets (RUNTIME-SEMANTICS ch. 1.5); laat '(volledig gegeven)' weg, of zet het
   op de invoerleden die regel 'vindloon' leest (dialect, Volledig gegeven)`. The member follows its writers on every
@@ -4857,8 +4870,11 @@ Each is one ERROR at the line of the marked declaration (witness: `CompleteMarke
   defaults lowering of §4 and the opgave lowering of §7, so a row of a decision table, a defaults group of a tree and
   the group an opgave generates are writers here as well. A writer on a subtype alone is no reason: on an object
   outside that subtype the member is input, and the marker closes it there (witness:
-  `CompleteMarkerTest.a_writer_on_a_subtype_alone_is_no_reason`). An allocation and the member assignment of an object
-  creation are no writers in that sense: ch. 1.5 reads a member a creation assigns as input on an object the case
+  `CompleteMarkerTest.a_writer_on_a_subtype_alone_is_no_reason`). An initialisation is no reason either: it is the
+  lowest writer of its target and makes no member derived, so a member it alone writes is input with a default value,
+  open where the case gives it no value, and the marker makes it settled leeg there, where the initialisation gives its
+  value (witness: `CompleteMarkerTest.an_initialisation_is_no_reason`). An allocation and the member assignment of an
+  object creation are no writers in that sense: ch. 1.5 reads a member a creation assigns as input on an object the case
   gives, and an executor refuses an allocation in a document with the property (slug `allocation`).
 
 ### Emission

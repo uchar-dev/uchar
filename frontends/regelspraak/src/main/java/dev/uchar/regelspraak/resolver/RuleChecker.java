@@ -2994,10 +2994,12 @@ final class RuleChecker {
         }
     }
 
-    /** '(volledig gegeven)' on a member that a rule or a defaults group writes on the declaring type itself, as
-     *  RUNTIME-SEMANTICS ch. 1.5 counts a writer: the member is input on no object of that type and its subtypes, and
+    /** '(volledig gegeven)' on a member that a writer other than an initialisation writes on the declaring type itself,
+     *  as RUNTIME-SEMANTICS ch. 1.5 counts a writer: the member is input on no object of that type and its subtypes, and
      *  the marker would do nothing without a word. One ERROR per marked member, at its first declaration, naming the
-     *  first writer. A writer on a subtype alone is no reason: on an object outside that subtype the member is input.
+     *  first writer. A writer on a subtype alone is no reason: on an object outside that subtype the member is input. An
+     *  initialisation is no reason either: it is the lowest writer of its target and makes no member derived, so a member
+     *  it alone writes is input, and the marker makes it settled leeg there, where the initialisation gives its value.
      *  An allocation and an object creation's member assignment are no writer in that sense (grammar/DIVERGENCES.md,
      *  "Volledig gegeven"). */
     private void completeMembers(RegelSpraakDocumentContext doc) {
@@ -3033,15 +3035,19 @@ final class RuleChecker {
         }
     }
 
-    /** The first rule or defaults group that writes the member {@code name} of {@code t} on {@code t} itself, as a part
-     *  of a message, or null. A characteristic attribution writes a characteristic, every other rule an attribute. */
+    /** The first writer other than an initialisation that writes the member {@code name} of {@code t} on {@code t}
+     *  itself, as a part of a message, or null: a rule other than an initialisation, or a defaults group with a default
+     *  other than its initialisation default or with an exception group. A characteristic attribution writes a
+     *  characteristic, every other rule an attribute. */
     private Msg ownWriter(ObjectType t, String name, boolean attribute) {
         for (ResolvedRule r : model.resolvedRules) {
-            if ((r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING) == attribute) continue;
+            if ((r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING) == attribute || r.kind() == ResolvedRule.Kind.INITIALISATIE)
+                continue;
             if (ownTarget(r.target(), name) == t) return Msg.frontend("PART.form-rule", "name", withoutVersion(r.name()));
         }
         for (PrioritizedDefaults pd : model.prioritizedDefaults)
-            if (pd.isCharacteristic() != attribute && sameName(pd.target(), name) && model.objectTypeByName(pd.subject()) == t)
+            if (pd.isCharacteristic() != attribute && sameName(pd.target(), name) && model.objectTypeByName(pd.subject()) == t
+                    && pd.defaults().stream().anyMatch(d -> !d.initialisation() || d.exceptions() != null))
                 return Msg.frontend("PART.writer-defaults-group", "name", pd.name());
         return null;
     }
