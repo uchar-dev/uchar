@@ -333,6 +333,63 @@ class SemanticTokensScenarioTest {
                 "heeft keyword", "staat keyword", "niet keyword", "vast keyword"), lines.get(11));
     }
 
+    /** A characteristic declared with a leading "niet" binds its own declaration where its whole name is written, in
+     *  a situation and in an expectation, as the scenario route reads it; beside it, "geen drijfhout" is the negation
+     *  of "drijfhout". Each line as its spans, a name with the line of the declaration it points at. Measured on the
+     *  frontend before: "niet" was a keyword and "drijfhout" bound "drijfhout", or nothing where only "niet drijfhout"
+     *  was declared. */
+    @Test void a_characteristic_declared_with_niet_binds_its_own_declaration() {
+        String alone = """
+                Objecttype de Vondst (mv: Vondsten)
+                    is niet drijfhout kenmerk (bijvoeglijk);
+                """;
+        String beside = """
+                Objecttype de Vondst (mv: Vondsten)
+                    is drijfhout kenmerk (bijvoeglijk);
+                    is niet drijfhout kenmerk (bijvoeglijk);
+                """;
+        String test = """
+                Scenario naast elkaar
+                Gegeven is de volgende situatie:
+                een Vondst V1
+                - is niet drijfhout
+                een Vondst V2
+                - is geen drijfhout
+                Met als verwacht resultaat:
+                - V1 is niet drijfhout
+                - V2 is geen drijfhout
+                """;
+        java.util.Map<Integer, List<String>> lines = lines(alone, test.substring(0, test.indexOf("een Vondst V2"))
+                + "Met als verwacht resultaat:\n- V1 is niet drijfhout\n");
+        assertEquals(List.of("- punctuation", "is keyword", "niet drijfhout characteristic 2"), lines.get(4));
+        assertEquals(List.of("- punctuation", "V1 label 3", "is keyword", "niet drijfhout characteristic 2"),
+                lines.get(6));
+        lines = lines(beside, test);
+        assertEquals(List.of("- punctuation", "is keyword", "niet drijfhout characteristic 3"), lines.get(4));
+        assertEquals(List.of("- punctuation", "is keyword", "geen keyword", "drijfhout characteristic 2"), lines.get(6));
+        assertEquals(List.of("- punctuation", "V1 label 3", "is keyword", "niet drijfhout characteristic 3"),
+                lines.get(8));
+        assertEquals(List.of("- punctuation", "V2 label 5", "is keyword", "geen keyword", "drijfhout characteristic 2"),
+                lines.get(9));
+    }
+
+    /** The spans of {@code test} read beside {@code model}, per line: text and kind, and for a reference the line of
+     *  its declaration. */
+    private static java.util.Map<Integer, List<String>> lines(String model, String test) {
+        List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("model.rgs", model),
+                new SemanticTokens.SourceFile("toets.rgs", test));
+        SemanticTokens.Document d = Resolver.tokens(files);
+        assertTrue(d.diagnostics().isEmpty(), () -> "no diagnostic: " + d.diagnostics());
+        SemanticTokensCheck.check(files, d);
+        java.util.Map<Integer, List<String>> lines = new java.util.TreeMap<>();
+        for (Span s : d.files().get(1).spans()) {
+            assertFalse(SemanticTokensCheck.unlinked(s), () -> "a reference without its declaration: " + s);
+            lines.computeIfAbsent(s.line(), x -> new ArrayList<>()).add(s.text() + " " + s.kind().wire()
+                    + (s.declaredAt() == null ? "" : " " + s.declaredAt().line()));
+        }
+        return lines;
+    }
+
     @Test void a_name_that_names_nothing_is_unresolved() {
         SemanticTokens.Document d = document();
         kind(d, "spaarpot", 0, "spaarpot", Kind.UNRESOLVED);

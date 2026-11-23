@@ -17,7 +17,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * failed before it (a situation without its block, an opener without its label) or makes a token up (an error node
  * outside the token stream: a label, the 'van' of a marker); the scenario layer reads such a tree as far as it goes.
  * Measured on the frontend before: each of the four documents below ended in an uncaught exception
- * (NullPointerException, ArrayIndexOutOfBoundsException, IllegalStateException) on one route or both.
+ * (NullPointerException, ArrayIndexOutOfBoundsException, IllegalStateException) on one route or both; the expectations
+ * 'staat niet vast' after them did the same or brought a finding beside the syntax error.
  */
 class ScenarioRecoveryTest {
 
@@ -64,21 +65,59 @@ class ScenarioRecoveryTest {
         assertEquals(List.of("RGS-216"), errors);
     }
 
+    private static final String OPEN_MODEL = """
+        Objecttype de Vondst (mv: Vondsten)
+            de afhaaldatum Datum in dagen;
+            is drijfhout kenmerk (bijvoeglijk);
+            het strandrecht kenmerk (bezittelijk);
+
+        """;
+
+    private static final String OPEN_SCENARIO = """
+        Scenario open
+        Gegeven is de volgende situatie:
+        een Vondst V1
+        Met als verwacht resultaat:
+        BULLET
+        - de gegevens zijn consistent
+        """;
+
+    /** An expectation 'staat niet vast' that the recovery cut short or into which it took another word: the syntax
+     *  error is the one finding, in a document with 'Afleiden uit leeg: nee' and in one without, where a whole one is
+     *  refused (RGS-467). Measured on the frontend before: '- of' ended in a NullPointerException on both routes, '- of
+     *  V1 strandrecht' brought RGS-244 beside the syntax error in both documents, and the other two RGS-467 in the
+     *  document without the line. */
+    @Test void an_open_expectation_the_recovery_cut_short_is_a_syntax_error_only() {
+        for (String model : List.of("Afleiden uit leeg: nee\n\n" + OPEN_MODEL, OPEN_MODEL))
+            for (String bullet : List.of("- of", "- of V1 strandrecht", "- de afhaaldatum van V1 staat niet zeker",
+                    "- of V1 drijfhout is, blijft niet vast"))
+                assertEquals(List.of("RGS-216"), syntaxErrorOnBothRoutes(model, OPEN_SCENARIO.replace("BULLET", bullet)),
+                        () -> bullet + " in\n" + model);
+    }
+
     /** Both routes return on {@code scenario} and report a syntax error; returns the codes of the ERRORs of
      *  {@code --cases}. */
     private static List<String> syntaxErrorOnBothRoutes(String scenario) {
-        ScenarioBundle b = ScenarioResolver.resolve(MODEL + scenario);
+        return syntaxErrorOnBothRoutes(MODEL, scenario);
+    }
+
+    private static List<String> syntaxErrorOnBothRoutes(String model, String scenario) {
+        ScenarioBundle b = ScenarioResolver.resolve(model + scenario);
         assertFalse(b.isOk());
         List<String> errors = codes(b.model().errors());
         assertTrue(errors.contains("RGS-216"), () -> "a syntax error: " + errors);
-        SemanticTokens.Document d = tokens(scenario);
+        SemanticTokens.Document d = tokens(model, scenario);
         assertTrue(d.diagnostics().stream().anyMatch(x -> "RGS-216".equals(x.code()) && "toets.rgs".equals(x.file())),
                 () -> "a syntax error in toets.rgs: " + d.diagnostics());
         return errors;
     }
 
     private static SemanticTokens.Document tokens(String scenario) {
-        return Resolver.tokens(List.of(new SemanticTokens.SourceFile("model.rgs", MODEL),
+        return tokens(MODEL, scenario);
+    }
+
+    private static SemanticTokens.Document tokens(String model, String scenario) {
+        return Resolver.tokens(List.of(new SemanticTokens.SourceFile("model.rgs", model),
                 new SemanticTokens.SourceFile("toets.rgs", scenario)));
     }
 

@@ -863,19 +863,17 @@ public final class ScenarioResolver {
                          Map<String, List<TimeWindow>> periods) {
         int line = k.getStart().getLine();
         boolean possessive = k.HEEFT() != null;
-        String written = withoutArticle(src(k.kaleNaam()));
-        String negated = withoutNegation(written);
-        if (negated != null) written = withoutArticle(negated);
         if (ot == null) return;
-        String characteristic = CharacteristicMatcher.find(ot, written);
+        CharacteristicRead read = readCharacteristic(ot, withoutArticle(src(k.kaleNaam())), true);
+        String characteristic = read.characteristic();
         if (characteristic == null) {
             error(line,
-                    "RGS-241", params("objectType", ot.name, "characteristic", written));
+                    "RGS-241", params("objectType", ot.name, "characteristic", read.written()));
             return;
         }
         if (!verbFits(ot, characteristic, possessive, line)) return;
         boolean temporal = ot.characteristicGranularityOf(characteristic) != null;
-        if (negated != null) {
+        if (read.negated()) {
             // characteristicsAbsent names a static characteristic; one with a timeline does not hold outside its periods
             if (temporal || k.periode() != null) {
                 error(line, "RGS-466", params("characteristic", characteristic));
@@ -1461,17 +1459,21 @@ public final class ScenarioResolver {
                 TimeWindow always = new TimeWindow(null, null);
                 if (followsExpected(t.timeline(), always, line)) t.timeline().add(new Segment(null, null, w));
             } else if (v instanceof VerwachtAttribuutOpenContext a) {
+                // the syntax error names a bullet the recovery cut short or patched, and nothing more is read from it
+                if (DefinitionResolver.recovered(a)) continue;
                 String label = a.UPPER_ID().getText();
                 String written = withoutArticle(src(a.verwachtingNaam()));
+                // the case format's attributeOpen names an attribute without dimensions, and no cell: refused first,
+                // since neither 'Afleiden uit leeg: nee' nor the labels of a cell would admit the bullet
+                String dimensioned = dimensionedAttribute(label, written, situation);
+                if (dimensioned != null) {
+                    error(line, "RGS-468", params("written", written, "attribute", dimensioned));
+                    continue;
+                }
                 Named named = expectedMember(label, written, situation, line);
                 if (named == null) continue;
                 String attr = named.attribute();
                 if (!openAdmitted(label, Msg.frontend("PART.member-phrase.attribute", "name", attr), line)) continue;
-                // the case format's attributeOpen names an attribute and no cell
-                if (named.labels() != null) {
-                    error(line, "RGS-468", params("written", written, "attribute", attr));
-                    continue;
-                }
                 if (withoutPeriodOnTimeline(label, attr, situation, line)) continue;
                 result.add(new Expectation(ExpectationKind.ATTRIBUTE_OPEN, label, attr, null, null, null, null, null, line));
             } else if (v instanceof VerwachtKenmerkContext k) {
@@ -1483,6 +1485,8 @@ public final class ScenarioResolver {
                         false, situation, line);
                 if (r != null) result.add(r);
             } else if (v instanceof VerwachtKenmerkOpenContext k) {
+                // as above; a verb the recovery made up leaves no token at all
+                if (DefinitionResolver.recovered(k) || k.IS() == null && k.HEEFT() == null) continue;
                 Expectation r = expectCharacteristic(k.UPPER_ID().getText(), withoutArticle(src(k.kaleNaam())),
                         k.HEEFT() != null, true, situation, line);
                 if (r != null) result.add(r);
@@ -1554,6 +1558,38 @@ public final class ScenarioResolver {
         return lower.startsWith("geen ") || lower.startsWith("niet ") ? written.substring(5).trim() : null;
     }
 
+    /** The characteristic a bullet names, null where it names none; whether the bullet negates it; and the name a
+     *  refusal quotes. */
+    private record CharacteristicRead(String characteristic, boolean negated, String written) {}
+
+    /** The characteristic {@code written} names on {@code ot}, as {@link CharacteristicMatcher#bind} reads one in a
+     *  rule: the whole name first, so a characteristic declared with a leading "niet" or "geen" names itself and is
+     *  never read as the negation of another; then, where {@code negatable}, the name after that word and an article,
+     *  negated. */
+    private static CharacteristicRead readCharacteristic(ObjectType ot, String written, boolean negatable) {
+        String whole = CharacteristicMatcher.find(ot, written);
+        String rest = negatable && whole == null ? withoutNegation(written) : null;
+        if (rest == null) return new CharacteristicRead(whole, false, written);
+        String name = withoutArticle(rest);
+        return new CharacteristicRead(CharacteristicMatcher.find(ot, name), true, name);
+    }
+
+    /** The dimensioned attribute {@code written} names on the instance labelled {@code label}, alone or as one of its
+     *  cells ({@link #member}); null where it names none, and where {@link #expectedMember} refuses the bullet on other
+     *  grounds: an unknown label, or a name that fits two cells (RGS-365). */
+    private String dimensionedAttribute(String label, String written, Situation situation) {
+        Instance i = situation.instance(label);
+        if (i == null || i.objectType() == null) return null;
+        ObjectType ot = i.objectType();
+        String attr = ot.attributeName(written);
+        if (attr != null) return ot.dimensionsOf(attr).isEmpty() ? null : attr;
+        List<ExpressionBuilder.CellReading> readings = ExpressionBuilder.cellReadings(model, ot, written);
+        if (readings.isEmpty()) return null;
+        ExpressionBuilder.CellChoice choice = ExpressionBuilder.chooseCell(readings);
+        if (choice.cells().size() > 1) return null;
+        return choice.cells().isEmpty() ? choice.partial().attribute() : choice.cells().get(0).attribute();
+    }
+
     /** Whether the document has open members, with the ERROR where it has none: without 'Afleiden uit leeg: nee' a
      *  member is filled or settled empty, and nothing is open (RUNTIME-SEMANTICS ch. 1.5). */
     private boolean openAdmitted(String label, Msg member, int line) {
@@ -1566,9 +1602,6 @@ public final class ScenarioResolver {
      *  before it) or, where {@code open}, is open, which takes no negation; null after an ERROR. */
     private Expectation expectCharacteristic(String label, String written, boolean has, boolean open,
                                              Situation situation, int line) {
-        String negated = open ? null : withoutNegation(written);
-        boolean absent = negated != null;
-        String name = absent ? negated : written;
         Instance i = situation.instance(label);
         if (i == null) {
             error(line,
@@ -1576,10 +1609,12 @@ public final class ScenarioResolver {
             return null;
         }
         if (i.objectType() == null) return null;
-        String characteristic = CharacteristicMatcher.find(i.objectType(), withoutArticle(name));
+        CharacteristicRead read = readCharacteristic(i.objectType(), withoutArticle(written), !open);
+        boolean absent = read.negated();
+        String characteristic = read.characteristic();
         if (characteristic == null) {
             error(line,
-                    "RGS-241", params("objectType", i.objectType().name, "characteristic", name));
+                    "RGS-241", params("objectType", i.objectType().name, "characteristic", read.written()));
             return null;
         }
         if (!verbFits(i.objectType(), characteristic, has, line)) return null;

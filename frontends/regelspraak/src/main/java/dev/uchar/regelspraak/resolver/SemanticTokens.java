@@ -1333,7 +1333,7 @@ public final class SemanticTokens {
                 role(range(r.toewijzingNaam()), ot);
                 for (TerminalNode label : r.UPPER_ID()) instanceReference(label, labels);
             } else if (t instanceof KenmerkToewijzingContext k)
-                member(withoutNegation(range(k.kaleNaam())), Kind.CHARACTERISTIC, ot);
+                member(withoutNegation(range(k.kaleNaam()), ot), Kind.CHARACTERISTIC, ot);
         }
     }
 
@@ -1408,26 +1408,32 @@ public final class SemanticTokens {
     }
 
     /** 'staat' and 'vast' of {@code staat niet vast}: words to the lexer, keywords of the expectation on this one
-     *  position ('niet' is a keyword token). */
+     *  position ('niet' is a keyword token). A word whose predicate failed is another word the recovery took in, and
+     *  keeps its lexical kind. */
     private void openWords(StaatWoordContext staat, VastWoordContext vast) {
-        claim(staat, Kind.KEYWORD, false, null);
-        claim(vast, Kind.KEYWORD, false, null);
+        if (staat != null && staat.exception == null) claim(staat, Kind.KEYWORD, false, null);
+        if (vast != null && vast.exception == null) claim(vast, Kind.KEYWORD, false, null);
     }
 
     /** {@code <LABEL> is|heeft [geen|niet] <kenmerk>}: the negation stays a keyword, and the rest names the
      *  characteristic. */
     private void characteristicOf(TerminalNode label, KaleNaamContext name, Map<String, Opened> labels) {
         instanceReference(label, labels);
-        member(withoutNegation(range(name)), Kind.CHARACTERISTIC, typeOf(label, labels));
+        ObjectType ot = typeOf(label, labels);
+        member(withoutNegation(range(name), ot), Kind.CHARACTERISTIC, ot);
     }
 
     /** {@code range} without a leading 'geen' or 'niet', which the scenario route reads as the negation of a
-     *  characteristic in a situation and in an expectation; 'geen' is a word to the lexer and is claimed as a keyword
-     *  here. Null for null. */
-    private int[] withoutNegation(int[] r) {
+     *  characteristic in a situation and in an expectation where the whole name names no characteristic of {@code ot}
+     *  (of any type where {@code ot} is null); 'geen' is a word to the lexer and is claimed as a keyword here. Null for
+     *  null. */
+    private int[] withoutNegation(int[] r, ObjectType ot) {
         if (r == null || r[0] >= r[1]) return r;
         String first = pieceText(r[0]).toLowerCase(Locale.ROOT);
         if (!first.equals("geen") && !first.equals("niet")) return r;
+        String whole = text(r[0], r[1]);
+        if (ot == null ? !members(whole, Kind.CHARACTERISTIC).isEmpty() : CharacteristicMatcher.find(ot, whole) != null)
+            return r;
         if (first.equals("geen")) claim(new int[]{r[0], r[0]}, Kind.KEYWORD, false, null);
         return new int[]{next(r[0], r[1]), r[1]};
     }

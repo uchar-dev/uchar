@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -26,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * sweep over every golden, cut at forty places and with each of twenty lines left out in turn, keeps the rest of the
  * resolution honest on recovered trees: no exception, and the output passes {@link SemanticTokensCheck}. A second sweep
  * does the same to the {@code scenario.rgs} of every golden test document, read beside its {@code source.rgs}, so the
- * scenario layer comes through the recovery too ({@link ScenarioRecoveryTest} pins the four forms that failed there).
+ * scenario layer comes through the recovery too ({@link ScenarioRecoveryTest} pins the forms that failed there).
  */
 class SemanticTokensRecoveryTest {
 
@@ -128,6 +129,48 @@ class SemanticTokensRecoveryTest {
             assertTrue(spans.stream().anyMatch(s -> s.text().equals(name) && !s.declaration() && s.declaredAt() != null
                             && s.declaredAt().line() == declared.line() && s.declaredAt().column() == declared.column()),
                     () -> "'" + name + "' points at the declaration of dg: " + spans);
+    }
+
+    /** An expectation 'staat niet vast' that the recovery cut short or into which it took another word: the tokens
+     *  come with the syntax error, and a word that failed the predicate of 'staat' or 'vast' keeps its lexical kind
+     *  where the recovery took it into the expectation. Measured on the frontend before: '- of' ended in a
+     *  NullPointerException, and 'zeker' and 'blijft' were keywords. */
+    @Test void an_open_expectation_the_recovery_cut_short_gives_its_tokens() {
+        String model = """
+                Afleiden uit leeg: nee
+
+                Objecttype de Vondst (mv: Vondsten)
+                    de afhaaldatum Datum in dagen;
+                    is drijfhout kenmerk (bijvoeglijk);
+                    het strandrecht kenmerk (bezittelijk);
+                """;
+        List<Map.Entry<String, List<String>>> words = List.of(
+                Map.entry("- of", List.of("of keyword")),
+                Map.entry("- of V1 strandrecht", List.of("of keyword", "V1 label", "strandrecht characteristic")),
+                Map.entry("- de afhaaldatum van V1 staat niet zeker",
+                        List.of("de keyword", "afhaaldatum attribute", "van keyword", "V1 label", "staat keyword",
+                                "niet keyword", "zeker word")),
+                Map.entry("- of V1 drijfhout is, blijft niet vast",
+                        List.of("of keyword", "V1 label", "drijfhout characteristic", "is keyword", ", punctuation",
+                                "blijft word", "niet keyword", "vast keyword")));
+        for (var e : words) {
+            String scenario = """
+                    Scenario open
+                    Gegeven is de volgende situatie:
+                    een Vondst V1
+                    Met als verwacht resultaat:
+                    """ + e.getKey() + "\n- de gegevens zijn consistent\n";
+            List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("model.rgs", model),
+                    new SemanticTokens.SourceFile("toets.rgs", scenario));
+            SemanticTokens.Document d = Resolver.tokens(files);
+            assertTrue(d.diagnostics().stream().anyMatch(x -> "RGS-216".equals(x.code())),
+                    () -> e.getKey() + ": the syntax error is in the output: " + d.diagnostics());
+            SemanticTokensCheck.check(files, d);
+            List<String> line = new ArrayList<>();
+            for (SemanticTokens.Span s : d.files().get(1).spans())
+                if (s.line() == 5 && !s.text().equals("-")) line.add(s.text() + " " + s.kind().wire());
+            assertEquals(e.getValue(), line, e.getKey());
+        }
     }
 
     /** Floors, measured at the build (card semantic-tokens, 2026-10-22): the cut sources read, and how many of them

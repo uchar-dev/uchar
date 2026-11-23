@@ -416,4 +416,4 @@ RGS-464	complete-on-written-member	ERROR	complete,kind,name,objectType,writer
 RGS-465	characteristic-holds-and-not-in-block	ERROR	characteristic,label
 RGS-466	characteristic-absent-with-period	ERROR	characteristic
 RGS-467	open-expectation-without-open-members	ERROR	label,member
-RGS-468	open-expectation-on-cell	ERROR	attribute,written
+RGS-468	open-expectation-on-dimensioned-attribute	ERROR	attribute,written
