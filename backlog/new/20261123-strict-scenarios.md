@@ -1,6 +1,6 @@
 # strict-scenarios: een toetsscenario voor een strikt document
 
-*Voorstel van de hoofdsessie, 2026-11-23; nog niet besloten en niet begonnen. Volgt uit het besluit `remove-absence-markers`:
+*Voorstel van de hoofdsessie, 2026-11-23; nog niet besloten en niet begonnen. Volgt uit het besluit `one-empty`:
 "nog niet" en "nooit" op één attribuut scheidt voortaan een strikt document, en een toetsdocument daarvan moet dat kunnen
 zeggen. Bijgewerkt na een tweede review (extern model, 2026-11-23).*
 
@@ -30,12 +30,13 @@ heeft daarom alleen handgeschreven cases.
    vaststaand leeg in de situatie hoort hier niet bij: dat vraagt `attributesEmpty` in het caseschema (kaart
    `settled-empty-input`, geparkeerd).
 4. Gate 16 regenereert; een golden met een `scenario.rgs` voor een strikt document (het strikte deel van de kenmerkgolden van
-   `remove-absence-markers`, of `jutterswet-afleiden-uit-leeg`).
+   `one-empty`, of `jutterswet-afleiden-uit-leeg`).
 5. **Toolchain** (pin-bump): `ScenarioData`, `SituationToRequest` en de playground zetten `characteristicsAbsent` om in
    `{"state": "holdsNot"}` en lezen `attributeOpen` en `characteristicOpen` als verwachting.
 
 ## Besluiten voor de eigenaar
 
 - De zinnen: "- is niet X" en "- heeft geen X" in een situatie, "staat niet vast" in een verwachting.
-- De volgorde: voorstel is deze kaart eerst, vóór de overstap van de regelset die nu `niet van toepassing` gebruikt en vóór
-  `remove-absence-markers`, zodat die regelset haar "nog niet"-gevallen als open kan toetsen.
+- De volgorde: voorstel is deze kaart eerst, samen met deel 2 van `one-empty`, vóór de overstap van de regelset die nu
+  `niet van toepassing` gebruikt en vóór deel 1 van `one-empty`, zodat die regelset haar "nog niet"-gevallen als open kan
+  toetsen.

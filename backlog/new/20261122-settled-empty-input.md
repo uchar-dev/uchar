@@ -3,7 +3,7 @@
 *Geparkeerd door de eigenaar op 2026-11-22. Voorstel van de hoofdsessie van dezelfde dag; niet begonnen.*
 
 Reden: een tweede weg om op een leeg attribuut door te rekenen maakt de lezing van leeg moeilijker te begrijpen, en zij moet op bekende logica blijven rusten; sluiten is aan de auteur (`(volledig gegeven)`, een kenmerk). Sinds het
-besluit van 2026-11-23 (kaart `remove-absence-markers`) vervalt ook de marker `niet van toepassing`; "er is er geen" als invoer bestaat dan alleen nog als kenmerk dat de casus geeft. Wat overblijft, is een aanvrager die zeker weet dat er niets is bij een attribuut zonder marker, en een strikt
+besluit van 2026-11-23 (kaart `one-empty`) vervalt ook de marker `niet van toepassing`; "er is er geen" als invoer bestaat dan alleen nog als kenmerk dat de casus geeft. Wat overblijft, is een aanvrager die zeker weet dat er niets is bij een attribuut zonder marker, en een strikt
 antwoord `{"state": "empty"}` dat als verzoek naar een volgende regelset gaat. Weer oppakken als een van die twee zich voordoet.
 
 ## Aanleiding
