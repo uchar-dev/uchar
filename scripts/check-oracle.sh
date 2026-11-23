@@ -70,7 +70,7 @@ EXPECTED_MIN_PRESERVED_CASES=782    # 2026-11-22: measured 782 (check 5: their c
 # strict reading from the ordinary one, and the gate fails.
 PRESERVATION_MUTANT=jutterswet-leeg-deeltal
 
-EXPECTED_MIN_MONOTONE_RUNS=2648     # 2026-11-23: measured 2648 (check 6: runs without one input compared with the case), raised from 2226 with the card one-empty, part 2: a test on leeg or gevuld, the filled-value count, a fold filter on gevuld and an initialisation read over an open value as every other read is, so the 396 runs in which a closure decided, until then counted apart, are compared
+EXPECTED_MIN_MONOTONE_RUNS=2652     # 2026-11-23: measured 2652 (check 6: runs without one input compared with the case), raised from 2226 with the card one-empty, part 2: a test on leeg or gevuld, the filled-value count, a fold filter on gevuld and an initialisation read over an open value as every other read is, so the 396 runs in which a closure decided, until then counted apart, are compared; 2648 until the member left out was read off the document, which compares the 4 runs of jutterswet-keurunie case2, whose case spells the characteristics otherwise than their declaration
 
 # check 6's own red row: a run whose member left out is not open without its value, compared all the same, must lose
 # an outcome. Measured 2026-11-23: jutterswet-volledig-gegeven case2 without the toeslag of V1, which is declared
@@ -302,11 +302,17 @@ fi
 # as it is, both with `runner --end-state`: the end state of ch. 5.12a with its open members. The run without the input
 # keeps every outcome of its end state in the other: each of its lines that is not open stands there; a member it has
 # no line for (settled leeg, or standing not to hold) has none there either; a link or an object the other adds lies on
-# a relation it has open. A run in which the member left out is not open without its value (a value the case gives a
-# derived member, or a member declared complete, ch. 1.5) is counted apart: that member is no open input member. Every
-# other difference fails by name unless MONOTONE_GAPS lists it; the comparison passes rows of its own, and the run of
-# MONOTONE_MUTANT, compared all the same, must lose an outcome. The runs go in one batch, one runner per core, and are
-# judged in corpus order.
+# a relation it has open. Whether the member left out is an open input member is read off the document, not off ref's
+# end state, so that ref closing such a member cannot take its run out of the comparison: a member a writer other than
+# an initialisation writes on the object's type (a rule other than an initialisation, or a defaults group with a
+# default other than its initialisation default) is derived, and an input member whose declaration says its input is
+# complete is settled leeg without its value (ch. 1.5). A run that leaves out an open input member must have it open in
+# ref's end state, and a run that leaves out a complete one must not; each fails by name where it does not. A run that
+# leaves out a derived member is compared where ref names the member open, and else counted apart, and so is one that
+# leaves out a complete member. Every other difference fails by name unless MONOTONE_GAPS lists it; the comparison,
+# the reading of the document and the judgement of a run pass rows of their own, and the run of MONOTONE_MUTANT,
+# compared all the same, must lose an outcome. The runs go in one batch, one runner per core, and are judged in corpus
+# order.
 if ! python3 -I - "$list" "$work" <<'PYEOF'
 import collections, copy, json, os, sys
 
@@ -373,7 +379,7 @@ if ! parallel_run "$work/mono/run" "$procs"; then
     exit 1
 fi
 if ! monotone=$(python3 -I - "$work" "$MONOTONE_MUTANT" "$MONOTONE_GAPS" "$EXPECTED_MIN_MONOTONE_RUNS" <<'PYEOF'
-import collections, os, re, sys
+import collections, json, os, re, sys
 
 work, mutant, gaps_text = sys.argv[1], sys.argv[2], sys.argv[3]
 min_runs = int(sys.argv[4])
@@ -478,6 +484,131 @@ for name, reduced, full, keeps in rows:
     if (not lost(reduced, full)) != keeps:
         problems.append('the comparison fails its row "%s": it says %s' % (name, "keeps" if not keeps else "loses"))
 
+
+# --- whether a member left out is an open input member, read off the document (RUNTIME-SEMANTICS ch. 1.5) ---
+def norm(s):
+    return " ".join(s.split()).lower()
+
+
+def chain(doc, otype):
+    # the object type [otype] and its supertypes, nearest first
+    types = {norm(o["name"]): o for o in doc["model"]["objectTypes"]}
+    out, t = [], norm(otype)
+    while t is not None:
+        if t not in types or types[t] in out:
+            raise ValueError("no object type %r, or a cycle of supertypes through it" % t)
+        out.append(types[t])
+        t = norm(types[t]["supertype"]) if "supertype" in types[t] else None
+    return out
+
+
+def writers(doc):
+    # (subject type, kind, member) of every writer that makes a member derived: a rule version other than an
+    # initialisation (a version without a presentation assigns a characteristic), and a defaults group with a default
+    # other than its initialisation default
+    for rule in doc["rules"]["rules"]:
+        for v in rule["versions"]:
+            if v.get("initialisation") is True:
+                continue
+            t = v["target"]["attribute"] if v["target"]["node"] == "DimensionCellRead" else v["target"]
+            yield t["subjectType"], "attribute" if "presentation" in v else "characteristic", t["attribute"]
+    for group in doc["rules"].get("prioritizedDefaults", []):
+        if any(d.get("initialisation") is not True for d in group["defaults"]):
+            kind = "characteristic" if "characteristic" in group else "attribute"
+            yield group["subject"], kind, group[kind]
+
+
+def standing(doc, otype, kind, member):
+    # what the member [member] of an object of [otype] is without a value, "derived", "complete" or "input", and the
+    # name its declaration gives it, by which the end state names it (a case may spell it otherwise)
+    declared = [m for o in chain(doc, otype) for m in o["attributes" if kind == "attribute" else "characteristics"]
+                if norm(m["name"]) == norm(member)]
+    if not declared:
+        raise ValueError("%s has no %s %r" % (otype, kind, member))
+    names = {norm(o["name"]) for o in chain(doc, otype)}
+    if any(k == kind and norm(m) == norm(member) and norm(t) in names for t, k, m in writers(doc)):
+        return "derived", declared[0]["name"]
+    return ("complete" if declared[0].get("complete") is True else "input"), declared[0]["name"]
+
+
+def number(n):
+    return {"node": "Literal", "value": {"number": n}}
+
+
+def ot(name, attributes, characteristics=(), supertype=None):
+    o = {"name": name, "attributes": attributes, "characteristics": [{"name": c} for c in characteristics]}
+    if supertype:
+        o["supertype"] = supertype
+    return o
+
+
+def target(subject, member):
+    return {"node": "AttributeReference", "attribute": member, "subjectType": subject}
+
+
+row_doc = {
+    "model": {"objectTypes": [
+        ot("Vondst", [{"name": "taxatie"}, {"name": "toeslag", "complete": True}, {"name": "strandloon"},
+                      {"name": "meldloon"}, {"name": "vindloon"}, {"name": "bergloon"}], ["kostbaar", "gemeld"]),
+        ot("Strandvondst", [], [], "Vondst")]},
+    "rules": {
+        "rules": [
+            {"versions": [{"target": target("Vondst", "strandloon"), "initialisation": True}]},
+            {"versions": [{"target": target("Vondst", "vindloon"), "presentation": "calculation"}]},
+            {"versions": [{"target": target("Vondst", "kostbaar")}]},
+            {"versions": [{"target": target("Strandvondst", "bergloon"), "presentation": "calculation"}]}],
+        "prioritizedDefaults": [
+            {"subject": "Vondst", "attribute": "meldloon", "defaults": [{"consequence": number("3"), "initialisation": True}]},
+            {"subject": "Vondst", "attribute": "taxatie", "defaults": [{"consequence": number("5")},
+                                                                      {"consequence": number("3"), "initialisation": True}]}]}}
+standing_rows = [
+    ("an input member", "Strandvondst", "characteristic", "gemeld", "input"),
+    ("an input member the case spells otherwise", "Vondst", "characteristic", " GEMELD", "input"),
+    ("a member declared complete, on a subtype", "Strandvondst", "attribute", "toeslag", "complete"),
+    ("a member that only an initialisation rule writes", "Vondst", "attribute", "strandloon", "input"),
+    ("a member that only the initialisation default of a stack writes", "Vondst", "attribute", "meldloon", "input"),
+    ("a member a stack with another default writes", "Vondst", "attribute", "taxatie", "derived"),
+    ("a member a calculation writes", "Strandvondst", "attribute", "vindloon", "derived"),
+    ("a characteristic an attribution writes", "Vondst", "characteristic", "kostbaar", "derived"),
+    ("a member a rule on a subtype writes, on the supertype", "Vondst", "attribute", "bergloon", "input"),
+    ("a member a rule on a subtype writes, on the subtype", "Strandvondst", "attribute", "bergloon", "derived"),
+]
+for name, otype, kind, member, want in standing_rows:
+    got, declared = standing(row_doc, otype, kind, member)
+    if got != want or declared != member.strip().lower():
+        problems.append('the reading of the document fails its row "%s": it says %s, declared as %r' % (name, got, declared))
+
+
+def judge(standing_of, state, kind, label, member):
+    # what a run without the input does in the comparison: "compare"; "apart" (a member that is not open without its
+    # value); or a failure, "closed" (an open input member ref does not name open) or "opened" (a member declared
+    # complete, which no writer makes derived, that ref names open). A derived member ref names open is compared all
+    # the same: its run can only add to the comparison
+    named_open = "%s %s %s open" % (kind, quote(label), quote(member)) in state
+    if standing_of == "input":
+        return "compare" if named_open else "closed"
+    if standing_of == "complete":
+        return "opened" if named_open else "apart"
+    return "compare" if named_open else "apart"
+
+
+def quote(s):
+    return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+judge_rows = [
+    ("an open input member ref names open", "input", ['attribute "V1" "strandloon" open'], "compare"),
+    ("an open input member ref closes (red)", "input", ['attribute "V1" "strandloon" 5'], "closed"),
+    ("a member declared complete", "complete", [], "apart"),
+    ("a member declared complete ref names open (red)", "complete", ['attribute "V1" "strandloon" open'], "opened"),
+    ("a derived member ref names open", "derived", ['attribute "V1" "strandloon" open'], "compare"),
+    ("a derived member ref does not name open", "derived", ['attribute "V1" "strandloon" 5'], "apart"),
+]
+for name, standing_of, state, want in judge_rows:
+    got = judge(standing_of, state, "attribute", "V1", "strandloon")
+    if got != want:
+        problems.append('the judgement of a run fails its row "%s": it says %s' % (name, got))
+
 gaps = {}
 for line in gaps_text.splitlines():
     if not line.strip():
@@ -500,16 +631,13 @@ def read_run(key):
     return rc, state
 
 
-def quote(s):
-    return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
-
-
 mutant_case, mutant_what = mutant.split("|", 1)
 full = {}
 counts = collections.Counter()
 mutant_lost = None
+documents = {}
 for line in open(os.path.join(work, "mono", "tasks.tsv"), encoding="utf-8"):
-    key, name, case_file, what, _doc, _file = line.rstrip("\n").split("\t")
+    key, name, case_file, what, doc_path, file = line.rstrip("\n").split("\t")
     case = name + "/" + case_file
     rc, state = read_run(key)
     if what == "-":
@@ -532,10 +660,18 @@ for line in open(os.path.join(work, "mono", "tasks.tsv"), encoding="utf-8"):
     if rc == "0":
         if case == mutant_case and what == mutant_what:
             mutant_lost = lost(state, full[case])
-        if "%s %s %s open" % (kind, quote(label), quote(member)) not in state:
+        if doc_path not in documents:
+            with open(doc_path, encoding="utf-8") as f:
+                documents[doc_path] = json.load(f)
+        with open(file, encoding="utf-8") as f:
+            otype = next(i["objectType"] for i in json.load(f)["input"]["instances"] if i["label"] == label)
+        standing_of, declared = standing(documents[doc_path], otype, kind, member)
+        verdict = judge(standing_of, state, kind, label, declared)
+        if verdict == "apart":
             counts["derived"] += 1
             continue
-        found = lost(state, full[case])
+        found = {"closed": ["ref does not name the open input member open"],
+                 "opened": ["ref names the member open, which is declared complete"]}.get(verdict) or lost(state, full[case])
     else:
         found = ["the run without the input faults (exit %s)" % rc]
     counts["runs"] += 1
@@ -559,8 +695,10 @@ if problems:
     sys.stderr.write("".join("check-oracle: FAIL (monotonicity) — %s\n" % p for p in problems))
     sys.exit(1)
 print("monotonicity: %d cases, %d runs without one input compared, floor %d, %d of a member not open without its "
-      "value; %d listed gap(s) of ch. 1.5; %d comparison rows; red row: %s loses %d outcome(s)"
-      % (counts["cases"], counts["runs"], min_runs, counts["derived"], len(gaps), len(rows), mutant, len(mutant_lost)))
+      "value; %d listed gap(s) of ch. 1.5; %d comparison rows, %d rows of the reading of the document and %d of the "
+      "judgement of a run; red row: %s loses %d outcome(s)"
+      % (counts["cases"], counts["runs"], min_runs, counts["derived"], len(gaps), len(rows), len(standing_rows),
+         len(judge_rows), mutant, len(mutant_lost)))
 PYEOF
 ); then
     status=1
