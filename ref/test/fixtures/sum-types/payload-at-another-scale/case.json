@@ -1,0 +1,36 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {
+          "a": {
+            "number": "10"
+          },
+          "b": {
+            "number": "3"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "herwaardering",
+      "value": {
+        "constructor": "Toegekend",
+        "payload": {
+          "number": "13.00"
+        }
+      }
+    }
+  ]
+}

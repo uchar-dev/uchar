@@ -191,6 +191,11 @@ faults with file/position context — never a silent fallback.
   per cell (EF-006, its place the cell), and a cell is a target of its own
   for the writers and the input beside them. A read of
   a dimensioned attribute outside a cell is refused (WF-125).
+- **Sum types** (ch. 9): a form of a sum type that no executor carries
+  (ch. 9.4: on a timeline, in a cell, in an object creation, a payload with
+  a unit, a defaults group or an initialisation on a sum-typed target) is
+  refused before anything is evaluated, with REF-015 and the slug of the
+  form (`Eval.refuse_sum_type_forms`).
 - **Not implemented** (each faults with context): multi-period grids,
   variable/constant refs, the "is gevuurd" test (row 30:
   decided as a dialect-only fixpoint predicate, not yet implemented),

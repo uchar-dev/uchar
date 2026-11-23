@@ -41,10 +41,33 @@ let decides_on_true = function Positive | Both -> true | Negative -> false
 let decides_on_false = function Negative | Both -> true | Positive -> false
 
 (* One read of a member that can be leeg: the member node, spelled as
-   --dependency-edges spells it, and the WF-127 identity of the read (the
-   same attribute read, or the same cell of it), which a gevuld test of the
-   same read discharges. *)
+   --dependency-edges spells it, and the identity of the read (the same
+   attribute read, or the same cell of it), which a gevuld test of the same
+   read discharges. *)
 type read_key = string option * string option * (string * string) list option * anchor option * string option list option
+
+(* The identity of a read: two reads are the same when they read one attribute
+   on one type over one path with one anchor, or the same cell of it (that read
+   and the same labels); any other expression has none. *)
+let rec read_key_of (e : expr) : read_key option =
+  match e with
+  | Attribute_reference { attribute_ref; object_type; navigation_bindings; anchor; _ } ->
+      Some
+        ( Option.map Checks.norm attribute_ref,
+          Option.map Checks.norm object_type,
+          Option.map (List.map (fun (b : role_binding) -> (Checks.norm b.rb_fact_type, Checks.norm b.rb_role))) navigation_bindings,
+          anchor,
+          None )
+  | Dimension_cell_read { attribute_ref = Some (Attribute_reference _ as a); labels; _ } ->
+      Option.map
+        (fun (attr, otn, path, anchor, _) -> (attr, otn, path, anchor, Some (List.map (Option.map Checks.norm) labels)))
+        (read_key_of a)
+  | Literal _ | Text_composition _ | Binary _ | Function_call _ | Instance_set_union _ | Rounding _ | Clamp _
+  | Dimension_cell_read _ | Parameter_ref _ | Variable_reference _ | Context_value _ | Bound_day _
+  | Expr_unresolved _ | Temporal_read _ | Construct _ | Match _ | Binder_ref _ | Struct_literal _ | Field_access _
+  | Let _ | List_literal _ | Lambda _ | If_then_else _ | Invoke _ | Fold _ | Map_list _ | Filter_list _
+  | List_length _ ->
+      None
 
 type carrier = { node : string; key : read_key option }
 
@@ -81,29 +104,18 @@ let leaf_kinds = [ "true-on-empty"; "empty-test"; "false-on-empty"; "negated-cha
 type env = {
   ctx : Checks.ctx; (* ctx.form: the subject of the form *)
   subject : string option; (* the subject of the position *)
-  tests : read_key list; (* the gevuld tests in scope, WF-127's dominance *)
+  tests : read_key list; (* the gevuld tests in scope *)
   form : form_info;
   emit : place -> unit;
   record_test : string -> string list -> unit; (* form key, members a test closes on *)
 }
 
-let rec strip_payload (e : expr) =
-  match e with
-  | Payload_access { base; _ } -> strip_payload base
-  | Literal _ | Text_composition _ | Binary _ | Function_call _ | Instance_set_union _ | Rounding _ | Clamp _
-  | Attribute_reference _ | Dimension_cell_read _ | Parameter_ref _ | Variable_reference _ | Context_value _
-  | Bound_day _ | Expr_unresolved _ | Temporal_read _ | Construct _ | Match _ | Binder_ref _ | Struct_literal _
-  | Field_access _ | Let _ | List_literal _ | Lambda _ | If_then_else _ | Invoke _ | Fold _ | Map_list _
-  | Filter_list _ | List_length _ ->
-      e
-
-(* A gevuld test of a read, as WF-127 reads it: the read is filled, or the
-   payload access of it is (which implies the read is). *)
+(* A gevuld test of a read: the read is filled. *)
 let filled_key (c : condition_expr) =
   match c with
   | Predicate { variety = Filled; negation = false; operand = Some p; time_period = None; _ }
   | Predicate { variety = Empty_predicate; negation = true; operand = Some p; time_period = None; _ } ->
-      Checks.payload_base_key (strip_payload p)
+      read_key_of p
   | Predicate _ -> None
   | Comparison _ | Characteristic_check _ | Role_membership _ | Time_window _ | Compound _ | Quantifier_fold _
   | Identity_check _ | Rule_status_check _ | Condition_unresolved _ ->
@@ -192,7 +204,7 @@ let union_roles (e : expr) =
   | Instance_set_union { branches; _ } -> List.map (fun (b : instance_set_branch) -> b.isb_source_role) branches
   | Literal _ | Text_composition _ | Binary _ | Function_call _ | Rounding _ | Clamp _ | Attribute_reference _
   | Dimension_cell_read _ | Parameter_ref _ | Variable_reference _ | Context_value _ | Bound_day _
-  | Expr_unresolved _ | Temporal_read _ | Construct _ | Match _ | Binder_ref _ | Payload_access _ | Struct_literal _
+  | Expr_unresolved _ | Temporal_read _ | Construct _ | Match _ | Binder_ref _ | Struct_literal _
   | Field_access _ | Let _ | List_literal _ | Lambda _ | If_then_else _ | Invoke _ | Fold _ | Map_list _
   | Filter_list _ | List_length _ ->
       []
@@ -246,11 +258,11 @@ let rec ex env at (e : expr) : carrier list =
   let each f xs = List.concat (List.mapi (fun i x -> ex env (Printf.sprintf "%s/%s/%d" at f i) x) xs) in
   match e with
   | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } ->
-      [ { node = Checks.n_attr ot a; key = Checks.payload_base_key e } ]
+      [ { node = Checks.n_attr ot a; key = read_key_of e } ]
   | Attribute_reference _ -> []
   | Dimension_cell_read
       { attribute_ref = Some (Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ }); labels; _ } ->
-      [ { node = Checks.n_cell ot a (Checks.some_names labels); key = Checks.payload_base_key e } ]
+      [ { node = Checks.n_cell ot a (Checks.some_names labels); key = read_key_of e } ]
   | Dimension_cell_read { attribute_ref; _ } -> ignore (opt "attribute" attribute_ref : carrier list); []
   | Parameter_ref { parameter = Some p; _ } -> (
       match Checks.find_ci env.ctx.doc.parameters p with
@@ -383,7 +395,6 @@ let rec ex env at (e : expr) : carrier list =
   | Match { scrutinee; arms; _ } ->
       let s = ex env (sub "scrutinee") scrutinee in
       s @ List.concat (List.mapi (fun i (_, _, b) -> ex env (Printf.sprintf "%s/arms/%d/body" at i) b) arms)
-  | Payload_access { base; _ } -> ex env (sub "base") base
   | Struct_literal { field_list; _ } ->
       List.concat (List.mapi (fun i (_, x) -> ex env (Printf.sprintf "%s/fields/%d/value" at i) x) field_list)
   | Field_access { base; _ } -> ex env (sub "base") base
@@ -525,7 +536,7 @@ let reference_subject (e : expr option) =
   | Some
       ( Literal _ | Text_composition _ | Binary _ | Function_call _ | Instance_set_union _ | Rounding _ | Clamp _
       | Dimension_cell_read _ | Parameter_ref _ | Variable_reference _ | Context_value _ | Bound_day _
-      | Expr_unresolved _ | Temporal_read _ | Construct _ | Match _ | Binder_ref _ | Payload_access _
+      | Expr_unresolved _ | Temporal_read _ | Construct _ | Match _ | Binder_ref _
       | Struct_literal _ | Field_access _ | Let _ | List_literal _ | Lambda _ | If_then_else _ | Invoke _ | Fold _
       | Map_list _ | Filter_list _ | List_length _ )
   | None ->
@@ -542,7 +553,7 @@ let target_node (r : resolved_rule) =
   | Some
       ( Literal _ | Text_composition _ | Binary _ | Function_call _ | Instance_set_union _ | Rounding _ | Clamp _
       | Dimension_cell_read _ | Parameter_ref _ | Variable_reference _ | Context_value _ | Bound_day _
-      | Expr_unresolved _ | Temporal_read _ | Construct _ | Match _ | Binder_ref _ | Payload_access _
+      | Expr_unresolved _ | Temporal_read _ | Construct _ | Match _ | Binder_ref _
       | Struct_literal _ | Field_access _ | Let _ | List_literal _ | Lambda _ | If_then_else _ | Invoke _ | Fold _
       | Map_list _ | Filter_list _ | List_length _ )
   | None ->

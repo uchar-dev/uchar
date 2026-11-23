@@ -18433,56 +18433,6 @@ let () =
     ~ir:(read (dir ^ "timeline-initialisation/ir.json"))
     ~case_text:(read (dir ^ "timeline-initialisation/case-bucket-scalar.json"))
     ~needle:"the initialisation of the timeline target \"strandloon\" reads the input per day" ();
-  (* the made Vondst holds the marker onbekend on every day the rule of 10 in
-     spring leaves, as ref holds it (WV-7.8-stapel-per-dag-creatie-marker) *)
-  (let name = "the stack of a timeline target: a creation gives a sum-typed timeline a marker" in
-   let doc, case =
-     load_pair ~ir:(read (dir ^ "timeline-creation-marker/ir.json"))
-       ~case_text:(read (dir ^ "timeline-creation-marker/case.json"))
-   in
-   let rec term = function
-     | Model.T_int i -> string_of_int i
-     | Model.T_str s -> s
-     | Model.T_func (f, []) -> f
-     | Model.T_func (f, ts) -> f ^ "(" ^ String.concat "," (List.map term ts) ^ ")"
-   in
-   let arg = function Model.A_str s -> s | Model.A_int i -> string_of_int i | Model.A_term t -> term t in
-   match Solve.run_clingo (translate doc case) with
-   | exception Uchar_ref.Value.Fault { text = m; _ } -> check (name ^ " (fault: " ^ m ^ ")") false
-   | out, Unix.WEXITED (10 | 30) ->
-       let segs =
-         List.sort compare
-           (List.filter_map
-              (fun (a : Model.atom) ->
-                match a with
-                | { name = "tl"; args = [ Model.A_term (T_func ("oc0", [ T_str "J1" ])); A_str "bergkosten"; f; t; v ] } ->
-                    Some (String.concat " " [ arg f; arg t; arg v ])
-                | _ -> None)
-              (Model.model_of_text out))
-       in
-       let day iso = match Uchar_ref.Value.date_of_iso iso with Uchar_ref.Value.Date d -> string_of_int d | _ -> assert false in
-       let spring = day "2025-03-01" and summer = day "2025-06-01" in
-       check
-         (name ^ " (" ^ String.concat "; " segs ^ ")")
-         (segs
-         = List.sort compare
-             [ String.concat " " [ "#inf"; spring; "onbekend" ]; String.concat " " [ spring; summer; "waarde(10)" ];
-               String.concat " " [ summer; "#sup"; "onbekend" ] ])
-   | _, _ -> check (name ^ ": clingo gave no model") false);
-  (* another producer of a sum-typed timeline than a constructor of a literal
-     or a copy is a refusal of this encoding, with its register code at the head,
-     as the value of an initialisation, natively or desugared, and of a member *)
-  List.iter
-    (fun d ->
-      let doc, case = load_pair ~ir:(read (dir ^ d ^ "/ir.json")) ~case_text:(read (dir ^ d ^ "/case.json")) in
-      let name = "the stack of a timeline target: another producer of a sum-typed timeline, " ^ d in
-      match translate doc case with
-      | exception Uchar_ref.Value.Fault { code = Some "CLINGO-036"; params; _ } ->
-          check name (params = [ ("attribute", "opslagkosten") ])
-      | exception Uchar_ref.Value.Fault { code; text; _ } ->
-          check (Printf.sprintf "%s (%s: %s)" name (Option.value code ~default:"no code") text) false
-      | _ -> check (name ^ ": expected CLINGO-036, got a program") false)
-    [ "sum-producer-initialisation"; "sum-producer-conditional"; "sum-producer-creation" ];
   faults_with ~name:"the stack of a timeline target: an allocation over a share for every month"
     ~ir:(read (dir ^ "timeline-allocation/ir.json")) ~case_text:(read (dir ^ "timeline-allocation/case.json"))
     ~needle:
@@ -19064,60 +19014,61 @@ let () =
   ref_matches ~name:"EF-037, no order: S1 of 8 settles the fold at itself" ~ir:every_order ~case_text:(case "8" keur);
   order_refused ~name:"EF-037, no order: clingo refuses with CLINGO-035" ~ir:every_order ~case_text:(case "8" keur)
 
-(* RUNTIME-SEMANTICS ch. 9.5, the absence markers: the constructor name of
-   several words as one ASP symbol, the payload of a sum-typed timeline and a
-   sum over it, refused, a sum-typed timeline in the input copied whole, and a
-   rule-level Construct with a parameter payload, on ref's documents
-   (ref/test/fixtures/absence-markers) and one of this suite *)
+(* The sum types (RUNTIME-SEMANTICS ch. 9), on ref's documents
+   (ref/test/fixtures/sum-types) and one of this suite: a constructor name of
+   several words, which ref plays, is a limit of this encoding (CLINGO-053); a
+   rule-level Construct with a parameter payload is carried; a computed payload
+   is leeg where ref's operator reads it leeg; a payload at another scale and a
+   Match as payload are refused by name; every form of ch. 9.4 no executor
+   carries is refused with CLINGO-052 and its slug; and a Construct in a
+   document that infers nothing from an empty value with CLINGO-049 *)
 let () =
   work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
-  let dir = "ref/test/fixtures/absence-markers/" in
+  let dir = "ref/test/fixtures/sum-types/" in
   let fixture d = (read (dir ^ d ^ "/ir.json"), read (dir ^ d ^ "/case.json")) in
-  let ir, case_text = fixture "constructors-in-one-symbol" in
-  ref_matches ~name:"absence markers: two constructors in one symbol, ref" ~ir ~case_text;
-  faults_with ~name:"absence markers: two constructors that meet in one ASP symbol are refused" ~ir ~case_text
-    ~needle:"meet in one ASP symbol \"niet_van_toepassing\"";
-  let ir, case_text = fixture "payload-of-a-timeline" in
-  faults_with ~name:"absence markers: the payload of a timeline in a scalar slot is refused" ~ir ~case_text
-    ~needle:"temporal attribute \"opslagkosten\" in a scalar slot is refused";
-  let ir, case_text = fixture "sum-of-a-timeline" in
-  faults_with ~name:"absence markers: a sum over the payloads of a timeline is refused" ~ir ~case_text
-    ~needle:"a payload access to the time-dependent attribute \"opslagkosten\" is read per day";
-  let ir, case_text = fixture "copy-of-a-timeline" in
-  both_answer ~name:"absence markers: a copy of a timeline with markers" ~ir ~case_text;
+  let refused ~name ~code ~params (ir, case_text) =
+    verifier_clean ~name ~ir;
+    let doc, case = load_pair ~ir ~case_text in
+    match translate doc case with
+    | (_ : string) -> check (name ^ ": expected a refusal, got a program") false
+    | exception Uchar_ref.Value.Fault { code = got; params = p; text } ->
+        check (name ^ ": " ^ code ^ " (" ^ Uchar_ref.Value.report ~code:got text ^ ")") (got = Some code && p = params)
+  in
+  let ir, case_text = fixture "constructor-of-several-words" in
+  ref_matches ~name:"sum types: a constructor name of several words, ref" ~ir ~case_text;
+  refused ~name:"sum types: a constructor name of several words" ~code:"CLINGO-053"
+    ~params:[ ("constructor", "Deels toegekend") ] (ir, case_text);
   both_answer ~name:"S19 door 2: a rule-level Construct with a parameter payload is carried" ~ir:param_payload_doc
     ~case_text:param_payload_case;
   (* a computed payload is leeg where ref's operator reads it leeg (RUNTIME-SEMANTICS ch. 9.1, 1.2a): plus, min and
      maal read a leeg operand as 0, verminderd met propagates its left, a date propagates and its duration counts 0;
      the payload a parameter read, and a date plus a parameter *)
-  let ir = read (dir ^ "empty-operands-of-a-computed-payload/ir.json") in
+  let ir = read (dir ^ "computed-payload/ir.json") in
   List.iter
     (fun c ->
-      both_answer ~name:("absence markers: a computed payload, " ^ c) ~ir
-        ~case_text:(read (dir ^ "empty-operands-of-a-computed-payload/" ^ c ^ ".json")))
+      both_answer ~name:("sum types: a computed payload, " ^ c) ~ir
+        ~case_text:(read (dir ^ "computed-payload/" ^ c ^ ".json")))
     [ "case1-alles-gevuld"; "case2-links-leeg"; "case3-rechts-leeg"; "case4-beide-leeg" ];
-  (* ref holds a payload's number as computed, never fitted, and restates a payload in another unit into the declared
-     one, so a payload whose term stands at another scale than the declared payload (a sum of whole numbers into a
-     payload of 2 decimals), a payload in another unit (2 t into a payload in kg) — computed or literal, at rule level,
-     in the step of a fold and in its initial value — and a Match as payload are refused by name *)
+  (* ref holds a payload's number as computed, never fitted, so a payload whose term stands at another scale than
+     the declared payload (a sum of whole numbers into a payload of 2 decimals) and a Match as payload are refused by
+     name *)
   List.iter
     (fun (d, what) ->
       let ir, case_text = fixture d in
-      let name = "absence markers: " ^ what in
-      verifier_clean ~name ~ir;
+      let name = "sum types: " ^ what in
       ref_matches ~name ~ir ~case_text;
-      let doc, case = load_pair ~ir ~case_text in
-      match translate doc case with
-      | (_ : string) -> check (name ^ ": expected a refusal, got a program") false
-      | exception Uchar_ref.Value.Fault { code; params; text } ->
-          check (name ^ ": CLINGO-006 (" ^ Uchar_ref.Value.report ~code text ^ ")") (code = Some "CLINGO-006" && params = []))
+      refused ~name ~code:"CLINGO-006" ~params:[] (ir, case_text))
     [ ("payload-at-another-scale", "a computed payload at another scale than the declared one is refused");
-      ("payload-in-another-unit", "a computed payload in another unit than the declared one is refused");
-      ("literal-payload-in-another-unit", "a literal payload in another unit than the declared one is refused");
-      ("payload-in-another-unit-in-a-fold-step", "a payload in another unit in the step of a fold is refused");
-      ("payload-in-another-unit-in-a-fold-init", "a payload in another unit in the initial value of a fold is refused");
-      ("match-as-payload", "a Match as payload is refused") ]
+      ("match-as-payload", "a Match as payload is refused") ];
+  List.iter
+    (fun (d, slug) ->
+      refused ~name:("sum types: a form no executor carries, " ^ d) ~code:"CLINGO-052" ~params:[ ("form", slug) ]
+        (fixture ("forms-not-carried/" ^ d)))
+    [ ("timeline", "timeline"); ("dimension", "dimension"); ("creation", "creation"); ("payload-unit", "payload-unit");
+      ("defaults-group", "defaults-group"); ("initialisation", "defaults-group") ];
+  refused ~name:"sum types: a Construct in a document that infers nothing from an empty value" ~code:"CLINGO-049"
+    ~params:[ ("form", "construct") ] (fixture "construct-in-a-strict-document")
 
 (* THE DAY NUMBERS THIS ENCODING HOLDS (RUNTIME-SEMANTICS ch. 3.8; card
    datumrekening-slaat-stil-om). A date step that would leave clingo's integers
@@ -19835,8 +19786,8 @@ let () =
 
 (* The leeg and gevuld tests (RUNTIME-SEMANTICS ch. 1.2) on each datatype the
    arm binds besides the number, the percentage and the day-precision date: a
-   text, an enumeration, a boolean, a datum-tijd, a sum type with an absence
-   marker (whose marker is a value, ch. 9.5), a sum type whose payload is a
+   text, an enumeration, a boolean, a datum-tijd, a sum type with a nullary
+   constructor (a value, ch. 9.1), a sum type whose payload is a
    text, an enumeration, a boolean or a datum-tijd, and a record; each read on
    the subject, over the to-one role of a Vondst to its Jutter, and as a
    parameter the case binds. On the subject and over a role one case per test:
@@ -19856,7 +19807,7 @@ let () =
   let whole = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}|} in
   let fields = Printf.sprintf {|[{"name": "waarde", "datatype": %s}, {"name": "telling", "datatype": %s}]|} num2 whole in
   let sum_type ~payload =
-    let constructors = Printf.sprintf {|[{"name": "waarde", "payload": %s}, {"name": "onbekend", "payload": null}]|} payload in
+    let constructors = Printf.sprintf {|[{"name": "Genoteerd", "payload": %s}, {"name": "Geschrapt", "payload": null}]|} payload in
     ( Printf.sprintf {|{"node": "SumType", "domain": "aantekening", "constructors": %s}|} constructors,
       Some (Printf.sprintf {|{"node": "Domain", "name": "aantekening", "datatype": {"node": "SumType", "constructors": %s}}|} constructors) )
   in
@@ -19935,20 +19886,20 @@ let () =
       ("an enumeration", (categorie, Some categorie_domain), {|{"enumeration": "schelp"}|});
       ("a boolean onwaar", ({|{"node": "Boolean"}|}, None), {|{"boolean": false}|});
       ("a datum-tijd", ({|{"node": "Date", "precision": "millisecond"}|}, None), {|{"dateTime": "2026-03-04T06:30:00"}|});
-      ("the absence marker of a sum type", sum_number, {|{"constructor": "onbekend"}|});
+      ("a nullary constructor of a sum type", sum_number, {|{"constructor": "Geschrapt"}|});
       ( "a sum type with a text payload",
         sum_type ~payload:{|{"node": "Text"}|},
-        {|{"constructor": "waarde", "payload": {"text": "Noorderstrand"}}|} );
+        {|{"constructor": "Genoteerd", "payload": {"text": "Noorderstrand"}}|} );
       ( "a sum type with an enumeration payload",
         (let t, d = sum_type ~payload:categorie in
          (t, Option.map (fun d -> d ^ ", " ^ categorie_domain) d)),
-        {|{"constructor": "waarde", "payload": {"enumeration": "hout"}}|} );
+        {|{"constructor": "Genoteerd", "payload": {"enumeration": "hout"}}|} );
       ( "a sum type with a boolean payload",
         sum_type ~payload:{|{"node": "Boolean"}|},
-        {|{"constructor": "waarde", "payload": {"boolean": false}}|} );
+        {|{"constructor": "Genoteerd", "payload": {"boolean": false}}|} );
       ( "a sum type with a datum-tijd payload",
         sum_type ~payload:{|{"node": "Date", "precision": "millisecond"}|},
-        {|{"constructor": "waarde", "payload": {"dateTime": "2026-03-04T06:30:00"}}|} );
+        {|{"constructor": "Genoteerd", "payload": {"dateTime": "2026-03-04T06:30:00"}}|} );
       ("a record", (struct_type, struct_domain), {|{"struct": {"waarde": {"number": "1.00"}, "telling": {"number": "3"}}}|})
     ];
   (* equal and notEqual over a role: the Jutter's value against the Vondst's
@@ -19980,8 +19931,8 @@ let () =
       ("a boolean", ({|{"node": "Boolean"}|}, None), {|{"boolean": false}|}, {|{"boolean": true}|});
       ( "a sum type",
         sum_number,
-        {|{"constructor": "onbekend"}|},
-        {|{"constructor": "waarde", "payload": {"number": "1.00"}}|} );
+        {|{"constructor": "Geschrapt"}|},
+        {|{"constructor": "Genoteerd", "payload": {"number": "1.00"}}|} );
       ( "a record",
         (struct_type, struct_domain),
         {|{"struct": {"waarde": {"number": "1.00"}, "telling": {"number": "3"}}}|},
@@ -20011,7 +19962,7 @@ let () =
       ("an enumeration", (categorie, Some categorie_domain), {|{"enumeration": "schelp"}|});
       ("a boolean", ({|{"node": "Boolean"}|}, None), {|{"boolean": true}|});
       ("a datum-tijd", (datetime, None), {|{"dateTime": "2026-03-04T06:30:00"}|});
-      ("a sum type", sum_number, {|{"constructor": "waarde", "payload": {"number": "1.00"}}|});
+      ("a sum type", sum_number, {|{"constructor": "Genoteerd", "payload": {"number": "1.00"}}|});
       ("a record", (struct_type, struct_domain), {|{"struct": {"waarde": {"number": "1.00"}, "telling": {"number": "3"}}}|}) ];
   plays ~name:"ch5.7 an unread parameter, a text on a timeline"
     ~ir:
@@ -21968,41 +21919,6 @@ let () =
       ("assigned an open value beside a rule that fills nothing", [ ("ervaring", "2") ], [], ("open", "open", "open", "holds"));
       ("assigned an open value beside an open rule", [], [], ("open", "open", "open", "open")) ]
 
-(* an assignment of a value of a sum type is one boundary as well: filled with
-   a constructor, or open *)
-let () =
-  work @@ fun () ->
-  let keur =
-    Printf.sprintf {|{"node": "SumType", "domain": "keur", "constructors": [{"name": "waarde", "payload": %s}, {"name": "onbekend", "payload": null}]}|} ov_num
-  in
-  let keur_type ?(chars = []) name attr =
-    Printf.sprintf
-      {|{"node": "ObjectType", "name": "%s", "animate": false, "plural": "%sen", "attributes": [{"node": "Attribute", "name": "%s", "datatype": %s}], "characteristics": [%s]}|}
-      name name attr keur
-      (String.concat ", " (List.map (fun k -> Printf.sprintf {|{"node": "Characteristic", "name": "%s", "kind": "adjectival"}|} k) chars))
-  in
-  let creation =
-    Printf.sprintf
-      {|{"node": "ObjectCreation", "name": "proefvondst", "versions": [{"createdType": "Vondst", "subject": "Jutter", "assignments": [%s], "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "proefvangst", "role": "proefvondst"}}]}|}
-      (ov_assign "keur" (ov_attr ~ty:"Jutter" "keuring"))
-  in
-  let ir =
-    ov_doc ~fact_types:[ ov_proefvangst ] ~object_creations:[ creation ]
-      ~domains:
-        [ Printf.sprintf {|{"node": "Domain", "name": "keur", "datatype": {"node": "SumType", "constructors": [{"name": "waarde", "payload": %s}, {"name": "onbekend", "payload": null}]}}|} ov_num ]
-      [ keur_type ~chars:[ "gekeurd" ] "Jutter" "keuring"; keur_type "Vondst" "keur" ]
-      [ ov_rule ~ty:"Jutter" ~name:"gekeurd" ~cond:(ov_test "filled" (ov_attr ~path:[ ("proefvangst", "proefvondst") ] "keur")) "gekeurd" None ]
-  in
-  List.iter
-    (fun (name, keuring, want) ->
-      ov_frame ~name:("WV-1.5-creation-member (a sum type, " ^ name ^ ")") ~ir
-        ~case_text:
-          (ov_case
-             [ Printf.sprintf {|{"label": "J1", "objectType": "Jutter", "attributes": {%s}, "roles": {}, "characteristics": []}|} keuring ]
-             [ ov_char_is ~label:"J1" "gekeurd" want ])
-        ())
-    [ ("a marker", {|"keuring": {"constructor": "onbekend"}|}, "holds"); ("open", "", "open") ]
-
 (* WV-1.5-fact-creation over a relation that is open: "een keurvondst van een
    Jutter is een hulpvondst van de Jutter", with the hulpvondsten of a Jutter
    that is not gemeld: where gemeld is not named, the keurtal and the gekeurd of
@@ -22203,7 +22119,7 @@ let () =
     [ "absent-link"; "absent-link-path"; "characteristic"; "closed-input"; "comparison"; "composite-filled-test";
       "compound-all"; "compound-any"; "compound-counting"; "compound-none"; "consistency"; "defaults-characteristic";
       "defaults-stack"; "defaults-subtype"; "filled-test"; "filled-test-not-closure"; "initialisation";
-      "input-above-computation"; "input-above-computation-open"; "let"; "let-closure"; "marker"; "navigated-read"; "settled-empty";
+      "input-above-computation"; "input-above-computation-open"; "let"; "let-closure"; "navigated-read"; "settled-empty";
       "quantifier-fold"; "settled-empty-date"; "settled-empty-stack"; "empty-by-fault"; "listed-fold"; "set-fold";
       "settled-empty-fold"; "fact-creation"; "object-creation" ]
   and refused = [ ("arithmetic", "CLINGO-005", None); ("exact-digits", "CLINGO-046", None) ]

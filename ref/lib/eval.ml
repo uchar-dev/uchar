@@ -262,6 +262,78 @@ let refuse_ranking_fold (kind : function_kind) attribute =
      sum and the total collapse a timeline, and a ranking fold over a timeline is refused"
     fold attribute
 
+(* The forms of a sum type no executor carries (RUNTIME-SEMANTICS ch. 9.4,
+   "Forms not carried"), by their slugs and in the order of that list. A
+   document that holds one is refused by name before anything is evaluated,
+   the first of the list it holds named; the runner calls this for every
+   entrance and [evaluate] for itself *)
+let sum_type_forms = [ "timeline"; "dimension"; "creation"; "payload-unit"; "defaults-group" ]
+
+let refuse_sum_type_forms (doc : document) =
+  let found = ref [] in
+  let refuse form = if not (List.mem form !found) then found := form :: !found in
+  let is_sum = function Some (Sum_type _) -> true | _ -> false in
+  let sum_attribute otn a =
+    match Ir_v0.Checks.effective_ot doc otn with
+    | Some ot -> is_sum (Option.join (Ir_v0.Checks.find_ci ot.attributes a))
+    | None -> false
+  in
+  List.iter
+    (fun (_, (ot : object_type)) ->
+      List.iter
+        (fun (a, dt) ->
+          if is_sum dt then begin
+            if Ir_v0.Checks.attr_temporal ot a then refuse "timeline";
+            if Ir_v0.Checks.attr_dimensions ot a <> None then refuse "dimension"
+          end)
+        ot.attributes)
+    doc.object_types;
+  List.iter (fun (_, (p : parameter)) -> if is_sum p.par_datatype && p.par_granularity <> None then refuse "timeline")
+    doc.parameters;
+  List.iter
+    (fun (oc : resolved_object_creation) ->
+      match oc.created_type with
+      | Some otn ->
+          if List.exists (fun (t : assignment) -> match t.to_attribute with Some a -> sum_attribute otn a | None -> false)
+               oc.assignments
+          then refuse "creation"
+      | None -> ())
+    doc.object_creations;
+  List.iter
+    (function
+      | _, Some (Sum_type { constructor_list; _ }) ->
+          if List.exists
+               (function
+                 | _, Some (Number { measure_unit = Some _; _ } | Percentage { measure_unit = Some _; _ }) -> true
+                 | _ -> false)
+               constructor_list
+          then refuse "payload-unit"
+      | _ -> ())
+    doc.domain_specs;
+  List.iter
+    (fun (g : prioritized_defaults) ->
+      match g.pd_attribute with Some a when sum_attribute g.pd_subject a -> refuse "defaults-group" | _ -> ())
+    doc.prioritized_defaults;
+  (* an initialisation is the lowest default of a defaults group on its target
+     (ch. 7.7) *)
+  List.iter
+    (fun (r : resolved_rule) ->
+      match (r.rr_presentation, Ir_v0.Checks.written_reference r.objective) with
+      | Some Initialisation, Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ })
+        when sum_attribute otn a ->
+          refuse "defaults-group"
+      | _ -> ())
+    doc.resolved_rules;
+  match List.find_opt (fun form -> List.mem form !found) sum_type_forms with
+  | None -> ()
+  | Some form ->
+      Value.faultc
+        ~params:[ ("form", form) ]
+        "REF-015"
+        "the document holds a sum type in a form no executor carries (RUNTIME-SEMANTICS ch. 9.4), the %s: it is \
+         refused, not evaluated"
+        form
+
 (* inferFromEmpty false (IR-SPEC ch. 2) asks for the reading that infers
    nothing from an empty value (RUNTIME-SEMANTICS ch. 1.5). This interpreter
    carries it for a rule, a defaults group, a creation off a cycle, a
@@ -280,8 +352,8 @@ let refuse_ranking_fold (kind : function_kind) attribute =
 let uncarried_forms =
   [ "allocation"; "creation-cycle"; "uniqueness"; "start-point"; "day-kind"; "function-def"; "timeline-member";
     "dimension-cell"; "dimension-fold"; "time-proportional-part"; "temporal-total"; "builtin-filter";
-    "variable-reference"; "unresolved"; "temporal-read"; "match"; "record"; "list-family"; "invoke"; "whole-period";
-    "time-window"; "rule-status-check"; "let-in-composite" ]
+    "variable-reference"; "unresolved"; "temporal-read"; "match"; "construct"; "record"; "list-family"; "invoke";
+    "whole-period"; "time-window"; "rule-status-check"; "let-in-composite" ]
 
 let refuse_uncarried (doc : document) =
   if not doc.infer_from_empty then begin
@@ -338,8 +410,7 @@ let refuse_uncarried (doc : document) =
       | Binary { left_side; right_side; _ } -> opt left_side; opt right_side
       | Rounding { base_expr; _ } -> opt base_expr
       | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr; opt minimum; opt maximum
-      | Construct { argument; _ } -> opt argument
-      | Payload_access { base; _ } -> expr lets base
+      | Construct _ -> refuse "construct"
       | Let { binder; value; body; _ } -> expr lets value; expr (SMap.add (norm binder) false lets) body
       | Function_call
           { kind; call_arguments; element_object_type; filter; dimension_selections; grain; source_role; source_path;
@@ -1217,9 +1288,6 @@ let rec is_period_arithmetic (e : expr) =
   | Binary { op = Plus | Min | Reduced_by | Times | Divided_by | Divided_by_abs | Percentage_of; _ } -> true
   | Function_call { kind = Sum_function; element_object_type = Some _; _ } -> true
   | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } | Parameter_ref _ -> true
-  (* a constructor of a literal holds on every day, as the literal does
-     (ch. 9.5): a marker written in a period window *)
-  | Construct { argument = None | Some (Literal _); _ } -> true
   | Rounding { base_expr = Some b; _ } -> is_period_arithmetic b
   | _ -> false
 
@@ -1381,35 +1449,6 @@ let literal_value (variant : literal_variant) (typ : datatype option) =
    binder's binding. A characteristic is no attribute and has no value
    type (WF-080), so its name types to None, as in the verifier. Every
    other node carries its own annotation. *)
-(* the payload of [v] where it carries the constructor [c] (ch. 9.5), and
-   leeg where it carries another constructor or is leeg *)
-let payload_of c (v : Value.t) =
-  match v with
-  | Value.Ctor (tag, Some p) when norm tag = norm c -> p
-  | Value.Empty | Value.Ctor _ -> Value.Empty
-  | v -> Value.fault "payload access base is %s, not a constructor value" (Value.to_string v)
-
-(* the payload [v] of the constructor [tag] of the sum type [typ] as a value
-   of the declared payload datatype (ch. 9.1; WF-062 reads the argument as a
-   write): a number in another unit restated into the payload's declared
-   unit, read off the declaration of the domain (ch. 2.10), as the write
-   boundary restates (ch. 2.4, 2.6); every other value as it is *)
-let in_payload_unit env (typ : datatype option) tag (v : Value.t) =
-  let declared =
-    match typ with
-    | Some (Sum_type { domain_spec; _ }) -> (
-        match Ir_v0.Checks.find_ci env.doc.domain_specs domain_spec with
-        | Some (Some (Sum_type { constructor_list; _ })) -> (
-            match List.find_opt (fun (c, _) -> norm c = norm tag) constructor_list with
-            | Some (_, Some (Number { measure_unit = Some m; _ } | Percentage { measure_unit = Some m; _ })) -> Some m
-            | _ -> None)
-        | _ -> None)
-    | _ -> None
-  in
-  match (declared, v) with
-  | Some m, Value.Num (q, (Value.Unit _ as u)) -> Value.Num (Arith.restate_into (Value.Unit m) q u, Value.Unit m)
-  | _ -> v
-
 let rec static_type env (e : expr) : datatype option =
   match e with
   | Attribute_reference { attribute_ref = Some a; object_type = Some ot; _ } -> (
@@ -1439,7 +1478,6 @@ let rec static_type env (e : expr) : datatype option =
   | Let { typ; _ }
   | Struct_literal { typ; _ }
   | Field_access { typ; _ }
-  | Payload_access { typ; _ }
   | List_literal { typ; _ }
   | If_then_else { typ; _ }
   | Invoke { typ; _ }
@@ -2202,7 +2240,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
       | v ->
           Value.fault "temporal-read date operand is %s, must be a day-precision date"
             (Value.to_string v))
-  | Construct { typ; constructor_; argument; _ } -> (
+  | Construct { constructor_; argument; _ } -> (
       (* ch. 9.1: a leeg argument propagates — a constructor value never
          carries a leeg payload; a nullary constructor (argument absent) is
          gevuld by construction *)
@@ -2211,7 +2249,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
       | Some a -> (
           match eval_expr env world self ~err a with
           | Value.Empty -> Value.Empty
-          | v -> Value.Ctor (constructor_, Some (in_payload_unit env typ constructor_ v))))
+          | v -> Value.Ctor (constructor_, Some v)))
   | Match { scrutinee; arms; _ } -> (
       (* ch. 9.2: evaluate the scrutinee; a leeg scrutinee propagates leeg
          (no implicit leeg-arm); otherwise the unique arm for the tag, with
@@ -2416,21 +2454,6 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
                 "field %S is not present on the record value (unreachable on a verifier-clean document)"
                 field_name)
       | v -> Value.fault "field access base is %s, not a record value" (Value.to_string v))
-  | Payload_access { base; constructor_; _ } ->
-      (* ch. 9.5: the payload where the value carries the constructor, and
-         leeg where it carries another one or is leeg, as a failed to-one
-         navigation is leeg; WF-127 holds the node under a test of its
-         constructor, so that leeg never counts on as 0. A time-dependent
-         attribute has a reading per day, which is not executed here *)
-      (match base with
-      | Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ }
-        when Ir_v0.Checks.attr_temporal (object_type env otn) a ->
-          Value.fault
-            "a payload access to the time-dependent attribute %S is read per day (ch. 9.5), which this \
-             interpreter does not execute (no corpus case)"
-            a
-      | _ -> ());
-      payload_of constructor_ (eval_expr env world self ~err base)
   | List_literal { elements; _ } ->
       (* ch. 10.1: a list value; an element evaluating leeg propagates —
          the whole literal evaluates leeg (a list carries no hole) *)
@@ -3105,31 +3128,6 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
         `Values
           (contributing_values members
              (map_in_order (fun i -> member_value (fun () -> World.read_attr world i member)) members))
-    (* the payload of each member (ch. 9.5): the set source reads the
-       attribute of the element type and takes the constructor's payload out
-       of it, leeg where the member carries another constructor; WF-127 holds
-       the filter to a gevuld test of it, so a member with a marker is no
-       contributor. A time-dependent attribute has a reading per day, which
-       is not executed here *)
-    | ( Some el,
-        [ Payload_access
-            { base = Attribute_reference { attribute_ref = Some name; navigation_bindings = None; anchor = None; _ };
-              constructor_; _ } ] )
-      when ranged
-           && (match kind with
-              | Sum_function | Minimum | Maximum | First | Last | Filled_count -> true
-              | _ -> false) ->
-        if Ir_v0.Checks.attr_temporal (object_type env el) name then
-          Value.fault
-            "a payload access to the time-dependent attribute %S is read per day (ch. 9.5), which this \
-             interpreter does not execute (no corpus case)"
-            name;
-        let members =
-          filter_in_order keep (fold_members ?binding:source_role ?path:source_path env world self ~element:el)
-        in
-        `Values
-          (contributing_values members
-             (map_in_order (fun i -> member_value (fun () -> payload_of constructor_ (World.read_attr world i name))) members))
     (* WF-037, the fold-source arm, in the verifier's sentence: the one
        argument of an aggregation that carries an elementType is an
        AttributeReference, and any other node there is refused by name. A
@@ -4401,8 +4399,7 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
            (List.map
               (fun (s : Timeline.segment) -> { s with s_value = Arith.round_v mode_kind decimal_places s.s_value })
               tl))
-  | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ }
-  | Construct { argument = None | Some (Literal _); _ } ->
+  | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } ->
       scalar_everywhere env w self ~err ~root e
   | Parameter_ref { parameter = Some p; _ } -> (
       match Ir_v0.Checks.find_ci env.doc.parameters p with
@@ -6021,7 +6018,6 @@ let vintage_read_params (doc : document) : string list =
         List.iter (fun (_, _, body) -> expr body) arms
     | Struct_literal { field_list; _ } -> List.iter (fun (_, e) -> expr e) field_list
     | Field_access { base; _ } -> expr base
-    | Payload_access { base; _ } -> expr base
     | Let { value; body; _ } -> expr value; expr body
     | List_literal { elements; _ } -> List.iter expr elements
     | Lambda { body; _ } -> expr body
@@ -6366,6 +6362,7 @@ let open_inputs env ~closed_inputs (world : World.t) =
       world.World.instances World.Member.empty
 
 let evaluate ?(closed_inputs = false) env world =
+  refuse_sum_type_forms env.doc;
   refuse_uncarried env.doc;
   (* WF-007: a presentation tag inside a type annotation. The loader lists
      where one stands (the in-memory datatype does not carry the tag), and

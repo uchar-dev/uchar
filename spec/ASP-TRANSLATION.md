@@ -2021,60 +2021,23 @@ target attribute (`ctor_value_term` reads the payload's decimals from
 the `SumType` declaration; a money payload's cents come from the
 payload, not the write site). The functor is an ASP *symbol*, not a
 string: the constructor name must normalise (`Ir_v0.Checks.norm`
-lowercases and collapses whitespace, and a space becomes an underscore,
-so `niet van toepassing` is `niet_van_toepassing`) to a valid symbolic
-constant `[a-z][a-z0-9_]*`, or the emitted program would be
-syntactically broken unfenced — `ctor_functor` faults on a name that
-does not, the quote fence's kin for the sum world (WF-060 admits the
-declaration; this is the ASP-side backstop). Two constructors of one
-sum type that meet in one symbol (`a b` and `a_b`) are refused at the
-declaration (`refuse_functor_collisions`): the model would hold them as
-one value. `translate_case` emits a sum-typed input attribute as
-`val(label, attr, term)`, and a sum-typed timeline as `tl`/`inputtl`
-segments whose value is the constructor term.
+lowercases and collapses whitespace) to a valid symbolic constant
+`[a-z][a-z0-9_]*`, or the emitted program would be syntactically broken
+unfenced — `ctor_functor` faults on a name that does not, the quote
+fence's kin for the sum world (WF-060 admits the declaration; this is
+the ASP-side backstop). A constructor name of several words, which
+WF-060 admits and ref carries, is a limit of this encoding: it is refused
+at the declaration with CLINGO-053 (`refuse_constructor_names`).
+`translate_case` emits a sum-typed input attribute as
+`val(label, attr, term)`.
 
-**The payload access** (`PayloadAccess`, RUNTIME-SEMANTICS ch. 9.5) is
-a member of its own. For every unary constructor of every scalar
-sum-typed attribute the program carries one projection rule,
-
-```
-val(O,"taxatie#waarde",P) :- val(O,"taxatie",waarde(P)).
-```
-
-and a `PayloadAccess` over an attribute read is the read of that member
-(`payload_member`, `find_decl` gives it the payload's declaration): in
-an operator, a comparison, a gevuld test and as the set source of a fold
-over members (`cell_source_fold`, the cell's sibling), at the payload's
-scale. A dimensioned sum-typed attribute carries the rule per cell,
-`val(O,"gewicht[najaar]#waarde",P) :- val(O,"gewicht[najaar]",waarde(P))`,
-and a `PayloadAccess` over a `DimensionCellRead` reads the member of its
-cell; the cell itself is a sum operand of a comparison as the attribute
-is (`sum_term`), and the model check reads a `cellValue` expectation of a
-constructor value through `ctor_value_term`. Where the attribute holds another constructor or is leeg, no atom
-binds — the failed access is leeg for free, and WF-127 keeps it under
-the test that makes that unreachable in a value position. The name
-carries a `#`, which no declared name does.
-
-**A sum-typed timeline.** A rule writes it from a constructor of a
-literal, which holds on every day (`translate_period_arithmetic`, a node
-whose value is the ground term at scale 0), or copies an own timeline of
-the same sum type whole (its `tl` segments read per period, at scale 0),
-cut to the periods of its condition; writers and the input are read per day as for every timeline
-target (S9, S10), EF-016 per day included. A comparison of such a
-timeline with a `Construct` in a condition per period compares the
-segment term with the ground term (`period_condition`); an ordering
-over it is refused. The model check reads a timeline expectation of
-constructor values through the same `ctor_value_term`.
-
-**A defaults group on a sum-typed target** (RUNTIME-SEMANTICS ch. 9.4, 9.5;
-the dialect's opgave marker on an attribute with markers) carries its
-decisions at scale 0: a consequence is a `Construct`, a ground term, or the
-`val/3` term of a member of the same sum type, so the scalar group writes
-the term as it stands (`translate_defaults_group`), and per day a
-consequence is a copy of an own timeline of that sum type
-(`translate_defaults_timeline`). A date literal as the payload of a
-`Construct` is its civil day number (`construct_ground_term`), as a date
-payload of the case input is.
+**The forms not carried** (RUNTIME-SEMANTICS ch. 9.4): a sum type on a
+timeline, in a dimension cell or in an object creation, a payload with a
+unit and a defaults group on a sum-typed target, an initialisation
+included, are refused before anything is translated, with CLINGO-052 and
+the slug of the form (`refuse_sum_type_forms`). A date literal as the
+payload of a `Construct` is its civil day number (`construct_ground_term`),
+as a date payload of the case input is.
 
 **A computed payload at rule level** (RUNTIME-SEMANTICS ch. 9.1): the payload
 of a `Construct` that a rule writes is any expression `expr_term` translates —
@@ -2082,8 +2045,11 @@ an attribute or parameter read, a date plus a duration, an arithmetic of
 those — and the functor wraps its term,
 
 ```
-val(S,"berekende afhaaldatum",waarde(((D)+(7)))) :- isa(S,"vondst"), val(S,"claimdatum",D).
+val(S,"latere dag",toegekend(((A29)+(C32)))) :- isa(S,"vondst"), val(S,"vinddag",A29), co31(S,C32).
 ```
+
+(the fixture `computed-payload` below: the vinddag plus the duur, which `co31/2`
+binds, coalesced to 0 where it is leeg).
 
 The payload's atoms bind exactly where ref reads its operands as values, the
 empty rule of each operator being `expr_term`'s own (ch. 1.2a: plus, min and
@@ -2092,13 +2058,10 @@ propagates and its duration counts 0), so where the payload is leeg no atom
 binds and the `Construct` is leeg. ref holds the payload's number as computed,
 never fitted, so the term must stand at the scale of the declared payload
 datatype; a term at another scale (a sum of whole numbers into a payload of 2
-decimals), a payload in another unit than the declared one, computed or
-literal (2 t into a payload in kg, which ref restates into the declared unit,
-ch. 9.1) and a `Match` as payload are refused (CLINGO-006). Witnesses: the
-golden `jutterswet-opgave-afwezigheidsmarkers` (a date plus a parameter, a
-date plus 7 dagen, a number verminderd met a product) and the fixtures of
-`ref/test/fixtures/absence-markers` in the backend's suite (the leeg operands
-per operator, the refusals).
+decimals) and a `Match` as payload are refused (CLINGO-006). Witnesses: the
+anchor `jutterswet-beschikkingsom` (an attribute read) and the fixtures of
+`ref/test/fixtures/sum-types` in the backend's suite (the leeg operands per
+operator, a date plus a parameter, the refusals).
 
 **Total match** (`Match`, ch. 9.2) lowers to **one rule per arm** into a
 `matchN(S,Result)` helper — the scrutinee's `val/3` atom carries the
@@ -2536,7 +2499,7 @@ datatype (`expr_term` for a number, a date and a sum type, `struct_term`,
 unbound, so the gated rule does not fire — leeg-on-absence for free (the
 anchor's `premie` rule reads `filled(dossier)`; the golden
 `jutterswet-gevuldtoets-soorten` carries the test on an enumeration, a
-text, a boolean and an attribute with absence markers). A list is refused
+text and a boolean). A list is refused
 (CLINGO-050). In an equality of records, sum types, texts, enumerations
 or booleans an operand is an attribute on the subject or over a path of
 to-one roles, a parameter, a literal or a constructor term alike.
@@ -3207,26 +3170,11 @@ the §9.8 composition and both executors evaluate it, which is what WF-085's
 reference graph is about.
 
 *Sum types (S14) — carriage and shapes without a corpus case:*
-**temporal sum carriage** is carried for the case input, a write of a
-constructor of a literal and a comparison with a `Construct` per period
-and a copy of an own sum-typed timeline (the goldens
-`jutterswet-afwezigheidsmarkers` and `jutterswet-afwezigheidsmarkers-kopie`);
-a sum scrutinee or a sum operand over an own temporal attribute in a
-scalar position still faults with the literal reason `temporal sum
-carriage is a recorded flank; no corpus case`, and a sum-typed timeline
-written by any other producer faults with `the sum-typed timeline … is
-written with a constructor of a literal or a copy of an own timeline of
-a sum type; another producer of a constructor value per period is not
-translated (no corpus case)`. A **payload access to a time-dependent
-attribute** has a reading per day (RUNTIME-SEMANTICS ch. 9.5) that is not
-encoded: in a scalar position it is refused as every temporal attribute
-in a scalar slot is, and as the source of a fold over members with
-`a payload access to the time-dependent attribute … is read per day
-(ch. 9.5), which this translation does not execute (no corpus case)`;
-ref refuses both in the same words. A **payload of another datatype than
-a number or a day-precision date** (WF-060 admits every scalar) has no
-scaling into the constructor term and faults where it is emitted. Two
-**constructors that meet in one ASP symbol** are refused at the
+a sum type on a timeline is one of the forms of RUNTIME-SEMANTICS ch. 9.4
+no executor carries, refused before translation (S14). A **payload of
+another datatype than a number or a day-precision date** (WF-060 admits
+every scalar) has no scaling into the constructor term and faults where it
+is emitted. A **constructor name of several words** is refused at the
 declaration (S14). A **non-literal `Construct` payload** meets SIX distinct places
 in the translator: THREE carry it — the positions that can hold the payload's
 binding atoms — and THREE refuse it, each for a different reason. A SEVENTH
@@ -3267,12 +3215,8 @@ artifact at all.
 Refused, each with its own true reason:
 
 - a **rule-level payload whose term stands at another scale than the
-  declared payload** and a **`Match` as payload** (CLINGO-006), and a
-  **payload in another unit than the declared one** in every position
-  that writes a bound or literal payload: at rule level, in the step of a
-  fold or the body of a function, and in the initial value of a fold
-  (CLINGO-006). ref holds the payload's number as computed, never fitted,
-  and restates its unit into the declared one; no corpus case.
+  declared payload** and a **`Match` as payload** (CLINGO-006). ref holds
+  the payload's number as computed, never fitted; no corpus case.
 - a **`Construct` with a bound payload in a ground-term position** — a
   sum-typed comparison operand, or a sum-typed operand inside a closed
   body. Those positions return a term and NO body atoms, so a payload

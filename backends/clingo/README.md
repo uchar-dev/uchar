@@ -112,7 +112,7 @@ spec bug.
   `val/3` atom for every datatype the encoding stores there, on the
   subject or over a path of to-one roles: a number, a percentage, a date,
   a datum-tijd, a text, an enumeration, a boolean (onwaar is a value), a
-  record and a sum type, whose absence markers are values (ch. 9.5), with
+  record and a sum type, a nullary constructor included (ch. 9.1), with
   a payload of any of those; a parameter binds its `param/2` atom. Any
   other operand is read by the term function of its datatype (golden
   `jutterswet-gevuldtoets-soorten`).
@@ -346,11 +346,9 @@ spec bug.
   value, cut to the periods of its condition, is `itl/5`, each of its
   segments is cut at the bounds of the writers' and the input's segments
   inside it (`initcut/5`, `initpiece/6`), and a piece that neither covers
-  (`initdecided/4`) is a `tl/5` segment. A sum-typed timeline takes a
-  constructor of a literal or a copy of an own timeline of a sum type from
-  each of these producers, a rule, a default, an initialisation and a
-  member value alike; another producer of a constructor value per period is
-  refused with CLINGO-036 at the head of the fault.
+  (`initdecided/4`) is a `tl/5` segment. A sum type on a timeline is one of
+  the forms no executor carries (RUNTIME-SEMANTICS ch. 9.4), refused with
+  CLINGO-052 before anything is translated.
 - A defaults group on a timeline attribute target decides per day
   (RUNTIME-SEMANTICS ch. 7.11): the chain and group predicates of the
   scalar lowering carry a period of the group's cut set, `grpG_d_per/3`,

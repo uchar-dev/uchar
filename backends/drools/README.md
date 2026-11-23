@@ -851,7 +851,7 @@ value of a member of that sum type as it stands, scalar and per day: the opgave 
 opgave marker on an attribute with markers, with a constructor value as the initialisation below them, a value or a
 marker, and a computation whose payload is computed (a date plus a duration, an arithmetic of numbers). Refused by name: a `Match` (DROOLS-021), the payload of a
 timeline (DROOLS-314), whose reading per day this backend does not execute, and every other value on a timeline of a
-sum type (DROOLS-303). Witness `AbsenceMarkerWitnessTest`, on the documents of `ref/test/fixtures/absence-markers`.
+sum type (DROOLS-303).
 
 **Period arithmetic over all time.** A timeline divides all time (RUNTIME-SEMANTICS ch. 3.1), so a segment may have an
 open bound: in a `Period` an open `from` is `Period.OPEN_FROM` (`LocalDate.MIN`) and an open `to` `Period.OPEN_TO`

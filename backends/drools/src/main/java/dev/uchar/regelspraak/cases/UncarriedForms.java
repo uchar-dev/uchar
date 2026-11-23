@@ -44,7 +44,7 @@ final class UncarriedForms {
             // the table of RUNTIME-SEMANTICS ch. 1.5, in its order
             "allocation", "creation-cycle", "uniqueness", "start-point", "day-kind", "function-def", "timeline-member",
             "dimension-cell", "dimension-fold", "time-proportional-part", "temporal-total", "builtin-filter",
-            "variable-reference", "unresolved", "temporal-read", "match", "record", "list-family", "invoke",
+            "variable-reference", "unresolved", "temporal-read", "match", "construct", "record", "list-family", "invoke",
             "whole-period", "time-window", "rule-status-check", "let-in-composite",
             // what ch. 1.5 defines and this backend does not carry yet
             "defaults-group", "if-then-else", "object-creation", "fact-creation",
@@ -52,7 +52,7 @@ final class UncarriedForms {
             "set-fold");
 
     /** The number of slugs of the table of ch. 1.5 at the head of {@link #SLUGS}. */
-    static final int TABLE = 23;
+    static final int TABLE = 24;
 
     /** The first slug of {@link #SLUGS} whose form {@code model} holds, with its defaults groups {@code defaults}; null
      *  where it holds none. */
@@ -161,7 +161,7 @@ final class UncarriedForms {
                     expr(c.minimum());
                     expr(c.maximum());
                 }
-                case Expr.Construct c -> expr(c.argument());
+                case Expr.Construct c -> found.add("construct");
                 case Expr.PayloadAccess p -> expr(p.base());
                 case Expr.Let l -> {
                     expr(l.value());

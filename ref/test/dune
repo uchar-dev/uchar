@@ -98,11 +98,6 @@
   (glob_files fixtures/canonical-timeline/*.json)
   ../../corpus/golden/anchor/jutterswet-borgdeel/ir.json
   ../../corpus/golden/anchor/jutterswet-dagentelling/ir.json
-  ; the worked examples of the absence markers, RUNTIME-SEMANTICS ch. 9.5
-  (glob_files fixtures/absence-markers/payload-of-a-timeline/*.json)
-  (glob_files fixtures/absence-markers/sum-of-a-timeline/*.json)
-  (glob_files fixtures/absence-markers/constructors-in-one-symbol/*.json)
-  (glob_files fixtures/absence-markers/copy-of-a-timeline/*.json)
   ; an ordered allocation whose shares do not fit, the place of the fault
   (glob_files fixtures/allocation-fit-order/*.json)
   ; a sum per period whose member and emptyFallback both fault
@@ -155,6 +150,9 @@
   (glob_files fixtures/infer-from-empty/*.json)
   ; the witnesses of a document that infers nothing from an empty value, a directory per form (ch. 1.5)
   (glob_files_rec fixtures/strict-empty/*.json)
+  ; the sum types: the forms of RUNTIME-SEMANTICS ch. 9.4 no executor carries, and the documents of the suite of
+  ; the ASP backend
+  (glob_files_rec fixtures/sum-types/*.json)
   ../../corpus/golden/jutterswet-meldplicht-flogic/ir.json
   ; the code of ref, read for the places that read a member past its state (ch. 1.5)
   (glob_files ../lib/*.ml)

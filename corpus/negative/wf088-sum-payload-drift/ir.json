@@ -44,12 +44,12 @@
       },
       {
         "node": "Domain",
-        "name": "keuring van een Vondst",
+        "name": "keuring",
         "datatype": {
           "node": "SumType",
           "constructors": [
             {
-              "name": "waarde",
+              "name": "Gekeurd",
               "payload": {
                 "node": "Enumeration",
                 "domain": "keurklasse",
@@ -61,11 +61,7 @@
               }
             },
             {
-              "name": "onbekend",
-              "payload": null
-            },
-            {
-              "name": "niet van toepassing",
+              "name": "Afgekeurd",
               "payload": null
             }
           ]

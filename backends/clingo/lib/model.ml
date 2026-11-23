@@ -440,24 +440,10 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
                 (Printf.sprintf "%s.%s = [%s], expected %s" label member
                    (String.concat ";" (List.map render_arg got))
                    (render_arg because)))
-      (* a cell of a sum-typed attribute (ch. 9.4, 9.5): the constructor term,
-         built as an attribute's is from the declaration of the cell's
-         attribute *)
-      | Cell_value { label; attr; labels; value = Value.Ctor _ as value } -> (
-          let member = Uchar_ref.World.cell attr labels in
-          let because = ctor_expect ~label ~attr value in
-          match term_of model label member with
-          | [ got ] when got = because -> None
-          | [] -> Some (Printf.sprintf "%s.%s is %s, expected %s" label member (without_value label member) (render_term because))
-          | got ->
-              Some
-                (Printf.sprintf "%s.%s = [%s], expected %s" label member
-                   (String.concat ";" (List.map render_term got))
-                   (render_term because)))
       | Cell_value { value; _ } ->
           fault
             "a cellValue expectation of %s is not checked here: this encoding carries a cell of a number, a date, a \
-             text, an enumeration, a boolean or a constructor value"
+             text, an enumeration or a boolean"
             (Value.to_string value)
       | Cell_empty { label; attr; labels } -> (
           let member = Uchar_ref.World.cell attr labels in
@@ -475,11 +461,7 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
             canonical_timeline
               (List.map
                  (fun (s : Uchar_ref.Timeline.segment) ->
-                   ( s.s_from,
-                     s.s_to,
-                     match s.s_value with
-                     | Value.Ctor _ -> A_term (ctor_expect ~label ~attr s.s_value)
-                     | v -> A_int (scaled_expect ~label ~attr v) ))
+                   (s.s_from, s.s_to, A_int (scaled_expect ~label ~attr s.s_value)))
                  tl)
           in
           (* a bound is a day number, or #inf / #sup for an open bound

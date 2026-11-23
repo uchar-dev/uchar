@@ -917,15 +917,14 @@ let read_per_period (doc : document) ~(ot : string) (c : condition_expr) =
 
 (* The value shapes of a rule on a temporal attribute target that ch. 3.4 and
    3.5 compute over all time: an operator of ch. 1.2 read per day, the sum over
-   the members of a set, an operand standing alone — a scalar, a constructor of
-   a literal, a time-dependent attribute or parameter read whole — and a
-   rounding of one of them, per day as well (ch. 2.5) *)
+   the members of a set, an operand standing alone — a scalar, a time-dependent
+   attribute or parameter read whole — and a rounding of one of them, per day as
+   well (ch. 2.5) *)
 let rec is_period_arithmetic (e : expr) =
   match e with
   | Binary { op = Plus | Min | Reduced_by | Times | Divided_by | Divided_by_abs | Percentage_of; _ } -> true
   | Function_call { kind = Sum_function; element_object_type = Some _; _ } -> true
   | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } | Parameter_ref _ -> true
-  | Construct { argument = None | Some (Literal _); _ } -> true
   | Rounding { base_expr = Some b; _ } -> is_period_arithmetic b
   | _ -> false
 
@@ -1070,7 +1069,7 @@ let rec static_type ctx (e : expr) : datatype option =
   | Literal { typ; _ } | Text_composition { typ; _ } | Binary { typ; _ } | Function_call { typ; _ }
   | Rounding { typ; _ } | Clamp { typ; _ } | Context_value { typ; _ } | Bound_day { typ; _ }
   | Expr_unresolved { typ; _ } | Temporal_read { typ; _ } | Construct { typ; _ } | Match { typ; _ } | Let { typ; _ }
-  | Struct_literal { typ; _ } | Field_access { typ; _ } | Payload_access { typ; _ } | List_literal { typ; _ }
+  | Struct_literal { typ; _ } | Field_access { typ; _ } | List_literal { typ; _ }
   | If_then_else { typ; _ } | Invoke { typ; _ } | Fold { typ; _ } | Map_list { typ; _ } | Filter_list { typ; _ }
   | List_length { typ; _ } ->
       typ
@@ -1702,15 +1701,6 @@ let object_type ctx name =
    the cell's (RUNTIME-SEMANTICS ch. 5.8c). Every declaration lookup by member
    below goes through here, so a cell that is written or read takes its
    attribute's datatype, decimals and unit. *)
-(* the member that holds the payload of the constructor [c] of the sum-typed
-   attribute [a] (RUNTIME-SEMANTICS ch. 9.5): a name no declaration can carry,
-   since '#' stands in no declared name *)
-let payload_member a c = norm a ^ "#" ^ norm c
-
-(* the declaration of a member: an attribute; a cell of a dimensioned
-   attribute, whose declaration is the attribute's; or the payload member of a
-   unary constructor of a sum-typed attribute ([payload_member]), whose
-   declaration is the constructor's payload *)
 let find_decl ctx ~otype ~attr =
   let ot = object_type ctx otype in
   match Ir_v0.Checks.find_ci ot.attributes attr with
@@ -1718,19 +1708,7 @@ let find_decl ctx ~otype ~attr =
   | None -> (
       match List.filter (fun (a, _) -> Uchar_ref.World.cell_of a attr) ot.attribute_dimensions with
       | [ (a, _) ] -> Ir_v0.Checks.find_ci ot.attributes a
-      | _ ->
-          List.find_map
-            (fun (a, dt) ->
-              match dt with
-              | Some (Sum_type { constructor_list; _ }) ->
-                  List.find_map
-                    (fun (c, payload) ->
-                      match payload with
-                      | Some _ when norm attr = payload_member a c -> Some payload
-                      | _ -> None)
-                    constructor_list
-              | _ -> None)
-            ot.attributes)
+      | _ -> None)
 
 let attr_decimals ctx ~otype ~attr =
   match find_decl ctx ~otype ~attr with
@@ -2327,7 +2305,6 @@ let walk_order ~(value : string -> expr -> bool) (visit : expr -> unit) =
         x base_expr
     | Construct { argument; _ } -> opt argument
     | Field_access { base; _ } -> x base
-    | Payload_access { base; _ } -> x base
     | Struct_literal { field_list; _ } -> List.iter (fun (_, y) -> x y) field_list
     | List_literal { elements; _ } -> List.iter x elements
     | Text_composition { pieces; _ } ->
@@ -2650,7 +2627,6 @@ let expr_reaches ctx (hit : expr -> bool) (e : expr) : bool =
     | Temporal_read { base_expr; date_value; _ } -> x base_expr || x date_value
     | Construct { argument; _ } -> opt argument
     | Field_access { base; _ } -> x base
-    | Payload_access { base; _ } -> x base
     | Struct_literal { field_list; _ } -> List.exists (fun (_, y) -> x y) field_list
     | List_literal { elements; _ } -> List.exists x elements
     | Text_composition { pieces; _ } ->
@@ -4189,16 +4165,13 @@ let money_mult_roles ctx (base_expr : expr) : bool option =
    normalised constructor name: nullary is the bare functor (afgewezen),
    unary is functor(payload). A functor is an ASP symbol, not a string —
    so the name must normalise to a valid symbolic constant [a-z][a-z0-9_]*
-   or the emitted program is syntactically broken UNFENCED. norm lowercases
-   and collapses whitespace, and a space becomes an underscore, so that a
-   name of several words ("niet van toepassing", the absence marker of
-   RUNTIME-SEMANTICS ch. 9.5) is one symbol; two constructors of one sum type
-   that meet in one symbol are refused at the declaration
-   ([refuse_functor_collisions]). A name that is empty, digit-led or carries
-   a non-word character faults here with its reason (WF-060 admits the
-   declaration; this is the ASP-side backstop, the quote fence's kin). *)
+   or the emitted program is syntactically broken UNFENCED. A name of several
+   words is refused at the declaration ([refuse_constructor_names]); one that
+   is empty, digit-led or carries a non-word character faults here with its
+   reason (WF-060 admits the declaration; this is the ASP-side backstop, the
+   quote fence's kin). *)
 let ctor_functor tag =
-  let f = String.map (function ' ' -> '_' | c -> c) (norm tag) in
+  let f = norm tag in
   let ok =
     f <> ""
     && (match f.[0] with 'a' .. 'z' -> true | _ -> false)
@@ -4463,27 +4436,6 @@ let cell_source_fold ctx (e : expr) =
     when f.source_role <> None || f.source_path <> None ->
       let member = cell_member ctx.doc ~ot:el ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
       Some (Function_call { f with call_arguments = [ Attribute_reference { r with attribute_ref = Some member } ] })
-  (* the payload of each contributor (RUNTIME-SEMANTICS ch. 9.5): the member a
-     projection rule derives ([payload_projections]), so the fold is the set
-     fold over that member, and a contributor that holds a marker gives none.
-     A time-dependent attribute has no projection, and is refused as ref
-     refuses it *)
-  | Function_call
-      ({ kind = Sum_function | Minimum | Maximum | First | Last | Filled_count;
-         call_arguments =
-           [ Payload_access
-               { base = Attribute_reference ({ attribute_ref = Some a; navigation_bindings = None; _ } as r);
-                 constructor_; _ } ];
-         element_object_type = Some el; dimension_selections = None; _ } as f)
-    when f.source_role <> None || f.source_path <> None ->
-      if attr_temporal ctx ~otype:el ~attr:a then
-        fault
-          "a payload access to the time-dependent attribute %S is read per day (ch. 9.5), which this \
-           translation does not execute (no corpus case)"
-          a;
-      Some
-        (Function_call
-           { f with call_arguments = [ Attribute_reference { r with attribute_ref = Some (payload_member a constructor_) } ] })
   | _ -> None
 
 (* a text/enum/boolean operand → (body atoms binding a ground term, the
@@ -4568,12 +4520,6 @@ let rec symbolic_term ctx ~subject ~subject_ot (e : expr) : string list * string
       faultc "CLINGO-042"
         "a text composition or a concatenation needs the text of a value, and ASP-Core-2 has no \
          string functions"
-  (* the text, enumeration or boolean payload of a sum-typed attribute (ch.
-     9.5): the member a projection rule derives from its constructor term
-     ([payload_projections]), read as the attribute is *)
-  | Payload_access { base = Attribute_reference { attribute_ref = Some a; _ } as base; constructor_; _ } ->
-      let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member:(payload_member a constructor_) base in
-      (atoms, v)
   | _ ->
       faultc "CLINGO-002"
         "a text/enum/boolean operand here is an own-subject attribute read or a literal (no \
@@ -5585,20 +5531,6 @@ let fault_where_reached ctx ~subject ~subject_ot ~code (node : expr) reason =
   in
   guard ();
   beside_hoisted_arms ctx node guard
-
-(* ref restates the payload of a Construct in another unit into the unit of
-   the declared payload [d] (ch. 9.1; WF-062 reads the argument as a write).
-   The encoding holds the payload's term or lexeme as it stands, so a payload
-   [arg] in another unit, computed or literal, is refused: unrestated it
-   would be a wrong number in the declared unit. *)
-let refuse_payload_in_another_unit ctx (d : datatype) (arg : expr) =
-  match (d, eff_unit ctx arg) with
-  | (Number { measure_unit = Some u; _ } | Percentage { measure_unit = Some u; _ }), Some v
-    when (not (Ir_v0.Units.identical u v)) && not (Normalise.same_quantity u v) ->
-      faultc "CLINGO-006"
-        "a Construct payload in another unit than the declared payload's is not restated \
-         (ref restates it into the declared unit; no corpus case)"
-  | _ -> ()
 
 (* the read of the scalar parameter [name] at [e], of any datatype the case
    carries in param/2: its atom and the variable that binds the value, with the
@@ -7882,7 +7814,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
       (* ch. 9.1: a constructor value is a ground term when its payload is
          ground — a nullary tag, or a literal payload scaled to the DECLARED
          payload datatype. *)
-      ([], construct_ground_term ctx typ constructor_ argument, 0)
+      ([], construct_ground_term typ constructor_ argument, 0)
   | Construct { argument = Some (Match _); _ } ->
       faultc "CLINGO-006"
         "a Match as the payload of a Construct is not translated at rule level (no corpus case)"
@@ -7896,10 +7828,9 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
          so where the payload is leeg the rule does not fire and the whole
          Construct is leeg. ref holds the payload's number as computed, never
          rounded or fitted, so the term must already stand at the scale of the
-         DECLARED payload datatype; a payload in another unit ref restates
-         into the declared one, which this arm does not, so it refuses it. A
-         sum term itself is not numeric, scale 0, carried by
-         [attr_sum_typed]'s write path and never fitted. *)
+         DECLARED payload datatype. A payload carries no unit (RUNTIME-SEMANTICS
+         ch. 9.4, [refuse_sum_type_forms]). A sum term itself is not numeric,
+         scale 0, carried by [attr_sum_typed]'s write path and never fitted. *)
       match ctor_payload_datatype (sum_constructors typ) constructor_ with
       | None -> fault "nullary constructor %S built with an argument" constructor_
       | Some d ->
@@ -7911,27 +7842,7 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
               "a Construct payload at scale %d does not match the declared payload scale %d \
                (rescaling a computed payload has no corpus case)"
               scale payload_scale;
-          refuse_payload_in_another_unit ctx d arg;
           (atoms, Printf.sprintf "%s(%s)" f term, 0))
-  | Payload_access { base = Attribute_reference { attribute_ref = Some a; _ } as base; constructor_; typ; _ } ->
-      (* ch. 9.5: the payload is a member of its own, which a projection rule
-         of the document derives from the constructor term of the attribute
-         ([payload_projections]), so the access is read as an attribute is —
-         in an operator, a comparison and as the source of a fold over
-         members alike — at the scale of the declared payload; where the
-         attribute holds another constructor or is leeg, no atom binds and
-         the access is leeg *)
-      let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member:(payload_member a constructor_) base in
-      (atoms, v, value_scale typ)
-  | Payload_access { base = Dimension_cell_read { attribute_ref = Some inner; labels; _ }; constructor_; typ; _ } ->
-      (* the payload of a cell (ch. 5.8c, 9.5): the member a projection rule
-         derives from the cell's constructor term ([payload_projections]) *)
-      let a, ot = dimensioned_reference inner in
-      let cell = cell_member ctx.doc ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
-      let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member:(payload_member cell constructor_) inner in
-      (atoms, v, value_scale typ)
-  | Payload_access _ ->
-      fault "a payload access is translated over an attribute read or a cell read (no corpus case for more)"
   | Match { typ; scrutinee; arms; _ } ->
       translate_match ctx ~subject ~subject_ot ~typ ~scrutinee ~arms
   | If_then_else { typ; condition; then_; else_; _ } ->
@@ -9170,7 +9081,6 @@ and dk_seen_days ctx : int list =
     | Match { scrutinee; arms; _ } -> ex scrutinee; List.iter (fun (_, _, b) -> ex b) arms
     | Construct { argument; _ } -> opt argument
     | Field_access { base; _ } -> ex base
-    | Payload_access { base; _ } -> ex base
     | Struct_literal { field_list; _ } -> List.iter (fun (_, x) -> ex x) field_list
     | List_literal { elements; _ } -> List.iter ex elements
     | Temporal_read { base_expr; date_value; _ } -> ex base_expr; ex date_value
@@ -10482,8 +10392,8 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
    - an attribute or a cell read of any other datatype binds its val/3 atom
      unscaled ([member_read]), on the subject or over a path of to-one roles:
      a text, an enumeration and a boolean (onwaar is a value), a datum-tijd,
-     a record, and a sum type — an attribute with absence markers among
-     them, whose markers are values (ch. 9.5); a parameter of such a datatype
+     a record, and a sum type, a nullary constructor included (ch. 9.1); a
+     parameter of such a datatype
      binds its param/2 atom ([param_read]);
    - any other operand of those datatypes rides the term function the
      equality arms choose for it: [symbolic_term], [dt_term], [struct_term],
@@ -10602,15 +10512,14 @@ and window_bounds ctx ~subject ~subject_ot starting_at up_to =
     fault "a period condition without any bound has no window to gate on";
   (v, t)
 
-and construct_ground_term ctx typ constructor_ argument =
+and construct_ground_term typ constructor_ argument =
   let constructor_list = sum_constructors typ in
   let f = ctor_functor constructor_ in
   match (ctor_payload_datatype constructor_list constructor_, argument) with
   | None, None -> f
   | None, Some _ -> fault "nullary constructor %S built with an argument" constructor_
   | Some _, None -> fault "unary constructor %S built without an argument" constructor_
-  | Some d, Some (Literal { variant; _ } as literal) ->
-      refuse_payload_in_another_unit ctx d literal;
+  | Some d, Some (Literal { variant; _ }) ->
       (* a date literal is its day number, as a date payload of the case input is *)
       let v =
         match variant with
@@ -10633,7 +10542,7 @@ and sum_term ctx ~subject ~subject_ot (e : expr) : string list * string =
   | None ->
   match e with
   | Construct { typ; constructor_; argument; _ } ->
-      ([], construct_ground_term ctx typ constructor_ argument)
+      ([], construct_ground_term typ constructor_ argument)
   | Attribute_reference
       { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ }
     when norm ot = norm subject_ot ->
@@ -10642,17 +10551,9 @@ and sum_term ctx ~subject ~subject_ot (e : expr) : string list * string =
       open_read ctx ~holder:subject ~attribute:a [];
       let v = fresh ctx "V" in
       ([ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ], v)
-  (* a cell of a sum-typed attribute (ch. 5.8c): the val/3 of the cell's member
-     on the object its reference reaches *)
-  | Dimension_cell_read { attribute_ref = Some inner; labels; _ } ->
-      let a, ot = dimensioned_reference inner in
-      let member = cell_member ctx.doc ~ot ~attr:a (List.map (req "DimensionCellRead.labels") labels) in
-      let atoms, v, _ = member_read ~scaled:false ctx ~subject ~subject_ot ~member inner in
-      (atoms, v)
   | _ ->
       faultc "CLINGO-013"
-        "a sum-typed operand here is an own-subject attribute read, a cell read or a Construct (no corpus \
-         case for more)"
+        "a sum-typed operand here is an own-subject attribute read or a Construct (no corpus case for more)"
 
 (* positional field projection (RUNTIME-SEMANTICS ch. 11.1): given the base's
    already-bound struct TERM and the base expr (for its StructType), unify the
@@ -11057,7 +10958,6 @@ and body_branches ctx ~carrier (e : expr) : (string list * string * int) list =
       | Some d ->
           let pscale = pow10 (decimals_of_datatype (Some d)) in
           let f = ctor_functor constructor_ in
-          refuse_payload_in_another_unit ctx d payload;
           List.map
             (fun (g, t, s) ->
               if s <> pscale then
@@ -11236,7 +11136,7 @@ and closed_term ctx ~carrier (e : expr) : string list * string * int =
       ctx.signs <- (term, Sum { l = tl; r = tr; minus = op = Min; subject = carrier.witness }) :: ctx.signs;
       (bl @ br, term, m)
   | Construct { typ; constructor_; argument = (None | Some (Literal _)) as argument; _ } ->
-      ([], construct_ground_term ctx typ constructor_ argument, 0)
+      ([], construct_ground_term typ constructor_ argument, 0)
   | Construct { typ; constructor_; argument = Some arg; _ } -> (
       (* ch. 9.1 in a closed body: a NON-literal payload is itself a
          closed-body term — a document parameter, a bound binder, an additive
@@ -11256,7 +11156,6 @@ and closed_term ctx ~carrier (e : expr) : string list * string * int =
               "a Construct payload at scale %d does not match the declared payload scale %d \
                (rescaling a bound sum payload has no corpus case)"
               scale payload_scale;
-          refuse_payload_in_another_unit ctx d arg;
           (atoms, Printf.sprintf "%s(%s)" (ctor_functor constructor_) term, 0))
   | Field_access { base; field_name; _ } ->
       (* ch. 11.1 inside a closed body (the MapList-over-struct-field lelem
@@ -11387,7 +11286,7 @@ and sum_operand ctx (e : expr) : string =
       match List.assoc_opt (norm ident) ctx.binders with
       | Some (_, var, _, _) -> var
       | None -> fault "unbound binder %S in a closed body (the verifier should preclude this)" ident)
-  | Construct { typ; constructor_; argument; _ } -> construct_ground_term ctx typ constructor_ argument
+  | Construct { typ; constructor_; argument; _ } -> construct_ground_term typ constructor_ argument
   | _ ->
       faultc "CLINGO-020"
         "a sum-typed operand in a closed body is a bound binder or a Construct (no corpus case \
@@ -11972,25 +11871,15 @@ let period_condition ?target ctx ~ot ~a (c : condition_expr) : string =
             ~body:[ per; Printf.sprintf "tl(S,%s,F,T,WB)" (str b); "F <= X"; "X < T" ];
           emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" (tv ^ "d")) ~body:[ Printf.sprintf "%s(S,X,_)" tv ];
           emit_rule ctx ~head:(Printf.sprintf "%s(S)" bd) ~body:(base :: gb);
-          (* a sum-typed timeline holds a ground constructor term per segment
-             (ch. 9.5), compared with the bound's by term identity (ch. 9.3);
-             a number is harmonised to one scale first *)
+          (* a number is harmonised to one scale first *)
           let wl, gl =
-            if attr_sum_typed ctx ~otype:ot ~attr:b then begin
-              (match op with
-              | Equal | Not_equal -> ()
-              | _ -> fault "an ordering over the sum-typed timeline %S: a constructor value is not orderable" b);
-              ("WB", gt)
-            end
-            else begin
-              let gs = numeric_scale ~what:"a comparison in a condition per period" gs in
-              let bscale = pow10 (attr_decimals ctx ~otype:ot ~attr:b) in
-              let m = max bscale gs in
-              range_guard ctx ~subject:"S" ~body:((base :: gb) @ [ Printf.sprintf "%s(S,_,WB)" tv ])
-                [ ("WB", max_int31 / (m / bscale)); (gt, max_int31 / (m / gs)) ];
-              ( (if bscale = m then "WB" else Printf.sprintf "(WB*%d)" (m / bscale)),
-                if gs = m then gt else Printf.sprintf "(%s*%d)" gt (m / gs) )
-            end
+            let gs = numeric_scale ~what:"a comparison in a condition per period" gs in
+            let bscale = pow10 (attr_decimals ctx ~otype:ot ~attr:b) in
+            let m = max bscale gs in
+            range_guard ctx ~subject:"S" ~body:((base :: gb) @ [ Printf.sprintf "%s(S,_,WB)" tv ])
+              [ ("WB", max_int31 / (m / bscale)); (gt, max_int31 / (m / gs)) ];
+            ( (if bscale = m then "WB" else Printf.sprintf "(WB*%d)" (m / bscale)),
+              if gs = m then gt else Printf.sprintf "(%s*%d)" gt (m / gs) )
           in
           let filled sym =
             emit_rule ctx ~head:(Printf.sprintf "%s(S,X)" inner)
@@ -12410,26 +12299,6 @@ let translate_day_count ?clip ?periods ?writer ctx ~subject ~ot ~a ~cond ~k ~day
    is leeg, or its fallback, where every member is (ch. 3.5). The written
    segments are the maximal runs of equal values; a period whose value is leeg
    writes nothing, the gap of ch. 3.1. *)
-(* A sum-typed timeline target takes a constructor of a literal, which holds on
-   every day (ch. 9.5): a marker written in a window; or an own timeline of a sum
-   type, copied whole (WF-023 holds it to the target's domain); its value is a
-   ground term with no scale. Another producer of a constructor value per period,
-   as the value of a rule, a default, an initialisation or a member of a creation,
-   is a refusal of this encoding, which ref need not share *)
-let sum_timeline_producer ctx ~otype ~a (value : expr) =
-  if attr_sum_typed ctx ~otype ~attr:a then
-    match value with
-    | Construct { argument = None | Some (Literal _); _ } -> ()
-    | Attribute_reference
-        { attribute_ref = Some b; object_type = Some otn; navigation_bindings = None; anchor = None; _ }
-      when attr_temporal ctx ~otype:otn ~attr:b && attr_sum_typed ctx ~otype:otn ~attr:b ->
-        ()
-    | _ ->
-        faultc ~params:[ ("attribute", a) ] "CLINGO-036"
-          "the sum-typed timeline %S is written with a constructor of a literal or a copy of an own timeline of a \
-           sum type; another producer of a constructor value per period is not translated (no corpus case)"
-          a
-
 let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(into = "tl") ?target_ot ctx ~subject ~ot
     ~a (value : expr) =
   (* [ot] is the type the value is read on, [target_ot] the type that declares
@@ -12438,9 +12307,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
   let target_ot = Option.value target_ot ~default:ot in
   let base = Printf.sprintf "isa(%s,%s)" subject (str ot) in
   let target = Calendar.of_attribute ctx.doc (object_type ctx target_ot) a in
-  sum_timeline_producer ctx ~otype:target_ot ~a value;
-  let sum_target = attr_sum_typed ctx ~otype:target_ot ~attr:a in
-  let target_scale = if sum_target then 0 else pow10 (attr_decimals ctx ~otype:target_ot ~attr:a) in
+  let target_scale = pow10 (attr_decimals ctx ~otype:target_ot ~attr:a) in
   let target_unit = attr_unit ctx ~otype:target_ot ~attr:a in
   let what = Printf.sprintf "the period arithmetic of %S" a in
   (* the unit of an operand by its declarations, a sum over a set a sum per period *)
@@ -12555,8 +12422,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
         let q = fresh ctx (p ^ "_r") in
         emit_rule ctx ~head:(Printf.sprintf "%s(%s,X,V)" q subject)
           ~body:[ at_x; Printf.sprintf "tl(%s,%s,F,T,V)" subject (str b); "F <= X"; "X < T" ];
-        (* a constructor term carries no scale *)
-        (q, false, if attr_sum_typed ctx ~otype:otn ~attr:b then 0 else pow10 (attr_decimals ctx ~otype:otn ~attr:b))
+        (q, false, pow10 (attr_decimals ctx ~otype:otn ~attr:b))
     | Function_call
         { kind = Sum_function;
           call_arguments = [ Attribute_reference { attribute_ref = Some x; navigation_bindings = None; anchor = None; _ } ];
@@ -12660,12 +12526,6 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
             end);
         (q, false, out)
     | Literal _ | Attribute_reference { navigation_bindings = None; anchor = None; _ } -> scalar e
-    | Construct { typ; constructor_; argument = (None | Some (Literal _)) as argument; _ } when sum_target ->
-        let q = fresh ctx (p ^ "_k") in
-        emit_rule ctx
-          ~head:(Printf.sprintf "%s(%s,X,%s)" q subject (construct_ground_term ctx typ constructor_ argument))
-          ~body:[ base; at_x ];
-        (q, false, 0)
     | Parameter_ref { parameter = Some n; _ } -> (
         match Ir_v0.Checks.find_ci ctx.doc.parameters n with
         | Some { par_granularity = None; _ } -> scalar e
@@ -12739,8 +12599,7 @@ let translate_period_arithmetic ?periods ?writer ?(cond = []) ?(write = true) ?(
      than the target fits only where the surplus is 0, the write boundary of
      ch. 2.4 on its segment (EF-006) *)
   let root =
-    if sum_target then root0
-    else if root_scale <= target_scale then begin
+    if root_scale <= target_scale then begin
       let k = target_scale / root_scale in
       if k = 1 then root0
       else begin
@@ -13109,7 +12968,6 @@ let translate_characteristic_timeline ctx (r : resolved_rule) ~ot ~k =
    leaves empty (EF-037, ref's sentence). *)
 let translate_timeline_initialisation ctx (r : resolved_rule) ~subject ~ot ~a ~cond ~periods =
   let value = Ir_v0.Checks.let_bound_value (req "RuleVersion.value" r.value_node) in
-  sum_timeline_producer ctx ~otype:ot ~a value;
   if not (is_period_arithmetic value) then
     fault
       "the value of the initialisation of the timeline target %S is not period arithmetic of ch. 3.4/3.5 (an \
@@ -14180,12 +14038,12 @@ let translate_object_creation ctx i (oc : resolved_object_creation) =
             assigns_nothing ~characteristic:true m [ stands; "not " ^ holds ];
             leaves_open ~characteristic:true m [ "not " ^ stands ]
         | None -> fault "characteristic assignment of %S without a value" m)
-      else if attr_sum_typed ctx ~otype:created ~attr:m || attr_struct_typed ctx ~otype:created ~attr:m
+      else if attr_struct_typed ctx ~otype:created ~attr:m
       then begin
-        (* a sum-/struct-typed initialisation (the tutorial passes an [Individual]
-           struct as a subscope input): the record/constructor term carries no
-           numeric scale, no unit and no fit — it rides straight into the val head,
-           the translate_rule struct/sum-target sibling (ch. 9.1/11.1). *)
+        (* a struct-typed initialisation (the tutorial passes an [Individual]
+           struct as a subscope input): the record term carries no numeric
+           scale, no unit and no fit — it rides straight into the val head, the
+           translate_rule struct-target sibling (ch. 11.1). *)
         assigned m (fun () ->
             ctx.rule_guard <- cond @ guard @ depth_guard;
             let bindings, tm, _ = expr_term ctx ~subject ~subject_ot (req "MemberAssignment.value" t.to_value) in
@@ -14798,7 +14656,6 @@ let rec translate_chain_days ctx ~g ~cuts ~subject ~origins ~base ~path ~a ~targ
     let jr = Printf.sprintf "%s_jr%d" tag n in
     head_body ctx (Printf.sprintf "%s(%s)" jr subject) (reached @ justified);
     let c = req "default consequence" r.default_consequence in
-    sum_timeline_producer ctx ~otype:(ot_at n) ~a c;
     if not (is_period_arithmetic c) then
       fault
         "the consequence of a default on the timeline target %S is not period arithmetic of ch. 3.4/3.5 (an operator \
@@ -15036,11 +14893,7 @@ let translate_defaults_group ctx gidx ~owner
       let hi = Printf.sprintf "grp%d_has_input" gidx in
       head_body ctx (Printf.sprintf "%s(%s)" hi subject)
         [ base; Printf.sprintf "inputval(%s,%s,_)" subject (str target_name) ];
-      (* a sum-typed target holds a ground constructor term, without a numeric scale (ch. 9.4: the defaults
-         carry over unchanged), and a consequence of that sum type rides in at scale 0 as well *)
-      ( (if attr_sum_typed ctx ~otype:owner ~attr:target_name then 0
-         else pow10 (attr_decimals ctx ~otype:owner ~attr:target_name)),
-        Some hi )
+      (pow10 (attr_decimals ctx ~otype:owner ~attr:target_name), Some hi)
     end
   in
   let target_unbounded =
@@ -16048,22 +15901,14 @@ let translate_case ctx (case : Case.t) =
       if ctx.strict then input_states ctx i;
       Uchar_ref.World.SMap.iter
         (fun aname (tl : Uchar_ref.Timeline.t) ->
-          (* ch. 9.4, 9.5: a sum-typed timeline carries a ground constructor
-             term per segment, as a scalar sum input does; a struct-typed one
-             is a recorded flank, refused loudly rather than silently
-             omitting segments *)
+          (* a struct-typed timeline is a recorded flank, refused loudly
+             rather than silently omitting segments *)
           (match Ir_v0.Checks.find_ci (object_type ctx i.otype).attributes aname with
           | Some (Some (Struct_type _)) ->
               fault "temporal struct carriage is a recorded flank; no corpus case"
           | _ -> ());
           let dt = attr_datatype ctx ~otype:i.otype ~attr:aname in
-          let segment_term (v : Value.t) =
-            match (dt, v) with
-            | Some (Sum_type { constructor_list; _ }), Value.Ctor (tag, payload) ->
-                ctor_value_term constructor_list (tag, payload)
-            | Some (Sum_type _), _ -> fault "a segment of the sum-typed timeline %S carries no constructor value" aname
-            | _ -> string_of_int (scaled_input ~what:(label ^ "." ^ aname) dt v)
-          in
+          let segment_term (v : Value.t) = string_of_int (scaled_input ~what:(label ^ "." ^ aname) dt v) in
           (* the input timeline of a target that computing rules write enters
              as inputtl/5, and stands on the days none of them decides
              (ch. 3.11, [timeline_input]) *)
@@ -16719,46 +16564,6 @@ let object_creation_strata (doc : document) : (string * int) list =
       find 0)
     doc.object_creations
 
-(* ch. 9.5: the payload of every unary constructor of a sum-typed scalar
-   attribute as a member of its own, val(O,"taxatie#waarde",P) beside
-   val(O,"taxatie",waarde(P)), which a PayloadAccess reads ([expr_term]); of a
-   dimensioned one, per cell, val(O,"gewicht[najaar]#waarde",P) beside the
-   cell's val/3 (ch. 5.8c). A time-dependent attribute has no scalar val/3,
-   and its payload is not read (ch. 9.5, per day; refused where it is read) *)
-let payload_projections ctx =
-  (* the members that hold a value of [a]: the attribute, or each of its cells *)
-  let members (ot : object_type) a =
-    match Ir_v0.Checks.attr_dimensions ot a with
-    | None -> [ a ]
-    | Some dims ->
-        let labels d =
-          match Ir_v0.Checks.find_ci ctx.doc.dimensions d with
-          | Some dim -> Ir_v0.Checks.some_names dim.dim_values
-          | None -> fault "the dimension %S of %S is not declared" d a
-        in
-        List.map (Uchar_ref.World.cell a)
-          (List.fold_right (fun d tails -> List.concat_map (fun l -> List.map (fun t -> l :: t) tails) (labels d)) dims [ [] ])
-  in
-  List.iter
-    (fun (otn, (ot : object_type)) ->
-      List.iter
-        (fun (a, dt) ->
-          match dt with
-          | Some (Sum_type { constructor_list; _ }) when not (attr_temporal ctx ~otype:otn ~attr:a) ->
-              List.iter
-                (fun m ->
-                  List.iter
-                    (function
-                      | c, Some _ ->
-                          emit_rule ctx ~head:(Printf.sprintf "val(O,%s,P)" (str (payload_member m c)))
-                            ~body:[ Printf.sprintf "val(O,%s,%s(P))" (str m) (ctor_functor c) ]
-                      | _, None -> ())
-                    constructor_list)
-                (members ot a)
-          | _ -> ())
-        ot.attributes)
-    ctx.doc.object_types
-
 (* an object creation on a dependency cycle in a document without a recursive
    creation group: WF-045 refuses it, but an executor can still be handed one,
    and this encoding keeps a creation depth only where a recursive group carries
@@ -16814,7 +16619,7 @@ let expr_children (e : expr) : expr list * condition_expr list =
   | Temporal_read { base_expr; date_value; _ } -> ([ base_expr; date_value ], [])
   | Construct { argument; _ } -> (o argument, [])
   | Match { scrutinee; arms; _ } -> (scrutinee :: List.map (fun (_, _, b) -> b) arms, [])
-  | Payload_access { base; _ } | Field_access { base; _ } -> ([ base ], [])
+  | Field_access { base; _ } -> ([ base ], [])
   | Struct_literal { field_list; _ } -> (List.map snd field_list, [])
   | Let { value; body; _ } -> ([ value; body ], [])
   | List_literal { elements; _ } -> (elements, [])
@@ -16936,26 +16741,96 @@ let check_parameter_set (doc : document) (case : Case.t) =
                   p d))
     (List.rev !read)
 
-(* two constructors of one sum type whose names meet in one ASP symbol
-   ([ctor_functor]: "a b" and "a_b") would be one value in the model; the
-   document is refused instead, naming both *)
-let refuse_functor_collisions (doc : document) =
+(* a constructor name of several words (WF-060 admits it) is no ASP symbol:
+   the encoding writes a constructor value as a ground term whose functor is
+   the name ([ctor_functor]). A limit of the encoding, refused before anything
+   is translated *)
+let refuse_constructor_names (doc : document) =
   List.iter
-    (fun (dn, dt) ->
+    (fun (_, dt) ->
       match dt with
       | Some (Sum_type { constructor_list; _ }) ->
-          ignore
-            (List.fold_left
-               (fun seen (c, _) ->
-                 let f = ctor_functor c in
-                 (match List.assoc_opt f seen with
-                 | Some c' ->
-                     fault "the constructors %S and %S of the sum type %S meet in one ASP symbol %S" c' c dn f
-                 | None -> ());
-                 (f, c) :: seen)
-               [] constructor_list)
+          List.iter
+            (fun (c, _) ->
+              if String.contains (norm c) ' ' then
+                faultc ~params:[ ("constructor", c) ] "CLINGO-053"
+                  "the constructor name %S has several words, and this encoding writes a constructor as an ASP \
+                   symbol, which has none"
+                  c)
+            constructor_list
       | _ -> ())
     doc.domain_specs
+
+(* The forms of a sum type no executor carries (RUNTIME-SEMANTICS ch. 9.4,
+   "Forms not carried"), by their slugs and in the order of that list. A
+   document that holds one is refused by name before anything is translated,
+   the first of the list it holds named *)
+let sum_type_forms = [ "timeline"; "dimension"; "creation"; "payload-unit"; "defaults-group" ]
+
+let refuse_sum_type_forms (doc : document) =
+  let found = ref [] in
+  let refuse form = if not (List.mem form !found) then found := form :: !found in
+  let is_sum = function Some (Sum_type _) -> true | _ -> false in
+  let sum_attribute otn a =
+    match Ir_v0.Checks.effective_ot doc otn with
+    | Some ot -> is_sum (Option.join (Ir_v0.Checks.find_ci ot.attributes a))
+    | None -> false
+  in
+  List.iter
+    (fun (_, (ot : object_type)) ->
+      List.iter
+        (fun (a, dt) ->
+          if is_sum dt then begin
+            if Ir_v0.Checks.attr_temporal ot a then refuse "timeline";
+            if Ir_v0.Checks.attr_dimensions ot a <> None then refuse "dimension"
+          end)
+        ot.attributes)
+    doc.object_types;
+  List.iter (fun (_, (p : parameter)) -> if is_sum p.par_datatype && p.par_granularity <> None then refuse "timeline")
+    doc.parameters;
+  List.iter
+    (fun (oc : resolved_object_creation) ->
+      match oc.created_type with
+      | Some otn ->
+          if List.exists (fun (t : assignment) -> match t.to_attribute with Some a -> sum_attribute otn a | None -> false)
+               oc.assignments
+          then refuse "creation"
+      | None -> ())
+    doc.object_creations;
+  List.iter
+    (function
+      | _, Some (Sum_type { constructor_list; _ }) ->
+          if List.exists
+               (function
+                 | _, Some (Number { measure_unit = Some _; _ } | Percentage { measure_unit = Some _; _ }) -> true
+                 | _ -> false)
+               constructor_list
+          then refuse "payload-unit"
+      | _ -> ())
+    doc.domain_specs;
+  List.iter
+    (fun (g : prioritized_defaults) ->
+      match g.pd_attribute with Some a when sum_attribute g.pd_subject a -> refuse "defaults-group" | _ -> ())
+    doc.prioritized_defaults;
+  (* an initialisation is the lowest default of a defaults group on its target
+     (ch. 7.7), as which this translation reads it *)
+  List.iter
+    (fun (r : resolved_rule) ->
+      match (r.rr_presentation, Ir_v0.Checks.written_reference r.objective) with
+      | Some Initialisation, Some (Attribute_reference { attribute_ref = Some a; object_type = Some otn; _ })
+        when sum_attribute otn a ->
+          refuse "defaults-group"
+      | _ -> ())
+    doc.resolved_rules;
+  match List.find_opt (fun form -> List.mem form !found) sum_type_forms with
+  | None -> ()
+  | Some form ->
+      faultc
+        ~params:[ ("form", form) ]
+        "CLINGO-052"
+        "the document holds a sum type in a form no executor carries (RUNTIME-SEMANTICS ch. 9.4), the %s: it is \
+         refused, not translated"
+        form
 
 (* inferFromEmpty false (IR-SPEC ch. 2) asks for the reading that infers
    nothing from an empty value (RUNTIME-SEMANTICS ch. 1.5). This translation
@@ -16972,8 +16847,8 @@ let refuse_functor_collisions (doc : document) =
 let uncarried_forms =
   [ "allocation"; "creation-cycle"; "uniqueness"; "start-point"; "day-kind"; "function-def"; "timeline-member";
     "dimension-cell"; "dimension-fold"; "time-proportional-part"; "temporal-total"; "builtin-filter";
-    "variable-reference"; "unresolved"; "temporal-read"; "match"; "record"; "list-family"; "invoke"; "whole-period";
-    "time-window"; "rule-status-check"; "let-in-composite";
+    "variable-reference"; "unresolved"; "temporal-read"; "match"; "construct"; "record"; "list-family"; "invoke";
+    "whole-period"; "time-window"; "rule-status-check"; "let-in-composite";
     (* a Let whose body reads something before its binder: the lowering keeps
        the binder's value beside every read of the body, so a read its first
        read of the binder does not reach would count (README [S1]) *)
@@ -17061,8 +16936,7 @@ let refuse_uncarried (doc : document) =
       | Binary { left_side; right_side; _ } -> opt left_side; opt right_side
       | Rounding { base_expr; _ } -> opt base_expr
       | Clamp { base_expr; minimum; maximum; _ } -> opt base_expr; opt minimum; opt maximum
-      | Construct { argument; _ } -> opt argument
-      | Payload_access { base; _ } -> expr p base
+      | Construct _ -> refuse "construct"
       | Let { binder; value; body; _ } ->
           if first_read body <> Binder (norm binder) then refuse "let-binder-not-first";
           expr p value;
@@ -17155,6 +17029,7 @@ let refuse_uncarried (doc : document) =
   end
 
 let translate_guarded ?(closed_inputs = false) (doc : document) (case : Case.t) : string * guards =
+  refuse_sum_type_forms doc;
   refuse_uncarried doc;
   (* the unbounded form at the scale its writes and the case give it
      ([Scale]); [Model.check] reads the model through the same declarations *)
@@ -17171,7 +17046,7 @@ let translate_guarded ?(closed_inputs = false) (doc : document) (case : Case.t) 
         at);
   refuse_unbounded_creation_cycle doc;
   refuse_creation_reads_on_a_cycle doc ~as_of:case.as_of;
-  refuse_functor_collisions doc;
+  refuse_constructor_names doc;
   (* the day-kind extension tables are per DOCUMENT+CASE (their window is
      read off the case's dates), so the store starts empty at every call —
      a suite that translates twice must not inherit the first window *)
@@ -17225,7 +17100,6 @@ let translate_guarded ?(closed_inputs = false) (doc : document) (case : Case.t) 
     emit_rule ctx ~head:"stands(I,A)" ~body:[ "val(I,A,_)" ];
     emit_rule ctx ~head:"stands(I,A)" ~body:[ "settled(I,A)" ]
   end;
-  payload_projections ctx;
   (* the evaluation date the validity gates compare with ([validity_gate]),
      written where a form carries a bounded window *)
   if

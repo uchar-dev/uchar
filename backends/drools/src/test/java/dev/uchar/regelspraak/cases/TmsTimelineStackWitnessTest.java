@@ -3,10 +3,6 @@ package dev.uchar.regelspraak.cases;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
-import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
-import dev.uchar.regelspraak.transpiler.tms.Period;
-
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -28,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *   <li>the documents of {@code ref/test/fixtures/writers-stack}: an initialisation with a condition beside a rule and
  *       the input; one whose value divides by 0 on some days, which the input leaves no day, some days or only the days
  *       on which its value is leeg; one within a window beside a rule, read by a total; a creation of a scalar on every
- *       day read by a sum; a creation of the marker {@code onbekend} beside a rule on the made object; and the goldens
+ *       day read by a sum; and the goldens
  *       {@code jutterswet-initialisatie-per-dag} and {@code jutterswet-creatie-per-dag};</li>
  *   <li>the faults: the initialisation over the asOfDate-bucket scalar of its target (EF-037), and a total that meets
  *       the open segments it writes (EF-036); and none of an initialisation whose value would fault where the input
@@ -38,8 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *   <li>the readings at the fixpoint (ch. 5.12): DISPLACED without nodes where the writers and the input leave the
  *       initialisation no day, and else its nodes, the root the filled segments of its value within the periods of its
  *       condition; line by line the reference interpreter's trace;</li>
- *   <li>the refusals by name: a value of an initialisation or of a member that is no period arithmetic and no
- *       constructor of a literal; an allocation that names a time-dependent attribute, which IR-SPEC WF-128 makes
+ *   <li>the refusals by name: an allocation that names a time-dependent attribute, which IR-SPEC WF-128 makes
  *       ill-formed; and a sum per period over a made link that reaches an object of the input, whose place in the fold
  *       order no made link has.</li>
  * </ul>
@@ -58,7 +53,7 @@ class TmsTimelineStackWitnessTest {
         for (String[] d : new String[][]{{"timeline-initialisation", "case.json"},
                 {"timeline-initialisation-deposit", "case.json"}, {"timeline-initialisation-deposit", "case-decides.json"},
                 {"timeline-initialisation-deposit", "case-leeg.json"}, {"timeline-initialisation-window", "case.json"},
-                {"timeline-creation", "case.json"}, {"timeline-creation-marker", "case.json"}})
+                {"timeline-creation", "case.json"}})
             plays.add(new Path[]{DOCUMENTS.resolve(d[0]).resolve("ir.json"), DOCUMENTS.resolve(d[0]).resolve(d[1])});
         for (String[] g : new String[][]{{"jutterswet-initialisatie-per-dag", "case1-zonder-invoer.json"},
                 {"jutterswet-initialisatie-per-dag", "case2-invoer.json"},
@@ -90,30 +85,6 @@ class TmsTimelineStackWitnessTest {
                 DOCUMENTS.resolve("timeline-initialisation").resolve("case-bucket-scalar.json"), "EF-037");
         faults(DOCUMENTS.resolve("timeline-initialisation-total").resolve("ir.json"),
                 DOCUMENTS.resolve("timeline-initialisation-total").resolve("case.json"), "EF-036");
-    }
-
-    /** "Een Jutter heeft een vondst met bergkosten gelijk aan onbekend indien hij actief is" beside "De bergkosten van
-     *  een Vondst moet gesteld worden op 10 van dd. 01-03-2025 tot dd. 01-06-2025": the made Vondst holds onbekend,
-     *  waarde(10) in spring and onbekend (the {@code ref/} test {@code WV-7.8-stapel-per-dag-creatie-marker}). */
-    @Test void the_made_object_holds_the_value_of_its_making_per_day() throws Exception {
-        Path d = DOCUMENTS.resolve("timeline-creation-marker");
-        JsonNode c = JSON.readTree(Files.readString(d.resolve("case.json")));
-        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
-            List<String> made = CaseRunner.forMeasurement(d.resolve("ir.json"), branch).withSession(c,
-                    (build, session, labels) -> {
-                        DroolsBackend.Firing firing = DroolsBackend.fire(build, session);
-                        if (firing.noFixpoint() != null) throw new IllegalStateException(firing.noFixpoint());
-                        Fixpoint fixpoint = DroolsBackend.fixpointOf(build, session);
-                        DroolsBackend.setDerivedValues(build, session);
-                        List<String> out = new ArrayList<>();
-                        for (Fixpoint.MadeObject m : fixpoint.objects())
-                            out.add(String.valueOf(Period.list((List<?>) RegelSpraakRuntime.get(m.object(),
-                                    "bergkosten"))));
-                        return out;
-                    });
-            assertEquals(List.of("[[-inf, 2025-03-01)=onbekend, [2025-03-01, 2025-06-01)=waarde(10),"
-                    + " [2025-06-01, +inf)=onbekend]"), made, branch.toString());
-        }
     }
 
     @Test void the_readings_are_those_of_the_reference_interpreter() {
@@ -155,15 +126,8 @@ class TmsTimelineStackWitnessTest {
                 v1 + "0 CharacteristicCheck true", v1 + "1 Literal [[- - 5]]", v1 + "HOLDS", "READINGS 1"));
     }
 
-    /** A value that is no period arithmetic and no constructor of a literal, on a timeline target of a sum type, in an
-     *  initialisation with and without a condition and in a creation's member (the {@code ref/} tests
-     *  {@code WV-7.8-stapel-per-dag-somproducent-…}); and an allocation over a share for every month, which IR-SPEC
-     *  WF-128 makes ill-formed ({@code -verdeling}). */
+    /** An allocation over a share for every month, which IR-SPEC WF-128 makes ill-formed ({@code -verdeling}). */
     @Test void the_forms_without_a_reading_per_day_are_refused_by_name() throws Exception {
-        for (String d : List.of("sum-producer-initialisation", "sum-producer-conditional", "sum-producer-creation"))
-            TmsConditionPerPeriodWitnessTest.refused(DOCUMENTS.resolve(d).resolve("ir.json"),
-                    JSON.readTree(Files.readString(DOCUMENTS.resolve(d).resolve("case.json"))), "opslagkosten",
-                    "DROOLS-316");
         Path a = DOCUMENTS.resolve("timeline-allocation");
         TmsConditionPerPeriodWitnessTest.refused(a.resolve("ir.json"),
                 JSON.readTree(Files.readString(a.resolve("case.json"))), "WF-128", "DROOLS-315");

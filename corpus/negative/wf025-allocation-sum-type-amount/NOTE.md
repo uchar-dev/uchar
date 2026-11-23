@@ -1,7 +1,7 @@
 Violates WF-025 (`spec/IR-SPEC.md` ch. 3.2): the amount of an allocation is a
 number. The golden `jutterswet-centdeling` with its `centopbrengst` declared
-as a sum type of a number and the constructor `onbekend` (an absence marker,
-ch. 2.4); the allocation still distributes it.
+as a sum type `Opgebracht(number) | Ingehouden` (ch. 2.4); the allocation
+still distributes it.
 
     WF-025.field-not-number FAIL /rules/allocations/0/versions/0/sourceAttribute:
     the field sourceAttribute of the allocation names 'centopbrengst' of

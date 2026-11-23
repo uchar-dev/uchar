@@ -1,0 +1,123 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V",
+        "objectType": "Vondst",
+        "attributes": {
+          "a": {
+            "number": "10"
+          },
+          "b": {
+            "number": "3"
+          },
+          "vinddag": {
+            "date": "2026-03-10"
+          },
+          "duur": {
+            "number": "4"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {
+      "wachttijd": {
+        "number": "5"
+      }
+    }
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "optelling",
+      "value": {
+        "constructor": "Toegekend",
+        "payload": {
+          "number": "13"
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "verschil",
+      "value": {
+        "constructor": "Toegekend",
+        "payload": {
+          "number": "7"
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "rest",
+      "value": {
+        "constructor": "Toegekend",
+        "payload": {
+          "number": "7"
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "product",
+      "value": {
+        "constructor": "Toegekend",
+        "payload": {
+          "number": "30"
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "samenstelling",
+      "value": {
+        "constructor": "Toegekend",
+        "payload": {
+          "number": "4"
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "latere dag",
+      "value": {
+        "constructor": "Toegekend",
+        "payload": {
+          "date": "2026-03-14"
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "eerdere dag",
+      "value": {
+        "constructor": "Toegekend",
+        "payload": {
+          "date": "2026-03-06"
+        }
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V",
+      "attribute": "wachtdag",
+      "value": {
+        "constructor": "Toegekend",
+        "payload": {
+          "date": "2026-03-15"
+        }
+      }
+    }
+  ]
+}

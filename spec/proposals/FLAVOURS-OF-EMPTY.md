@@ -12,6 +12,23 @@ op commit `872b859` in alef-bridge (kaart `backlog/doing/20261104-empty-kinds-in
 bronnotities staan in het onderzoeksrapport buiten de repo (`research/flavours-of-empty/`); de programma's van §6 staan
 hier letterlijk.*
 
+**Besluit van de eigenaar (2026-11-23), dat N1 tot en met N5 hieronder herziet** (kaart `one-empty`, ontwerp B):
+
+- **N1 herzien:** de IR houdt één leeg en geen markers. De markers `onbekend` en `niet van toepassing` vervallen, met de
+  dialectvormen, `PayloadAccess` en WF-127. In een gewoon document is een waarde gevuld of leeg (RS ch. 1.2); in een
+  document met `inferFromEmpty: false` gevuld, vaststaand leeg of open (RS ch. 1.5).
+- **N2 herzien:** een regel of een opgave beslist niet dat er geen waarde is. Een stand als "komt er niet" schrijft de
+  auteur als kenmerk: "een Vondst is afhaalbaar indien hij niet drijfhout is" en "de afhaaldatum van een Vondst moet
+  berekend worden als zijn claimdatum plus 7 dagen indien hij afhaalbaar is" (de goldens `jutterswet-afhaalbaar` en
+  `jutterswet-afhaalbaar-strikt`).
+- **N3 herzien:** het caseformaat krijgt geen `null` en geen markers.
+- **N4 en N5 herzien:** er is geen dialectsuiker voor markers. Wie in een gewoon document "nog niet" naast "nooit" op
+  één attribuut nodig heeft, schrijft het standpatroon van §6.1 (een enumeratie van de stand naast de waarde).
+- **N6 aangevuld:** in een gewoon document blijft een kenmerk tweewaardig. In een document met `inferFromEmpty: false`
+  heeft een kenmerk drie standen: het geldt, het staat vast dat het niet geldt, of het is open (RS ch. 1.5).
+
+De besluiten van 2026-11-04 hieronder staan er als geschiedenis.
+
 **Besluiten van de eigenaar (2026-11-04).**
 
 - **N1:** de IR houdt één leeg, de afwezigheid: nog niet afgeleid of niet aangeleverd; een schrijver die leeg oplevert, beslist niets.

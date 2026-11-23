@@ -4,7 +4,7 @@ CLINGO-002	fallback	text-operand-shape		symbolic_term
 CLINGO-003	fallback	gedurende-condition-shape		expr_term
 CLINGO-004	fallback	temporal-read-base-shape		expr_term
 CLINGO-005	refusal	clamp-bound-not-literal	bound	expr_term
-CLINGO-006	fallback	construct-payload-rule-level		expr_term,refuse_payload_in_another_unit
+CLINGO-006	fallback	construct-payload-rule-level		expr_term
 CLINGO-007	refusal	sum-over-listed-operands		expr_term
 CLINGO-008	fallback	expression-node-kind		expr_term
 CLINGO-009	fallback	datum-tijd-term-shape		dt_term
@@ -34,7 +34,7 @@ CLINGO-032	limit	calendar-total-outside-rounding	attribute	expr_term
 CLINGO-033	limit	unbounded-form-held-whole		division_misfit,fitted,translate_pro_rata
 CLINGO-034	limit	machine-integer-range		range_guard,money_mult_fences,expr_term,translate_pro_rata,translate_day_count,translate_period_arithmetic,translate_allocation,translate_uniqueness_union
 CLINGO-035	limit	creation-order-not-carried		refuse_order_dependent
-CLINGO-036	refusal	sum-timeline-producer	attribute	sum_timeline_producer
+CLINGO-036	retired	sum-timeline-producer	attribute	sum_timeline_producer
 CLINGO-037	limit	date-arithmetic-range		translate_date_plus_months,day_number_fence
 CLINGO-038	refusal	creation-condition-reads-on-a-cycle	creation,node,writer	refuse_creation_reads_on_a_cycle
 CLINGO-039	limit	non-exact-division-in-condition		division_misfit
@@ -50,3 +50,5 @@ CLINGO-048	limit	date-part-not-statically-whole		date_construction
 CLINGO-049	refusal	infer-from-empty-false	form	refuse_uncarried
 CLINGO-050	refusal	filled-test-operand-not-bound	operand,datatype	filled_operand_atoms
 CLINGO-051	refusal	helper-reads-outside-its-key	form,read	refuse_unkeyed
+CLINGO-052	refusal	sum-type-form-not-carried	form	refuse_sum_type_forms
+CLINGO-053	limit	constructor-name-of-several-words	constructor	refuse_constructor_names

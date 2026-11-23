@@ -10,13 +10,13 @@
         "attributes": [
           {
             "node": "Attribute",
-            "name": "taxatie",
+            "name": "vindloonbesluit",
             "datatype": {
               "node": "SumType",
-              "domain": "taxatie van een Vondst",
+              "domain": "vindloonbesluit",
               "constructors": [
                 {
-                  "name": "waarde",
+                  "name": "Toegekend",
                   "payload": {
                     "node": "Number",
                     "whole": false,
@@ -25,7 +25,7 @@
                   }
                 },
                 {
-                  "name": "onbekend",
+                  "name": "Afgewezen",
                   "payload": null
                 }
               ]
@@ -56,12 +56,12 @@
     "domains": [
       {
         "node": "Domain",
-        "name": "taxatie van een Vondst",
+        "name": "vindloonbesluit",
         "datatype": {
           "node": "SumType",
           "constructors": [
             {
-              "name": "waarde",
+              "name": "Toegekend",
               "payload": {
                 "node": "Number",
                 "whole": false,
@@ -70,7 +70,7 @@
               }
             },
             {
-              "name": "onbekend",
+              "name": "Afgewezen",
               "payload": null
             }
           ]
@@ -86,7 +86,7 @@
     "rules": [
       {
         "node": "Rule",
-        "name": "vaste taxatie",
+        "name": "vast vindloonbesluit",
         "versions": [
           {
             "validity": {
@@ -94,20 +94,20 @@
             },
             "target": {
               "node": "AttributeReference",
-              "attribute": "taxatie",
+              "attribute": "vindloonbesluit",
               "subjectType": "Vondst",
               "source": {
-                "snippet": "De taxatie van een Vondst"
+                "snippet": "Het vindloonbesluit van een Vondst"
               }
             },
             "value": {
               "node": "Construct",
               "type": {
                 "node": "SumType",
-                "domain": "taxatie van een Vondst",
+                "domain": "vindloonbesluit",
                 "constructors": [
                   {
-                    "name": "waarde",
+                    "name": "Toegekend",
                     "payload": {
                       "node": "Number",
                       "whole": false,
@@ -116,12 +116,12 @@
                     }
                   },
                   {
-                    "name": "onbekend",
+                    "name": "Afgewezen",
                     "payload": null
                   }
                 ]
               },
-              "constructor": "waarde",
+              "constructor": "Toegekend",
               "argument": {
                 "node": "AttributeReference",
                 "attribute": "gewicht",

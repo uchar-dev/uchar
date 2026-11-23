@@ -16,7 +16,7 @@
               "domain": "centopbrengst van een Centpot",
               "constructors": [
                 {
-                  "name": "waarde",
+                  "name": "Opgebracht",
                   "payload": {
                     "node": "Number",
                     "whole": false,
@@ -25,7 +25,7 @@
                   }
                 },
                 {
-                  "name": "onbekend",
+                  "name": "Ingehouden",
                   "payload": null
                 }
               ]
@@ -105,7 +105,7 @@
           "node": "SumType",
           "constructors": [
             {
-              "name": "waarde",
+              "name": "Opgebracht",
               "payload": {
                 "node": "Number",
                 "whole": false,
@@ -114,7 +114,7 @@
               }
             },
             {
-              "name": "onbekend",
+              "name": "Ingehouden",
               "payload": null
             }
           ]

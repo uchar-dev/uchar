@@ -13,3 +13,4 @@ REF-011	fallback	temporal-target-shape		run_pro_rata
 REF-012	fallback	rule-target-shape	rule	run_rule
 REF-013	refusal	ranking-fold-over-a-timeline	fold,attribute	refuse_ranking_fold
 REF-014	refusal	infer-from-empty-false	form	refuse_uncarried
+REF-015	refusal	sum-type-form-not-carried	form	refuse_sum_type_forms

@@ -1105,6 +1105,7 @@ several, it names the first of this list:
 | `unresolved` | an `Unresolved` node |
 | `temporal-read` | a temporal read |
 | `match` | a match (ch. 9.2) |
+| `construct` | a `Construct` (ch. 9.1) |
 | `record` | a record literal and a field access (ch. 11) |
 | `list-family` | a list literal, a Lambda, a Fold, a MapList, a FilterList and a ListLength (ch. 10) |
 | `invoke` | an Invoke (ch. 10) |
@@ -1957,8 +1958,7 @@ the empty timeline: a scalar holds on every day (§5.1.1, §5.1.4.1).
   the segment's one value on each of its days, so all those buckets give one
   verdict.
 - **Segment-wise equality** — the same `van`, the same `tot`, and values
-  that are equal or both leeg (numeric equality for a number; the structural
-  equality of ch. 9.3 for a constructor value) — is the change-detection
+  that are equal or both leeg (numeric equality for a number) — is the change-detection
   rule of a timeline write, the counterpart of the scalar rule of ch. 1.2,
   Assignment (the evaluation model: ch. 5).
 
@@ -6547,8 +6547,8 @@ case reader refuses, while it reads the case (ch. 5.7 step 3):
 - a cell the input names twice, with EF-035;
 - a scalar or a timeline input on a dimensioned attribute, a `cells` input
   on an attribute without dimensions, and an `attributeValue`,
-  `attributeEmpty` or `attributeTimeline` expectation on a dimensioned
-  attribute: a case error without a code, since the case does not fit the
+  `attributeEmpty`, `attributeOpen` or `attributeTimeline` expectation on a
+  dimensioned attribute: a case error without a code, since the case does not fit the
   document's declarations, as a timeline on an attribute without one does
   not. A scalar on a dimensioned attribute would otherwise load as a value
   the document cannot read; measured 2026-11-02 before the reader held this,
@@ -7840,7 +7840,7 @@ and `-005-03-01` until then, and the golden `date-with-parts` reads one); a
 text and an enumeration value quoted, with `\`, `"` and the line breaks
 escaped; a constructor value (ch. 9.1) as its tag quoted and, for a unary
 constructor, its payload written as a value is, in parentheses:
-`"onbekend"`, `"waarde"(300)`; leeg as `empty`; a timeline as `[[<from> <to> <value>], …]`, with
+`"Afgewezen"`, `"Toegekend"(300)`; leeg as `empty`; a timeline as `[[<from> <to> <value>], …]`, with
 `empty` as the value of a period without one. After the value of an
 expression stands its unit, quoted, where it has one: of a number the unit
 of the node's effective type (ch. 2.10), the number restated into it where
@@ -9853,11 +9853,7 @@ attribute `strandloon`, label `J1` (`-totaal`); "… op 5 van dd. 01-01-2025 tot
 dd. 01-01-2026" beside the rule of 20 in spring gives **5**, **20**, **5** on
 2025, leeg elsewhere, and the jaarloon **105** (`-venster`). The creation of a melding with
 the waarde of the scalar vangst 7 gives a terug of **7** on (−∞, +∞)
-(`-creatie-scalair`); a creation that gives a sum-typed timeline the marker
-`onbekend`, beside 10 in spring, gives the object it makes `onbekend`,
-`waarde(10)` on [2025-03-01, 2025-06-01) and `onbekend` (`-creatie-marker`,
-the golden `jutterswet-afwezigheidsmarkers-initialisatie` for an
-initialisation on such a timeline); an allocation over a share for every month
+(`-creatie-scalair`); an allocation over a share for every month
 is WF-128 (`-verdeling`).
 
 Worked example `WV-7.8-stapel` (absolute; `ref/test/` verbatim, the golden
@@ -10582,11 +10578,10 @@ empty: **EF-037**, attribute `stormtoelage`, label `J7`.
 
 *A v1 kernel extension (CONSTRUCTS row 36; design and ratified decisions:
 `spec/proposals/PHASE5B-KERNEL.md` §2). No v0 counterpart exists, so this
-chapter mirrors nothing; it is normative from first writing. The
-RegelSpraak dialect lowers its absence markers to these forms (ch. 9.5).
+chapter mirrors nothing; it is normative from first writing.
 Node forms and well-formedness: IR-SPEC ch. 2.4 (`SumType`, the keuzetype
 family and its WF-087 normalisation) and IR-SPEC ch. 4.7 (`Construct`, `Match`,
-`BinderRef`, `PayloadAccess`), WF-060..064 and WF-127. `Match` is the one
+`BinderRef`), WF-060..064. `Match` is the one
 node of this chapter that also serves the family's other wire variant,
 the enumeration — its evaluation is ch. 9.2; everything else here is
 sum-only.*
@@ -10601,12 +10596,8 @@ leeg propagates — the whole `Construct` evaluates leeg (the ch. 1.3
 strict default; constructing "a grant of nothing" is not expressible,
 exactly as prioritized defaults never write leeg, ch. 7.1).
 
-The argument is a write into the declared payload (`IR-SPEC.md` WF-062):
-a number in another unit of the payload's unit system is restated into
-the payload's unit, as a value written into an attribute is restated
-into the attribute's (ch. 2.6). A `Construct waarde(lading)` with a
-`lading` of 2 t and a payload in kg is `waarde(2000)` (worked in
-ch. 9.5).
+The argument is a write into the declared payload (`IR-SPEC.md` WF-062).
+A payload that declares a unit is a form no executor carries (ch. 9.4).
 
 Worked (the `jutterswet-beschikkingsom` anchor's declarations —
 `beschikking` = `Toegekend(bedrag: 2 decimals)` | `Afgewezen` |
@@ -10721,11 +10712,9 @@ cross-sum-type comparison is ill-formed, never false). Then:
 - constructor values are not orderable: `<`/`>` over a sum type is a
   typing fault, as for text and enumeration values.
 
-Structural equality is the equality used by the three consumers that
-need one: idempotent writes (ch. 5.1), timeline segment
-change-detection (ch. 3.1, as amended), and the defaults'
-equal-decisions-are-no-conflict rule (ch. 7.5) — two defaults both
-deciding `Toegekend(1250.50)` are equal decisions, not a conflict.
+Structural equality is the equality of idempotent writes (ch. 5.1):
+two writes of `Toegekend(1250.50)` to one target are one value, not a
+conflict.
 
 Worked (the anchor's condition rules — `bevoorschot` iff `beschikking`
 = `Aangehouden`; `afgehandeld` iff `beschikking` ≠ `Aangehouden`):
@@ -10739,268 +10728,31 @@ Worked (the anchor's condition rules — `bevoorschot` iff `beschikking`
   exactly one empty → waar, Tabel 44); pinned absolutely in the anchor's
   case 4.
 
-### 9.4 Carriage, defaults, timelines
+### 9.4 Carriage and the forms not carried
 
-- **Defaults and standing.** A sum-typed attribute target changes no
-  defaults semantics: the decide-test stays gevuld/leeg and never
-  inspects the tag (ch. 7.1); a default wanting "decide only for
-  constructor X" puts a match or a ch. 9.3 equality in its
-  justification. The ch. 7.8 standing norm carries over unchanged.
+- **Standing.** A rule that writes a sum-typed attribute stands as every
+  rule does: the ch. 7.8 standing norm carries over unchanged.
 - **Case carriage.** Constructor values ride the case format's value
   union (input attributes, parameters, expectations); the loaders
   fail fast on an undeclared constructor or a payload against the
   wrong datatype (the WF-059/WF-018 backstop, widened).
-- **Timelines.** A sum-typed temporal attribute holds a constructor
-  value per segment, in the case format as in the end state. A
-  constructor of a literal is a scalar operand of ch. 3.11, which holds
-  on every day, so a rule writes it in the periods of its condition; an
-  own timeline of the same sum type is an operand read whole (ch. 3.4),
-  so a rule that writes it copies it segment by segment in the periods
-  of its condition; input, writers and EF-016 are read per day as for
-  every timeline target (ch. 3.11, 5.7, 7.8), and a comparison of such a
-  timeline with a constructor is a condition per period (ch. 3.10).
-  Timeline *arithmetic* and temporal totals stay numeric-only
-  (ch. 3.4–3.6), as for text and enumeration members. Corpus witnesses:
-  the goldens `jutterswet-afwezigheidsmarkers` (ch. 9.5) and
-  `jutterswet-afwezigheidsmarkers-kopie` (the copy).
 
-### 9.5 Absence markers and the payload access
+**Forms not carried.** The forms below have no reading in this
+specification. An executor that meets one refuses the document before it
+evaluates anything, and names the form by its slug; where the document
+holds several, it names the first of this list:
 
-*Status: proposal of the card `absence-markers` (2026-11-04), after the
-decisions of the maintainer of that day recorded in
-`spec/proposals/FLAVOURS-OF-EMPTY.md`.* The IR has one absence, leeg
-(ch. 1.1): not yet derived, or not supplied. Beside it a document may
-give an attribute **absence markers**: values without a number that a
-rule writes and that decide like a number does. **onbekend** says that
-the attribute has a value that cannot be established; **niet van
-toepassing** that it has none. A marker is a filled value: it is no
-second absence, and ch. 1.2 does not change.
+| slug | the form |
+|---|---|
+| `timeline` | a sum-typed attribute or parameter with a timeline (ch. 3): its input, its writers, its copy and its comparison per period |
+| `dimension` | a sum-typed dimensioned attribute (ch. 5.8c): its cells |
+| `creation` | an object creation that gives a sum-typed member a value (ch. 5.5) |
+| `payload-unit` | a sum type with a unary constructor whose payload declares a unit (ch. 2.10) |
+| `defaults-group` | a defaults group whose target is a sum-typed attribute (ch. 7), and an initialisation of one, which ch. 7.7 reads as such a group |
 
-**The lowering.** An attribute of datatype T with markers is an
-attribute of a sum type of its own, over a domain the producer names,
-with the constructors `waarde` (payload T) and then the markers it
-admits, `onbekend` and `niet van toepassing`, as nullary constructors.
-The RegelSpraak dialect writes them on the declaration
-(`frontends/regelspraak/grammar/DIVERGENCES.md`,
-"Afwezigheidsmarkeringen"). Every rule of ch. 9.1–9.4 applies:
-
-- **Writing.** A value v is written as `Construct waarde(v)`; a leeg v
-  leaves the Construct leeg (ch. 9.1), which decides nothing (ch. 3.11).
-  A marker is written as the Construct of the marker, and decides: it
-  displaces the input (ch. 7.8, rank 1 over rank 2), it yields where a
-  defaults group puts an opgave above it (ch. 7.1), and against a writer
-  of another value on the same object, or the same day of a timeline, the
-  session faults with EF-016 (ch. 5.7, ch. 3.11).
-- **Testing a marker.** An equality with the Construct of the marker
-  (ch. 9.3): waar where the attribute holds that marker, onwaar on leeg
-  and on every other value.
-- **Reading the value.** The node `PayloadAccess(base, c)` (`IR-SPEC.md`
-  ch. 4.7) evaluates `base`, a sum-typed expression, and is the payload
-  where the value carries the unary constructor `c`, and leeg where it
-  carries another constructor or is leeg — a failed access, as a failed
-  to-one navigation is leeg (ch. 1.2). On a timeline the access is read
-  per day.
-- **Testing for a value.** A gevuld test of `PayloadAccess(X, waarde)`
-  holds where X carries a value; leeg and the markers fail it.
-- **A cell.** On a dimensioned attribute with markers each cell is such
-  a value (ch. 5.8c): a marker is written into a cell, a cell is tested
-  for a marker and for a value, and its value is read as the
-  `PayloadAccess` over the `DimensionCellRead` of the cell.
-
-**The reading rule.** A failed access is leeg, and plus, min and maal
-count leeg as 0 (ch. 1.2): an unknown amount would count on as nothing.
-So every `PayloadAccess` stands under a test of its own constructor —
-`IR-SPEC.md` WF-127: as the operand of a leeg or gevuld test, or after a
-gevuld test of the same access, the same attribute or the same cell of
-it, that holds as a conjunct before it (in the
-condition of its form for the form's value; earlier in the same `all` for
-a condition, whose members are read in order, ch. 5.10; in the filter of
-a fold over members for the fold's per-member positions; in the condition
-of an IfThenElse for its then branch). Under such a test the access never
-fails, and its leeg reaches no operator.
-
-**An aggregation over members with markers** reads each member's
-payload, so its filter tests that each member holds a value ("de som van
-de taxatie van alle vondsten die een waarde hebben"); the members with a
-marker are no contributors, and where no member holds a value the
-aggregation reads as over an empty source (ch. 1.2). *Normvraag, open:*
-the alternative skips the markers as leeg contributors without a filter
-in the source; this chapter takes the filter, the reading of the decision
-"wie leest, toetst eerst".
-
-**An opgave above a computation.** A consequence of a defaults group on an
-attribute with markers may be another attribute of the same sum type. The
-reference is read whole, without a `PayloadAccess`, so the group passes on
-the value that decides as it stands, a marker included (ch. 9.4, ch. 7.1;
-per day ch. 7.11). The RegelSpraak dialect's opgave marker on an attribute
-with markers lowers to this
-(`frontends/regelspraak/grammar/DIVERGENCES.md` §7): the opgave and the
-computation are attributes of the marked attribute's sum type, so an opgave
-may itself be a marker, and it decides above a computed marker as above a
-computed value. Whether an opgave deviates from the computation is the
-inequality of ch. 9.3 over the two, both filled: a value beside a marker, a
-marker beside a value, two different markers and two different values
-deviate; two equal markers and two equal values do not, and neither does an
-opgave beside a leeg computation.
-
-**Executed.** In ref, the ASP backend and both branches of the Drools
-backend: writing, a computed value included (a date plus a duration, an
-arithmetic of numbers), testing, reading the value in arithmetic,
-comparisons and a fold over members, scalar, per cell and in an object
-creation, the write and the test per period, the copy of a timeline, and a
-defaults group on an attribute with markers whose consequences are
-attributes of its sum type, with an initialisation as its lowest default,
-scalar and per day, with the readings of ch. 5.12. Not executed, refused by
-name in all three: a `PayloadAccess` of a timeline, whose test per period is
-a gevuld test per period without a reading (ch. 3.12 row 5). The ASP backend
-and the Drools backend write a sum-typed timeline from a constructor of a
-literal and from a copy of an own timeline of the same sum type, and from
-nothing else. The ASP backend refuses by name a computed value whose term
-stands at another scale than the declared payload, a value in another unit
-than the payload's, and a `Match` as the value (`ASP-TRANSLATION.md` S14).
-
-Worked examples (absolute; `ref/test/` verbatim, the golden
-`jutterswet-afwezigheidsmarkers` and its red twin
-`jutterswet-afwezigheidsmarkers-botsing`). A Vondst whose `taxatie`
-(2 decimals) and `opslagkosten` (whole, for every month) carry both
-markers, with the rules "taxatie := zijn schatting", "taxatie :=
-onbekend indien hij onleesbaar is", "taxatie := niet van toepassing
-indien hij drijfhout is", "vindloon := zijn taxatie gedeeld door 10
-rekenkundig afgerond op 2 decimalen indien zijn taxatie een waarde
-heeft", "vindloon := 25,00 indien zijn taxatie onbekend is", "vindloon :=
-0,00 indien zijn taxatie niet van toepassing is", "kostbaar indien zijn
-taxatie een waarde heeft en zijn taxatie groter is dan 1000,00", for a
-Jutter "getaxeerd totaal := de som van de taxatie van alle vondsten die
-een waarde hebben", and "opslagkosten := onbekend van 01-01-2025 tot
-01-03-2025", "opslagkosten := niet van toepassing gedurende de tijd dat
-hij verkocht is", "opslagtoeslag := 7 gedurende de tijd dat zijn
-opslagkosten onbekend zijn".
-
-- `WV-9.5-payload`: the payload access to `waarde` of `waarde(300)` is
-  **300**, of `onbekend` **leeg**, of leeg **leeg**.
-- `WV-9.5-markeringen-schatting`: schatting 300,00 → taxatie
-  **waarde(300.00)**, vindloon **30,00**, not kostbaar.
-- `WV-9.5-markeringen-onbekend-verdringt-invoer`: onleesbaar, input
-  taxatie waarde(40.00) → taxatie **onbekend**, vindloon **25,00**.
-- `WV-9.5-markeringen-niet-van-toepassing`: drijfhout → **niet van
-  toepassing**, vindloon **0,00**.
-- `WV-9.5-markeringen-niets`: no input → taxatie and vindloon **leeg**.
-- `WV-9.5-markeringen-onbekend-in-de-invoer`: input taxatie onbekend →
-  **onbekend** (the rule from the schatting fires with leeg and decides
-  nothing), vindloon **25,00**.
-- `WV-9.5-markeringen-kostbaar`: schatting 2000,00 → **kostbaar**,
-  vindloon **200,00**.
-- `WV-9.5-markeringen-som-van-de-waarden`: vondsten with schatting
-  300,00, onleesbaar and schatting 100,00 → getaxeerd totaal **400,00**;
-  `-geen-waarde-in-de-som`: only the onleesbare → **leeg**.
-- `WV-9.5-markeringen-per-maand`: opslagkosten waarde(10) on 2025 in the
-  input → **onbekend** on [2025-01-01, 2025-03-01) and **waarde(10)** on
-  [2025-03-01, 2026-01-01); opslagtoeslag **7** on [2025-01-01,
-  2025-03-01). `-na-verkoop`: verkocht from 2025-06-01 as well →
-  **onbekend**, **waarde(10)** on [2025-03-01, 2025-06-01) and **niet van
-  toepassing** on [2025-06-01, 2026-01-01).
-- `WV-9.5-botsing-scalair`: onleesbaar with schatting 300,00 → **EF-016**,
-  attribute `taxatie`, label V1, the values waarde(300) and onbekend;
-  `WV-9.5-botsing-per-dag`: verkocht from 2025-02-01 → **EF-016** in
-  February 2025, attribute `opslagkosten`, the values onbekend and niet
-  van toepassing.
-- `WV-9.5-per-dag-*`: a payload access to the opslagkosten in a scalar
-  slot, and a sum over the payloads of their timelines, are refused by
-  name; `WV-9.5-kopie-van-een-tijdlijn`: a timeline of the same sum type
-  copied whole reads **onbekend**, **waarde(10)** as its source.
-
-On a cell (the golden `jutterswet-afwezigheidsmarkers-cel`): a Vondst whose
-`gewicht` (2 decimals) is dimensioned by `seizoen` (voorjaar, najaar) and
-carries the marker onbekend, with the rules "gewicht in najaar := zijn
-schatting", "gewicht in voorjaar := onbekend indien hij onleesbaar is",
-"najaarsloon := zijn gewicht in najaar maal 2 indien zijn gewicht in najaar
-een waarde heeft", "voorjaarstoeslag := 7,00 indien zijn gewicht in voorjaar
-onbekend is" and "zwaar indien zijn gewicht in najaar een waarde heeft en
-zijn gewicht in najaar groter is dan 100,00".
-
-- `WV-9.5-cel-schatting`: schatting 60,00 → gewicht in najaar
-  **waarde(60.00)**, in voorjaar **leeg**, najaarsloon **120,00**, not zwaar.
-- `WV-9.5-cel-onbekend-verdringt-invoer`: onleesbaar, input gewicht in
-  voorjaar waarde(10.00) → **onbekend**, voorjaarstoeslag **7,00**.
-- `WV-9.5-cel-zwaar`: schatting 150,00 → najaarsloon **300,00**, **zwaar**.
-- `WV-9.5-cel-onbekend-in-de-invoer`: input onbekend in both cells → gewicht
-  in najaar **onbekend**, najaarsloon **leeg**, voorjaarstoeslag **7,00**.
-
-In an object creation (the golden `jutterswet-afwezigheidsmarkers-creatie`):
-a Jutter that is actief makes a vondst with the taxatie onbekend, one that is
-ervaren a vondst with the taxatie 12,50, a drijfhout vondst has the taxatie
-5,00; the Jutter counts its vondsten whose taxatie is onbekend and sums the
-taxatie of those that hold a value.
-
-- `WV-9.5-creatie-actief`: **1** onbekend, the sum **leeg**;
-  `-ervaren`: **0**, **12,50**; `-beide-met-drijfhout`: actief, ervaren and a
-  drijfhout vondst → taxatie **waarde(5.00)**, **1**, **17,50**;
-  `-drijfhout-verdringt-onbekend`: two vondsten with the input onbekend, one
-  drijfhout → **waarde(5.00)** and **onbekend**, **1**, **5,00**.
-
-The copy (the golden `jutterswet-afwezigheidsmarkers-kopie`): "opslagkopie :=
-zijn opslagkosten" and "verkoopkopie := zijn opslagkosten gedurende de tijd
-dat hij verkocht is", beside the writers of the opslagkosten above.
-
-- `WV-9.5-kopie`: opslagkosten waarde(10) on 2025 → opslagkopie
-  **onbekend** on [2025-01-01, 2025-03-01), **waarde(10)** on [2025-03-01,
-  2026-01-01); `-na-verkoop`: verkocht from 2025-06-01 → opslagkopie as the
-  opslagkosten, verkoopkopie **niet van toepassing** on [2025-06-01,
-  2026-01-01); `-invoer-naast-de-kopie`: opslagkosten waarde(10) on
-  [2025-04-01, 2025-08-01) and the input opslagkopie waarde(4) on 2025 →
-  opslagkopie **onbekend**, **waarde(4)** on [2025-03-01, 2025-04-01),
-  **waarde(10)** on [2025-04-01, 2025-08-01), **waarde(4)** on [2025-08-01,
-  2026-01-01).
-
-The opgave (the golden `jutterswet-opgave-afwezigheidsmarkers`): a Vondst
-whose `teruggavedatum` (a date with both markers) is computed as "zijn
-claimdatum plus de teruggavetermijn" (a parameter of 14 days), "niet van
-toepassing indien hij drijfhout is" and "onbekend indien hij onleesbaar is",
-below the opgave; whose `afhaaldatum` (a date, the marker niet van
-toepassing) is computed as "zijn claimdatum plus 7 dagen" and initialised on
-01-01-2026, below the opgave; whose `bergloon` (whole, the marker onbekend) is
-computed as "zijn gewicht verminderd met 2 maal zijn schade" and initialised
-on onbekend, below the opgave; and whose `opslagkosten` (whole, for every
-month, the marker onbekend) are computed as onbekend on [2025-01-01,
-2025-03-01) and 10 on [2025-03-01, 2025-07-01), below the opgave. A deviation
-deposits one fact `controle opgave X` × the Vondst (ch. 5.6).
-
-- `WV-9.5-opgave-berekende-marker`: drijfhout → teruggavedatum **niet van
-  toepassing**, no deviation; `-datum-boven-marker`: drijfhout and the
-  opgave 12-03-2026 → **waarde(2026-03-12)**, a deviation;
-  `-marker-boven-datum`: claimdatum 10-03-2026 and the opgave niet van
-  toepassing → **niet van toepassing**, the computation
-  **waarde(2026-03-24)**, a deviation; `-dezelfde-marker`:
-  drijfhout and the opgave niet van toepassing → **niet van toepassing**, no
-  deviation; `-andere-marker`: onleesbaar and the opgave niet van toepassing
-  → **niet van toepassing**, a deviation; `-marker-zonder-berekening`: the
-  opgave onbekend → **onbekend**, no deviation; `-datum-boven-datum`:
-  claimdatum 10-03-2026 and the opgave 12-03-2026 → **waarde(2026-03-12)**, a
-  deviation; `-gelijke-datum`: claimdatum 10-03-2026 and the opgave
-  24-03-2026 → **waarde(2026-03-24)**, no deviation; `-niets`: no input →
-  **leeg**, and the opslagkosten **onbekend** on [2025-01-01, 2025-03-01) and
-  **waarde(10)** on [2025-03-01, 2025-07-01).
-- `WV-9.5-opgave-per-maand`: the opgave of the opslagkosten waarde(4) on
-  [2025-02-01, 2025-05-01) and onbekend on [2025-06-01, 2025-08-01) →
-  **onbekend** on [2025-01-01, 2025-02-01), **waarde(4)** on [2025-02-01,
-  2025-05-01), **waarde(10)** on [2025-05-01, 2025-06-01) and **onbekend** on
-  [2025-06-01, 2025-08-01).
-- `WV-9.5-opgave-berekende-afhaaldatum`: claimdatum 10-03-2026 → afhaaldatum
-  **waarde(2026-03-17)**; `-afhaaldatum-zonder-claim`: no input → the
-  initialisation, **waarde(2026-01-01)**; `-marker-boven-initialisatie`: the
-  opgave niet van toepassing → **niet van toepassing**, no deviation.
-- `WV-9.5-opgave-berekend-bergloon`: gewicht 30 and schade 4 → bergloon
-  **waarde(22)**; `-bergloon-zonder-gewicht`: schade 4 → the computation
-  **leeg** (verminderd met propagates its left operand, ch. 1.2a), the
-  initialisation **onbekend**.
-
-A value in another unit (the fixture
-`ref/test/fixtures/absence-markers/payload-in-another-unit`): a Vondst whose
-`gewicht` (whole, in kg, the marker onbekend) is computed as "zijn lading", a
-whole number in t.
-
-- `WV-9.5-waarde-in-de-gedeclareerde-eenheid`: lading 2 t → gewicht
-  **waarde(2000)**, in kg.
+The suite holds this table to the slugs the reference interpreter refuses
+with, in this order, and plays a document per form
+(`WV-9.4-forms-not-carried`, `ref/test/fixtures/sum-types/forms-not-carried`).
 
 ## 10. Folds and function values
 
@@ -11478,7 +11230,7 @@ Worked (the anchor's `dubbel` iff `dossier` = `{waarde: 120.50, telling:
   temporal record carriage is a recorded OPEN in the ASP inventory —
   never a silent divergence, the ch. 9.4 flank pattern. Timeline
   *arithmetic* and temporal totals stay numeric-only regardless
-  (ch. 3.4–3.6), as for the sum-type, text and enumeration members.
+  (ch. 3.4–3.6), as for the text and enumeration members.
 
 ## Chapters (planned)
 

@@ -23,8 +23,7 @@ domain of the Jutterswet.*
    value makes a computation open and a condition undetermined, unless another part decides it: "A and B" is false as
    soon as A is false; "A or B" is true as soon as A is true.
 3. **Who wants to go on without a given says so in the rules:** with a test on leeg in the form that goes on ("indien
-   zijn gewicht leeg is"), with an initialisation, with an opgave, with a marker (`onbekend`, `niet van toepassing`)
-   and a rule for that marker, or by treating the input as complete (§9).
+   zijn gewicht leeg is"), with an initialisation, with an opgave, or by treating the input as complete (§9).
 
 ### 1.1 Two requirements
 
@@ -60,9 +59,6 @@ to hold, or is open (§5.6).
 - An expression whose reads are all filled or settled leeg is settled: it computes as the ordinary reading does, and
   its outcome is filled or settled leeg. A leeg outcome by a fault on settled operands (a division by 0, a root of a
   negative) is settled leeg, with its §9.5 deposit as today.
-- **onbekend** and **niet van toepassing** (RUNTIME-SEMANTICS ch. 9.5): unchanged. They are filled values, declared per
-  attribute, that decide like a number and that a reader tests before it reads the value (WF-127). They do not pass on
-  through an operator.
 
 ## 3. How a document carries the choice
 
@@ -133,8 +129,7 @@ true. Where both sides are filled, its complement is the complementary operator:
 | `notEqual` | every datatype | `equal` |
 
 The ordering of a number, a percentage and a date of one precision is total; equality of a sum type is structural
-(ch. 9.3), of a record field by field (ch. 11.2). A comparison over two sum types is a test on a marker where one side
-is the `Construct` of a marker: its complement is "the attribute is filled and carries another constructor". Where a
+(ch. 9.3), of a record field by field (ch. 11.2). Where a
 side is settled leeg, the operator and its complement can both be false in the ordinary reading; the leeg side then
 belongs to the established false side (§5.3).
 
@@ -171,8 +166,6 @@ is the author's own negation.
 
 - an attribute read contributes "the read is filled, or it reads a derived attribute that is settled leeg" (§5.6a); a
   read over a path also "a link of the path is absent" (§5.8); a cell read the gevuld test of the cell;
-- a payload access contributes the test of the payload access itself, which is the test WF-127 asks for and implies the
-  read under it;
 - a literal, a session value (`evaluationDate`, `evaluationYear`), a scalar parameter and a member the caller closes
   (§9) contribute nothing;
 - a fold over a set contributes a quantifier fold over the same range (§8.2);
@@ -316,9 +309,7 @@ a division by 0 of filled operands is settled leeg, with its fault, in the stric
 **The same rule elsewhere.** A filled-value count (§8.2) counts what is filled: for the form that wrote it a closure,
 for another form established only where every member's value stands. A fold filter that tests on gevuld excludes a
 leeg member for the form that wrote the fold; for another form that exclusion is established only for a member whose
-value is settled leeg. A test on a
-marker is untouched: its other side, "the attribute is filled and carries another constructor", is a statement about a
-filled value (§5.7). The opgave is closed by its declaration, not by a test, and keeps its closure in both walks (§7.4).
+value is settled leeg. The opgave is closed by its declaration, not by a test, and keeps its closure in both walks (§7.4).
 
 Example (witness `filled-test`): "een Vondst is vrijgesteld indien zijn gewicht leeg is of kleiner dan 10,00" and "een
 Vondst is licht indien zijn gewicht kleiner is dan 10,00". With gewicht leeg: vrijgesteld **holds** (the closure
@@ -419,14 +410,10 @@ type (WF-053).
 Example (witness `settled-empty`): "het vindloon van een Vondst is 10 indien hij kostbaar is" gives `vindloon (leeg)`
 where `kostbaar (niet)` holds. Taxatie 50,00: `vindloon (leeg)`; 2000,00: vindloon 10; leeg: open, neither.
 
-### 5.7 A test on a marker
+### 5.7 A sum type
 
-A test on a marker is an equality with the `Construct` of the marker: `c+` is the test, `c-` is "the attribute is filled
-and carries another constructor" — the comparison table under its gevuld test, in both walks. Example (witness
-`marker`): "een Vondst is onschatbaar indien zijn taxatie onbekend is" and "de taxatietoeslag is 4 indien hij niet
-onschatbaar is": taxatie `onbekend` → onschatbaar, toeslag leeg; `waarde(300,00)` or `niet van toepassing` →
-`onschatbaar (niet)`, toeslag **4**; taxatie leeg → undetermined, toeslag **leeg** (ordinary: 4). The reading of the
-value under "een waarde heeft" stays as WF-127 has it.
+A `Construct` and a `Match` are forms without this reading (RUNTIME-SEMANTICS ch. 1.5): a document that holds one is
+refused.
 
 ### 5.8 A read over a link, and the other predicates and checks
 
@@ -666,7 +653,7 @@ initialisation's own value is settled leeg (§5.6a). The transformation leaves a
 an initialisation rule `c+` and `d(value)` as its condition, and notes both (`note initialisation`). An initialisation
 default carries no justification (WF-050), so nothing keeps it from writing what the ordinary reading computes: where
 its value does not pass leeg on by itself (a fold that skips a leeg member, a sum that counts one as 0), the
-transformation refuses it (`initialisation-value`); a literal, a read or a marker passes. The owner decided this reading
+transformation refuses it (`initialisation-value`); a literal or a read passes. The owner decided this reading
 (§12).
 
 **The opgave is closed by its declaration.** In a group of form `inputAboveComputation` (IR-SPEC ch. 2.13), recognised by
@@ -837,10 +824,9 @@ The 11 per cause; none is a case where the strict reading itself differs from th
 | an attribute declared on a type and written only on a subtype: on an object of the type alone no writer applies, so it is input there, but a member closes per declaring type and a form writes it, so it is not closed | 1 | 1 |
 | a dated defaults group outside its validity: what it alone decides is settled there, and the generated group carries its window (`negation-over-versions`) | 1 | 1 |
 
-Reading these differences found four places where the transformation left a settled value open, each fixed before
-these numbers: a `Let` whose value is leeg (ch. 10.6), a date plus a duration over a leeg date (the witness
-`settled-empty-date`), a payload access whose base is settled leeg (it keeps the test WF-127 asks for), and an object
-creation whose assigned value made a writer's `A (leeg)` hold on the object it makes (§5.6a).
+Reading these differences found places where the transformation left a settled value open, each fixed before these
+numbers, among them a `Let` whose value is leeg (ch. 10.6), a date plus a duration over a leeg date (the witness
+`settled-empty-date`) and an object creation whose assigned value made a writer's `A (leeg)` hold on the object it makes (§5.6a).
 
 On the rule set of §10.4: the transformation of the version without guards with every input member closed, against the
 ordinary reading of the same version, in 248 of 265 situations equal (the 6 that name a member it does not declare

@@ -41,7 +41,7 @@ class OpenValuesRefWitnessTest {
                 "comparison", "composite-filled-test", "compound-all", "compound-any", "compound-counting", "compound-none",
                 "consistency", "defaults-characteristic", "defaults-stack", "defaults-subtype", "empty-by-fault", "exact-digits",
                 "filled-test", "filled-test-not-closure", "initialisation", "input-above-computation",
-                "input-above-computation-open", "let", "listed-fold", "marker", "navigated-read", "quantifier-fold", "set-fold",
+                "input-above-computation-open", "let", "listed-fold", "navigated-read", "quantifier-fold", "set-fold",
                 "settled-empty",
                 "settled-empty-date", "settled-empty-fold", "settled-empty-stack"))
             WITNESS.put(plays, null);
@@ -82,7 +82,7 @@ class OpenValuesRefWitnessTest {
                 }
             }
         }
-        // the cases of the thirty-two witnesses that play, on two branches, counted 2026-11-22
-        assertEquals(2 * 144, played);
+        // the cases of the thirty-one witnesses that play, on two branches, counted 2026-11-23
+        assertEquals(2 * 140, played);
     }
 }

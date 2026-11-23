@@ -108,10 +108,9 @@ faults (EF-014). A read over an absent to-one link is leeg like any other.
    populations a creation writes are followed too;
 7. the guards, `-` where there is none:
    `filled-test:<node>` — every read of that member at the place stands under
-   a gevuld test of the same read, by the dominance of WF-127 (a conjunct
-   before it in the same `all`, the condition of the form for its value, the
-   filter of a fold for its per-member positions, the condition of an
-   IfThenElse for its then branch); a payload access always does;
+   a gevuld test of the same read (a conjunct before it in the same `all`,
+   the condition of the form for its value, the filter of a fold for its
+   per-member positions, the condition of an IfThenElse for its then branch);
    `characteristic-check:<node>` — the form's own condition requires, as a
    conjunct, that a characteristic does not hold ("heeft geen K"), one of
    whose writers closes on the leeg of a member (a leeg or gevuld test where

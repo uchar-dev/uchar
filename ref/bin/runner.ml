@@ -30,11 +30,12 @@ let print_codes ~observed ~params ~(pinned : Uchar_ref.Case.expected_fault) =
   line "CODE-PINNED" (Some pinned.ef_code) pinned.ef_params
 
 (* Every entrance — the replay, --noop, --closed-inputs and --trace — reads its
-   document here and nowhere else, so a document with a form whose reading ref
-   does not carry is refused before any of them evaluates or checks anything
-   (REF-014). *)
+   document here and nowhere else, so a document with a form of a sum type no
+   executor carries (REF-015), or a form whose reading ref does not carry
+   (REF-014), is refused before any of them evaluates or checks anything. *)
 let load_document ir_path =
   let doc = Ir_v0.Loader.load_file ir_path in
+  Uchar_ref.Eval.refuse_sum_type_forms doc;
   Uchar_ref.Eval.refuse_uncarried doc;
   doc
 

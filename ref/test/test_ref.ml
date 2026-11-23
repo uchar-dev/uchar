@@ -4468,6 +4468,53 @@ let () =
   (* step 1: leeg in, leeg out — no implicit leeg-arm, no coalesce *)
   expect_empty "WV-9.2-enum-leeg" (eval None)
 
+(* WV-9.4-forms-not-carried: the forms of a sum type no executor carries are
+   one list of slugs, in one order: the table of ch. 9.4 ("Forms not carried")
+   is [Eval.sum_type_forms]. A document per form under
+   ref/test/fixtures/sum-types/forms-not-carried, verifier-clean, is refused
+   with REF-015 and its slug before anything is evaluated, an initialisation
+   of a sum-typed attribute as the defaults group ch. 7.7 reads it as *)
+let () =
+  let read file = In_channel.with_open_bin (corpus_file file) In_channel.input_all in
+  let lines = String.split_on_char '\n' (read "spec/RUNTIME-SEMANTICS.md") in
+  let rec after_head = function
+    | [] -> []
+    | l :: rest -> if String.starts_with ~prefix:"**Forms not carried.**" l then rest else after_head rest
+  in
+  let rec table acc started = function
+    | [] -> List.rev acc
+    | l :: rest when String.starts_with ~prefix:"| `" l -> (
+        match String.split_on_char '`' l with _ :: slug :: _ -> table (slug :: acc) true rest | _ -> table acc started rest)
+    | l :: _ when started && not (String.starts_with ~prefix:"|" l) -> List.rev acc
+    | _ :: rest -> table acc started rest
+  in
+  let in_spec = table [] false (after_head lines) in
+  check
+    (Printf.sprintf "WV-9.4-forms-not-carried (the table of ch. 9.4: %s)" (String.concat " " in_spec))
+    (in_spec = Eval.sum_type_forms);
+  let dir = "ref/test/fixtures/sum-types/forms-not-carried/" in
+  List.iter
+    (fun (d, slug) ->
+      with_files ~ir:(read (dir ^ d ^ "/ir.json")) ~case_data:(read (dir ^ d ^ "/case.json")) (fun findings _ evaluate ->
+          check ("WV-9.4-forms-not-carried-" ^ d ^ ": verifier-clean") (findings = []);
+          check ("WV-9.4-forms-not-carried-" ^ d)
+            (match evaluate () with
+            | exception Value.Fault { code = Some "REF-015"; params; _ } -> params = [ ("form", slug) ]
+            | exception Value.Fault _ -> false
+            | _ -> false)))
+    [ ("timeline", "timeline"); ("dimension", "dimension"); ("creation", "creation"); ("payload-unit", "payload-unit");
+      ("defaults-group", "defaults-group"); ("initialisation", "defaults-group") ];
+  (* a constructor name of several words is a name like another (WF-060) *)
+  let dir = "ref/test/fixtures/sum-types/" in
+  plays ~ident:"WV-9.1-constructor-of-several-words" ~ir:(read (dir ^ "constructor-of-several-words/ir.json"))
+    ~case_data:(read (dir ^ "constructor-of-several-words/case.json")) (fun _ -> ());
+  (* a Construct in a document that infers nothing from an empty value is a
+     form without that reading (ch. 1.5), as a match is *)
+  match Eval.refuse_uncarried (Ir_v0.Loader.load_file (corpus_file (dir ^ "construct-in-a-strict-document/ir.json"))) with
+  | () -> check "WV-1.5-uncarried-construct (not refused)" false
+  | exception Value.Fault { code; params; _ } ->
+      check "WV-1.5-uncarried-construct" (code = Some "REF-014" && params = [ ("form", "construct") ])
+
 (* --- ch. 10: folds and function values (RUNTIME-SEMANTICS ch. 10) -------
    Value-level worked examples: list rendering (10.1) and the list-equality
    corners — elementwise and IN ORDER, with the Tabel 38 Empty corners ([] is
@@ -13556,8 +13603,7 @@ let () =
    01-01-2026" beside 20 in spring gives 5, 20, 5 within 2025 and the total
    105; the creation of a
    melding with the waarde of the scalar vangst 7 gives a terug of 7 on every
-   day; a creation that gives a sum-typed timeline the marker onbekend beside 10
-   in spring gives the made object onbekend, waarde(10), onbekend; an
+   day; an
    allocation over a share for every month is not well-formed (WF-128), and ref
    refuses to evaluate it *)
 let () =
@@ -13597,40 +13643,6 @@ let () =
              params = [ ("attribute", "strandloon"); ("label", "J1") ]
          | exception Value.Fault _ -> false
          | _ -> false)));
-  (let ir, case_data = fixture "timeline-creation-marker" "case.json" in
-   plays ~ident:"WV-7.8-stapel-per-dag-creatie-marker" ~ir ~case_data (fun final ->
-       let made = World.SMap.find_opt "oc0::J1" final.World.instances in
-       let shown =
-         match Option.bind made (fun i -> World.timeline i "bergkosten") with
-         | Some tl ->
-             String.concat " "
-               (List.map
-                  (fun (s : Timeline.segment) ->
-                    Printf.sprintf "[%d,%d)=%s" s.s_from s.s_to (Value.to_string s.s_value))
-                  (Timeline.canonical tl))
-         | None -> "(no timeline)"
-       in
-       let day iso = match Value.date_of_iso iso with Value.Date d -> d | _ -> assert false in
-       check
-         ("WV-7.8-stapel-per-dag-creatie-marker: the made Vondst holds " ^ shown)
-         (shown
-         = Printf.sprintf "[%d,%d)=onbekend [%d,%d)=waarde(10) [%d,%d)=onbekend" Timeline.open_from (day "2025-03-01")
-             (day "2025-03-01") (day "2025-06-01") (day "2025-06-01") Timeline.open_to)));
-  (* a constructor whose argument is no literal is no producer of a sum-typed
-     timeline that ref reads per period, as the value of an initialisation or
-     of a member alike *)
-  List.iter
-    (fun (d, needle) ->
-      let ir, case_data = fixture d "case.json" in
-      with_files ~ir ~case_data (fun _ _ evaluate ->
-          check ("WV-7.8-stapel-per-dag-somproducent-" ^ d)
-            (match evaluate () with
-            | exception Value.Fault { code = None; text; _ } -> Case.contains ~needle text
-            | exception Value.Fault _ -> false
-            | _ -> false)))
-    [ ("sum-producer-initialisation", "the value of the initialisation of the timeline target \"opslagkosten\" is not period arithmetic");
-      ("sum-producer-conditional", "the value of the initialisation of the timeline target \"opslagkosten\" is not period arithmetic");
-      ("sum-producer-creation", "this operand of the period arithmetic of ch. 3.4/3.5 is not executed") ];
   (let dep c = corpus_file (dir ^ "timeline-initialisation-deposit/" ^ c) in
    let ir = dep "ir.json" in
    check "WV-7.8-stapel-per-dag-lezing-verdrongen"
@@ -14060,48 +14072,6 @@ let () =
       ( "value-differs",
         "J1.vondstopbrengst = [2024-01-01,2024-02-01)=50 [2024-02-01,2024-03-01)=70 [2024-03-01,2024-04-01)=10, \
          expected [2024-01-01,2024-02-01)=50 [2024-02-01,2024-03-01)=60 [2024-03-01,2024-04-01)=10" ) ]
-
-(* WV-9.5-payload: a PayloadAccess is the payload where the value carries its
-   constructor, and leeg where it carries another one or is leeg
-   (RUNTIME-SEMANTICS ch. 9.5) *)
-let () =
-  let waarde = Value.Ctor ("waarde", Some (Value.Num (Q.of_string "300", Value.Unitless))) in
-  check "WV-9.5-payload-waarde" (Eval.payload_of "waarde" waarde = Value.Num (Q.of_string "300", Value.Unitless));
-  check "WV-9.5-payload-marker" (Eval.payload_of "waarde" (Value.Ctor ("onbekend", None)) = Value.Empty);
-  check "WV-9.5-payload-leeg" (Eval.payload_of "waarde" Value.Empty = Value.Empty)
-
-(* WV-9.5-per-dag: the payload of a timeline has a reading per day
-   (RUNTIME-SEMANTICS ch. 9.5), which this interpreter does not execute: a read of
-   it in a scalar slot and a sum over the members are refused by name, on the
-   documents of ref/test/fixtures/absence-markers *)
-let () =
-  let read f = In_channel.with_open_bin (corpus_file f) In_channel.input_all in
-  let dir = "ref/test/fixtures/absence-markers/" in
-  List.iter
-    (fun d ->
-      with_files ~ir:(read (dir ^ d ^ "/ir.json")) ~case_data:(read (dir ^ d ^ "/case.json")) (fun findings _ evaluate ->
-          check ("WV-9.5-per-dag-" ^ d ^ ": verifier-clean") (findings = []);
-          check ("WV-9.5-per-dag-" ^ d)
-            (match evaluate () with
-            | exception Value.Fault { text; _ } ->
-                text
-                = "a payload access to the time-dependent attribute \"opslagkosten\" is read per day (ch. 9.5), which \
-                   this interpreter does not execute (no corpus case)"
-            | _ -> false)))
-    [ "payload-of-a-timeline"; "sum-of-a-timeline" ];
-  plays ~ident:"WV-9.5-twee-namen-een-symbool" ~ir:(read (dir ^ "constructors-in-one-symbol/ir.json"))
-    ~case_data:(read (dir ^ "constructors-in-one-symbol/case.json")) (fun _ -> ());
-  plays ~ident:"WV-9.5-kopie-van-een-tijdlijn" ~ir:(read (dir ^ "copy-of-a-timeline/ir.json"))
-    ~case_data:(read (dir ^ "copy-of-a-timeline/case.json")) (fun _ -> ());
-  (* the value of an attribute with markers is held in the declared unit
-     (ch. 9.1, WF-062): the lading 2 t written into a gewicht in kg is
-     waarde(2000), not waarde(2) *)
-  plays ~ident:"WV-9.5-waarde-in-de-gedeclareerde-eenheid" ~ir:(read (dir ^ "payload-in-another-unit/ir.json"))
-    ~case_data:(read (dir ^ "payload-in-another-unit/case.json")) (fun final ->
-      check "WV-9.5-waarde-in-de-gedeclareerde-eenheid: the payload restated into kg"
-        (match World.attr (World.get final "V") "gewicht" with
-        | Value.Ctor ("waarde", Some (Value.Num (q, _))) -> Q.equal q (Q.of_int 2000)
-        | _ -> false))
 
 (* WV-4.4-plaats-in-de-case: an ordered allocation without rounding over a pot
    of 100, the case listing Wc (wachtjaar 2020), Wa and Wb (both 2010, weights
@@ -17097,7 +17067,7 @@ let () =
       "compound-all"; "compound-any"; "compound-counting"; "compound-none"; "consistency"; "defaults-characteristic";
       "defaults-stack"; "defaults-subtype"; "empty-by-fault"; "exact-digits"; "fact-creation"; "filled-test";
       "filled-test-not-closure"; "initialisation"; "input-above-computation"; "input-above-computation-open"; "let";
-      "let-closure"; "listed-fold"; "marker"; "navigated-read"; "object-creation"; "quantifier-fold"; "set-fold"; "settled-empty"; "settled-empty-date";
+      "let-closure"; "listed-fold"; "navigated-read"; "object-creation"; "quantifier-fold"; "set-fold"; "settled-empty"; "settled-empty-date";
       "settled-empty-fold"; "settled-empty-stack" ]
   in
   List.iter
