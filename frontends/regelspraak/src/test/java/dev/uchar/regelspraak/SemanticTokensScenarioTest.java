@@ -364,7 +364,9 @@ class SemanticTokensScenarioTest {
         assertEquals(List.of("- punctuation", "is keyword", "niet drijfhout characteristic 2"), lines.get(4));
         assertEquals(List.of("- punctuation", "V1 label 3", "is keyword", "niet drijfhout characteristic 2"),
                 lines.get(6));
-        lines = lines(beside, test);
+        // "- is geen drijfhout" gives drijfhout as not holding in a document without 'Afleiden uit leeg: nee', where
+        // that changes nothing (RGS-469); "- is niet drijfhout" names the characteristic declared so
+        lines = lines(beside, test, List.of("WARNING RGS-469 toets.rgs:6"));
         assertEquals(List.of("- punctuation", "is keyword", "niet drijfhout characteristic 3"), lines.get(4));
         assertEquals(List.of("- punctuation", "is keyword", "geen keyword", "drijfhout characteristic 2"), lines.get(6));
         assertEquals(List.of("- punctuation", "V1 label 3", "is keyword", "niet drijfhout characteristic 3"),
@@ -376,10 +378,19 @@ class SemanticTokensScenarioTest {
     /** The spans of {@code test} read beside {@code model}, per line: text and kind, and for a reference the line of
      *  its declaration. */
     private static java.util.Map<Integer, List<String>> lines(String model, String test) {
+        return lines(model, test, List.of());
+    }
+
+    /** As {@link #lines(String, String)}, where the document raises exactly {@code diagnostics}, each as its severity,
+     *  code, file and line. */
+    private static java.util.Map<Integer, List<String>> lines(String model, String test, List<String> diagnostics) {
         List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("model.rgs", model),
                 new SemanticTokens.SourceFile("toets.rgs", test));
         SemanticTokens.Document d = Resolver.tokens(files);
-        assertTrue(d.diagnostics().isEmpty(), () -> "no diagnostic: " + d.diagnostics());
+        List<String> raised = new ArrayList<>();
+        for (SemanticTokens.FileDiagnostic x : d.diagnostics())
+            raised.add(x.severity() + " " + x.code() + " " + x.file() + ":" + x.line());
+        assertEquals(diagnostics, raised, () -> "the diagnostics: " + d.diagnostics());
         SemanticTokensCheck.check(files, d);
         java.util.Map<Integer, List<String>> lines = new java.util.TreeMap<>();
         for (Span s : d.files().get(1).spans()) {
