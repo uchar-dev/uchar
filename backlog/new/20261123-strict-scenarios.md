@@ -1,6 +1,6 @@
 # strict-scenarios: een toetsscenario voor een strikt document
 
-*Voorstel van de hoofdsessie, 2026-11-23; nog niet besloten en niet begonnen. Volgt uit het besluit `one-empty`:
+*Besloten door de eigenaar, 2026-11-23 (de zinnen en de volgorde); nog niet begonnen. Volgt uit het besluit `one-empty`:
 "nog niet" en "nooit" op één attribuut scheidt voortaan een strikt document, en een toetsdocument daarvan moet dat kunnen
 zeggen. Bijgewerkt na een tweede review (extern model, 2026-11-23).*
 
@@ -35,9 +35,8 @@ heeft daarom alleen handgeschreven cases.
 5. **Toolchain** (pin-bump): `ScenarioData`, `SituationToRequest` en de playground zetten `characteristicsAbsent` om in
    `{"state": "holdsNot"}` en lezen `attributeOpen` en `characteristicOpen` als verwachting.
 
-## Besluiten voor de eigenaar
+## Besluiten (2026-11-23)
 
 - De zinnen: "- is niet X" en "- heeft geen X" in een situatie, "staat niet vast" in een verwachting.
-- De volgorde: voorstel is deze kaart eerst, samen met deel 2 van `one-empty`, vóór de overstap van de regelset die nu
-  `niet van toepassing` gebruikt en vóór deel 1 van `one-empty`, zodat die regelset haar "nog niet"-gevallen als open kan
-  toetsen.
+- De volgorde: deze kaart eerst, dan `one-empty` deel 1 en deel 2, dan de toolchain in één pin-bump; daarna zet de werkbank
+  de regelset om die nu `niet van toepassing` gebruikt.
