@@ -29,8 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *       the input; one whose value divides by 0 on some days, which the input leaves no day, some days or only the days
  *       on which its value is leeg; one within a window beside a rule, read by a total; a creation of a scalar on every
  *       day read by a sum; a creation of the marker {@code onbekend} beside a rule on the made object; and the goldens
- *       {@code jutterswet-initialisatie-per-dag}, {@code jutterswet-creatie-per-dag} and
- *       {@code jutterswet-afwezigheidsmarkers-initialisatie};</li>
+ *       {@code jutterswet-initialisatie-per-dag} and {@code jutterswet-creatie-per-dag};</li>
  *   <li>the faults: the initialisation over the asOfDate-bucket scalar of its target (EF-037), and a total that meets
  *       the open segments it writes (EF-036); and none of an initialisation whose value would fault where the input
  *       leaves it no day, since its value is not evaluated there;</li>
@@ -65,10 +64,7 @@ class TmsTimelineStackWitnessTest {
                 {"jutterswet-initialisatie-per-dag", "case2-invoer.json"},
                 {"jutterswet-initialisatie-per-dag", "case3-zonder-stormwacht.json"},
                 {"jutterswet-creatie-per-dag", "case1-strandloon-tot-juli.json"},
-                {"jutterswet-creatie-per-dag", "case2-zonder-strandloon.json"},
-                {"jutterswet-afwezigheidsmarkers-initialisatie", "case1-zonder-invoer.json"},
-                {"jutterswet-afwezigheidsmarkers-initialisatie", "case2-invoer.json"},
-                {"jutterswet-afwezigheidsmarkers-initialisatie", "case3-ongekeurd-naast-invoer.json"}})
+                {"jutterswet-creatie-per-dag", "case2-zonder-strandloon.json"}})
             plays.add(new Path[]{GOLDEN.resolve(g[0]).resolve("ir.json"), GOLDEN.resolve(g[0]).resolve(g[1])});
         List<String> outcomes = new ArrayList<>(), expected = new ArrayList<>();
         for (Path[] p : plays) {

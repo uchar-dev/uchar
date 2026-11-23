@@ -41,9 +41,9 @@ class LenientReaderWitnessTest {
     /** Rule 0's condition is a QuantifierFold "at least 2". */
     private static final String VUURTOREN = "jutterswet-vuurtoren";
     private static final String FOLD = "/rules/rules/0/versions/0/condition";
-    /** Rule 2's condition is a Predicate of kind filled, digits 0. */
-    private static final String AFWEZIGHEIDSMARKERS = "jutterswet-afwezigheidsmarkers-cel";
-    private static final String PREDICATE = "/rules/rules/2/versions/0/condition";
+    /** Rule 0's condition is a Predicate of kind filled, digits 0. */
+    private static final String GEVULDTOETS = "jutterswet-gevuldtoets-soorten";
+    private static final String PREDICATE = "/rules/rules/0/versions/0/condition";
     /** The named timeline "het penningjaar". */
     private static final String PENNINGJAAR = "jutterswet-penningjaar";
     private static final String TIMELINE = "/model/timelines/0";
@@ -61,7 +61,7 @@ class LenientReaderWitnessTest {
         outsideInt(SEINWACHT, COMPOUND, "threshold", "Compound.threshold", 4_294_967_297L);
         outsideInt(VUURTOREN, FOLD, "threshold", "QuantifierFold.threshold", 4_294_967_298L);
         outsideInt(SEINWACHT, ROUNDING, "decimals", "Rounding.decimals", 4_294_967_298L);
-        outsideInt(AFWEZIGHEIDSMARKERS, PREDICATE, "digits", "Predicate.digits", 4_294_967_296L);
+        outsideInt(GEVULDTOETS, PREDICATE, "digits", "Predicate.digits", 4_294_967_296L);
         outsideInt(PENNINGJAAR, TIMELINE, "count", "Timeline.count", 4_294_967_297L);
     }
 

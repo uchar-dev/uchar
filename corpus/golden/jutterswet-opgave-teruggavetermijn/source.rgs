@@ -1,0 +1,10 @@
+Parameter de teruggavetermijn : Numeriek (geheel getal) met eenheid dg;
+
+Objecttype de Vondst (mv: Vondsten)
+    de claimdatum Datum in dagen;
+    de teruggavedatum Datum in dagen (mag opgegeven worden);
+
+// Bron: art. 3h lid 1
+Regel teruggave na de claimdatum
+    geldig altijd
+        De teruggavedatum van een Vondst moet berekend worden als zijn claimdatum plus de teruggavetermijn.

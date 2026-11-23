@@ -141,8 +141,6 @@ PART.what.attribute	het attribuut '{name}'
 PART.what.declared-parameter	de parameter '{name}'
 PART.what.expectation	de verwachting voor '{name}'
 PART.what.inconsistency-rule	de regel van de inconsistentie
-PART.absence-markers.none	de declaratie laat geen afwezigheidsmarkering toe
-PART.absence-markers.only	de declaratie laat alleen '{marker}' toe
 PART.where-situation	in de situatie van het scenario '{scenario}'
 PART.where-situation-and-set	in de situatie van het scenario '{scenario}' en in de parameterset '{set}'
 PART.combination-fixed-periods	zowel een vaste waarde als perioden
@@ -723,8 +721,6 @@ RGS-373.day-family	de dagfamilie (dag, week)
 RGS-373.month-family	de maandfamilie (maand, kwartaal, jaar)
 RGS-374	de tijdlijn van {operand} ligt op het raster per {operandGrid}, dat niet past in het raster per {targetGrid} van het doel {target}: het doel kan haar knips niet dragen (WF-126)
 RGS-375	{head}: '(mag opgegeven worden)' maakt op een tijdsafhankelijk attribuut geen kenmerk '{characteristic}', maar het model leest het — de voorwaarde van dat kenmerk vergelijkt twee tijdlijnen en toetst een tijdlijn op gevuld, wat geen lezing per periode heeft (RUNTIME-SEMANTICS ch. 3.12 rij 5) (dialect §7)
-RGS-376	'{expression}' leest de waarde van '{attribute}' van {objectType}, dat onbekend of niet van toepassing kan zijn, zonder eerst te toetsen dat het een waarde heeft; zet 'zijn {attribute} een waarde heeft' ervoor in de voorwaarde, of in een aggregatie 'die een waarde hebben' (RUNTIME-SEMANTICS ch. 9.5, IR-SPEC WF-127)
-RGS-377	{what}: '{marker}' past hier niet als afwezigheidsmarkering: {admitted} (RUNTIME-SEMANTICS ch. 9.5)
 RGS-378	verdeling '{name}' noemt het tijdsafhankelijke attribuut '{attribute}' van {objectType}: een verdeling verdeelt één bedrag op één moment, en een lezing ervan per dag is niet gedefinieerd (WF-128)
 RGS-379	{kind} '{name}' leest negatief, zoals in een ontkenning of een leeg-toets, wat {producerKind} '{producer}' schrijft, op een kring; een kring draagt geen negatieve rand, ook niet een kring door een recursieve creatie ({wf}): {sentence}
 RGS-380	parameter '{parameter}' heeft overlappende geldigheidsperiodes {first} en {second}
@@ -789,7 +785,6 @@ RGS-441	kenmerkcontrole '{source}' volgt de rol '{role}' vanaf {subject}, maar d
 RGS-450	het attribuut '{attribute}' van {label} is tijdsafhankelijk; een waarde zonder periode is de waarde van de periode waarin de peildatum valt, maar het scenario '{scenario}' heeft geen peildatum (voeg 'met peildatum <datum>' toe of geef de waarde een periode: 'van <datum> tot <datum>')
 RGS-451	de dagsoortdefinitie van '{dayKind}' leest de parameter '{parameter}', die {where} geen waarde heeft
 RGS-460	het teken '{sign}' in '{datatype}' valt weg: een percentage draagt geen teken (IR-SPEC ch. 2.4), dus geen uitvoerder toetst die beperking
-RGS-461	attribuut '{attribute}' van {objectType}: '{marking}' staat vóór '{opgave}', niet erna — schrijf '{marking} {opgave}' (dialect §7)
 RGS-462	'Afleiden uit leeg: {value}' staat een tweede keer in het document, na 'Afleiden uit leeg: {first}'; een document kiest één keer of uit een lege waarde iets volgt, ook als het uit meer bestanden bestaat
 RGS-463	attribuut '{attribute}' van {objectType}: '{complete}' staat naast '{opgave}' — het attribuut is dan het doel van een opgave boven zijn berekening en geen invoer, en de opgave die '{opgave}' genereert, is al volledig; schrijf alleen '{opgave}' (dialect, Volledig gegeven)
 RGS-464	{kind} '{name}' van {objectType}: '{complete}' staat op een lid dat {writer} op {objectType} zelf schrijft — het lid volgt dan op elk object van {objectType} zijn schrijvers en is nergens invoer, dus de markering doet niets (RUNTIME-SEMANTICS ch. 1.5); laat '{complete}' weg, of zet het op de invoerleden die {writer} leest (dialect, Volledig gegeven)

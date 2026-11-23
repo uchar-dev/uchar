@@ -104,11 +104,6 @@ public final class RegelSpraakModel {
     public boolean inferFromEmpty() { return inferFromEmpty; }
     public void inferFromEmpty(boolean inferFromEmpty) { this.inferFromEmpty = inferFromEmpty; }
 
-    /** The constructor of the value of an attribute with absence markers, and the markers in their order: the sum type
-     *  such an attribute lowers to (RUNTIME-SEMANTICS ch. 9.5). */
-    public static final String VALUE_CONSTRUCTOR = "waarde";
-    public static final List<String> ABSENCE_MARKERS = List.of("onbekend", "niet van toepassing");
-
     /** A copy of this model that holds every element of every collection (the elements are shared). The scoped IR
      *  document of the scenario lowering starts from it and drops only the forms its scope does not carry. The copy
      *  walks the public collection fields by reflection, so a collection the model gains later is copied without a
@@ -955,17 +950,6 @@ public final class RegelSpraakModel {
          *  the calendar's own start point ("startend op dag 1 van maand 1") leaves it. The named form adopts the
          *  definition's, as it adopts the granularity and the count. */
         public final Map<String, String> attributeFixedStartPoint = new LinkedHashMap<>();
-        /** The absence markers an attribute admits ("(of onbekend of niet van toepassing)", grammar/DIVERGENCES.md,
-         *  "Afwezigheidsmarkeringen"), in the order of {@link RegelSpraakModel#ABSENCE_MARKERS}, keyed by its naam;
-         *  absent for an attribute without markers. Such an attribute is of the sum type {@link #sumTypeOf}
-         *  (RUNTIME-SEMANTICS ch. 9.5); its datatype in {@link #attributes} is the datatype of its value, the payload. */
-        public final Map<String, List<String>> attributeMarkers = new LinkedHashMap<>();
-        /** The attribute whose sum type a member with absence markers shares, keyed by the member's naam: the members
-         *  'opgegeven X' and 'berekende X' that the opgave marker generates on an attribute X with markers carry X's
-         *  markers over X's domain (grammar/DIVERGENCES.md §7), so the defaults group on X passes either value on as it
-         *  is, a marker included, and opgave and computation compare as values of one sum type (WF-061). Absent for an
-         *  attribute with a domain of its own. */
-        public final Map<String, String> attributeMarkerDomain = new LinkedHashMap<>();
         public final List<String> characteristics = new ArrayList<>();
         /** §13.3.6 the granularity of a temporal kenmerk's tijdlijn ("is duurzaam kenmerk voor elke dag"),
          *  keyed by its naam — the kenmerk analogue of {@link #attributeGranularity}. */
@@ -1020,40 +1004,6 @@ public final class RegelSpraakModel {
                     if (e.getKey().equalsIgnoreCase(name)) return e.getValue();
             }
             return null;
-        }
-
-        /** The absence markers of attribute {@code name} on this chain, or null for an attribute without them. */
-        public List<String> markersOf(String name) {
-            return onChain(t -> t.attributeMarkers, name);
-        }
-
-        /** The type of this chain that declares the absence markers of attribute {@code name}, or null. */
-        public ObjectType markerDeclaringType(String name) {
-            for (ObjectType t : chain())
-                for (String a : t.attributeMarkers.keySet())
-                    if (a.equalsIgnoreCase(name)) return t;
-            return null;
-        }
-
-        /** The sum type of attribute {@code name} where it has absence markers, or null: one per attribute, over the
-         *  domain {@link #markerDomainName}, so a marker never passes to another attribute by the nominal identity of
-         *  sum types (IR-SPEC WF-061) — the members of one opgave marker excepted, which share the domain of the marked
-         *  attribute ({@link #attributeMarkerDomain}); its constructors are the value, with the declared datatype as
-         *  payload, and then the markers (RUNTIME-SEMANTICS ch. 9.5). */
-        public Datatype.SumType sumTypeOf(String name) {
-            ObjectType declaring = markerDeclaringType(name);
-            if (declaring == null) return null;
-            String attribute = declaring.attributeName(name);
-            List<Datatype.Constructor> constructors = new ArrayList<>();
-            constructors.add(new Datatype.Constructor(VALUE_CONSTRUCTOR, declaring.attributes.get(attribute)));
-            for (String marker : declaring.attributeMarkers.get(attribute)) constructors.add(new Datatype.Constructor(marker, null));
-            return new Datatype.SumType(markerDomainName(declaring,
-                    declaring.attributeMarkerDomain.getOrDefault(attribute, attribute)), constructors);
-        }
-
-        /** The domain of the sum type of {@code attribute}, declared with markers on {@code declaring}. */
-        public static String markerDomainName(ObjectType declaring, String attribute) {
-            return attribute + " van een " + declaring.name;
         }
 
         /** The declared datatype of attribute {@code name}, matched case-INsensitively —

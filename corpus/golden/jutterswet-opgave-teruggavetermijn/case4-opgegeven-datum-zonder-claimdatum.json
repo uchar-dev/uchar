@@ -8,13 +8,11 @@
         "objectType": "Vondst",
         "attributes": {
           "opgegeven teruggavedatum": {
-            "constructor": "niet van toepassing"
+            "date": "2026-03-12"
           }
         },
         "roles": {},
-        "characteristics": [
-          "onleesbaar"
-        ]
+        "characteristics": []
       }
     ],
     "parameters": {
@@ -29,26 +27,21 @@
       "label": "V",
       "attribute": "teruggavedatum",
       "value": {
-        "constructor": "niet van toepassing"
+        "date": "2026-03-12"
       }
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeEmpty",
       "label": "V",
-      "attribute": "berekende teruggavedatum",
-      "value": {
-        "constructor": "onbekend"
-      }
+      "attribute": "berekende teruggavedatum"
     },
     {
-      "kind": "characteristicPresent",
+      "kind": "characteristicAbsent",
       "label": "V",
       "characteristic": "afwijkende opgave teruggavedatum"
     },
     {
-      "kind": "inconsistent",
-      "rule": "controle opgave teruggavedatum",
-      "label": "V"
+      "kind": "consistent"
     }
   ]
 }

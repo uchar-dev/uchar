@@ -65,37 +65,12 @@
     {
       "kind": "characteristicAbsent",
       "label": "V1",
-      "characteristic": "getaxeerd"
-    },
-    {
-      "kind": "characteristicPresent",
-      "label": "V1",
-      "characteristic": "ongetaxeerd"
-    },
-    {
-      "kind": "characteristicAbsent",
-      "label": "V1",
       "characteristic": "herleidbaar"
     },
     {
       "kind": "characteristicPresent",
       "label": "V1",
       "characteristic": "onherleidbaar"
-    },
-    {
-      "kind": "characteristicAbsent",
-      "label": "V1",
-      "characteristic": "herkeurd"
-    },
-    {
-      "kind": "characteristicPresent",
-      "label": "V1",
-      "characteristic": "onherkeurd"
-    },
-    {
-      "kind": "characteristicAbsent",
-      "label": "V1",
-      "characteristic": "houten"
     },
     {
       "kind": "characteristicAbsent",

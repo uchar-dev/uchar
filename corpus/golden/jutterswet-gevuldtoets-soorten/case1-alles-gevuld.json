@@ -26,18 +26,6 @@
           },
           "aangifte": {
             "boolean": false
-          },
-          "taxatie": {
-            "constructor": "waarde",
-            "payload": {
-              "number": "120.00"
-            }
-          },
-          "herkeuring": {
-            "constructor": "waarde",
-            "payload": {
-              "enumeration": "hout"
-            }
           }
         },
         "roles": {
@@ -84,37 +72,12 @@
     {
       "kind": "characteristicPresent",
       "label": "V1",
-      "characteristic": "getaxeerd"
-    },
-    {
-      "kind": "characteristicAbsent",
-      "label": "V1",
-      "characteristic": "ongetaxeerd"
-    },
-    {
-      "kind": "characteristicPresent",
-      "label": "V1",
       "characteristic": "herleidbaar"
     },
     {
       "kind": "characteristicAbsent",
       "label": "V1",
       "characteristic": "onherleidbaar"
-    },
-    {
-      "kind": "characteristicPresent",
-      "label": "V1",
-      "characteristic": "herkeurd"
-    },
-    {
-      "kind": "characteristicAbsent",
-      "label": "V1",
-      "characteristic": "onherkeurd"
-    },
-    {
-      "kind": "characteristicPresent",
-      "label": "V1",
-      "characteristic": "houten"
     },
     {
       "kind": "consistent"

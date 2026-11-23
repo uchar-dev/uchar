@@ -19064,23 +19064,14 @@ let () =
   ref_matches ~name:"EF-037, no order: S1 of 8 settles the fold at itself" ~ir:every_order ~case_text:(case "8" keur);
   order_refused ~name:"EF-037, no order: clingo refuses with CLINGO-035" ~ir:every_order ~case_text:(case "8" keur)
 
-(* RUNTIME-SEMANTICS ch. 9.5, the absence markers: the golden
-   jutterswet-afwezigheidsmarkers in both executors, the constructor name of
-   several words as one ASP symbol, the payload of a sum-typed attribute as a
-   member of its own (the read, the comparison and the sum over members), a
-   sum-typed timeline in the input, written by a constructor of a literal and
-   copied whole, and the refusals beside them, on ref's documents
-   (ref/test/fixtures/absence-markers) *)
+(* RUNTIME-SEMANTICS ch. 9.5, the absence markers: the constructor name of
+   several words as one ASP symbol, the payload of a sum-typed timeline and a
+   sum over it, refused, a sum-typed timeline in the input copied whole, and a
+   rule-level Construct with a parameter payload, on ref's documents
+   (ref/test/fixtures/absence-markers) and one of this suite *)
 let () =
   work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
-  let g = "corpus/golden/jutterswet-afwezigheidsmarkers/" in
-  let ir = read (g ^ "ir.json") in
-  List.iter
-    (fun c -> both_answer ~name:("absence markers: " ^ c) ~ir ~case_text:(read (g ^ c ^ ".json")))
-    [ "case1-schatting"; "case2-onbekend-verdringt-invoer"; "case3-niet-van-toepassing"; "case4-niets";
-      "case5-onbekend-in-de-invoer"; "case6-kostbaar"; "case7-som-van-de-waarden"; "case8-geen-waarde-in-de-som";
-      "case9-onbekend-per-maand"; "case10-niet-van-toepassing-na-verkoop" ];
   let dir = "ref/test/fixtures/absence-markers/" in
   let fixture d = (read (dir ^ d ^ "/ir.json"), read (dir ^ d ^ "/case.json")) in
   let ir, case_text = fixture "constructors-in-one-symbol" in
@@ -19095,21 +19086,6 @@ let () =
     ~needle:"a payload access to the time-dependent attribute \"opslagkosten\" is read per day";
   let ir, case_text = fixture "copy-of-a-timeline" in
   both_answer ~name:"absence markers: a copy of a timeline with markers" ~ir ~case_text;
-  (* the opgave marker beside the markers (golden jutterswet-opgave-afwezigheidsmarkers): a defaults group on a
-     sum-typed target, scalar and per day, whose consequences are members of the target's sum type, and the deviation
-     of the two as sum values; a computed payload, a date plus a parameter and plus a literal duration and a number
-     verminderd met a product; and an initialisation of such a target with a marker and with a date literal, the
-     latter a day number like a date payload of the input *)
-  let g = "corpus/golden/jutterswet-opgave-afwezigheidsmarkers/" in
-  let ir = read (g ^ "ir.json") in
-  List.iter
-    (fun c -> both_answer ~name:("absence markers beside the opgave marker: " ^ c) ~ir ~case_text:(read (g ^ c ^ ".json")))
-    [ "case1-berekende-marker"; "case2-opgegeven-datum-verdringt-berekende-marker";
-      "case3-opgegeven-marker-verdringt-berekende-datum"; "case4-dezelfde-marker"; "case5-andere-marker";
-      "case6-opgegeven-marker-zonder-berekening"; "case7-opgegeven-datum-verdringt-berekende-datum";
-      "case8-opgegeven-datum-gelijk-aan-berekende-datum"; "case9-niets"; "case10-opgave-per-maand";
-      "case11-berekende-afhaaldatum"; "case12-afhaaldatum-zonder-claim"; "case13-opgegeven-marker-boven-de-initialisatie";
-      "case14-berekend-bergloon"; "case15-bergloon-zonder-gewicht" ];
   both_answer ~name:"S19 door 2: a rule-level Construct with a parameter payload is carried" ~ir:param_payload_doc
     ~case_text:param_payload_case;
   (* a computed payload is leeg where ref's operator reads it leeg (RUNTIME-SEMANTICS ch. 9.1, 1.2a): plus, min and

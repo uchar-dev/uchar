@@ -1648,7 +1648,11 @@ EXPECTED_CHANNEL=(
 # reading of RUNTIME-SEMANTICS ch. 1.5 in which a member can be open, each with a defaults group (PLAYED 6 and 6).
 # 388 with jutterswet-afhaalbaar and jutterswet-afhaalbaar-strikt: a status written as a characteristic, in an ordinary
 # and in a strict document (PLAYED 3 and 4).
-EXPECTED_PLAYED=388
+# 383 since the card one-empty (the absence markers dropped, 2026-11-23): minus the five goldens of the markers
+# (jutterswet-afwezigheidsmarkers, -cel, -creatie, -initialisatie and -kopie); jutterswet-opgave-afwezigheidsmarkers is
+# jutterswet-opgave-teruggavetermijn without the markers (PLAYED 4), and jutterswet-gevuldtoets-soorten tests the
+# enumeration, the text and the boolean alone.
+EXPECTED_PLAYED=383
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

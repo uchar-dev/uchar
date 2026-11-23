@@ -1,7 +1,6 @@
 package dev.uchar.regelspraak.tms;
 
 import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
-import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
 import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
 
@@ -89,34 +88,6 @@ then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "onverantwoord", true)));
 end
 
-// zijn taxatie gevuld is
-function boolean toets_getaxeerdeVondst(Object $taxatie) {
-    return ComputeHelpers.emptyTest($taxatie, Boolean.FALSE);
-}
-
-rule "getaxeerde vondst"
-    dialect "mvel"
-when
-    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatie : taxatie )
-    eval( toets_getaxeerdeVondst($taxatie) )
-then
-    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "getaxeerd", true)));
-end
-
-// zijn taxatie leeg is
-function boolean toets_ongetaxeerdeVondst(Object $taxatie) {
-    return ComputeHelpers.emptyTest($taxatie, Boolean.TRUE);
-}
-
-rule "ongetaxeerde vondst"
-    dialect "mvel"
-when
-    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatie : taxatie )
-    eval( toets_ongetaxeerdeVondst($taxatie) )
-then
-    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "ongetaxeerd", true)));
-end
-
 function Object pad_herleidbareVondst(Object o) {
     Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("jutter"));
     return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "naam");
@@ -153,56 +124,5 @@ when
     eval( toets_onherleidbareVondst($jutterNaam) )
 then
     insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "onherleidbaar", true)));
-end
-
-// zijn herkeuring gevuld is
-function boolean toets_herkeurdeVondst(Object $herkeuring) {
-    return ComputeHelpers.emptyTest($herkeuring, Boolean.FALSE);
-}
-
-rule "herkeurde vondst"
-    dialect "mvel"
-when
-    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $herkeuring : herkeuring )
-    eval( toets_herkeurdeVondst($herkeuring) )
-then
-    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "herkeurd", true)));
-end
-
-// zijn herkeuring leeg is
-function boolean toets_onherkeurdeVondst(Object $herkeuring) {
-    return ComputeHelpers.emptyTest($herkeuring, Boolean.TRUE);
-}
-
-rule "onherkeurde vondst"
-    dialect "mvel"
-when
-    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $herkeuring : herkeuring )
-    eval( toets_onherkeurdeVondst($herkeuring) )
-then
-    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "onherkeurd", true)));
-end
-
-// hij aan alle volgende voorwaarden voldoet: - zijn herkeuring heeft een waarde - zijn herkeuring is gelijk aan 'hout'
-function boolean toets_houtenVondst(Object $herkeuring) {
-    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
-    if (lezing.stands()) {
-        return lezing.verdict();
-    }
-    lezing.read(ComputeHelpers.emptyTest(ComputeHelpers.payload($herkeuring, "waarde"), Boolean.FALSE));
-    if (lezing.stands()) {
-        return lezing.verdict();
-    }
-    lezing.read(ComputeHelpers.textEqual(RegelSpraakRuntime.rsEnumNaam(ComputeHelpers.payload($herkeuring, "waarde")), RegelSpraakRuntime.rsEnumNaam("hout"), Boolean.TRUE));
-    return lezing.verdict();
-}
-
-rule "houten vondst"
-    dialect "mvel"
-when
-    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $herkeuring : herkeuring )
-    eval( toets_houtenVondst($herkeuring) )
-then
-    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "houten", true)));
 end
 

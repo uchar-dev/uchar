@@ -71,7 +71,7 @@ EXPECTED_MIN_PRESERVED_CASES=782    # 2026-11-22: measured 782 (check 5: their c
 PRESERVATION_MUTANT=jutterswet-leeg-deeltal
 
 EXPECTED_MIN_MONOTONE_RUNS=2226     # 2026-11-22: measured 2226 (check 6: runs without one input compared with the case; 2276 before that golden's fifty)
-EXPECTED_MIN_MONOTONE_CLOSURES=401  # 2026-11-22: measured 401 (check 6: runs without one input in which a closure decided, counted apart; 443 while the opgave of the goldens with an opgave marker was open without a value and their initialisation closed over it: declared complete, it is settled leeg, so of those 42 runs the 27 without the opgave count as a member not open without its value and the 15 without another input are compared)
+EXPECTED_MIN_MONOTONE_CLOSURES=396  # 2026-11-23: measured 396, lowered with the card one-empty, which drops the goldens of the absence markers (401 on 2026-11-22; check 6: runs without one input in which a closure decided, counted apart; 443 while the opgave of the goldens with an opgave marker was open without a value and their initialisation closed over it: declared complete, it is settled leeg, so of those 42 runs the 27 without the opgave count as a member not open without its value and the 15 without another input are compared)
 
 # check 6's own red row: a run in which a closure decided, compared all the same, must lose an outcome. Measured
 # 2026-11-21: jutterswet-afleiden-uit-leeg case1 without the taxatie of V1, where "ongetaxeerd indien zijn taxatie leeg

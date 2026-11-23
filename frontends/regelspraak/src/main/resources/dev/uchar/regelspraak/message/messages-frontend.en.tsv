@@ -141,8 +141,6 @@ PART.what.attribute	the attribute '{name}'
 PART.what.declared-parameter	the parameter '{name}'
 PART.what.expectation	the expectation for '{name}'
 PART.what.inconsistency-rule	the rule of the inconsistency
-PART.absence-markers.none	the declaration admits no absence marker
-PART.absence-markers.only	the declaration admits only '{marker}'
 PART.where-situation	in the situation of the scenario '{scenario}'
 PART.where-situation-and-set	in the situation of the scenario '{scenario}' and in the parameter set '{set}'
 PART.combination-fixed-periods	both a fixed value and periods
@@ -723,8 +721,6 @@ RGS-373.day-family	the day family (dag, week)
 RGS-373.month-family	the month family (maand, kwartaal, jaar)
 RGS-374	the timeline of {operand} lies on the grid of every {operandGrid}, which does not fit the grid of every {targetGrid} of the target {target}: the target cannot carry its cuts (WF-126)
 RGS-375	{head}: '(mag opgegeven worden)' makes no characteristic '{characteristic}' on a time-dependent attribute, but the model reads it — the condition of that characteristic compares two timelines and tests a timeline for filled, which has no reading per period (RUNTIME-SEMANTICS ch. 3.12 row 5) (dialect §7)
-RGS-376	'{expression}' reads the value of '{attribute}' of {objectType}, which can hold an absence marker, without first testing that it holds a value; put the value test of the attribute before the read in the condition, or in an aggregation the value test in the subselection (RUNTIME-SEMANTICS ch. 9.5, IR-SPEC WF-127)
-RGS-377	{what}: '{marker}' does not fit here as an absence marker: {admitted} (RUNTIME-SEMANTICS ch. 9.5)
 RGS-378	allocation '{name}' names the time-dependent attribute '{attribute}' of {objectType}: an allocation distributes one amount at one moment, and no reading of it per day is defined (WF-128)
 RGS-379	{kind} '{name}' reads negatively, as in a negation or an empty test, what {producerKind} '{producer}' writes, on a cycle; a cycle carries no negative edge, not even a cycle through a recursive creation ({wf}): {sentence}
 RGS-380	parameter '{parameter}' has overlapping validity periods {first} and {second}
@@ -789,7 +785,6 @@ RGS-441	characteristic check '{source}' follows the role '{role}' from {subject}
 RGS-450	the attribute '{attribute}' of {label} is time-dependent; a value without a period is the value of the period the as-of date falls in, but the scenario '{scenario}' has no as-of date (add 'met peildatum <datum>' or give the value a period: 'van <datum> tot <datum>')
 RGS-451	the day-kind definition of '{dayKind}' reads the parameter '{parameter}', which {where} has no value
 RGS-460	the sign '{sign}' in '{datatype}' is dropped: a percentage carries no sign (IR-SPEC ch. 2.4), so no executor checks that restriction
-RGS-461	member '{attribute}' of {objectType}: '{marking}' stands before '{opgave}', not after it — write '{marking} {opgave}' (dialect §7)
 RGS-462	'Afleiden uit leeg: {value}' stands in the document a second time, after 'Afleiden uit leeg: {first}'; a document chooses once whether anything follows from an empty value, also when it consists of several files
 RGS-463	attribute '{attribute}' of {objectType}: '{complete}' stands beside '{opgave}' — the attribute is then the target of an opgave above its computation and no input, and the opgave that '{opgave}' generates is complete already; write '{opgave}' alone (dialect, Volledig gegeven)
 RGS-464	{kind} '{name}' of {objectType}: '{complete}' stands on a member that {writer} writes on {objectType} itself — the member then follows its writers on every object of {objectType} and is input nowhere, so the marking does nothing (RUNTIME-SEMANTICS ch. 1.5); leave '{complete}' out, or put it on the input members that {writer} reads (dialect, Volledig gegeven)

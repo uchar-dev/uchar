@@ -904,22 +904,9 @@ public final class SemanticTokens {
         for (int i = first; i <= last; i++) {
             Piece p = pieces.get(i);
             if (p.hidden() || claim[i] != null || !isWord(p.type())) continue;
-            claim(new int[]{i, i}, pieceText(i).equals("geen") || markerWord(pieceText(i)) ? Kind.KEYWORD : Kind.UNRESOLVED,
-                    false, null);
+            claim(new int[]{i, i}, pieceText(i).equals("geen") ? Kind.KEYWORD : Kind.UNRESOLVED, false, null);
         }
     }
-
-    /** A word of the absence markers ("onbekend", "niet van toepassing", "een waarde heeft"; grammar/DIVERGENCES.md,
-     *  "Afwezigheidsmarkeringen") in a document that declares them: the resolver reads it as a marker or as the test
-     *  of a value, which no name of the document stands for. */
-    private boolean markerWord(String word) {
-        if (!MARKER_WORDS.contains(word.toLowerCase(java.util.Locale.ROOT))) return false;
-        for (ObjectType t : model.objectTypes.values()) if (!t.attributeMarkers.isEmpty()) return true;
-        return false;
-    }
-
-    private static final java.util.Set<String> MARKER_WORDS = java.util.Set.of("onbekend", "niet", "van", "toepassing",
-            RegelSpraakModel.VALUE_CONSTRUCTOR);
 
     /** Whether {@code b} is the next step of the navigation {@code a} begins: only 'van' and an article or a quantifier
      *  stand between them ("de mast VAN DE post", "het gewicht VAN ALLE vondsten"). */
@@ -1324,7 +1311,6 @@ public final class SemanticTokens {
         for (ToewijzingContext t : inst.toewijzing()) {
             if (t instanceof AttribuutToewijzingContext a) {
                 member(range(a.toewijzingNaam()), Kind.ATTRIBUTE, ot);
-                markerValue(a.situatieWaarde());
             }
             else if (t instanceof RolToOneToewijzingContext r) {
                 role(range(r.toewijzingNaam()), ot);
@@ -1344,13 +1330,6 @@ public final class SemanticTokens {
         RegelSpraakModel.Parameter p = ScenarioResolver.parameterByName(model, text(r[0], r[1]));
         claim(r, p == null ? Kind.UNRESOLVED : Kind.PARAMETER, false,
                 p == null ? null : lookup(Kind.PARAMETER, null, p.name()));
-        markerValue(row.situatieWaarde());
-    }
-
-    /** An absence marker written as a value ("onbekend", "niet van toepassing"): a keyword, as the marking of its
-     *  declaration is; the scenario route reads the words, which the lexer reads as names. */
-    private void markerValue(SituatieWaardeContext w) {
-        if (w instanceof AfwezigheidSituatieWaardeContext m) claim(m, Kind.KEYWORD, false, null);
     }
 
     private void scenario(ScenarioContext sc, Map<String, SituatieDefinitieContext> situations,
@@ -1378,13 +1357,9 @@ public final class SemanticTokens {
     private void expectation(VerwachtingContext v, Map<String, Opened> labels) {
         if (v instanceof VerwachtAttribuutLeegContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
         else if (v instanceof VerwachtTijdlijnLeegContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
-        else if (v instanceof VerwachtTijdlijnAltijdContext a) {
-            attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
-            markerValue(a.situatieWaarde());
-        } else if (v instanceof VerwachtAttribuutWaardeContext a) {
-            attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
-            markerValue(a.situatieWaarde());
-        } else if (v instanceof VerwachtAttribuutOpenContext a) {
+        else if (v instanceof VerwachtTijdlijnAltijdContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
+        else if (v instanceof VerwachtAttribuutWaardeContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
+        else if (v instanceof VerwachtAttribuutOpenContext a) {
             attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
             openWords(a.staatWoord(), a.vastWoord());
         } else if (v instanceof VerwachtKenmerkContext k) characteristicOf(k.UPPER_ID(), k.kaleNaam(), labels);

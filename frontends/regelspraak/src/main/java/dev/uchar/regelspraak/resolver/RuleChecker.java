@@ -1432,7 +1432,7 @@ final class RuleChecker {
             case Expr.BinderRef ignored -> { }
             case Expr.Constant ignored -> { }
             case Expr.Unresolved ignored -> { }
-            // the two nodes of the absence markers, which a backend's loader builds and the resolver does not
+            // the two nodes of a sum type, which a backend's loader builds and the resolver does not
             case Expr.Construct c -> navigation(c.argument(), subject, reported);
             case Expr.PayloadAccess p -> navigation(p.base(), subject, reported);
         }
@@ -2677,8 +2677,6 @@ final class RuleChecker {
     // deviating case through the characteristic); the writers move AFTER the defaults lowering, so a tree or an
     // unordered set of the dialect's own blocks moves whole. Case input on X itself keeps Reading A
     // (RUNTIME-SEMANTICS ch. 7.8): the marker adds an input attribute, it does not change what input on X means.
-    // Where X carries absence markers, 'opgegeven X' and 'berekende X' carry them as well, over X's sum type: an opgave
-    // or a computation may be a marker, the group passes it on, and a marker that differs is a deviation (ch. 9.3).
     // ==============================================================================================
 
     /** A marked attribute whose declaration passed the declaration checks, with its generated members declared. The
@@ -2771,12 +2769,6 @@ final class RuleChecker {
                 copyEntry(t.attributeTimelineCount, o.attribute(), g);
                 copyEntry(t.attributeTimelineName, o.attribute(), g);
                 copyEntry(t.attributeFixedStartPoint, o.attribute(), g);
-                // an opgave and a computation of an X with markers hold what X holds, a marker included, over X's
-                // domain: the group passes either on as it is, and the deviation compares them as one sum type
-                if (t.attributeMarkers.containsKey(o.attribute())) {
-                    t.attributeMarkers.put(g, t.attributeMarkers.get(o.attribute()));
-                    t.attributeMarkerDomain.put(g, o.attribute());
-                }
             }
             t.characteristics.add(o.deviating());
             t.characteristicKinds.put(o.deviating(), ObjectType.CharacteristicKind.BEZITTELIJK);
@@ -2909,8 +2901,6 @@ final class RuleChecker {
                     o.type().attributeTimelineCount.remove(g);
                     o.type().attributeTimelineName.remove(g);
                     o.type().attributeFixedStartPoint.remove(g);
-                    o.type().attributeMarkers.remove(g);
-                    o.type().attributeMarkerDomain.remove(g);
                 }
                 o.type().characteristics.remove(o.deviating());
                 o.type().characteristicKinds.remove(o.deviating());
@@ -4750,8 +4740,7 @@ final class RuleChecker {
             for (int i = 0; i < assignments.size(); i++) {
                 ResolvedObjectCreation.MemberAssignment t = assignments.get(i);
                 Datatype targetType = createdType.attribute(t.attribute());
-                // a marker is no value of the declared datatype, so the typing below has nothing to judge
-                if (targetType == null || t.value() instanceof Expr.Construct) continue;
+                if (targetType == null) continue;
                 // §13.2.14: a member init is a WRITE TARGET too (WF-023 names all three), so the created
                 // type's declared datatype is this enumeratiewaarde's domain — promoted in place, like register.
                 Expr promoted = ExpressionBuilder.enumAgainstContext(t.value(), targetType);
@@ -4812,21 +4801,14 @@ final class RuleChecker {
      *  setter on a property that does not exist. */
     private ResolvedObjectCreation.MemberAssignment makeMemberAssignment(ObjectType createdType, String name,
                                                             ExpressieContext valueCtx, ObjectCreatieContext oc) {
-        // a marker as the value of a member with absence markers, as a rule writes it ("met taxatie gelijk aan onbekend")
-        Expr.Construct marker = createdType == null || createdType.attribute(name) == null ? null
-                : absenceMarkerValue(createdType, name, valueCtx);
-        if (marker != null) return new ResolvedObjectCreation.MemberAssignment(name, marker);
         Expr value = builder.build(valueCtx);
         if (createdType == null || createdType.attribute(name) != null)
             return new ResolvedObjectCreation.MemberAssignment(name, value);
         // "met vangstgewicht in najaar gelijk aan …": the cell of the made object (IR-SPEC ch. 3.3, MemberAssignment.labels),
         // read as a cell read is; a name with labels of some dimensions only, or that fits two cells, has its ERROR
         Expr cell = builder.dimensionCell(name, createdType, null, null, Source.of(oc, name));
-        if (cell instanceof Expr.DimensionCellRead c) {
-            Expr.Construct cellMarker = absenceMarkerValue(c, valueCtx);
-            return new ResolvedObjectCreation.MemberAssignment(c.attribute().attribute(), cellMarker != null ? cellMarker : value,
-                    false, c.labels());
-        }
+        if (cell instanceof Expr.DimensionCellRead c)
+            return new ResolvedObjectCreation.MemberAssignment(c.attribute().attribute(), value, false, c.labels());
         if (cell != null) return new ResolvedObjectCreation.MemberAssignment(name, value);
         // through the chain, exactly as the attribute branch above: an INHERITED kenmerk of the created
         // type is as much a member of it as its own, and reading the own list alone made one sentence's
@@ -5296,13 +5278,6 @@ final class RuleChecker {
         // §13.2.14: the doel is the WRITE-TARGET context an enumeratiewaarde takes its domain from — the
         // same context the membership check below reads. Promoting BEFORE the ResolvedRule is built is
         // what puts the typed literal on the wire (ExpressionBuilder.enumAgainstContext).
-        // a marker written as the value (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"): the typing below judges a
-        // value, which a marker is not
-        Expr.Construct marker = absenceMarkerValue(targetExpr, value);
-        if (marker != null) {
-            model.resolvedRules.add(new ResolvedRule(name, category, targetExpr, marker, condition, validity, currentSourceAnnotations));
-            return;
-        }
         Expr valueExpr = ExpressionBuilder.enumAgainstContext(builder.buildResult(value), targetExpr.type());
         model.resolvedRules.add(new ResolvedRule(name, category, targetExpr, valueExpr, condition, validity, currentSourceAnnotations));
         Datatype targetType = targetExpr.type(), valueType = valueExpr.type();
@@ -5346,27 +5321,9 @@ final class RuleChecker {
         else model.diagnostics.add(report.apply(error));
     }
 
-    /** The marker {@code value} writes into {@code target} where the target is an attribute with absence markers, or a
-     *  cell of one, and the value is one of them as written ("moet gesteld worden op niet van toepassing"): a Construct
-     *  of the marker; null otherwise. */
-    private Expr.Construct absenceMarkerValue(Expr target, ExpressieContext value) {
-        Expr.AttributeReference a = markedAttribute(target);
-        return a == null ? null : absenceMarkerValue(a.objectType(), a.attribute(), value);
-    }
-
-    /** As above, for the attribute {@code attribute} of {@code holder}: the member an object creation assigns. */
-    private Expr.Construct absenceMarkerValue(ObjectType holder, String attribute, ExpressieContext value) {
-        if (holder == null || attribute == null || value == null) return null;
-        java.util.List<String> markers = holder.markersOf(attribute);
-        if (markers == null) return null;
-        String word = String.join(" ", src(value).trim().toLowerCase(java.util.Locale.ROOT).split("\\s+"));
-        if (!markers.contains(word)) return null;
-        return new Expr.Construct(holder.sumTypeOf(attribute), word, null, source(value));
-    }
-
     /** The attribute that {@code e} reads, itself or the attribute of the cell it reads; null for any other node or
      *  for an attribute whose type did not resolve. */
-    private static Expr.AttributeReference markedAttribute(Expr e) {
+    private static Expr.AttributeReference attributeOrCell(Expr e) {
         Expr.AttributeReference a = e instanceof Expr.DimensionCellRead c ? c.attribute()
                 : e instanceof Expr.AttributeReference r ? r : null;
         return a == null || a.objectType() == null ? null : a;
@@ -5412,7 +5369,7 @@ final class RuleChecker {
     private static Typing.Coded timelineInScalar(Expr target, Expr value) {
         String read = timelineRead(value);
         if (read == null) return null;
-        Expr.AttributeReference written = markedAttribute(target);
+        Expr.AttributeReference written = attributeOrCell(target);
         return new Typing.Coded("RGS-434", Diagnostic.params("operand", read,
                 "target", written != null ? written.attribute() : target.source().snippet()));
     }
@@ -6774,8 +6731,6 @@ final class RuleChecker {
      *  neither stays Unresolved (an honest marker), never a silently-true gate. */
     private Condition characteristicCheckPredicate(Expr lhs, KaleNaamContext nameCtx, boolean withIndefiniteArticle, boolean hasVerb,
                                       Condition.WholePeriod period, Source source) {
-        Condition marked = absenceMarkerTest(lhs, nameCtx, withIndefiniteArticle, hasVerb, period, source);
-        if (marked != null) return marked;
         Condition c = characteristicCheckPredicateBare(lhs, nameCtx, withIndefiniteArticle, hasVerb, source);
         if (period == null || c == null) return c;
         // §8.2 "is/heeft gedurende het gehele jaar een <kenmerk>" attaches the whole-period qualifier ONLY to a
@@ -6790,29 +6745,6 @@ final class RuleChecker {
                 // staat er omdat zij de weigering van DEZE route beschrijft; dat checkWholePeriod
                 // vervolgens harder ingrijpt is haar besluit, niet dat van deze plek. Gemeten 2026-09-19.
                 : new Condition.Unresolved(source, Msg.frontend("RGS-092.whole-period-role"));
-    }
-
-    /** A test of an attribute with absence markers (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"; RUNTIME-SEMANTICS
-     *  ch. 9.5), read where the grammar reads a characteristic check of an expression: "zijn taxatie onbekend is" and
-     *  "… niet van toepassing is" compare the attribute with a Construct of the marker, "… een waarde heeft" is a
-     *  gevuld test of the PayloadAccess of the value; of a cell of such an attribute alike ("zijn gewicht in najaar een
-     *  waarde heeft"). A marker the attribute does not declare, and a test of a value under the whole-period qualifier,
-     *  stay the unresolved check they are without the markers. Null for a sentence that is no such test. */
-    private Condition absenceMarkerTest(Expr lhs, KaleNaamContext nameCtx, boolean een, boolean hasVerb,
-                                        Condition.WholePeriod period, Source source) {
-        Expr.AttributeReference a = markedAttribute(lhs);
-        if (a == null || nameCtx == null) return null;
-        java.util.List<String> markers = a.objectType().markersOf(a.attribute());
-        if (markers == null) return null;
-        Datatype.SumType sum = a.objectType().sumTypeOf(a.attribute());
-        String word = String.join(" ", src(nameCtx).trim().toLowerCase(java.util.Locale.ROOT).split("\\s+"));
-        if (een && hasVerb && word.equals(RegelSpraakModel.VALUE_CONSTRUCTOR)) {
-            if (period != null) return null;
-            return new Condition.Predicate(Condition.PredicateKind.GEVULD, AbsenceMarkers.valueOf(lhs, sum), null, source);
-        }
-        if (een || hasVerb || !markers.contains(word)) return null;
-        return new Condition.Comparison(Condition.Operator.GELIJK, lhs,
-                new Expr.Construct(sum, word, null, source(nameCtx)), period, source);
     }
 
     /** Flip the negatie of a resolved kenmerk-/rolcheck (the §8.1.8.3 "is niet een &lt;k&gt;" negation). The positive

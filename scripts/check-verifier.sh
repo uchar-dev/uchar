@@ -207,9 +207,9 @@ EXPECTED_MIN_ARM_SITES=442    # 2026-11-02: measured 442 key literals "WF-###.<s
 # pointer in a report line would check nothing and pass.
 # The empty-closures inventory (check 6), floored in the same regime: an analysis that quietly stopped
 # finding a kind of place would still pass its witnesses.
-EXPECTED_MIN_EMPTY_CLOSURE=827   # 2026-11-21: measured 827 places of class closure over corpus/golden and corpus/red
+EXPECTED_MIN_EMPTY_CLOSURE=823   # 2026-11-23: measured 823 places of class closure over corpus/golden and corpus/red (827 on 2026-11-21; lowered with the card one-empty, which drops the goldens of the absence markers)
 EXPECTED_MIN_EMPTY_NEGATION=383  # 2026-11-21: measured 383 places of class negation, same documents (382 before a default with own content passed on what its exception groups read)
-EXPECTED_MIN_EMPTY_ABSENT=206    # 2026-11-21: measured 206 places of class absent-instance, same documents
+EXPECTED_MIN_EMPTY_ABSENT=205    # 2026-11-23: measured 205 places of class absent-instance, same documents (206 on 2026-11-21; lowered with the card one-empty, which drops the goldens of the absence markers)
 EXPECTED_MIN_EMPTY_KINDS=20      # 2026-11-21: 20 of the 21 kinds; clamp-empty-bound has only its witness, no clamp of the corpus has a bound that can be leeg
 EXPECTED_MIN_EMPTY_WITNESSES=24  # 2026-11-21: 24 witnesses, one per kind (21) and one per guard (3)
 EXPECTED_MIN_POINTERS=705   # 2026-11-02: measured 705 pointers over the negative reports, all resolving (706 that morning, 619 on 2026-10-19, 547 on 2026-09-25); lowered by one with the card dimensions-remaining, which admits a filled count over cells: wf037-filled-count-dimension-selection, whose report cited two pointers, gave way to wf037-total-dimension-selection, which cites one

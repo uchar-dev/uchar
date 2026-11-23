@@ -11,10 +11,7 @@
             "date": "2026-03-10"
           },
           "opgegeven teruggavedatum": {
-            "constructor": "waarde",
-            "payload": {
-              "date": "2026-03-24"
-            }
+            "date": "2026-03-12"
           }
         },
         "roles": {},
@@ -33,10 +30,7 @@
       "label": "V",
       "attribute": "teruggavedatum",
       "value": {
-        "constructor": "waarde",
-        "payload": {
-          "date": "2026-03-24"
-        }
+        "date": "2026-03-12"
       }
     },
     {
@@ -44,19 +38,18 @@
       "label": "V",
       "attribute": "berekende teruggavedatum",
       "value": {
-        "constructor": "waarde",
-        "payload": {
-          "date": "2026-03-24"
-        }
+        "date": "2026-03-24"
       }
     },
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicPresent",
       "label": "V",
       "characteristic": "afwijkende opgave teruggavedatum"
     },
     {
-      "kind": "consistent"
+      "kind": "inconsistent",
+      "rule": "controle opgave teruggavedatum",
+      "label": "V"
     }
   ]
 }

@@ -110,14 +110,6 @@ class CompleteMarkerTest {
                 List.copyOf(members(ir).get("Characteristic gemeld").keySet()));
     }
 
-    @Test void the_marker_after_an_absence_marking_stands_on_the_attribute_with_markers() {
-        String ir = clean("""
-                Objecttype de Vondst (mv: Vondsten)
-                    de taxatie Numeriek (geheel getal) (of onbekend) (volledig gegeven);
-                """).document();
-        assertEquals(List.of("Attribute taxatie"), complete(ir));
-    }
-
     @Test void the_two_attributes_an_opgave_generates_carry_the_field_and_the_marked_attribute_does_not() {
         String ir = clean("""
                 Objecttype de Vondst (mv: Vondsten)

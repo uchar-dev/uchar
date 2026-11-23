@@ -240,13 +240,6 @@ situatieWaarde
     | booleanWaarde     # booleanSituatieWaarde
     | ENUM_LITERAL      # enumSituatieWaarde
     | tekstWaarde       # tekstSituatieWaarde
-    | afwezigheidsWaarde # afwezigheidSituatieWaarde
-    ;
-// An absence marker as a value, in the words a rule writes it (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"):
-// 'onbekend' and 'toepassing' are matched on their text, on this one position, so no word becomes a keyword.
-afwezigheidsWaarde
-    : { isWord("onbekend") }? LOWER_ID
-    | NIET VAN { isWord("toepassing") }? LOWER_ID
     ;
 
 // ---- Verwachtingregels (bullets) ----
@@ -491,11 +484,6 @@ kenmerkSpecificatie
 // uchar DIALECT EXTENSION (grammar/DIVERGENCES.md §7): the opgave marker "(mag opgegeven worden)" is the last element,
 // after the optional timeline and before the optional ';', so every clause of the production keeps its place. The
 // resolver lowers it to an opgave above the attribute's computation.
-// uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"): the absence markers stand after the
-// optional timeline and before the opgave marker — the markers are among the values the attribute can hold, and the
-// opgave marker then says that such a value, a marker included, may be supplied; the resolver lowers the attribute to
-// a sum type. An absence marking after the opgave marker is admitted only so that the resolver can refuse it with a
-// message that names the right order instead of a bare syntax error.
 // uchar DIALECT EXTENSION (grammar/DIVERGENCES.md, "Volledig gegeven"): the marker '(volledig gegeven)' stands in the place of
 // the opgave marker: the input of the attribute is complete. Beside the opgave marker, before or after it, it is
 // admitted only so that the resolver can refuse the pair with a message of its own instead of a bare syntax error.
@@ -503,21 +491,12 @@ attribuutSpecificatie
     : bepaaldLidwoord? lowerNaam ( MV_START meervoudsvorm RPAREN )? benaming* ( datatype | domeinNaam ) ( MET_EENHEID eenheidExpressie )?
       COMMA? ( GEDIMENSIONEERD_MET dimensieNaam ( EN dimensieNaam )* )?
       tijdlijn?
-      afwezigheidsmarkering?
       VOLLEDIG_GEGEVEN?
-      ( MAG_OPGEGEVEN_WORDEN afwezigheidsmarkeringNaOpgave? volledigNaOpgave? )?
+      ( MAG_OPGEGEVEN_WORDEN volledigNaOpgave? )?
       SEMICOLON?
-    ;
-afwezigheidsmarkeringNaOpgave
-    : afwezigheidsmarkering
     ;
 volledigNaOpgave
     : VOLLEDIG_GEGEVEN
-    ;
-afwezigheidsmarkering
-    : OF_ONBEKEND
-    | OF_NIET_VAN_TOEPASSING
-    | OF_ONBEKEND_OF_NIET_VAN_TOEPASSING
     ;
 
 // ====================================================================

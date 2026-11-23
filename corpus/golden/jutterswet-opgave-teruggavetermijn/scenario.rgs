@@ -1,0 +1,48 @@
+Parameterset termijnen:
+de parameter de teruggavetermijn is 14 dg
+
+Scenario berekende teruggavedatum
+met parameterset termijnen
+Gegeven is de volgende situatie:
+een Vondst V
+- de claimdatum is 10-03-2026
+Met als verwacht resultaat:
+- de teruggavedatum van V is 24-03-2026
+- de berekende teruggavedatum van V is 24-03-2026
+- V heeft geen afwijkende opgave teruggavedatum
+- de gegevens zijn consistent
+
+Scenario opgegeven datum verdringt berekende datum
+met parameterset termijnen
+Gegeven is de volgende situatie:
+een Vondst V
+- de claimdatum is 10-03-2026
+- de opgegeven teruggavedatum is 12-03-2026
+Met als verwacht resultaat:
+- de teruggavedatum van V is 12-03-2026
+- de berekende teruggavedatum van V is 24-03-2026
+- V heeft afwijkende opgave teruggavedatum
+- de gegevens zijn inconsistent volgens "controle opgave teruggavedatum" voor V
+
+Scenario opgegeven datum gelijk aan berekende datum
+met parameterset termijnen
+Gegeven is de volgende situatie:
+een Vondst V
+- de claimdatum is 10-03-2026
+- de opgegeven teruggavedatum is 24-03-2026
+Met als verwacht resultaat:
+- de teruggavedatum van V is 24-03-2026
+- de berekende teruggavedatum van V is 24-03-2026
+- V heeft geen afwijkende opgave teruggavedatum
+- de gegevens zijn consistent
+
+Scenario opgegeven datum zonder claimdatum
+met parameterset termijnen
+Gegeven is de volgende situatie:
+een Vondst V
+- de opgegeven teruggavedatum is 12-03-2026
+Met als verwacht resultaat:
+- de teruggavedatum van V is 12-03-2026
+- de berekende teruggavedatum van V is leeg
+- V heeft geen afwijkende opgave teruggavedatum
+- de gegevens zijn consistent

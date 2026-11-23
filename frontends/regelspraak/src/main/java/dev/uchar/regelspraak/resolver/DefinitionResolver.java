@@ -557,20 +557,6 @@ public final class DefinitionResolver {
             String name = name(a.lowerNaam());
             ot.attributes.put(name, withUnit(datatypeOf(a.datatype(), a.domeinNaam()), a, name));
             if (a.meervoudsvorm() != null) ot.attributePlural.put(name, src(a.meervoudsvorm())); // §3.3, for §8.1.6
-            // the absence markers (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"), in their canonical order
-            AfwezigheidsmarkeringContext marking = a.afwezigheidsmarkering();
-            if (a.afwezigheidsmarkeringNaOpgave() != null) {
-                AfwezigheidsmarkeringContext after = a.afwezigheidsmarkeringNaOpgave().afwezigheidsmarkering();
-                error("RGS-461", params("attribute", name, "objectType", ot.name, "marking", after.getText(),
-                        "opgave", a.MAG_OPGEGEVEN_WORDEN().getText()), after.getStart().getLine());
-                // the declaration is read as written in the right order, so this one error stands alone
-                if (marking == null) marking = after;
-            }
-            if (marking != null) {
-                ot.attributeMarkers.put(name, marking.OF_ONBEKEND() != null ? List.of("onbekend")
-                        : marking.OF_NIET_VAN_TOEPASSING() != null ? List.of("niet van toepassing")
-                        : RegelSpraakModel.ABSENCE_MARKERS);
-            }
             // '(volledig gegeven)' (grammar/DIVERGENCES.md, "Volledig gegeven"): beside the opgave marker the attribute is the
             // target of a stack and no input, and the opgave the marker generates is complete already
             TerminalNode complete = a.VOLLEDIG_GEGEVEN() != null ? a.VOLLEDIG_GEGEVEN()

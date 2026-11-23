@@ -238,7 +238,6 @@ public final class Resolver {
         designations.compose(checker.nameParts());
         designations.check();
         designations.declare();
-        AbsenceMarkers.lower(model);
         reportUnresolved(model, checker.refusedMarkers());
         model.document(checker.document(doc));   // last: the one emission, of the finished model
         return model;

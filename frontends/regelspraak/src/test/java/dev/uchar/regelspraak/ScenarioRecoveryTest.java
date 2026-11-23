@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * A test document with a syntax error in its scenario layer: both routes that read one, {@code --cases} and the
  * semantic tokens, report the syntax error (RGS-216) and return. ANTLR's recovery leaves a context out where a match
  * failed before it (a situation without its block, an opener without its label) or makes a token up (an error node
- * outside the token stream: a label, the 'van' of a marker); the scenario layer reads such a tree as far as it goes.
+ * outside the token stream: a label); the scenario layer reads such a tree as far as it goes.
  * Measured on the frontend before: each of the four documents below ended in an uncaught exception
  * (NullPointerException, ArrayIndexOutOfBoundsException, IllegalStateException) on one route or both; the expectations
  * 'staat niet vast' after them did the same or brought a finding beside the syntax error.
@@ -24,7 +24,7 @@ class ScenarioRecoveryTest {
 
     private static final String MODEL = """
         Objecttype de Vondst (mv: Vondsten)
-            de taxatie Numeriek (getal met 2 decimalen) (of onbekend of niet van toepassing);
+            de taxatie Numeriek (getal met 2 decimalen);
 
         """;
 
@@ -57,12 +57,13 @@ class ScenarioRecoveryTest {
         syntaxErrorOnBothRoutes(SCENARIO.replace("een Vondst V\n", "een V\n"));
     }
 
-    /** The recovery reads 'niet toepassing' as the marker 'niet van toepassing' with a made-up 'van': the syntax error
-     *  is the one finding, and no refusal of a marker the declaration lacks (RGS-377) stands beside it. */
-    @Test void a_marker_with_a_word_the_recovery_makes_up_is_a_syntax_error_only() {
-        List<String> errors = syntaxErrorOnBothRoutes(
-                SCENARIO.replace("- de taxatie is 3", "- de taxatie is niet toepassing"));
-        assertEquals(List.of("RGS-216"), errors);
+    /** A word is no value of an attribute: 'onbekend' as the value of the taxatie is a syntax error on both routes. In a
+     *  situation it is the one finding; an expectation the parse cannot read is named as well (RGS-272), as every
+     *  expectation the grammar does not know. */
+    @Test void a_word_as_a_value_is_a_syntax_error() {
+        assertEquals(List.of("RGS-216"), syntaxErrorOnBothRoutes(SCENARIO.replace("- de taxatie is 3", "- de taxatie is onbekend")));
+        assertEquals(List.of("RGS-216", "RGS-272"),
+                syntaxErrorOnBothRoutes(SCENARIO.replace("- de taxatie van V is 3", "- de taxatie van V is onbekend")));
     }
 
     private static final String OPEN_MODEL = """

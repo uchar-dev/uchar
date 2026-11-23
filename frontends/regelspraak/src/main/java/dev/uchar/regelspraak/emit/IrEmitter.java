@@ -257,9 +257,6 @@ public final class IrEmitter {
 
         w.key("domains").beginArray();
         for (var entry : m.domains.entrySet()) domain(entry.getKey(), entry.getValue());
-        for (ObjectType ot : m.objectTypes.values())
-            for (String a : ot.attributeMarkers.keySet())
-                if (!ot.attributeMarkerDomain.containsKey(a)) markerDomain(ot.sumTypeOf(a));
         w.endArray();
 
         w.key("unitSystems").beginArray();
@@ -435,7 +432,7 @@ public final class IrEmitter {
             w.key("node").value("Attribute");
             w.key("name").value(a);
             w.key("datatype");
-            datatype(ot.attributeMarkers.containsKey(a) ? ot.sumTypeOf(a) : entry.getValue(), true);
+            datatype(entry.getValue(), true);
             String plural = ot.attributePlural.get(a);
             if (plural != null) w.key("plural").value(plural);
             List<String> dimensions = ot.attributeDimensions.get(a);
@@ -758,8 +755,6 @@ public final class IrEmitter {
     /** A datatype at a type annotation: the {@code type} of an expression node. */
     private void datatype(Datatype dt) { datatype(dt, false); }
 
-    // --- absence markers (grammar/DIVERGENCES.md, "Afwezigheidsmarkeringen"; RUNTIME-SEMANTICS ch. 9.5) ------------
-
     /** The constructors of a sum type in declared order, each payload in its declaration spelling. */
     private void constructors(Datatype.SumType s) {
         w.key("constructors").beginArray();
@@ -770,18 +765,6 @@ public final class IrEmitter {
             w.endObject();
         }
         w.endArray();
-    }
-
-    /** The domain declaration of the sum type of an attribute with absence markers; the domain names it. */
-    private void markerDomain(Datatype.SumType s) {
-        w.beginObject();
-        w.key("node").value("Domain");
-        w.key("name").value(s.domain());
-        w.key("datatype").beginObject();
-        w.key("node").value("SumType");
-        constructors(s);
-        w.endObject();
-        w.endObject();
     }
 
     /** IR-SPEC ch. 2.4. A number is a {@code Number}, its sign always written (a number declared without one is
@@ -827,7 +810,7 @@ public final class IrEmitter {
                 w.key("domain").value(e.domain());
                 w.key("values"); stringList(e.values());
             }
-            // the sum type of an attribute with absence markers, at its declaration and at a use site (a Construct)
+            // a sum type, which a backend's IR loader reads off the wire (RUNTIME-SEMANTICS ch. 9); the resolver builds none
             case Datatype.SumType s -> {
                 w.key("node").value("SumType");
                 w.key("domain").value(s.domain());
@@ -1092,8 +1075,8 @@ public final class IrEmitter {
             case Expr.IfThenElse ignored -> throw new UnsupportedOperationException(
                     "IfThenElse is never emitter-produced (IR-SPEC ch. 4.10): the resolver builds none, "
                             + "so this emitter has no verified wire shape for it");
-            // IR-SPEC ch. 4.7: a value or a marker of an attribute with absence markers, and a read of its value
-            // (RUNTIME-SEMANTICS ch. 9.5, WF-127)
+            // IR-SPEC ch. 4.7: the two nodes of a sum type, which a backend's IR loader reads off the wire; the resolver
+            // builds neither
             case Expr.Construct c -> {
                 w.key("node").value("Construct");
                 w.key("type"); datatype(c.type());
@@ -1827,12 +1810,10 @@ public final class IrEmitter {
     }
 
     /** The attribute reference the single argument {@code e} of an instance fold reads through the fold's range: the
-     *  argument itself, the reference under a cell of each member (ALEF's fold of one cell over a role, IR-SPEC
-     *  ch. 4.3), or the reference whose value each member gives (a PayloadAccess, RUNTIME-SEMANTICS ch. 9.5); null for
-     *  any other node. */
+     *  argument itself, or the reference under a cell of each member (ALEF's fold of one cell over a role, IR-SPEC
+     *  ch. 4.3); null for any other node. */
     public static Expr.AttributeReference foldSourceReference(Expr e) {
         if (e instanceof Expr.AttributeReference a) return a;
-        if (e instanceof Expr.PayloadAccess p) return foldSourceReference(p.base());
         return e instanceof Expr.DimensionCellRead c ? c.attribute() : null;
     }
 

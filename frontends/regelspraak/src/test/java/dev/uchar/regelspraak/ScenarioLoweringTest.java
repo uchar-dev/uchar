@@ -413,7 +413,7 @@ class ScenarioLoweringTest {
             de aanvangsdatum Datum in dagen;
             de wachtdagen Numeriek (geheel getal) voor elke wachtjaar;
             de romplengte Numeriek (geheel getal);
-            de keurwaarde Numeriek (geheel getal) (of onbekend);
+            de keurwaarde Numeriek (geheel getal);
             is gekeurd kenmerk (bijvoeglijk);
             is gemeld kenmerk (bijvoeglijk);
 
@@ -442,7 +442,7 @@ class ScenarioLoweringTest {
 
         Regel keurwaarde
             geldig altijd
-                De keurwaarde van een Schuit moet gesteld worden op onbekend
+                De keurwaarde van een Schuit moet gesteld worden op 0
                 indien hij gemeld is.
 
         Regel keuring

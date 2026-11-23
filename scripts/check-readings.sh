@@ -145,7 +145,7 @@ EXPECTED_MIN_STATE_OBJECTS=3015     # 2026-11-12: measured 3015 (end-state lines
 EXPECTED_MIN_STATE_MEMBERS=8337     # 2026-11-12: measured 8337 (end-state lines `attribute` and `characteristic`; beside them 1538 `link`, 157 `channel`)
 EXPECTED_MIN_UNDETERMINED_LINES=65  # 2026-11-22: measured 65 (node lines `undetermined open …`, of the goldens with inferFromEmpty false)
 EXPECTED_MIN_STATE_OPEN=79         # 2026-11-22: measured 79 (end-state lines of an open member)
-EXPECTED_MIN_STATE_MADE=479         # 2026-11-12: measured 479 (end-state lines `object` of an object a creation made)
+EXPECTED_MIN_STATE_MADE=475         # 2026-11-23: measured 475 (end-state lines `object` of an object a creation made; 479 on 2026-11-12, lowered with the card one-empty, which drops the golden of the absence markers in an object creation)
 
 # --- tools ---------------------------------------------------------------------------------------------
 if ! command -v dune >/dev/null 2>&1 && command -v opam >/dev/null 2>&1; then

@@ -575,8 +575,8 @@ where on none (ch. 5.12). On a target of a sum type a consequence is the copy of
 and the root writes the constructor values it decides as they stand (`PeriodArithmetic.writtenValues`, ch. 9.4).
 Refused by name: a consequence that is no period arithmetic (DROOLS-105), and on a target that is no number a
 consequence that is no such copy (DROOLS-303). Witnesses `TmsDefaultsPerDayWitnessTest` (the documents of
-`ref/test/fixtures/defaults-per-day` and the cases of `ref/test/fixtures/defaults-per-day-cases`), goldens
-`jutterswet-opgave-per-periode` and `jutterswet-opgave-afwezigheidsmarkers`.
+`ref/test/fixtures/defaults-per-day` and the cases of `ref/test/fixtures/defaults-per-day-cases`), golden
+`jutterswet-opgave-per-periode`.
 
 **Who decided per period.** `decisionsOf` has no record of a stack per day, which decides per day and has no
 decider per object. `DroolsBackend.periodDecisionsOf(build, session)` gives, per object and per attribute on a
@@ -851,9 +851,7 @@ value of a member of that sum type as it stands, scalar and per day: the opgave 
 opgave marker on an attribute with markers, with a constructor value as the initialisation below them, a value or a
 marker, and a computation whose payload is computed (a date plus a duration, an arithmetic of numbers). Refused by name: a `Match` (DROOLS-021), the payload of a
 timeline (DROOLS-314), whose reading per day this backend does not execute, and every other value on a timeline of a
-sum type (DROOLS-303). Witness `AbsenceMarkerWitnessTest`, goldens `jutterswet-afwezigheidsmarkers`,
-`jutterswet-afwezigheidsmarkers-cel`, `jutterswet-afwezigheidsmarkers-creatie`,
-`jutterswet-afwezigheidsmarkers-kopie` and `jutterswet-opgave-afwezigheidsmarkers`.
+sum type (DROOLS-303). Witness `AbsenceMarkerWitnessTest`, on the documents of `ref/test/fixtures/absence-markers`.
 
 **Period arithmetic over all time.** A timeline divides all time (RUNTIME-SEMANTICS ch. 3.1), so a segment may have an
 open bound: in a `Period` an open `from` is `Period.OPEN_FROM` (`LocalDate.MIN`) and an open `to` `Period.OPEN_TO`
@@ -959,8 +957,7 @@ time-dependent attribute is the input of the made object per day: the period ari
 a scalar on every day, or the constructor of a literal, set on the new bean as its segments (`ComputeHelpers.setTimeline`).
 A sum per period over the relation a creation makes reads the made objects through their links, and a made object has
 no input that could be the asOfDate-bucket scalar. Witness `TmsTimelineStackWitnessTest` (the documents of
-`ref/test/fixtures/writers-stack`), goldens `jutterswet-initialisatie-per-dag`, `jutterswet-creatie-per-dag` and
-`jutterswet-afwezigheidsmarkers-initialisatie`.
+`ref/test/fixtures/writers-stack`), goldens `jutterswet-initialisatie-per-dag` and `jutterswet-creatie-per-dag`.
 
 **A characteristic within a window.** A rule may write a time-dependent characteristic within a period window
 (RUNTIME-SEMANTICS ch. 3.10, 3.11): its condition, the window alone or a composite with the window among its members,

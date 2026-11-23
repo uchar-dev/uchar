@@ -6,8 +6,6 @@ een Vondst V1
 - de categorie is 'schelp'
 - de omschrijving is "roestig anker"
 - de aangifte is onwaar
-- de taxatie is 120,00
-- de herkeuring is 'hout'
 - de jutter is J1
 Met als verwacht resultaat:
 - V1 is ingedeeld
@@ -16,13 +14,8 @@ Met als verwacht resultaat:
 - V1 is niet onbeschreven
 - V1 is verantwoord
 - V1 is niet onverantwoord
-- V1 is getaxeerd
-- V1 is niet ongetaxeerd
 - V1 is herleidbaar
 - V1 is niet onherleidbaar
-- V1 is herkeurd
-- V1 is niet onherkeurd
-- V1 is houten
 - de gegevens zijn consistent
 
 Scenario alles leeg
@@ -38,51 +31,32 @@ Met als verwacht resultaat:
 - V1 is onbeschreven
 - V1 is niet verantwoord
 - V1 is onverantwoord
-- V1 is niet getaxeerd
-- V1 is ongetaxeerd
 - V1 is niet herleidbaar
 - V1 is onherleidbaar
-- V1 is niet herkeurd
-- V1 is onherkeurd
-- V1 is niet houten
 - V2 is niet ingedeeld
 - V2 is onbepaald
 - V2 is niet herleidbaar
 - V2 is onherleidbaar
 - de gegevens zijn consistent
 
-Scenario markeringen
+Scenario gemengd
 Gegeven is de volgende situatie:
 een Vondst V1
 - de categorie is 'hout'
 - de aangifte is waar
-- de taxatie is onbekend
-- de herkeuring is onbekend
 een Vondst V2
 - de omschrijving is "drijvend wrakhout"
-- de taxatie is niet van toepassing
-- de herkeuring is 'metaal'
 Met als verwacht resultaat:
-- V1 is getaxeerd
-- V1 is niet ongetaxeerd
 - V1 is ingedeeld
 - V1 is niet onbepaald
 - V1 is niet beschreven
 - V1 is onbeschreven
 - V1 is verantwoord
 - V1 is niet onverantwoord
-- V1 is herkeurd
-- V1 is niet onherkeurd
-- V1 is niet houten
-- V2 is getaxeerd
-- V2 is niet ongetaxeerd
 - V2 is niet ingedeeld
 - V2 is onbepaald
 - V2 is beschreven
 - V2 is niet onbeschreven
 - V2 is niet verantwoord
 - V2 is onverantwoord
-- V2 is herkeurd
-- V2 is niet onherkeurd
-- V2 is niet houten
 - de gegevens zijn consistent

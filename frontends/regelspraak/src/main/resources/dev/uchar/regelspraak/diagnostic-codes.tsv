@@ -359,8 +359,6 @@ RGS-372	assignment-precision-exceeds	ERROR	targetDecimals,valueDecimals
 RGS-373	calendar-family-factor	ERROR	canonical,canonicalFamily,unit,unitFamily,unitSystem
 RGS-374	timeline-grid-finer	ERROR	operand,operandGrid,target,targetGrid
 RGS-375	marking-deviation-on-timeline-read	ERROR	characteristic,head
-RGS-376	absence-marker-read-untested	ERROR	attribute,expression,objectType
-RGS-377	scenario-absence-marker-not-admitted	ERROR	admitted,marker,what
 RGS-378	allocation-time-dependent-attribute	ERROR	attribute,name,objectType
 RGS-379	negative-edge-on-cycle	ERROR	kind,name,producer,producerKind,sentence,wf
 RGS-380	parameter-validity-overlap	ERROR	first,parameter,second
@@ -409,7 +407,6 @@ RGS-441	navigated-characteristic-check-unbound	ERROR	role,source,subject
 RGS-450	scalar-input-on-timeline-without-as-of-date	ERROR	attribute,label,scenario
 RGS-451	day-kind-reads-parameter-without-value	ERROR	dayKind,parameter,where
 RGS-460	percentage-sign-dropped	WARNING	datatype,sign
-RGS-461	absence-marking-after-input-marking	ERROR	attribute,marking,objectType,opgave
 RGS-462	infer-from-empty-twice	ERROR	first,value
 RGS-463	complete-beside-input-marking	ERROR	attribute,complete,objectType,opgave
 RGS-464	complete-on-written-member	ERROR	complete,kind,name,objectType,writer

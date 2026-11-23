@@ -2299,19 +2299,14 @@ Objecttype de Vondst (mv: Vondsten)
 New token: `MAG_OPGEGEVEN_WORDEN`, `'(mag' WSP 'opgegeven' WSP 'worden)'`, a
 whole token with its parentheses like the declaration markers `BEZIELD`,
 `BEZITTELIJK` and `BIJVOEGLIJK`. It is the last element of
-`attribuutSpecificatie`, after the optional timeline and the optional absence
-marking ("Afwezigheidsmarkeringen") and before the optional `;`, so every clause
-of the production keeps its place:
+`attribuutSpecificatie`, after the optional timeline and before the optional `;`, so every clause of the production
+keeps its place:
 
 ```
-    de teruggavedatum Datum in dagen (of onbekend of niet van toepassing) (mag opgegeven worden);
-    de opslagkosten Numeriek (geheel getal) voor elke maand (of onbekend) (mag opgegeven worden);
+    de opslagkosten Numeriek (geheel getal) voor elke maand (mag opgegeven worden);
 ```
 
-The absence marking names the values the attribute can hold, and the opgave
-marker then says that such a value, a marker included, may be supplied. The
-grammar admits the other order as well, so that the resolver refuses it with a
-message that names this one (RGS-461, "Afwezigheidsmarkeringen"). The grammar also admits
+The grammar also admits
 it at the end of both alternatives of `kenmerkSpecificatie`, so that the
 resolver refuses it there with a message of its own instead of a bare syntax
 error. The token reserves no name word: `mag`, `opgegeven` and `worden` keep
@@ -2357,7 +2352,7 @@ two passes of `RuleChecker`:
 
 | Piece | Lowered to |
 |---|---|
-| 1 | attribute `opgegeven X` on T, X's datatype — X's sum type where X has absence markers (below) — right after X, declared complete (section "Volledig gegeven"); no writer — the case supplies it |
+| 1 | attribute `opgegeven X` on T, X's datatype, right after X, declared complete (section "Volledig gegeven"); no writer — the case supplies it |
 | 2 | attribute `berekende X` on T, X's datatype as well, right after `opgegeven X`, declared complete; every computing writer of X on T or on a subtype of T, at any depth — a gelijkstelling or berekening, a row of a decision table, a defaults group of an `Uitzondering op` or `Afwijking van` tree, the sibling groups of an `Uitzonderingen ongeordend` block — keeps its type, name, shape, condition, window and statute annotation and targets `berekende X`; an unordered set moves as a set, every member still unordered |
 | 3 | one `PrioritizedDefaults` `opgave boven berekening X` on X, validity always, from the top: the opgave default (justification the empty `all`, source `altijd`, as the anchors spell it; consequence `opgegeven X`; source `opgegeven X`), the computation default (the same with `berekende X`), and, where the author wrote an initialisation of X on T, that initialisation as the lowest default (`initialisation: true`, its value as consequence, its statute annotation as source); the initialisation rule leaves the rule list |
 | 4 | the possessive characteristic `afwijkende opgave X` at the end of T's characteristics, attributed by the rule `afwijking opgave X` under one `all` of: `opgegeven X` filled, `berekende X` filled, `opgegeven X` notEqual `berekende X` |
@@ -2416,22 +2411,6 @@ The contradiction. An opgave that differs from a filled computation attributes
 `afwijkende opgave X` and deposits one §9.5 fact, `controle opgave X` × the
 subject (ch. 5.6); an opgave equal to the computation, or an opgave without a
 computable value, deposits nothing.
-
-An X with absence markers ("Afwezigheidsmarkeringen"). `opgegeven X` and
-`berekende X` carry X's markers and X's sum type, over X's one domain `X van een
-T`, so an opgave and a computation hold what X holds, a marker included: the
-case supplies a marker as the opgave, and a moved writer writes a marker into
-`berekende X` as it wrote one into X. The two generated defaults read the two
-members as they are, sum-typed, so the group passes a value or a marker on
-whole and the opgave decides above a computed marker; a `PayloadAccess` there
-would read a marker as leeg and let the group fall through. The condition of
-`afwijkende opgave X` tests the two members filled — a marker is a filled value
-(`spec/RUNTIME-SEMANTICS.md` ch. 9.5) — and compares them as values of one sum
-type (ch. 9.3): a supplied date beside a computed marker, a supplied marker
-beside a computed date and two different markers deviate, two equal markers do
-not, and an opgave beside an empty computation deposits nothing. On a
-time-dependent X the group passes the two members on per day, as copies of an
-own timeline of the sum type (ch. 9.4).
 
 Writers on a subtype. A writer of X on a subtype of T, at any depth, moves as
 a writer on T does and keeps its type: it writes `berekende X` for the
@@ -2706,150 +2685,12 @@ amount of the initialisation default among them. The lowering written by hand in
 € plays in the three executors; an initialisation beside an `Afwijking van`
 group cannot be written by hand in the dialect, so that piece is measured on the
 golden itself.
-`jutterswet-opgave-afwezigheidsmarkers` puts the marker beside the absence
-markers: on a Datum in dagen with both markers, computed as another date plus a
-parameter as its duration and set to niet van toepassing or onbekend by two
-conditional rules; on a Datum in dagen with the marker niet van toepassing,
-computed as another date plus 7 dagen and initialised on a date; on a whole
-number with the marker onbekend, computed as one number verminderd met 2 maal
-another and initialised on onbekend; and on a whole number for every month with
-the marker onbekend, set to onbekend in winter and to 10 in spring; fifteen
-cases, written as a scenario document: a computed marker that stands, a
-supplied date above a computed marker and a supplied marker above a computed
-date, each with the deviation, the same marker supplied and computed without
-it, two different markers with it, a supplied marker beside an empty
-computation without it, a supplied date above a computed date with and without
-it, the attribute leeg without opgave and computation, per month the opgave
-deciding the days on which it holds a value or a marker, a computed date above
-the initialisation, the initialisation where the computation is leeg, a
-supplied marker above the initialisation, a computed number, and the
-initialisation onbekend where the left operand of the computation is leeg. ref,
-clingo and both branches of the Drools backend replay the fifteen cases
-exactly.
+`jutterswet-opgave-teruggavetermijn` puts the marker on a Datum in dagen computed as another date plus a parameter
+as its duration; four cases, written as a scenario document: the computed date, a supplied date above it with the
+deviation, a supplied date equal to it without, and a supplied date beside an empty computation without. ref, clingo
+and both branches of the Drools backend replay the four cases exactly.
 
 ---
-
-## Afwezigheidsmarkeringen — `(of onbekend)`, `(of niet van toepassing)` on an attribute
-
-Origin: the decisions of the maintainer of 2026-11-04 recorded in `spec/proposals/FLAVOURS-OF-EMPTY.md` (N1–N5), and
-the card `absence-markers`, which built it. Beside leeg, which says that no value is derived or supplied, an
-attribute may admit two markers: **onbekend** (it has a value that cannot be established) and **niet van toepassing**
-(it has none). A marker is a filled value: a rule writes it and it decides, as a number does. Official RegelSpraak
-v2.3.0 has no form for either; §12 writes `n.v.t.` only in a cell of a decision table, as a condition that does not
-apply. This extension gives the dialect one, lowered to the sum type of `spec/RUNTIME-SEMANTICS.md` ch. 9.5.
-
-### Surface syntax (additive; one optional element in an existing production)
-
-```
-Objecttype de Vondst (mv: Vondsten)
-    de taxatie Numeriek (getal met 2 decimalen) (of onbekend of niet van toepassing);
-    de opslagkosten Numeriek (geheel getal) voor elke maand (of niet van toepassing);
-```
-
-Three new tokens, each a whole token with its parentheses like the opgave marker: `OF_ONBEKEND` `'(of onbekend)'`,
-`OF_NIET_VAN_TOEPASSING` `'(of niet van toepassing)'` and `OF_ONBEKEND_OF_NIET_VAN_TOEPASSING` `'(of onbekend of niet
-van toepassing)'`; the parser rule `afwezigheidsmarkering` takes one of them. It stands in `attribuutSpecificatie`
-after the optional timeline and before the optional opgave marker (§7): an attribute carries a marking, the opgave
-marker, both in that order — `(of onbekend) (mag opgegeven worden)` — or neither. The grammar admits a marking after
-the opgave marker too (`afwezigheidsmarkeringNaOpgave`), only so that the resolver can refuse it by name (RGS-461,
-below). A marker on a characteristic is a syntax error: its production does not take it. The tokens
-reserve no word: `of`, `onbekend`, `niet`, `van` and `toepassing` lex as before everywhere else.
-
-A rule writes a marker as the whole value of a gelijkstelling, "… moet gesteld worden op onbekend", "… op niet van
-toepassing", and an object creation as the whole value of a member, "Een Jutter heeft een vondst met taxatie gelijk
-aan onbekend". A condition tests one in both registers, "zijn taxatie onbekend is" / "zijn taxatie is niet van
-toepassing", and tests for a value, "zijn taxatie een waarde heeft" / "zijn taxatie heeft een waarde"; the grammar
-reads each as the characteristic check of an expression it already parses, and the resolver reads it as a test of the
-markers where the expression is an attribute with markers or a cell of one. On a dimensioned attribute with markers
-the same sentences name a cell: "Het gewicht in voorjaar van een Vondst moet gesteld worden op onbekend", "zijn
-gewicht in najaar een waarde heeft", "zijn gewicht in voorjaar onbekend is". An aggregation over members selects the
-members that hold a value with the subselection "die een waarde hebben": "de som van de taxatie van alle vondsten van
-de Jutter die een waarde hebben".
-
-A scenario document ("Scenariotoetsen") writes a marker as the value of an attribute that declares it, in a situation
-and in an expectation, as a rule writes it: "- de taxatie is onbekend", "- de opslagkosten van V1 is niet van
-toepassing van 01-06-2025 tot 01-01-2026". The grammar reads the words on that one position by their text
-(`afwezigheidsWaarde`), so no word becomes a keyword.
-
-### Inertness — measured, not assumed
-
-None of the 292 RegelSpraak sources of the corpus and the parity zone writes `(of ` (counted 2026-11-04), and gates 10
-and 11 re-emit every one of them byte for byte with the extension in the frontend. A word of the markers in a
-document without markers reads as before: "hij onbekend is" stays the check of a characteristic named onbekend, and
-an attribute named waarde stays that attribute (witness: `AbsenceMarkerTest.without_markers_the_words_are_names`).
-
-### Lowering (resolver and emitter)
-
-| Piece | Lowered to |
-|---|---|
-| the attribute X of T with markers M | an attribute whose datatype is a `SumType` over the domain `X van een T`, with the constructors `waarde` (payload: X's declared datatype) and the markers of M, `onbekend` before `niet van toepassing`; the domain is declared in `domains` after the declared domains. One domain per attribute, so a marker never passes from one attribute to another (WF-061) — except within one opgave marker on X (§7), whose members `opgegeven X` and `berekende X` carry X's sum type over X's domain, declared once |
-| a marker written into X, by a rule or an object creation | `Construct` of the marker |
-| a reference to another member of X's sum type written into X — `opgegeven X` and `berekende X` as the consequences of the group of the opgave marker on X | the reference itself, typed with the sum type: the value passes on whole, a marker included |
-| any other value v written into X, by a rule, a default's consequence or an object creation | `Construct waarde(v)`; a leeg v leaves it leeg, which decides nothing |
-| two members of one sum type compared for (in)equality — `opgegeven X` ongelijk aan `berekende X`, the deviation of §7 | `Comparison` of the two references, typed with the sum type: a comparison of the values with their markers (RUNTIME-SEMANTICS ch. 9.3) |
-| "zijn X onbekend is" | `Comparison equal` of X and the `Construct onbekend` |
-| "zijn X een waarde heeft" | `Predicate filled` of `PayloadAccess(X, waarde)` |
-| a read of the value of X in arithmetic, a comparison or an aggregation | `PayloadAccess(X, waarde)` |
-| each of these on a cell of a dimensioned X ("zijn X in najaar") | the same node over the `DimensionCellRead` of the cell |
-| "die een waarde hebben" on an aggregation over X | the filter `Predicate filled` of `PayloadAccess` of the element's X |
-
-The model holds these nodes, and the emitter writes what it holds. Where the resolver reads a rule it builds a marker
-written or tested as a `Construct` and "een waarde heeft" as the gevuld test of a `PayloadAccess`; a last pass over the
-finished model (`resolver/AbsenceMarkers`) builds every other read of the value as a `PayloadAccess` typed with X's
-declared datatype, every other value written into X as the `Construct` of `waarde`, and types every reference to X
-with its sum type (`ObjectType.sumTypeOf`; the members of an opgave marker share X's, `ObjectType.attributeMarkerDomain`).
-A reference to another member of the sum type a target holds is written as it is, and two such members compared for
-(in)equality are compared as sum-typed values: within the dialect only the members of one opgave marker share a sum
-type. The checks of the rule pipeline run before that pass and read a reference
-to X with its declared datatype, so the typing of a computation reads the value as it reads any attribute.
-
-### Fail-fast refusals (resolver, loud diagnostics)
-
-RGS-461: a marking after the opgave marker, `(mag opgegeven worden) (of onbekend)`. The ERROR names the attribute and
-the order to write, `(of onbekend) (mag opgegeven worden)`; the declaration is then read in that order, so no second
-error follows from it (witness: `AbsenceMarkerTest.a_marking_after_the_opgave_marker_is_refused_with_the_right_order`).
-
-RGS-376: a read of the value of an attribute with markers without a test before it, the frontend's half of
-WF-127, judged on the `PayloadAccess` nodes of the last pass. The test before it is a value test that holds as a
-conjunct before the read: of the condition of the rule for its value, earlier in the same `alle` for a read in a
-condition, of the subselection of the aggregation for its operand. The ERROR names the attribute, its type and the
-read (witnesses: `AbsenceMarkerTest`, a computation, a comparison before the test, a sum without the subselection, a
-read of a cell without a test, a read of a cell after the test of another cell, a read of `opgegeven X` without a
-test). The test of a cell guards the read of that cell, the same attribute with the same labels, and no other; the
-value of `opgegeven X` and of `berekende X` is read under a test of that member, as the value of X is.
-
-A marker the attribute does not declare stays the unresolved name or check it is without the markers, with its
-WARNING (RGS-092); so does a test of a value under the whole-period qualifier.
-
-### Emission
-
-The domains, the sum-typed attributes and the nodes of the model go out through the writers every other form uses. A
-document without markers emits what it emits without the extension.
-
-### Scope / limitations of this card
-
-- The reading of a value per period is lowered but not executed: its test per period is a gevuld test per period,
-  which has no reading (`spec/RUNTIME-SEMANTICS.md` ch. 3.12 row 5). The frontend writes "… berekend worden als zijn
-  opslagkosten plus 1 gedurende de tijd dat zijn opslagkosten een waarde hebben" as a `PayloadAccess` under that test,
-  the verifier admits it, and ref, the ASP backend and the Drools backend refuse it by name (measured 2026-11-04). A
-  marker written per period, the input per day and a test of a marker per period are lowered and executed.
-- No negation of a test ("geen waarde heeft") and no marker in a decision table cell is lowered.
-- The ASP backend scales a number and a day-precision date into a constructor term; markers on an attribute of
-  another datatype play in ref and are refused by name in the ASP backend (`spec/ASP-TRANSLATION.md` S19). A computed
-  value it writes at the scale and in the unit of the declared payload: a value whose term stands at another scale,
-  such as a sum of whole numbers into an attribute of 2 decimals with markers, and a value in another unit, such as
-  2 t into an attribute in kg, play in ref and in the Drools backend and are refused by name in the ASP backend
-  (CLINGO-006).
-- The semantic tokens read the words of the markers as keywords in a document that declares markers.
-
-Goldens: `jutterswet-afwezigheidsmarkers` (scalar and per month; ten cases), with the red twin
-`jutterswet-afwezigheidsmarkers-botsing` (EF-016, scalar and per day); `jutterswet-afwezigheidsmarkers-cel` (a marker
-written into a cell, the tests of a cell and a read under the test; four cases); `jutterswet-afwezigheidsmarkers-creatie`
-(a marker and a number in an object creation, a number written into an attribute with markers; four cases);
-`jutterswet-opgave-afwezigheidsmarkers` (the markers beside the opgave marker, scalar and per month, with computed
-values and initialisations; fifteen cases, §7).
-Each has its source as `source.rgs` and a `scenario.rgs` that lowers to its case files (gate 16). Ref, clingo and both
-branches of the Drools backend replay every case exactly, and the red twin faults with EF-016 in each.
 
 ## Vocabulaires en benamingen — named vocabularies and designations
 
@@ -3478,8 +3319,7 @@ before RGS-467 and before the refusal of a cell without its labels).
 A parameter with a timeline takes its value with a period, in a situation and in a parameter set (RGS-398). The values are the literal forms of the language:
 a number with the unit its declaration demands (`1,5 t`, `25 %`, `3/4
 vadem`), a date `dd-mm-jjjj`, a date-time `dd-mm-jjjj hh:mm:ss.mmm`,
-`waar`/`onwaar`, an enumeration value `'strandgoed'`, a text `"Aukje"`, and for an attribute
-that declares it an absence marker, `onbekend` or `niet van toepassing` ("Afwezigheidsmarkeringen").
+`waar`/`onwaar`, an enumeration value `'strandgoed'` and a text `"Aukje"`.
 
 **Two new tokens, for the parameter set only.** The other forms this
 repository added to the scenario layer reuse the lexer as it stands,
@@ -3629,10 +3469,6 @@ serialiser, so a case file and an IR document share one shape.
 - The cells of one attribute are its `cells`, in first-seen order, each with
   its labels and its value; an expected cell is a `cellValue` or a `cellEmpty`
   with its labels (RUNTIME-SEMANTICS ch. 5.8c).
-- Every value of an attribute with absence markers, given or expected, also a
-  segment of its timeline or a cell, is a constructor value of the case format
-  (RUNTIME-SEMANTICS ch. 9.5): a marker is `{"constructor": "onbekend"}`, any
-  other value the payload of `{"constructor": "waarde", "payload": …}`.
 - The parameters are those the chosen set gives on the peildatum, in the
   order of each parameter's first row in the set, then the situation's own.
   The resolver has chosen the jaargangen, so the case file carries one value
@@ -3844,12 +3680,8 @@ prefix `scenario: `, placeholders in angle brackets:
   `de verwachting voor '<a>'`): `de datum '<d>' is geen geldige datum`, `een
   enumeratiewaarde ('<w>') past niet op een <type>`, `'<w>' is geen waarde van
   de enumeratie <domein> (<waarden>)`, `de waarde '<bron>' is niet gelezen`
-  and `er staat geen waarde` (beside a syntax error), `de tekstwaarde draagt
-  een «expressie», en een waarde in een scenario is letterlijk`, and (RGS-377)
-  `'<markering>' past hier niet als afwezigheidsmarkering: <de declaratie laat
-  geen afwezigheidsmarkering toe | de declaratie laat alleen '<markering>'
-  toe>` for a marker the attribute does not declare, a marker on an attribute
-  without markers and a marker for a parameter. A number the
+  and `er staat geen waarde` (beside a syntax error), and `de tekstwaarde draagt
+  een «expressie», en een waarde in een scenario is letterlijk`. A number the
   parse cannot read and a restatement without an exact factor are no refusal:
   the parse enters a number on a number token only, and the typing admits two
   units with one canonical only, each with the exact factor its system
@@ -3873,10 +3705,7 @@ a whole timeline written by hand, the exclusive end, and each refusal of
 the parameter set on its line), `ScenarioCellTest` (each form of a cell as
 an input and as an expectation, the merge per cell, a case file with cells
 written by hand, each refusal of a cell, and the semantic tokens of a cell)
-and `ScenarioAbsenceMarkerTest` (a marker and a value of an attribute with
-markers as input and as expectation, scalar and per segment, in a case file
-written by hand, each refusal of RGS-377 on its line, and the semantic
-tokens of a marker) and `ScenarioStrictTest` (the three forms of a
+and `ScenarioStrictTest` (the three forms of a
 characteristic that does not hold and both forms of `staat niet vast` in
 case files written by hand, the same input in a document without `Afleiden
 uit leeg: nee`, a scenario or a situation based on another and a scenario
@@ -3905,10 +3734,6 @@ volgens` expectation), `jutterswet-seizoenboeking` (the cells of one dimension
 as input, `cellValue` and `cellEmpty`) and `jutterswet-strandseizoen` (the
 cells of two attributes of two dimensions each, the labels side by side, in
 either order, joined by "en" and by ",", and after `uit`) and
-`jutterswet-afwezigheidsmarkers` (markers and values of two attributes with
-markers in the input and the expectations, scalar and per month) and
-`jutterswet-opgave-afwezigheidsmarkers` (a marker supplied as the opgave of an
-attribute with markers, scalar and per month, §7) and
 `jutterswet-afleiden-uit-leeg` (a document with `Afleiden uit leeg: nee`:
 characteristics that do not hold in the input, a situation shared by two
 scenarios, `attributeOpen` and `characteristicOpen`). Together they carry
@@ -4972,9 +4797,8 @@ Objecttype de Vondst (mv: Vondsten)
 ```
 
 New token: `VOLLEDIG_GEGEVEN`, the phrase `(volledig gegeven)`, a whole token with its parentheses like the opgave
-marker (§7). On an attribute it stands in the place of the opgave marker, after the optional timeline and the optional
-absence marking ("Afwezigheidsmarkeringen") and before the optional `;`: `de opslagkosten Numeriek (geheel getal) voor
-elke maand (of onbekend) (volledig gegeven);`. On a characteristic it stands after the optional timeline: `is gemeld
+marker (§7). On an attribute it stands in the place of the opgave marker, after the optional timeline and before the
+optional `;`: `de opslagkosten Numeriek (geheel getal) voor elke maand (volledig gegeven);`. On a characteristic it stands after the optional timeline: `is gemeld
 kenmerk (bijvoeglijk) voor elke maand (volledig gegeven);`. The grammar admits it beside the opgave marker on one
 attribute, before and after it, only so that the resolver can refuse the pair with a message of its own (RGS-463,
 below). The token reserves no word: `volledig` and `gegeven` keep lexing as `LOWER_ID` everywhere else, so an
@@ -5056,8 +4880,8 @@ what it emits without the extension, which is the measurement above stated as a 
 - A scenario document ("Scenariotoetsen") has no syntax of its own for a complete member: the declarations it reads
   carry the marker.
 
-**Witnesses.** `CompleteMarkerTest` (the field on an attribute and on a characteristic, after a timeline and beside
-absence markers, on the two members of an opgave, the golden byte for byte, RGS-463 in either order and RGS-464 for a
+**Witnesses.** `CompleteMarkerTest` (the field on an attribute and on a characteristic, after a timeline, on the two
+members of an opgave, the golden byte for byte, RGS-463 in either order and RGS-464 for a
 rule, an attribution, a defaults group and an opgave an extension adds, in both languages where the sentence is pinned,
 a writer on a subtype alone, the token, the semantic tokens); `InputMarkingTest` (the two generated members on the wire);
 the golden `jutterswet-volledig-gegeven`, which gate 10 re-emits and whose six cases pin the reading of RUNTIME-SEMANTICS
