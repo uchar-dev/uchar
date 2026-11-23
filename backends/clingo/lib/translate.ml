@@ -11450,9 +11450,8 @@ and closed_division ctx ~carrier ~coalesced ~rounding ~left_side ~right_side :
    binders, parameters or literals — never a bare attribute read. That is
    exactly what keeps the else-branch the positive builtin's EXACT complement
    (the operands are total, never leeg), so the two branches need no NAF over
-   derived atoms; or a test on leeg or gevuld over such an operand, a helper
-   and its negation. Returns (binding atoms, positive literal, complement
-   literal).
+   derived atoms. Returns (binding atoms, positive builtin, complement
+   builtin).
 
    It sits in the [expr_term] group rather than beside [value_branches], where
    it was written, because BOTH lowerings of ch. 10.2 now read it: the rule
@@ -11503,23 +11502,6 @@ and value_condition ctx ~subject ~subject_ot (c : condition_expr) : string list 
       (* two convertible units restate by the factors of [comparison_factors], as
          in a condition: a binder carries its value's unit ([eff_unit]) *)
       compared_builtins ctx ~carrier:(rule_carrier ctx ~subject ~subject_ot) ~op l r (la, lt, ls) (ra, rt, rs)
-  | Predicate { variety = Empty_predicate | Filled; operand; day_kind = None; time_period = None; _ } ->
-      operand_ok operand;
-      (* the test on leeg or gevuld (ch. 1.2) over bound operands: a leeg
-         operand is what it asks about, so no binding atom rides along, and the
-         test is reified in a helper over the subject, whose negation is the
-         else-branch's exact complement. In a document with inferFromEmpty
-         false an open operand is a read of the value's boundary (ch. 1.5, "An
-         IfThenElse in a value") *)
-      let outer = ctx.in_condition in
-      ctx.in_condition <- true;
-      let atoms = Fun.protect ~finally:(fun () -> ctx.in_condition <- outer) (fun () -> cond_atoms ctx ~subject ~subject_ot c) in
-      ctx.fresh <- ctx.fresh + 1;
-      let p = Printf.sprintf "vt%d" ctx.fresh in
-      let key, opening = helper_key ~form:(form_var ctx ~subject ~subject_ot) ~over:(subject, subject_ot) atoms in
-      emit_rule ctx ~head:(Printf.sprintf "%s(%s)" p key) ~body:(opening @ atoms);
-      let holds = Printf.sprintf "%s(%s)" p key in
-      ([], holds, "not " ^ holds)
   | _ ->
       faultc "CLINGO-023"
         "a value-position IfThenElse condition is a comparison over bound operands (no corpus case for more)"
@@ -15441,7 +15423,7 @@ let translate_consistency ctx i (c : resolved_consistency) =
   let subject_ot = req "ConsistencyVersion.subject" c.cons_subject in
   let assertion = req "ConsistencyVersion.assertion" c.assertion in
   (* in a document with inferFromEmpty false it reports where its assertion is
-     established false for itself, and not where it is undetermined (ch. 1.5) *)
+     established false, and not where it is undetermined (ch. 1.5) *)
   if ctx.strict then
     deposit ctx ~code:"EF-025" ~rule:(str name) ~subject:"S"
       (Printf.sprintf "isa(S,%s)" (str subject_ot) :: (judge ctx ~subject:"S" ~subject_ot assertion).fails)

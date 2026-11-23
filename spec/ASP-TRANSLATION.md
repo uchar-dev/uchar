@@ -2781,16 +2781,7 @@ its *exact complement* (`cmp_complement`) — no NAF over derived atoms.
 WF-077 is what makes this sound: a value-position `IfThenElse` condition
 reads only binders, parameters and literals, never a bare attribute read,
 so its operands are total (never leeg) and the positive/complement pair
-partitions cleanly (the S7 closed-body argument, now at rule level). A
-test on leeg or gevuld over such an operand is the one condition that asks
-whether a value is there: it is reified in a helper over the subject
-(`vt<n>`), the then-branch carries the helper and the else-branch its
-negation, and no binding atom of the operand rides along; a `Let` binder it
-reads still guards both branches, so a leeg binder ends the `Let` (ch.
-10.6). In a document with `inferFromEmpty: false` an open operand is a read
-of the value's boundary, and the value is open (RUNTIME-SEMANTICS ch. 1.5,
-"An IfThenElse in a value"; pinned in the backend's own suite, since
-RegelSpraak does not write the test there). Each
+partitions cleanly (the S7 closed-body argument, now at rule level). Each
 branch emits its own `val(S,attr,·)` head and its own `wval/4` (S10): the
 rule decides where *any* branch does, and the input-stands rule is emitted
 once.
@@ -3428,13 +3419,12 @@ refused for it.
 
 *The `Let`, guarded consequences and the split money
 multiplication (S18) — shapes and fences without a corpus case:* a
-**value-position `IfThenElse` condition** that is neither a comparison
-nor a test on leeg or gevuld (`a value-position IfThenElse condition is
-a comparison over bound operands (no corpus case for more)`) — another
-predicate or a composite condition has no corpus case. Its operands may
-READ binders, parameters and literals, and arithmetic combinators
-(`Binary`, `Rounding`, `Clamp`, `TextComposition`) over those are
-admissible:
+**value-position `IfThenElse` condition** that is not a comparison
+(`a value-position IfThenElse condition is a comparison over bound
+operands (no corpus case for more)`) — a predicate or composite
+condition has no corpus case. Its comparison operands may READ binders,
+parameters and literals, and arithmetic combinators (`Binary`,
+`Rounding`, `Clamp`, `TextComposition`) over those are admissible:
 `value_condition` lowers each operand through `expr_term` and harmonises
 the two operand scales exactly as the closed-body comparison route does,
 so the operand backstop (`… must read only binders, parameters or

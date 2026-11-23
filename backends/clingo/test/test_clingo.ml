@@ -21233,12 +21233,9 @@ let () =
 (* WV-1.5-if-then-else: "het vindloon van een Vondst is 10 als zijn taxatie
    groter is dan 1000, anders zijn gewicht", the condition over a binder of
    the taxatie (WF-077): an undetermined condition leaves the value open, and
-   only the chosen branch is read. A test on leeg or gevuld in the condition,
-   over the binder of the taxatie, which RegelSpraak does not write: "de
-   bergtoeslag is 5 als t leeg is, anders 0" and "de keurtoeslag is 1 als t
-   gevuld is, anders 0" are open over an open taxatie and 0 and 1 at taxatie
-   50; over a settled leeg taxatie the read of the binder ends the Let (ch.
-   10.6), and both are settled leeg, as they are leeg without the property *)
+   only the chosen branch is read. "De bergtoeslag is 5 als zijn taxatie leeg
+   is, anders 0" is a test on leeg in the condition of a value, which this
+   encoding translates in no document (CLINGO-023) *)
 let ov_ite c t e = Printf.sprintf {|{"node": "IfThenElse", "type": %s, "condition": %s, "then": %s, "else": %s, %s}|} ov_num c t e (ov_src "als")
 
 let () =
@@ -21254,21 +21251,16 @@ let () =
       ("else", [ ("taxatie", "50"); ("gewicht", "3") ], "3");
       ("else open", [ ("taxatie", "50") ], "open");
       ("condition open", [ ("gewicht", "3") ], "open") ];
-  let toeslag kind v = ov_let "t" (ov_attr "taxatie") (ov_ite (ov_test kind (ov_binder "t")) (ov_lit v) (ov_lit "0")) in
-  let ir ?(strict = true) complete =
-    ov_doc ~strict
-      [ ov_type ~complete "Vondst" [ "taxatie"; "bergtoeslag"; "keurtoeslag" ] [] ]
-      [ ov_rule ~name:"bergtoeslag" "bergtoeslag" (Some (toeslag "empty" "5"));
-        ov_rule ~name:"keurtoeslag" "keurtoeslag" (Some (toeslag "filled" "1")) ]
-  in
+  let bergtoeslag = ov_let "t" (ov_attr "taxatie") (ov_ite (ov_test "empty" (ov_binder "t")) (ov_lit "5") (ov_lit "0")) in
   List.iter
-    (fun (name, ir, attrs, (berg, keur)) ->
-      ov_frame ~name:("WV-1.5-if-then-else (a test on leeg and gevuld, " ^ name ^ ")") ~ir
-        ~case_text:(ov_case (ov_v1 attrs) [ ov_attr_is "bergtoeslag" berg; ov_attr_is "keurtoeslag" keur ]) ())
-    [ ("taxatie open", ir [], [], ("open", "open"));
-      ("taxatie 50", ir [], [ ("taxatie", "50") ], ("0", "1"));
-      ("taxatie complete", ir [ "taxatie" ], [], ("leeg", "leeg"));
-      ("without the property", ir ~strict:false [], [], ("leeg", "leeg")) ]
+    (fun strict ->
+      let ir = ov_doc ~strict [ ov_vondst [ "taxatie"; "bergtoeslag" ] [] ] [ ov_rule ~name:"bergtoeslag" "bergtoeslag" (Some bergtoeslag) ] in
+      let doc, case = load_pair ~ir ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "bergtoeslag" "5" ]) in
+      check (Printf.sprintf "WV-1.5-if-then-else (a test on leeg, %s): CLINGO-023" (if strict then "with the property" else "without it"))
+        (match Translate.translate doc case with
+         | _ -> false
+         | exception Uchar_ref.Value.Fault { code; _ } -> code = Some "CLINGO-023"))
+    [ true; false ]
 
 (* --- the creations (ch. 1.5, "A creation", "An object made") -------------- *)
 let ov_role_check ft role =
@@ -21813,20 +21805,21 @@ let () =
    binder is open, and where the filter stands the barrier of a leeg binder
    ends the condition that reads it (ch. 10.6): "het keurgewicht van een Jutter
    is, daarbij geldt: t is de som van het gewicht van zijn vondsten waarvan
-   getuigen gevuld (leeg) is, 1 als t gelijk is aan 3 (gevuld is), anders t",
-   and "een Jutter is keurig indien (daarbij geldt …) groter is dan 4" *)
+   getuigen gevuld (leeg) is, 1 als t gelijk is aan 3, anders t", and "een
+   Jutter is keurig indien (daarbij geldt …) groter is dan 4". The test "1 als
+   t gevuld is" is CLINGO-023 in every document *)
 let () =
   work @@ fun () ->
-  let keurgewicht condition variety =
+  let keurgewicht variety =
     ov_let "t"
       (ov_fold ~filter:(ov_test variety (ov_attr "getuigen")) "sum" "gewicht")
-      (ov_ite condition (ov_lit "1") (ov_binder "t"))
+      (ov_ite (ov_cmp "equal" (ov_binder "t") (ov_lit "3")) (ov_lit "1") (ov_binder "t"))
   in
-  let ir ?(complete = []) ?(condition = ov_cmp "equal" (ov_binder "t") (ov_lit "3")) variety =
+  let ir ?(complete = []) variety =
     ov_doc ~fact_types:[ ov_aanmelding ]
       [ ov_type "Jutter" [ "keurgewicht" ] [ "keurig" ]; ov_type ~complete "Vondst" [ "gewicht"; "getuigen" ] [] ]
-      [ ov_rule ~ty:"Jutter" ~name:"keurgewicht" "keurgewicht" (Some (keurgewicht condition variety));
-        ov_rule ~ty:"Jutter" ~name:"keurig" ~cond:(ov_cmp "greater" (keurgewicht condition variety) (ov_lit "4")) "keurig" None ]
+      [ ov_rule ~ty:"Jutter" ~name:"keurgewicht" "keurgewicht" (Some (keurgewicht variety));
+        ov_rule ~ty:"Jutter" ~name:"keurig" ~cond:(ov_cmp "greater" (keurgewicht variety) (ov_lit "4")) "keurig" None ]
   in
   List.iter
     (fun (name, ir, v1, want, keurig) ->
@@ -21834,17 +21827,14 @@ let () =
         ~case_text:
           (ov_case (ov_jutter [ ("V1", v1, [], []) ]) [ ov_attr_is ~label:"J1" "keurgewicht" want; ov_char_is ~label:"J1" "keurig" keurig ])
         ())
-    (let filled = ir "filled" and empty = ir ~complete:[ "gewicht" ] "empty"
-     and gevuld = ir ~condition:(ov_test "filled" (ov_binder "t")) "filled" in
+    (let filled = ir "filled" and empty = ir ~complete:[ "gewicht" ] "empty" in
      [ ("open", filled, [ ("gewicht", "5") ], "open", "open");
        ("filled", filled, [ ("gewicht", "5"); ("getuigen", "2") ], "5", "holds");
        ("a leeg test, open", empty, [], "open", "open");
        ("a leeg test, false", empty, [ ("getuigen", "2") ], "leeg", "not");
        ("a leeg test, false beside a gewicht", empty, [ ("gewicht", "4"); ("getuigen", "2") ], "leeg", "not");
        ("a leeg test, filled", empty, [ ("gewicht", "4") ], "open", "open");
-       ("a leeg test, three", empty, [ ("gewicht", "3") ], "open", "open");
-       ("a gevuld test, open", gevuld, [ ("gewicht", "5") ], "open", "open");
-       ("a gevuld test, filled", gevuld, [ ("gewicht", "5"); ("getuigen", "2") ], "1", "not") ])
+       ("a leeg test, three", empty, [ ("gewicht", "3") ], "open", "open") ])
 
 (* a Let in the filter of a fold whose binder a filter inside its body reads:
    "de som van het gewicht van zijn vondsten waarvan (daarbij geldt: de maat is
