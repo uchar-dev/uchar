@@ -662,8 +662,9 @@ type ctx = {
      for it; read provisionally, a fault leaves the member undetermined *)
   mutable member_gate : string list;
   (* the same, where that member is read at all, provisionally as well: a
-     limit of this encoding (a guard without a fault code) says that it cannot
-     tell what the member is, and is no fault of the member *)
+     guard whose code is no EF code ([emit_viol]: none, or a CLINGO code such
+     as CLINGO-034) is a limit of this encoding, says that it cannot tell what
+     the member is, and is no fault of the member *)
   mutable limit_gate : string list;
   (* per writer of a member, by its index in the document, the predicate that
      says of a subject that the writer fills nothing there *)

@@ -479,8 +479,12 @@ spec bug.
   and it is not complete, it is open (`iopen/2`). An exception group of
   the initialisation default decides above the input, so such a group
   makes the attribute derived. A read asks whether the attribute
-  stands (`stands/2`); one whose state the case alone decides stands in
-  facts of its own (`given/2`), so that grounding decides the read.
+  stands (`stands/2`). An attribute whose state the case alone decides
+  stands in facts of its own (`given/2`), so that grounding decides the
+  read; that is decided per normalised attribute name over the whole
+  document, not per type: no rule or defaults group writes an attribute
+  of that name, and no creation makes an object that declares one
+  (`case_only_attributes`, `spec/ASP-TRANSLATION.md` S20).
   - *A value and an atomic condition* are translated as in any other
     document, each as one boundary (`ob<n>`) that holds where a read the
     evaluation reaches does not stand: a divisor only past a filled
@@ -529,14 +533,24 @@ spec bug.
     members; one an open value is assigned to is open (`aopen/2`,
     `kopen/2`) where no writer decides.
 
-  Every other form is refused before translation with CLINGO-049 and the
-  slug of the form (`Translate.uncarried_forms`): the slugs of the table
-  of ch. 1.5, in its order (`let-in-composite` is the form of [L3]), and
-  after them `let-binder-not-first`, a Let whose body reads something
-  before its binder, the form of [S1], and `let-in-filter`, a Let in the
-  filter of a fold or in a quantifier test whose binder a filter in its
-  body reads: a judgement in that filter holds of the form subject and
-  its own member, and would not tell the members of the outer one apart.
+  Two passes refuse before translation, in this order
+  (`spec/ASP-TRANSLATION.md` S20, "What clingo refuses in a strict
+  document"): in every document `refuse_sum_type_forms` refuses a form
+  of ch. 9.4 with CLINGO-052; then, in a strict document,
+  `refuse_uncarried` refuses with CLINGO-049 and the slug of the form
+  (`Translate.uncarried_forms`): the slugs of the table of ch. 1.5, in
+  its order, and after them `let-binder-not-first`, a Let whose body
+  reads something before its binder, the form of [S1], and
+  `let-in-filter`, a Let in the filter of a fold or in a quantifier test
+  whose binder a filter in its body reads: a judgement in that filter
+  holds of the form subject and its own member, and would not tell the
+  members of the outer one apart. `let-in-composite` is a Let whose
+  binder is read in a member of a composite with more than one member,
+  or in the filter or the matrix of a quantifier fold; the form of [L3]
+  is one of them. The limits of S19 refuse a strict document with their
+  own codes, as any other: CLINGO-005, CLINGO-023 (an IfThenElse in a
+  value whose condition tests on leeg or gevuld among them), CLINGO-046,
+  and the others S20 lists.
 - Constructs outside the corpus-exercised subset fault the translator —
   fail fast, never a silent SKIP.
 
