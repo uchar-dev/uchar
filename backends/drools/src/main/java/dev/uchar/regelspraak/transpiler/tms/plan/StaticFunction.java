@@ -364,8 +364,8 @@ public enum StaticFunction {
      *  {@code Integer} threshold; over no contributor the sum is not read. */
     QUANTIFIER_VERDICT(ComputeHelpers.class, "quantifierVerdict", false),
     /** As {@link #QUANTIFIER_VERDICT}, where the matrix can be undetermined on a member (ch. 1.5): the list of the fold's
-     *  {@code FoldOpen} facts after the sum, and no truth value but the judgement where the verdict does not stand for
-     *  another form. */
+     *  {@code FoldOpen} facts after the sum, and no truth value but the judgement where Kleene's table over the
+     *  contributors does not establish the verdict. */
     QUANTIFIER_VERDICT_OVER_OPEN(ComputeHelpers.class, "quantifierVerdictOverOpen", false),
     /** The verdict of a quantifier fold whose matrix can fault or deposit, read over the outcome per contributor in
      *  the contributors' order and stopped as ch. 5.10 says; a contributor that is reached deposits to the probe and

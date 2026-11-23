@@ -4721,13 +4721,14 @@ gives a Vondst without a gewicht the vindloon 10. A document can choose that not
 it is not settled whether that Vondst is kostbaar. Official RegelSpraak v2.3.0 has no way to write the choice; this
 extension gives the dialect one line for it, and the wire one property on the root of the document,
 `inferFromEmpty: false`. The frontend writes the choice and gives it no meaning of its own: what it means for an
-evaluation is the executors', and an executor that does not carry that reading refuses the document by name
-(`backends/drools/README.md`).
+evaluation is the executors'; a form whose reading RUNTIME-SEMANTICS ch. 1.5 does not define is refused by every
+executor, which names it by its slug ("Forms without the reading"), and an executor that does not carry the reading of
+another form refuses that form by its own code.
 
 In such a document a judgement is one value of Kleene's strong table (RUNTIME-SEMANTICS ch. 1.5), whatever form reads
 it: over a value the case does not give, a test on leeg or gevuld ("indien zijn taxatie leeg is") is undetermined, as
-the comparison above is, and so are the filled-value count and a filter on gevuld; "de vrijstelling van een Vondst moet
-gesteld worden op 1 indien zijn taxatie leeg is" leaves the vrijstelling open there. Only the author closes, by declaring
+the comparison above is, and so is a filter on gevuld, while the filled-value count is open; "de vrijstelling van een
+Vondst moet gesteld worden op 1 indien zijn taxatie leeg is" leaves the vrijstelling open there. Only the author closes, by declaring
 that the input of a member is complete (`(volledig gegeven)`, section "Volledig gegeven"). An initialisation is the
 lowest writer of its target and makes no member derived: with "het strandloon van een Vondst moet geïnitialiseerd
 worden op 5" alone, the strandloon is an input member with a default value, open where the case gives it none and 5
@@ -4795,8 +4796,8 @@ re-emits and whose cases pin the reading of RUNTIME-SEMANTICS ch. 1.5.
 ## Volledig gegeven — `(volledig gegeven)` on an attribute or a characteristic
 
 uchar DIALECT EXTENSION (decision of the maintainer, 2026-11-21). In a document with `Afleiden uit leeg: nee` an input
-member the case gives no value, or a characteristic it does not name, is open: nothing stands about it, and what reads
-it does not stand either (RUNTIME-SEMANTICS ch. 1.5). For some members the author knows that the input is complete:
+member the case gives no value, or a characteristic it does not name, is open unless its input is declared complete
+(below): nothing stands about it, and what reads it does not stand either (RUNTIME-SEMANTICS ch. 1.5). For some members the author knows that the input is complete:
 where the case gives no value, there is none. That is the one way a document closes: over a member declared complete
 and given no value a test on leeg holds and the member counts as leeg, where over any other open member it is
 undetermined; a member that only an initialisation writes is input as well, and declared complete it is settled leeg

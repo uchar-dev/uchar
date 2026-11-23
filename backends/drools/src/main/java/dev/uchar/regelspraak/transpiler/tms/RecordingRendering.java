@@ -20,9 +20,8 @@ import java.util.function.Supplier;
  * fixpoint-readings). It evaluates as the rendering into closures does, node for node: the same functions of the plan
  * ({@link ClosureRendering#implementation}), the same reading of a composite ({@link Composite}), the same order
  * (RUNTIME-SEMANTICS ch. 5.10, 5.11), a {@code Let} by need (ch. 10.6) and exactly the branch a choice takes
- * (ch. 10.2). It decides nothing either. A function of the plan that opens a boundary (an atomic condition in which a fold
- * can close, the operand of a test on leeg or gevuld) opens it here as well, since it is the same function over what this
- * rendering evaluates. A probe in the value array is the caller's, which fills each probe slot with a
+ * (ch. 10.2). It decides nothing either. A function of the plan that opens a boundary (an atomic condition, the test on
+ * leeg or gevuld among them) opens it here as well, since it is the same function over what this rendering evaluates. A probe in the value array is the caller's, which fills each probe slot with a
  * fresh probe and reads none: a reading deposits nothing.
  */
 final class RecordingRendering {

@@ -302,14 +302,17 @@ fi
 # as it is, both with `runner --end-state`: the end state of ch. 5.12a with its open members. The run without the input
 # keeps every outcome of its end state in the other: each of its lines that is not open stands there; a member it has
 # no line for (settled leeg, or standing not to hold) has none there either; a link or an object the other adds lies on
-# a relation it has open. Whether the member left out is an open input member is read off the document, not off ref's
-# end state, so that ref closing such a member cannot take its run out of the comparison: a member a writer other than
-# an initialisation writes on the object's type (a rule other than an initialisation, or a defaults group with a
-# default other than its initialisation default) is derived, and an input member whose declaration says its input is
-# complete is settled leeg without its value (ch. 1.5). A run that leaves out an open input member must have it open in
-# ref's end state, and a run that leaves out a complete one must not; each fails by name where it does not. A run that
-# leaves out a derived member is compared where ref names the member open, and else counted apart, and so is one that
-# leaves out a complete member. Every other difference fails by name unless MONOTONE_GAPS lists it; the comparison,
+# a relation it has open. What the member left out is without its value is read off the document, not off ref's end
+# state, so that ref closing an open input member cannot take its run out of the comparison (ch. 1.5), in four
+# standings: derived, where a writer other than an initialisation writes it on the object's type (a rule other than an
+# initialisation, or a defaults group with a default other than its initialisation default or with an exception
+# group); an open input member, where no such writer writes it and its declaration does not say its input is complete;
+# complete, declared so with no writer, settled leeg; and initialised, declared complete with an initialisation as its
+# one writer, settled leeg below the initialisation, which then gives its value. A run that leaves out an open input
+# member must have it open in ref's end state, and a run that leaves out a complete one must not; each fails by name
+# where it does not. A run that leaves out a derived or an initialised member is compared where ref names the member
+# open, and else counted apart, and so is one that leaves out a complete member. Every other difference fails by name
+# unless MONOTONE_GAPS lists it; the comparison,
 # the reading of the document and the judgement of a run pass rows of their own, and the run of MONOTONE_MUTANT,
 # compared all the same, must lose an outcome. The runs go in one batch, one runner per core, and are judged in corpus
 # order.

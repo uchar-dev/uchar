@@ -428,7 +428,7 @@ rule, which rests on the `equals` and `hashCode` of the fact classes, the subjec
 
 **Open values.** In a document with `inferFromEmpty: false` a member of an object is filled, settled leeg or open, and
 nothing follows from what is open (RUNTIME-SEMANTICS ch. 1.5); what stands, a settled leeg value among it, is computed
-with as in any document. Four words keep four things apart, here, in the javadoc and in the records a consumer reads. A
+with as in any document. Three words keep three things apart, here, in the javadoc and in the records a consumer reads. A
 member is **open** where neither a value nor leeg stands, and so is the outcome of a form that leaves its target so
 (`ConditionReading.Status.OPEN`, `Fixpoint.open`, `EndState.EndObject.open`). A condition is **undetermined** where it is
 neither true nor false, and so is, in a reading, a node an open read broke off (`NodeReading.undetermined`, with the open
@@ -493,7 +493,7 @@ default `OPEN`, or at the root inserts the `LeftOpen` of the target, unless a me
 differently. A stack of which no default can be open is lowered as any stack.
 
 A fold over a set whose members can be open keeps the contributions and the accumulate of any fold; the rule of a
-member's contribution says beside or in place of it, with a `FoldOpen(fold, subject, member, own, read)`, that what the
+member's contribution says beside or in place of it, with a `FoldOpen(fold, subject, element, read, place)`, that what the
 member gives the fold does not stand: its filter is undetermined or its value open, a filled-value count's among them.
 Where
 the filter can be undetermined, the rule tests and evaluates its judgement as a writer does its condition

@@ -4219,8 +4219,9 @@ public final class TmsTranspiler {
      *
      * <p>Where a member can be open (RUNTIME-SEMANTICS ch. 1.5, "Exception groups and a declared-unordered group"), the
      * decision stands only where none is, and a rule of its own inserts {@code atOpen} where one is, no member conflicts
-     * and no two members decide differently. A single chain at the root needs no more than that: its initialisation
-     * decides beside an open default above it, and the target's standing reads the decision first.
+     * and no two members decide differently. A single chain at the root needs no more than that: it decides or is open,
+     * never both, since below an open default no default decides, its initialisation default among them (ch. 1.5, "The
+     * initialisation of a stack").
      */
     private void reconciliation(StackBuild b, int earliest, int itemCount, boolean membersConflict, String key, String label,
                             Supplier<List<LhsItem>> guard, Consequence.StackFact atConflict,
@@ -9188,8 +9189,8 @@ public final class TmsTranspiler {
      * no {@link Value} stands: open where a writer leaves it open ({@link LeftOpen}), whatever its input, which then
      * stands no more than the writer's leeg would (ch. 7.8), a rule built where that can be, and the input rule stands
      * under a {@code not} over that fact; and open where the bean holds none and its input is not complete
-     * ({@link OpenInput}), which is only where no form writes it on the object: the consequence of the input rule says so
-     * where that can be.
+     * ({@link OpenInput}), which is only where it is input on the object, no form but an initialisation writing it there
+     * ({@link OpenableMembers}): the consequence of the input rule says so where that can be.
      *
      * <p>The input timeline of a member on a timeline stands in the form a {@link Value} carries one,
      * {@code List<Period>} ({@link Period#list}), so every standing of the member holds one representation, except
@@ -9308,7 +9309,7 @@ public final class TmsTranspiler {
     /**
      * The two generic rules that keep one {@link PathState} per object of the subject type for a member read over
      * a path, a derived one or one that can be open: where every link on the path is present, the standing of the member on
-     * the object the path reaches, joined on that object, or where no form writes it its input on that object's bean, open
+     * the object the path reaches, joined on that object, or where it is input there its input on that object's bean, open
      * where the bean holds none and the input is not complete ({@link OpenInput}), and that object; where a link is
      * absent, null for both. The links are input, read off the
      * bean in the left-hand side, and do not change while the session fires, so exactly one of the two holds for each
