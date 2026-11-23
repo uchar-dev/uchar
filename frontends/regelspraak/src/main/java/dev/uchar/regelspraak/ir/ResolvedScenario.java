@@ -76,9 +76,11 @@ public record ResolvedScenario(String name, Scope scope, LocalDate asOfDate, Sit
     public record RoleValue(String key, FactType factType, ObjectType targetType, List<String> targetLabels,
                             boolean many, int line) {}
 
-    /** A characteristic asserted on an instance under its declared name. {@code periods} is null for a static
+    /** A characteristic a situation gives on an instance under its declared name. {@code holds} is false where the
+     *  situation states that it does not hold ("is niet X", "heeft geen X"), the case file's
+     *  {@code characteristicsAbsent}; such a characteristic is static. {@code periods} is null for a static
      *  characteristic and holds the periods in which a time-dependent one holds, in written order. */
-    public record CharacteristicValue(String characteristic, List<TimeWindow> periods, int line) {}
+    public record CharacteristicValue(String characteristic, boolean holds, List<TimeWindow> periods, int line) {}
 
     /** A parameter value under its declared name: a scalar {@code value} or, for a time-dependent parameter, a
      *  {@code timeline}. Exactly one of the two is non-null. */
@@ -106,6 +108,8 @@ public record ResolvedScenario(String name, Scope scope, LocalDate asOfDate, Sit
         CELL_EMPTY,          // de <cel> van <LABEL> is leeg
         CHARACTERISTIC_PRESENT,    // <LABEL> is/heeft [een] <kenmerk>
         CHARACTERISTIC_ABSENT,     // <LABEL> is/heeft geen <kenmerk>
+        ATTRIBUTE_OPEN,      // de <attr> van <LABEL> staat niet vast
+        CHARACTERISTIC_OPEN, // of <LABEL> <kenmerk> is/heeft, staat niet vast
         CONSISTENT,          // de gegevens zijn consistent
         INCONSISTENT         // de gegevens zijn inconsistent [volgens "<regel>" [voor <LABEL>]]
     }

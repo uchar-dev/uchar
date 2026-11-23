@@ -1332,7 +1332,8 @@ public final class SemanticTokens {
             } else if (t instanceof RolToManyToewijzingContext r) {
                 role(range(r.toewijzingNaam()), ot);
                 for (TerminalNode label : r.UPPER_ID()) instanceReference(label, labels);
-            } else if (t instanceof KenmerkToewijzingContext k) member(range(k.kaleNaam()), Kind.CHARACTERISTIC, ot);
+            } else if (t instanceof KenmerkToewijzingContext k)
+                member(withoutNegation(range(k.kaleNaam())), Kind.CHARACTERISTIC, ot);
         }
     }
 
@@ -1383,9 +1384,17 @@ public final class SemanticTokens {
         } else if (v instanceof VerwachtAttribuutWaardeContext a) {
             attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
             markerValue(a.situatieWaarde());
+        } else if (v instanceof VerwachtAttribuutOpenContext a) {
+            attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
+            openWords(a.staatWoord(), a.vastWoord());
         } else if (v instanceof VerwachtKenmerkContext k) characteristicOf(k.UPPER_ID(), k.kaleNaam(), labels);
         else if (v instanceof VerwachtKenmerkHeeftContext k) characteristicOf(k.UPPER_ID(), k.kaleNaam(), labels);
-        else if (v instanceof VerwachtInconsistentContext c && c.inconsistentieSleutel() != null) {
+        else if (v instanceof VerwachtKenmerkOpenContext k) {
+            // the open form takes no negation: the scenario route reads the name as written
+            instanceReference(k.UPPER_ID(), labels);
+            member(range(k.kaleNaam()), Kind.CHARACTERISTIC, typeOf(k.UPPER_ID(), labels));
+            openWords(k.staatWoord(), k.vastWoord());
+        } else if (v instanceof VerwachtInconsistentContext c && c.inconsistentieSleutel() != null) {
             InconsistentieSleutelContext key = c.inconsistentieSleutel();
             // 'volgens' is a word to the lexer and a keyword of the expectation on this one position
             claim(key.volgensWoord(), Kind.KEYWORD, false, null);
@@ -1398,19 +1407,29 @@ public final class SemanticTokens {
         member(range(name), Kind.ATTRIBUTE, typeOf(label, labels));
     }
 
-    /** {@code <LABEL> is|heeft [geen|niet] <kenmerk>}: the negation stays a keyword ('geen' is a word to the lexer,
-     *  which the scenario route reads as the negation), and the rest names the characteristic. */
+    /** 'staat' and 'vast' of {@code staat niet vast}: words to the lexer, keywords of the expectation on this one
+     *  position ('niet' is a keyword token). */
+    private void openWords(StaatWoordContext staat, VastWoordContext vast) {
+        claim(staat, Kind.KEYWORD, false, null);
+        claim(vast, Kind.KEYWORD, false, null);
+    }
+
+    /** {@code <LABEL> is|heeft [geen|niet] <kenmerk>}: the negation stays a keyword, and the rest names the
+     *  characteristic. */
     private void characteristicOf(TerminalNode label, KaleNaamContext name, Map<String, Opened> labels) {
         instanceReference(label, labels);
-        int[] r = range(name);
-        if (r != null && r[0] < r[1]) {
-            String first = pieceText(r[0]).toLowerCase(Locale.ROOT);
-            if (first.equals("geen") || first.equals("niet")) {
-                if (first.equals("geen")) claim(new int[]{r[0], r[0]}, Kind.KEYWORD, false, null);
-                r = new int[]{next(r[0], r[1]), r[1]};
-            }
-        }
-        member(r, Kind.CHARACTERISTIC, typeOf(label, labels));
+        member(withoutNegation(range(name)), Kind.CHARACTERISTIC, typeOf(label, labels));
+    }
+
+    /** {@code range} without a leading 'geen' or 'niet', which the scenario route reads as the negation of a
+     *  characteristic in a situation and in an expectation; 'geen' is a word to the lexer and is claimed as a keyword
+     *  here. Null for null. */
+    private int[] withoutNegation(int[] r) {
+        if (r == null || r[0] >= r[1]) return r;
+        String first = pieceText(r[0]).toLowerCase(Locale.ROOT);
+        if (!first.equals("geen") && !first.equals("niet")) return r;
+        if (first.equals("geen")) claim(new int[]{r[0], r[0]}, Kind.KEYWORD, false, null);
+        return new int[]{next(r[0], r[1]), r[1]};
     }
 
     private ObjectType typeOf(TerminalNode label, Map<String, Opened> labels) {

@@ -18,9 +18,7 @@ import java.util.function.Predicate;
  * becomes the set of forms the IR document beside the case files carries. The case format changes in nothing and no
  * executor learns anything new: a scenario is a case file written in RegelSpraak.
  *
- * <p>The key order is the order every case file of the corpus writes: the schema's {@code properties} order, with
- * one exception the corpus fixes — an instance writes {@code characteristicTimelines} after {@code characteristics},
- * where the schema lists it before (all 51 instances in the corpus that carry the field, measured 2026-09-26). The
+ * <p>The key order is the schema's {@code properties} order, which gate 2 holds every case file of the corpus to. The
  * serialiser is the emitter's own ({@link IrEmitter.Json}), so a case file and an IR document share one shape.
  */
 public final class CaseEmitter {
@@ -114,8 +112,15 @@ public final class CaseEmitter {
         }
         w.endObject();
         w.key("characteristics").beginArray();
-        for (CharacteristicValue k : i.characteristics()) if (k.periods() == null) w.value(k.characteristic());
+        for (CharacteristicValue k : i.characteristics()) if (k.holds() && k.periods() == null) w.value(k.characteristic());
         w.endArray();
+        List<String> absent = new ArrayList<>();
+        for (CharacteristicValue k : i.characteristics()) if (!k.holds()) absent.add(k.characteristic());
+        if (!absent.isEmpty()) {
+            w.key("characteristicsAbsent").beginArray();
+            for (String k : absent) w.value(k);
+            w.endArray();
+        }
         List<CharacteristicValue> temporal = new ArrayList<>();
         for (CharacteristicValue k : i.characteristics()) if (k.periods() != null) temporal.add(k);
         if (!temporal.isEmpty()) {
@@ -164,6 +169,16 @@ public final class CaseEmitter {
             }
             case CHARACTERISTIC_ABSENT -> {
                 w.key("kind").value("characteristicAbsent");
+                w.key("label").value(v.label());
+                w.key("characteristic").value(v.characteristic());
+            }
+            case ATTRIBUTE_OPEN -> {
+                w.key("kind").value("attributeOpen");
+                w.key("label").value(v.label());
+                w.key("attribute").value(v.attribute());
+            }
+            case CHARACTERISTIC_OPEN -> {
+                w.key("kind").value("characteristicOpen");
                 w.key("label").value(v.label());
                 w.key("characteristic").value(v.characteristic());
             }

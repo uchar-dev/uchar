@@ -281,6 +281,58 @@ class SemanticTokensScenarioTest {
         reference(d, "J1\n", 1, "J1", Kind.LABEL, "toets.rgs", "J1\n", 0);
     }
 
+    static final String STRICT_MODEL = """
+            Afleiden uit leeg: nee
+
+            Objecttype de Vondst (mv: Vondsten)
+                de afhaaldatum Datum in dagen;
+                is drijfhout kenmerk (bijvoeglijk);
+                het strandrecht kenmerk (bezittelijk);
+            """;
+
+    /** A situation with the three forms of a characteristic that does not hold, and the expectations that a member is
+     *  open; a document without 'Afleiden uit leeg: nee' refuses the second (RGS-467). */
+    static final String STRICT_TEST = """
+            Scenario open vondsten
+            Gegeven is de volgende situatie:
+            een Vondst V1
+            - is niet drijfhout
+            - heeft geen strandrecht
+            een Vondst V2
+            - heeft niet het strandrecht
+            Met als verwacht resultaat:
+            - de afhaaldatum van V1 staat niet vast
+            - of V2 drijfhout is, staat niet vast
+            - of V2 het strandrecht heeft staat niet vast
+            """;
+
+    /** The negation before a characteristic in a situation is a keyword, as in an expectation, and 'staat' and 'vast'
+     *  of 'staat niet vast' are keywords; every name points at its declaration. */
+    @Test void the_words_of_a_strict_scenario_are_keywords() {
+        List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("vondsten.rgs", STRICT_MODEL),
+                new SemanticTokens.SourceFile("strikt.rgs", STRICT_TEST));
+        SemanticTokens.Document d = Resolver.tokens(files);
+        assertTrue(d.diagnostics().isEmpty(), () -> "no diagnostic: " + d.diagnostics());
+        SemanticTokensCheck.check(files, d);
+        java.util.Map<Integer, List<String>> lines = new java.util.TreeMap<>();
+        for (Span s : d.files().get(1).spans()) {
+            assertFalse(SemanticTokensCheck.unlinked(s), () -> "a reference without its declaration: " + s);
+            assertNotEquals(Kind.WORD, s.kind(), () -> "a word outside every name: " + s);
+            lines.computeIfAbsent(s.line(), x -> new ArrayList<>()).add(s.text() + " " + s.kind().wire());
+        }
+        assertEquals(List.of("- punctuation", "is keyword", "niet keyword", "drijfhout characteristic"), lines.get(4));
+        assertEquals(List.of("- punctuation", "heeft keyword", "geen keyword", "strandrecht characteristic"),
+                lines.get(5));
+        assertEquals(List.of("- punctuation", "heeft keyword", "niet keyword", "het keyword", "strandrecht characteristic"),
+                lines.get(7));
+        assertEquals(List.of("- punctuation", "de keyword", "afhaaldatum attribute", "van keyword", "V1 label",
+                "staat keyword", "niet keyword", "vast keyword"), lines.get(9));
+        assertEquals(List.of("- punctuation", "of keyword", "V2 label", "drijfhout characteristic", "is keyword",
+                ", punctuation", "staat keyword", "niet keyword", "vast keyword"), lines.get(10));
+        assertEquals(List.of("- punctuation", "of keyword", "V2 label", "het keyword", "strandrecht characteristic",
+                "heeft keyword", "staat keyword", "niet keyword", "vast keyword"), lines.get(11));
+    }
+
     @Test void a_name_that_names_nothing_is_unresolved() {
         SemanticTokens.Document d = document();
         kind(d, "spaarpot", 0, "spaarpot", Kind.UNRESOLVED);

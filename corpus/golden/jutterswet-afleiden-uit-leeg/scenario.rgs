@@ -1,0 +1,91 @@
+Scenario alles gegeven
+Gegeven is de volgende situatie:
+een Vondst V1
+- de taxatie is 2000
+- het gewicht is 5
+- is gemeld
+een Vondst V2
+- de taxatie is 50
+- het gewicht is 0
+- is niet gemeld
+Met als verwacht resultaat:
+- V1 is kostbaar
+- het vindloon van V1 is 15
+- de bewakingstoeslag van V1 is leeg
+- V1 is niet ongetaxeerd
+- het meldloon van V1 is 3
+- V2 is niet kostbaar
+- het vindloon van V2 is 10
+- de bewakingstoeslag van V2 is 5
+- V2 is niet ongetaxeerd
+- V2 is niet gemeld
+- het meldloon van V2 is leeg
+- de gegevens zijn consistent
+
+Scenario taxatie open
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 5
+- is gemeld
+Met als verwacht resultaat:
+- of V1 kostbaar is, staat niet vast
+- het vindloon van V1 is 15
+- de bewakingstoeslag van V1 staat niet vast
+- V1 is ongetaxeerd
+- het meldloon van V1 is 3
+- de gegevens zijn consistent
+
+Scenario gewicht open
+Gegeven is de volgende situatie:
+een Vondst V1
+- de taxatie is 50
+- is niet gemeld
+Met als verwacht resultaat:
+- V1 is niet kostbaar
+- het vindloon van V1 staat niet vast
+- de bewakingstoeslag van V1 is 5
+- V1 is niet ongetaxeerd
+- V1 is niet gemeld
+- het meldloon van V1 is leeg
+- de gegevens zijn consistent
+
+Scenario beide open
+Gegeven is de volgende situatie:
+een Vondst V1
+Met als verwacht resultaat:
+- of V1 kostbaar is, staat niet vast
+- het vindloon van V1 staat niet vast
+- de bewakingstoeslag van V1 staat niet vast
+- V1 is ongetaxeerd
+- of V1 gemeld is, staat niet vast
+- het meldloon van V1 staat niet vast
+- de gegevens zijn consistent
+
+Situatie getaxeerde vondst:
+een Vondst V1
+- de taxatie is 50
+- het gewicht is 5
+
+Scenario uitzondering open
+gebaseerd op de situatie getaxeerde vondst
+Met als verwacht resultaat:
+- of V1 betwist is, staat niet vast
+- de premie van V1 staat niet vast
+- het vindloon van V1 is 15
+- de gegevens zijn consistent
+
+Scenario uitzondering staat niet
+gebaseerd op de situatie getaxeerde vondst
+Gegeven is de volgende situatie:
+een Vondst V1
+- is niet betwist
+een Vondst V2
+- de taxatie is 50
+- het gewicht is 5
+- is betwist
+Met als verwacht resultaat:
+- V1 is niet betwist
+- de premie van V1 is 10
+- V2 is betwist
+- de premie van V2 is 0
+- de gegevens zijn consistent

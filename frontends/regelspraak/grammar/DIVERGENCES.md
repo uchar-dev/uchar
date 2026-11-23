@@ -3361,6 +3361,7 @@ een Jutter J
 - de vondsten zijn V1, V2 en V3
 - is borgplichtig van 01-01-2024 tot 15-01-2024
 - heeft strandrecht
+- is niet bergingsbevoegd
 de parameter de vondstdrempel is 3
 de parameter het penningbedrag is 7 van 01-01-2024 tot 01-01-2025
 ```
@@ -3368,10 +3369,13 @@ de parameter het penningbedrag is 7 van 01-01-2024 tot 01-01-2025
 An instance opens with `een <objecttype> <LABEL>` (one capitalised word)
 and carries bullets: an attribute value (`de|het <attribuut> is <waarde>`),
 a to-one role (`de|het <rol> is <LABEL>`), a to-many role (`de|het <rol>
-zijn <LABEL>, <LABEL> en <LABEL>`) and a characteristic (`is|heeft
-[een|de|het] <kenmerk>`). A parameter value has no bullet. An attribute,
-characteristic or parameter value may carry one period, `van <datum> tot
-<datum>`: from inclusive, to exclusive, the case format's segment.
+zijn <LABEL>, <LABEL> en <LABEL>`), a characteristic (`is|heeft
+[een|de|het] <kenmerk>`) and a characteristic that does not hold (`is niet
+<kenmerk>`, `heeft geen <kenmerk>`, `heeft niet het <kenmerk>`: the word
+`niet` or `geen` before the name, as in an expectation). A parameter value
+has no bullet. An attribute, characteristic or parameter value may carry one
+period, `van <datum> tot <datum>`: from inclusive, to exclusive, the case
+format's segment.
 
 A **cell** of a dimensioned attribute stands where an attribute stands, in a
 bullet of an instance and in an expectation, written as a rule writes it
@@ -3452,6 +3456,8 @@ ends at the first header keyword. The expectations, one bullet each:
 | `- de\|het <cel> van <LABEL> is leeg` | `cellEmpty` |
 | `- <LABEL> is\|heeft [een\|de\|het] <kenmerk>` | `characteristicPresent` (a characteristic without a timeline) |
 | `- <LABEL> is\|heeft niet\|geen <kenmerk>` | `characteristicAbsent` (a characteristic without a timeline) |
+| `- de\|het <attribuut> van <LABEL> staat niet vast` | `attributeOpen` (an attribute without a timeline, in a document with `Afleiden uit leeg: nee`) |
+| `- of <LABEL> [een\|de\|het] <kenmerk> is\|heeft[,] staat niet vast` | `characteristicOpen` (a characteristic without a timeline, in a document with `Afleiden uit leeg: nee`) |
 | `- de gegevens zijn consistent` | `consistent` |
 | `- de gegevens zijn inconsistent [volgens "<regel>" [voor <LABEL>]]` | `inconsistent` with its optional `rule` and `label` |
 
@@ -3459,6 +3465,12 @@ The segment bullets of one label and attribute are one `attributeTimeline`,
 at the place of the first. An expectation without a period on a time-dependent attribute names no day of its
 timeline and is refused (RGS-399, pointing to `is altijd leeg`, `is altijd <waarde>` or a period); so is an
 expectation on a time-dependent characteristic (RGS-400), for which the case format has no expectation over periods.
+`staat niet vast` expects an open member (RUNTIME-SEMANTICS ch. 1.5): the verb of the characteristic form follows its
+kind, as in `- <LABEL> is|heeft <kenmerk>`, and the name takes no negation (`of V1 niet afhaalbaar is` names a
+characteristic `niet afhaalbaar`). A document without
+`Afleiden uit leeg: nee` has no open member, so there both forms are refused (RGS-467); on a time-dependent attribute or
+characteristic they are refused as the other expectations without a period are (RGS-399, RGS-400), and on a cell of a
+dimensioned attribute because `attributeOpen` names no cell (RGS-468).
 A parameter with a timeline takes its value with a period, in a situation and in a parameter set (RGS-398). The values are the literal forms of the language:
 a number with the unit its declaration demands (`1,5 t`, `25 %`, `3/4
 vadem`), a date `dd-mm-jjjj`, a date-time `dd-mm-jjjj hh:mm:ss.mmm`,
@@ -3471,12 +3483,17 @@ because a keyword token changes the lexing of every source that carries the
 word. A period is `VAN DATE TOT DATE`, bare date
 tokens only: a name word may be a number, so a date that may also be a
 `NUMBER` would let a characteristic's `van`-segment compete for `van 2024`.
-The empty timeline is `ALTIJD LEEG`. `volgens` is matched as a `LOWER_ID`
-by its text, on the one position after `inconsistent` (a source carries the
-word elsewhere as a name word). The rule of an inconsistency is a text
-literal because a conflict channel's name (`Jutter.vrijgesteld/0`) is no
-token run. `tot en met` is one token and is no period
-(`ScenarioParseTest`). The parameter set takes two tokens:
+The empty timeline is `ALTIJD LEEG`. `volgens` is matched as a `LOWER_ID` by
+its text, on the one position after `inconsistent` (a source carries the
+word elsewhere as a name word). So are `staat` and `vast` of `staat niet
+vast`, after the label of an expectation and after the verb of its
+characteristic form only; `of` and `niet` keep their tokens `OF` and `NIET`,
+which a name carries as before (an attribute `de staat`, `het gewicht of
+volume`, `de niet uitgekeerde premie` and a characteristic `vast` read as
+names in a situation and in an expectation, `ScenarioStrictTest`). The rule
+of an inconsistency is a text literal because a conflict channel's name
+(`Jutter.vrijgesteld/0`) is no token run. `tot en met` is one token and is
+no period (`ScenarioParseTest`). The parameter set takes two tokens:
 `PARAMETERSET` (`Parameterset`) and `MET_PARAMETERSET` (`met
 parameterset`, one whole-phrase token like `MET_PEILDATUM`). A block header
 must end the block before it, and a header clause must end the name run
@@ -3549,7 +3566,15 @@ scenario blocks then resolve against that model (`ScenarioResolver`):
   one, `is` otherwise). A time-dependent characteristic is delivered as
   periods only, as every case reader demands; a period belongs to a
   time-dependent attribute, characteristic or parameter only. The periods of
-  one timeline stand in order and do not overlap.
+  one timeline stand in order and do not overlap. A characteristic after
+  `niet` or `geen` does not hold, the case file's `characteristicsAbsent`
+  (RUNTIME-SEMANTICS ch. 1.5; in a document without `Afleiden uit leeg: nee`
+  it changes no outcome, and the lowering writes it there all the same). It
+  is static: with a period, or on a time-dependent characteristic, which does
+  not hold outside its periods, it is refused. Within one situation block a
+  characteristic holds or does not, also over two openers of one label; a
+  block merged later replaces it in place either way, so a case never names
+  one characteristic in both lists (EF-047).
 - **The grid**: both bounds of a segment of an attribute, a parameter or an
   expected timeline sit on a wall of the declared grid — its granularity,
   count and fixed start point, and without a start point the calendar's month,
@@ -3589,11 +3614,13 @@ serialiser, so a case file and an IR document share one shape.
 
 - `asOfDate` is the peildatum, or null. The instances come in first-seen
   order with their attributes, roles and characteristics in first-seen
-  order; `characteristicTimelines` is written when a time-dependent
-  characteristic holds somewhere, after `characteristics`. That is the
-  corpus's key order: the case schema lists the field before
-  `characteristics`, and all 51 instances in the corpus that carry the field
-  write it after (measured 2026-09-26).
+  order. An instance writes `characteristics`, then `characteristicsAbsent`
+  where a characteristic does not hold, then `characteristicTimelines` where a
+  time-dependent characteristic holds somewhere, the last two only when they
+  are not empty: the case schema's key order, which gate 2 holds every case
+  file to. An expectation `staat niet vast` is an `attributeOpen` with its
+  label and attribute, or a `characteristicOpen` with its label and
+  characteristic.
 - The cells of one attribute are its `cells`, in first-seen order, each with
   its labels and its value; an expected cell is a `cellValue` or a `cellEmpty`
   with its labels (RUNTIME-SEMANTICS ch. 5.8c).
@@ -3743,6 +3770,15 @@ prefix `scenario: `, placeholders in angle brackets:
   perioden ('is <k> van <datum> tot <datum>'), niet als vaste waarde`
 - `het kenmerk '<k>' is bezittelijk; schrijf 'heeft <k>'`, and `… is niet
   bezittelijk; schrijf 'is <k>'`
+- `het kenmerk '<k>' van <l> staat in één situatieblok als geldend en als
+  niet geldend; binnen een blok geldt een kenmerk of niet, en alleen een blok
+  dat op een andere situatie gebaseerd is, vervangt wat het van die situatie
+  erft` (RGS-465)
+- `het kenmerk '<k>' is als niet geldend gegeven, maar met een periode of als
+  tijdsafhankelijk kenmerk; een casebestand levert alleen een kenmerk zonder
+  tijdlijn als niet geldend, zonder periode (characteristicsAbsent), en een
+  tijdsafhankelijk kenmerk geldt buiten de perioden die de situatie geeft
+  niet` (RGS-466)
 - `de rol '<r>' vanaf het objecttype '<t>' is niet eenduidig: meer dan één
   feittype kent haar`
 - `de rol '<r>' is een naar-veel-rol; schrijf de 'zijn'-lijstvorm ('de <r>
@@ -3780,6 +3816,13 @@ prefix `scenario: `, placeholders in angle brackets:
 - `de periode van <d> tot <d> begint vóór het einde van de vorige (<d>); de
   perioden van één tijdlijn staan in volgorde en overlappen niet`
 - `het label '<l>' in de verwachting is nergens in de situatie gedeclareerd`
+- `<het attribuut '<a>' | het kenmerk '<k>'> van <l>: 'staat niet vast'
+  verwacht een open lid, maar in een document zonder 'Afleiden uit leeg: nee'
+  is geen lid open; verwacht een waarde, 'is leeg', of bij een kenmerk 'is
+  niet' of 'heeft geen' (RUNTIME-SEMANTICS ch. 1.5)` (RGS-467)
+- `de cel '<naam>' van het gedimensioneerde attribuut '<a>' krijgt de
+  verwachting 'staat niet vast', maar een casebestand verwacht alleen een
+  attribuut als open (attributeOpen), geen cel` (RGS-468)
 - `het attribuut '<a>' is niet tijdsafhankelijk; een tijdlijnverwachting
   hoort bij een attribuut met een tijdlijn`
 - `de verwachting dat '<a>' van <l> altijd leeg is, spreekt de perioden
@@ -3824,11 +3867,16 @@ an input and as an expectation, the merge per cell, a case file with cells
 written by hand, each refusal of a cell, and the semantic tokens of a cell)
 and `ScenarioAbsenceMarkerTest` (a marker and a value of an attribute with
 markers as input and as expectation, scalar and per segment, in a case file
-written by hand, each refusal of RGS-377 on its line, and the semantic tokens
-of a marker). The corpus: 47 goldens carry a `scenario.rgs` beside their
-`source.rgs` (counted 2026-11-20) whose lowering reproduces their pinned case
-files, and whose scenario route reproduces their `ir.json`, byte for byte —
-the handwritten expectations are the anchor —, among them
+written by hand, each refusal of RGS-377 on its line, and the semantic
+tokens of a marker) and `ScenarioStrictTest` (the three forms of a
+characteristic that does not hold and both forms of `staat niet vast` in
+case files written by hand, the same input in a document without `Afleiden
+uit leeg: nee`, a block based on another that turns a characteristic either
+way, each refusal on its line, and names with `staat`, `vast`, `of` and
+`niet`). The corpus: 49 goldens carry a `scenario.rgs` beside their
+`source.rgs` (counted 2026-11-23) whose lowering reproduces their pinned
+case files, and whose scenario route reproduces their `ir.json`, byte for
+byte — the handwritten expectations are the anchor —, among them
 `ww-herleving-inkomen-rgs`, `jutterswet-uitsluiting-rgs`,
 `jutterswet-nestkenmerk-rgs`, `jutterswet-dagentelling-rgs` (the timelines),
 `jutterswet-rubriektabel-rgs` (a scope over a decision table and a rule, which
@@ -3848,8 +3896,11 @@ either order, joined by "en" and by ",", and after `uit`) and
 `jutterswet-afwezigheidsmarkers` (markers and values of two attributes with
 markers in the input and the expectations, scalar and per month) and
 `jutterswet-opgave-afwezigheidsmarkers` (a marker supplied as the opgave of an
-attribute with markers, scalar and per month, §7). Together
-they carry every expectation kind of the case format.
+attribute with markers, scalar and per month, §7) and
+`jutterswet-afleiden-uit-leeg` (a document with `Afleiden uit leeg: nee`:
+characteristics that do not hold in the input, a situation shared by two
+scenarios, `attributeOpen` and `characteristicOpen`). Together they carry
+every expectation kind of the case format.
 
 ---
 
@@ -4641,8 +4692,9 @@ lower to. Any other chain is read as `--ir` reads it. The output has the same fo
   so the attribute is an `attribute` and each label a `dimensionLabel`, and the prepositions and the joining "en"
   keep their lexical kind. Where the opener or the label names no type, every type's members are candidates, as for a
   name its place does not decide;
-- `de parameter …` names a `parameter`; the negation `geen` or `niet` before a characteristic in an expectation and the
-  word `volgens` of an inconsistency are keywords; the rule an inconsistency names is a text literal, a `string`.
+- `de parameter …` names a `parameter`; the negation `geen` or `niet` before a characteristic in a situation and in an
+  expectation, the words `staat` and `vast` of `staat niet vast`, and the word `volgens` of an inconsistency are
+  keywords; the rule an inconsistency names is a text literal, a `string`.
 
 **After a syntax error.** The parse tree is ANTLR's recovery. Rule text in it is read as any rule text: a word there
 that names nothing is `unresolved`. A word the recovery placed in no name and no rule text keeps its lexical kind
@@ -4696,12 +4748,14 @@ error; floors on the files, the spans and the name spans per kind. `SemanticToke
 sources, and every golden cut at forty places and with each of twenty lines left out.
 `SemanticTokensScenarioTest`: a test document of two files with a parameter set, two situations (one based on the
 other), two scenarios with both scope forms, a peildatum, a parameter set, a basis and an inline situation, every form
-of the table "case expectation", a label opened again in a later block of its merge, and one name that names nothing;
-its diagnostics are those of the scenario route. `SemanticTokensCorpusTest` also reads every golden `scenario.rgs` with
-its `source.rgs` as one test document: the coverage and the positions, every reference linked, no ERROR, no
-`unresolved` and no `word`; floors on the documents and on the name spans of the four kinds. Measured on the casus of the
-parity zone (its 47 fragments as one document, outside the suite because the zone's material stays out of this one):
-complete coverage, every reference linked, and 24 spans `unresolved`, each a name the fragments do not declare.
+of the table "case expectation" but `staat niet vast`, a label opened again in a later block of its merge, and one name
+that names nothing, whose diagnostics are those of the scenario route; and a test document with `Afleiden uit leeg: nee`
+with the three forms of a characteristic that does not hold and both forms of `staat niet vast`.
+`SemanticTokensCorpusTest` also reads every golden `scenario.rgs` with its `source.rgs` as one test document: the
+coverage and the positions, every reference linked, no ERROR, no `unresolved` and no `word`; floors on the documents and
+on the name spans of the four kinds. Measured on the casus of the parity zone (its 47 fragments as one document, outside
+the suite because the zone's material stays out of this one): complete coverage, every reference linked, and 24 spans
+`unresolved`, each a name the fragments do not declare.
 
 ## De eenheid van een tekstdeel — `«X (eenheid)»`
 

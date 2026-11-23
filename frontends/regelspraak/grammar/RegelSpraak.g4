@@ -207,7 +207,7 @@ toewijzing
     : bullet bepaaldLidwoord toewijzingNaam IS situatieWaarde periode?     DOT? # attribuutToewijzing   // de/het <attr> is <waarde> [van <d> tot <d>]
     | bullet bepaaldLidwoord toewijzingNaam IS UPPER_ID                    DOT? # rolToOneToewijzing    // de/het <rol> is <LABEL>
     | bullet bepaaldLidwoord toewijzingNaam ZIJN UPPER_ID ( ( COMMA | EN ) UPPER_ID )* DOT? # rolToManyToewijzing // de/het <rol> zijn <LABEL>, <LABEL> en <LABEL>
-    | bullet ( IS | HEEFT ) lidwoord? kaleNaam periode?      DOT? # kenmerkToewijzing     // is/heeft [lidw] <kenmerk> [van <d> tot <d>]
+    | bullet ( IS | HEEFT ) lidwoord? kaleNaam periode?      DOT? # kenmerkToewijzing     // is/heeft [lidw] <kenmerk> [van <d> tot <d>] | is niet/heeft geen <kenmerk>
     ;
 // One period of a timeline, from inclusive to exclusive, the case format's [from, to): a
 // segment of a time-dependent attribute or parameter, or a period in which a time-dependent
@@ -261,8 +261,10 @@ verwachting
     | bullet bepaaldLidwoord verwachtingNaam VAN UPPER_ID IS ALTIJD LEEG          DOT? # verwachtTijdlijnLeeg      // … is altijd leeg: the whole timeline is empty
     | bullet bepaaldLidwoord verwachtingNaam VAN UPPER_ID IS ALTIJD situatieWaarde DOT? # verwachtTijdlijnAltijd  // … is altijd <waarde>: one segment over all time
     | bullet bepaaldLidwoord verwachtingNaam VAN UPPER_ID IS situatieWaarde verwachtePeriode? DOT? # verwachtAttribuutWaarde // de/het <attr> van <LABEL> is <waarde> [van <d> tot <d> | tot <d> | vanaf <d>]
+    | bullet bepaaldLidwoord verwachtingNaam VAN UPPER_ID staatWoord NIET vastWoord DOT? # verwachtAttribuutOpen // de/het <attr> van <LABEL> staat niet vast
     | bullet UPPER_ID IS      lidwoord? kaleNaam                     DOT? # verwachtKenmerk           // <LABEL> is [lidw]|geen <kenmerk>
     | bullet UPPER_ID HEEFT   lidwoord? kaleNaam                     DOT? # verwachtKenmerkHeeft      // <LABEL> heeft [lidw]|geen <kenmerk>
+    | bullet OF UPPER_ID lidwoord? kaleNaam ( IS | HEEFT ) COMMA? staatWoord NIET vastWoord DOT? # verwachtKenmerkOpen // of <LABEL> [lidw] <kenmerk> is|heeft[,] staat niet vast
     | bullet DE_GEGEVENS_ZIJN INCONSISTENT inconsistentieSleutel?    DOT? # verwachtInconsistent      // de gegevens zijn inconsistent [volgens "<regel>" [voor <LABEL>]]
     | bullet DE_GEGEVENS_ZIJN CONSISTENT                             DOT? # verwachtConsistent        // de gegevens zijn consistent
     ;
@@ -272,6 +274,10 @@ verwachting
 // carry the word), so the word is matched on its text here, on this one position only.
 inconsistentieSleutel : volgensWoord tekstWaarde ( VOOR UPPER_ID )? ;
 volgensWoord          : { isWord("volgens") }? LOWER_ID ;
+// 'staat niet vast': an open member (RUNTIME-SEMANTICS ch. 1.5). 'staat' and 'vast' are names to the lexer and are
+// matched on their text after the label of an expectation only, so neither becomes a keyword; 'niet' is NIET.
+staatWoord            : { isWord("staat") }? LOWER_ID ;
+vastWoord             : { isWord("vast") }? LOWER_ID ;
 // The attribuutnaam of a verwachting, which MUST stop before the trailing ' van <LABEL>'
 // (VAN then the UPPER_ID label). A plain kaleNaam would ambiguously absorb ' van <LABEL>'
 // because kaleNaam's '(VAN kaleNaamDeel)*' loop accepts a bare UPPER_ID as a kaleNaamDeel —

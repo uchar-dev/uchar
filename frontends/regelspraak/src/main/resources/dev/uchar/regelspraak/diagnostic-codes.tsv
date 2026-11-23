@@ -413,3 +413,7 @@ RGS-461	absence-marking-after-input-marking	ERROR	attribute,marking,objectType,o
 RGS-462	infer-from-empty-twice	ERROR	first,value
 RGS-463	complete-beside-input-marking	ERROR	attribute,complete,objectType,opgave
 RGS-464	complete-on-written-member	ERROR	complete,kind,name,objectType,writer
+RGS-465	characteristic-holds-and-not-in-block	ERROR	characteristic,label
+RGS-466	characteristic-absent-with-period	ERROR	characteristic
+RGS-467	open-expectation-without-open-members	ERROR	label,member
+RGS-468	open-expectation-on-cell	ERROR	attribute,written

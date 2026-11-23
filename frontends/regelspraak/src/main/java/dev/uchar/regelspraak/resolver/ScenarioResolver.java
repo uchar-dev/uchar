@@ -710,6 +710,15 @@ public final class ScenarioResolver {
                 if (pw != null) parameters.add(pw);
             }
         }
+        // within one block a characteristic holds or does not; only a block merged later replaces what it inherits
+        Map<String, Map<String, Boolean>> given = new HashMap<>();
+        for (InstanceFragment f : instances)
+            for (CharacteristicValue k : f.characteristics()) {
+                Boolean earlier = given.computeIfAbsent(f.label(), x -> new HashMap<>())
+                        .putIfAbsent(norm(k.characteristic()), k.holds());
+                if (earlier != null && earlier != k.holds())
+                    error(k.line(), "RGS-465", params("characteristic", k.characteristic(), "label", f.label()));
+            }
         return new BlockResult(instances, parameters);
     }
 
@@ -855,6 +864,8 @@ public final class ScenarioResolver {
         int line = k.getStart().getLine();
         boolean possessive = k.HEEFT() != null;
         String written = withoutArticle(src(k.kaleNaam()));
+        String negated = withoutNegation(written);
+        if (negated != null) written = withoutArticle(negated);
         if (ot == null) return;
         String characteristic = CharacteristicMatcher.find(ot, written);
         if (characteristic == null) {
@@ -864,13 +875,22 @@ public final class ScenarioResolver {
         }
         if (!verbFits(ot, characteristic, possessive, line)) return;
         boolean temporal = ot.characteristicGranularityOf(characteristic) != null;
+        if (negated != null) {
+            // characteristicsAbsent names a static characteristic; one with a timeline does not hold outside its periods
+            if (temporal || k.periode() != null) {
+                error(line, "RGS-466", params("characteristic", characteristic));
+                return;
+            }
+            characteristics.add(new CharacteristicValue(characteristic, false, null, line));
+            return;
+        }
         if (k.periode() == null) {
             if (temporal) {
                 error(line,
                         "RGS-242", params("characteristic", characteristic));
                 return;
             }
-            characteristics.add(new CharacteristicValue(characteristic, null, line));
+            characteristics.add(new CharacteristicValue(characteristic, true, null, line));
             return;
         }
         if (!temporal) {
@@ -884,7 +904,7 @@ public final class ScenarioResolver {
         if (list == null) {
             list = new ArrayList<>();
             periods.put(norm(characteristic), list);
-            characteristics.add(new CharacteristicValue(characteristic, list, line));
+            characteristics.add(new CharacteristicValue(characteristic, true, list, line));
         }
         if (follows(list.isEmpty() ? null : list.get(list.size() - 1).until(), p, line)) list.add(p);
     }
@@ -1440,13 +1460,31 @@ public final class ScenarioResolver {
                 }
                 TimeWindow always = new TimeWindow(null, null);
                 if (followsExpected(t.timeline(), always, line)) t.timeline().add(new Segment(null, null, w));
+            } else if (v instanceof VerwachtAttribuutOpenContext a) {
+                String label = a.UPPER_ID().getText();
+                String written = withoutArticle(src(a.verwachtingNaam()));
+                Named named = expectedMember(label, written, situation, line);
+                if (named == null) continue;
+                String attr = named.attribute();
+                if (!openAdmitted(label, Msg.frontend("PART.member-phrase.attribute", "name", attr), line)) continue;
+                // the case format's attributeOpen names an attribute and no cell
+                if (named.labels() != null) {
+                    error(line, "RGS-468", params("written", written, "attribute", attr));
+                    continue;
+                }
+                if (withoutPeriodOnTimeline(label, attr, situation, line)) continue;
+                result.add(new Expectation(ExpectationKind.ATTRIBUTE_OPEN, label, attr, null, null, null, null, null, line));
             } else if (v instanceof VerwachtKenmerkContext k) {
                 Expectation r = expectCharacteristic(k.UPPER_ID().getText(), withoutArticle(src(k.kaleNaam())), false,
-                        situation, line);
+                        false, situation, line);
                 if (r != null) result.add(r);
             } else if (v instanceof VerwachtKenmerkHeeftContext k) {
                 Expectation r = expectCharacteristic(k.UPPER_ID().getText(), withoutArticle(src(k.kaleNaam())), true,
-                        situation, line);
+                        false, situation, line);
+                if (r != null) result.add(r);
+            } else if (v instanceof VerwachtKenmerkOpenContext k) {
+                Expectation r = expectCharacteristic(k.UPPER_ID().getText(), withoutArticle(src(k.kaleNaam())),
+                        k.HEEFT() != null, true, situation, line);
                 if (r != null) result.add(r);
             } else if (v instanceof VerwachtInconsistentContext c) {
                 String rule = null, label = null;
@@ -1509,11 +1547,28 @@ public final class ScenarioResolver {
         return true;
     }
 
-    private Expectation expectCharacteristic(String label, String written, boolean has, Situation situation, int line) {
-        // "geen <kenmerk>" and "niet <kenmerk>" are the absent form: the grammar keeps the word inside the bareName
-        String klein = written.toLowerCase(java.util.Locale.ROOT);
-        boolean absent = klein.startsWith("geen ") || klein.startsWith("niet ");
-        String name = absent ? written.substring(5).trim() : written;
+    /** {@code written} without its leading "geen " or "niet ", the negation the grammar keeps inside the bareName of a
+     *  characteristic; null where it carries none. */
+    private static String withoutNegation(String written) {
+        String lower = written.toLowerCase(java.util.Locale.ROOT);
+        return lower.startsWith("geen ") || lower.startsWith("niet ") ? written.substring(5).trim() : null;
+    }
+
+    /** Whether the document has open members, with the ERROR where it has none: without 'Afleiden uit leeg: nee' a
+     *  member is filled or settled empty, and nothing is open (RUNTIME-SEMANTICS ch. 1.5). */
+    private boolean openAdmitted(String label, Msg member, int line) {
+        if (!model.inferFromEmpty()) return true;
+        error(line, "RGS-467", params("member", member, "label", label));
+        return false;
+    }
+
+    /** The expectation that the characteristic {@code written} of {@code label} holds, does not hold ("geen" or "niet"
+     *  before it) or, where {@code open}, is open, which takes no negation; null after an ERROR. */
+    private Expectation expectCharacteristic(String label, String written, boolean has, boolean open,
+                                             Situation situation, int line) {
+        String negated = open ? null : withoutNegation(written);
+        boolean absent = negated != null;
+        String name = absent ? negated : written;
         Instance i = situation.instance(label);
         if (i == null) {
             error(line,
@@ -1528,13 +1583,16 @@ public final class ScenarioResolver {
             return null;
         }
         if (!verbFits(i.objectType(), characteristic, has, line)) return null;
+        if (open && !openAdmitted(label,
+                Msg.frontend("PART.member-phrase.characteristic-name", "name", characteristic), line)) return null;
         // the case format has no expectation over the periods of a characteristic, and a scalar one names no day
         if (i.objectType().characteristicGranularityOf(characteristic) != null) {
             error(line, "RGS-400", params("characteristic", characteristic, "label", label));
             return null;
         }
-        return new Expectation(absent ? ExpectationKind.CHARACTERISTIC_ABSENT : ExpectationKind.CHARACTERISTIC_PRESENT,
-                label, null, null, characteristic, null, null, null, line);
+        ExpectationKind kind = open ? ExpectationKind.CHARACTERISTIC_OPEN
+                : absent ? ExpectationKind.CHARACTERISTIC_ABSENT : ExpectationKind.CHARACTERISTIC_PRESENT;
+        return new Expectation(kind, label, null, null, characteristic, null, null, null, line);
     }
 
     /** A rule an inconsistency may name, as the case readers take it (RUNTIME-SEMANTICS ch. 5.6): a form the
