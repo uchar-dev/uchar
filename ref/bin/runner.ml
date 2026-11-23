@@ -11,8 +11,8 @@
    do-nothing executor satisfies has stopped testing anything. With --trace
    the runner prints the readings of the conditions at the fixpoint and the
    end state ([trace] below), which gate 17 holds to the Drools backend's;
-   with --end-state the end state and the closures over an open value, which
-   the monotonicity leg of gate 5 reads. *)
+   with --end-state the end state, which the monotonicity leg of gate 5
+   reads. *)
 
 (* The two machine lines of the red path, which gate 8 reads: the code and
    parameters this executor observed (RUNTIME-SEMANTICS ch. 5.7b), and the case's
@@ -54,13 +54,8 @@ let verdict ~(pinned : Uchar_ref.Case.expected_fault) ~code ~params ~what report
    (RUNTIME-SEMANTICS ch. 5.12), one line per reading and per node in the
    canonical text, each after "reading ", sorted, and then the end state of the
    session (ch. 5.12a), one line per fact, each after "state ", sorted; it
-   compares no expectation. --end-state ([readings] false): the end state, and
-   then one line "closure <form> <object>" per evaluation standing at the
-   fixpoint that applied a closure to an open value (ch. 1.5: a closure inside
-   a value or a judgement, an initialisation over a writer that leaves its
-   target open), sorted; where the evaluation faults, one line "closures <n>",
-   the number of closures over an open value the session applied before the
-   fault.
+   compares no expectation. --end-state ([readings] false): the end state
+   alone.
    Exit 0 with the lines; 1 when the evaluation faults; 2 on a load error
    or a case that pins a fault, which has no fixpoint to read. *)
 let trace ?(readings = true) ir_path case_path =
@@ -88,15 +83,9 @@ let trace ?(readings = true) ir_path case_path =
       in
       List.iter (fun l -> print_endline ("reading " ^ l)) (Uchar_ref.Reading.lines env ~world:final readings)
     end;
-    List.iter (fun l -> print_endline ("state " ^ l)) (Uchar_ref.End_state.lines env ~world:final);
-    if not readings then
-      let name label = if label = "" then "-" else Uchar_ref.Reading.name_of doc final label in
-      List.iter print_endline
-        (List.sort_uniq compare
-           (List.map (fun (form, at) -> "closure " ^ form ^ " " ^ name at) (Uchar_ref.World.closures final)))
+    List.iter (fun l -> print_endline ("state " ^ l)) (Uchar_ref.End_state.lines env ~world:final)
   with
   | Uchar_ref.Value.Fault { code; text; _ } ->
-      if not readings then Printf.printf "closures %d\n" !Uchar_ref.Eval.closures_applied;
       Printf.eprintf "EVALUATION FAULT: %s\n" (Uchar_ref.Value.report ~code text);
       exit 1
   | Uchar_ref.Case.Error { code; text; _ } ->

@@ -1,0 +1,41 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "heffing"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "stapelheffing"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "heffingscode"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "codeheffing"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

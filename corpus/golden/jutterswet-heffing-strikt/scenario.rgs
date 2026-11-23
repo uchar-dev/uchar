@@ -1,0 +1,34 @@
+Scenario getaxeerd
+Gegeven is de volgende situatie:
+een Vondst V1
+- de taxatie is 50
+Met als verwacht resultaat:
+- de heffing van V1 is 0
+- de stapelheffing van V1 is 0
+- de heffingscode van V1 is leeg
+- de codeheffing van V1 is 0
+- de gegevens zijn consistent
+
+Scenario taxatie open
+Gegeven is de volgende situatie:
+een Vondst V1
+Met als verwacht resultaat:
+- de heffing van V1 staat niet vast
+- de stapelheffing van V1 staat niet vast
+- de heffingscode van V1 staat niet vast
+- de codeheffing van V1 staat niet vast
+- de gegevens zijn consistent
+
+Scenario twee vondsten
+Gegeven is de volgende situatie:
+een Vondst V1
+- de taxatie is 2000
+een Vondst V2
+Met als verwacht resultaat:
+- de heffing van V1 is 0
+- de stapelheffing van V1 is 0
+- de codeheffing van V1 is 0
+- de heffing van V2 staat niet vast
+- de stapelheffing van V2 staat niet vast
+- de codeheffing van V2 staat niet vast
+- de gegevens zijn consistent

@@ -39,7 +39,7 @@
       "attribute": "bewakingstoeslag"
     },
     {
-      "kind": "characteristicPresent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "ongetaxeerd"
     },

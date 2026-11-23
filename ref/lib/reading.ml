@@ -9,7 +9,8 @@
    displaced is read all the same, as at its turn, and keeps the status
    Displaced. A form outside its validity and any other form not at its turn
    (an initialisation whose target holds a value of the input or of another
-   writer, a 1:1 creation whose subject the input links) have no nodes. A
+   writer, or which a writer above it leaves open, a 1:1 creation whose
+   subject the input links) have no nodes. A
    reading deposits nothing and writes nothing: the evaluation is the
    session's own ([Eval]), watched through [Eval.observer], with every
    deposit dropped and every world it computes discarded.
@@ -329,15 +330,14 @@ let fresh numbered =
       { number; kind; site; own; scope; outcome = None; members = []; target = None })
     numbered
 
-(* The reading of [condition] on [self], and of the value where it holds for
-   the form itself: [compute] evaluates it, by default [value] as one value.
+(* The reading of [condition] on [self], and of the value where it holds:
+   [compute] evaluates it, by default [value] as one value.
    The status says what the form does with its target, as the session reads
    its three outcomes (ch. 1.5, [Eval.outcome_of]): it decides (Holds, a leeg
    value and a value that faults included), it stands that it fills nothing
-   (Fails), or it leaves its target open (Open): its condition is neither true
-   for itself nor false for another, or its value has an open read or is leeg
-   after a closure over one. A consistency ([assertion]) holds, reports
-   (Fails) or is open as its assertion is for itself. A form without a
+   (Fails), or it leaves its target open (Open): its condition is
+   undetermined, or its value has an open read. A consistency ([assertion])
+   holds, reports (Fails) or is open as its assertion is. A form without a
    condition, read where it is at its turn, decides as one whose condition
    holds. *)
 let read_on ?(assertion = false) ?compute ~form ~numbered env world (self : World.instance) ~condition ~value =
@@ -362,7 +362,7 @@ let read_on ?(assertion = false) ?compute ~form ~numbered env world (self : Worl
         | judged -> (
             let judged = Option.value judged ~default:(Eval.established true) in
             if assertion then
-              match judged.own with Established true -> Holds | Established false -> Fails | Undetermined -> Open
+              match judged.truth with Established true -> Holds | Established false -> Fails | Undetermined -> Open
             else
               match Eval.outcome_of judged evaluate with
               | Decides status -> status
@@ -465,7 +465,13 @@ let rules json env ~world =
           in
           let initialisation = r.rr_presentation = Some Initialisation in
           in_window env r.rr_validity ~form (of_type env world ~except ot) (fun self ->
-              if initialisation && (not temporal) && not (World.init_may_write world ~label:self.label ~attr:member)
+              (* an initialisation is not at its turn where its target holds a
+                 value of the input or of another writer, or where a writer
+                 above it, the input among them, leaves its target open (ch.
+                 1.5, 5.4) *)
+              if initialisation && (not temporal)
+                 && ((not (World.init_may_write world ~label:self.label ~attr:member))
+                    || World.open_beside_initialisation world ~form ~label:self.label ~attr:member)
               then [ without ~form Displaced self ]
               (* on a timeline target an initialisation that the writers and the
                  input leave no day is displaced (ch. 7.8 per day) *)
@@ -889,11 +895,9 @@ let defaults json env ~world0 ~world =
                       | [] -> `Gives_way
                       | x :: _ -> `Decides x
                   in
-                  (* what the chain [ds] does. Below the default that decides
-                     or settles every default is displaced; below one that is
-                     open only an initialisation default is at its turn, a
-                     closure over the stack (ch. 1.5, 7.3), and every other
-                     default is displaced *)
+                  (* what the chain [ds] does. Below the default that decides,
+                     settles or is open every default is displaced, the
+                     initialisation default among them (ch. 1.5, 7.3) *)
                   let rec decide ~env_at (ds : default list) =
                     let rec go i = function
                       | [] -> `Gives_way
@@ -919,26 +923,15 @@ let defaults json env ~world0 ~world =
                               settled
                           | `Open ->
                               read_displaced env d;
-                              closing (i + 1) rest
+                              displace ~env_at ~from:(i + 1) rest;
+                              `Open
                           | `Gives_way when has_content -> (
                               match own env d with
-                              | `Decides _ as decided ->
+                              | (`Decides _ | `Open) as stops ->
                                   displace ~env_at ~from:(i + 1) rest;
-                                  decided
-                              | `Open -> closing (i + 1) rest
+                                  stops
                               | `Gives_way -> go (i + 1) rest)
                           | `Gives_way -> go (i + 1) rest)
-                    and closing i = function
-                      | [] -> `Open
-                      | (d : default) :: rest when d.default_initialisation -> (
-                          match own (env_at i) d with
-                          | `Decides _ as decided ->
-                              displace ~env_at ~from:(i + 1) rest;
-                              decided
-                          | `Gives_way | `Open -> closing (i + 1) rest)
-                      | (d : default) :: rest ->
-                          displace_all (env_at i) d;
-                          closing (i + 1) rest
                     in
                     go 0 ds
                   in
@@ -1096,15 +1089,13 @@ let open_text (doc : document) (world : World.t) label (member : World.member) =
   | Some name -> "open " ^ name_of doc world label ^ " " ^ quote name
   | None -> failwith ("ref/lib/reading.ml: an open read on " ^ label ^ " of a member its document does not declare")
 
-(* The judgement at a node (ch. 5.12): the truth for the form itself;
-   [closure] after it where the truth for another form is undetermined; and
-   for an undetermined one the open read that left it so *)
+(* The judgement at a node (ch. 5.12): its truth, and for an undetermined
+   one the open read that left it so *)
 let judgement_text doc world (j : Eval.judgement) =
   match j with
-  | { own = Established b; other = Established _; _ } -> string_of_bool b
-  | { own = Established b; other = Undetermined; _ } -> string_of_bool b ^ " closure"
-  | { own = Undetermined; open_read = Some (label, member); _ } -> "undetermined " ^ open_text doc world label member
-  | { own = Undetermined; open_read = None; _ } ->
+  | { truth = Established b; _ } -> string_of_bool b
+  | { truth = Undetermined; open_read = Some (label, member) } -> "undetermined " ^ open_text doc world label member
+  | { truth = Undetermined; open_read = None } ->
       failwith "ref/lib/reading.ml: an undetermined judgement without the open read that left it so"
 
 (* The readings in the canonical text, sorted: per reading one line with the
@@ -1116,7 +1107,7 @@ let judgement_text doc world (j : Eval.judgement) =
    after the value or the established judgement of a node that reads a member
    over a path, [on] and the object the path reached, or [on none] where a
    link on it is absent; and the contributors of a fold over a set, sorted,
-   each with its value, its truth for the form itself or its fault and
+   each with its value, its truth or its fault and
    [reached] or [unreached]. An
    expression whose value is leeg, which a read of a leeg binder ended or
    which faulted carries the unit of its declaration or its annotation. *)
@@ -1177,9 +1168,9 @@ let lines env ~world (rs : reading list) =
     in
     let found =
       match (n.target, n.outcome) with
-      | Some target, Some (Got _ | Judged { own = Established _; _ } | Whole _ | Over _) ->
+      | Some target, Some (Got _ | Judged { truth = Established _; _ } | Whole _ | Over _) ->
           found ^ " on " ^ (match target with Some l -> name l | None -> "none")
-      | None, Some (Got _ | Judged { own = Established _; _ } | Whole _ | Over _) when navigates ->
+      | None, Some (Got _ | Judged { truth = Established _; _ } | Whole _ | Over _) when navigates ->
           failwith
             (Printf.sprintf "ref/lib/reading.ml: node %d (%s) of %s read a member over a path without walking it"
                n.number n.kind head)
@@ -1200,7 +1191,7 @@ let lines env ~world (rs : reading list) =
           | Member_value _ when counts -> canonical Value.Empty
           | Member_value v -> canonical v
           | Member_timeline tl -> timeline_text tl
-          | Member_verdict j -> truth_text j.own
+          | Member_verdict j -> truth_text j.truth
           | Member_fault code -> fault_text code)
         ^ if c.reached then " reached" else " unreached"
       in

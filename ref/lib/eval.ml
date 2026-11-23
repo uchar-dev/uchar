@@ -139,17 +139,15 @@ let rec filter_in_order p = function
    with one, a quantifier fold whose table the observer records also
    evaluates its matrix on the contributors the evaluation does not reach,
    for the observer alone (ch. 5.12). [cond] is handed the judgement of a
-   condition (ch. 1.5), which in a document without open members is one truth
-   for the form itself and for another. *)
+   condition (ch. 1.5), which in a document without open members is
+   established. *)
 
-(* The judgement of a condition (ch. 1.5): its truth for the form whose
-   condition it is ([own]) and for another form ([other]); see "open values and
-   the judgement of a condition" below. [open_read] is the read, as (object,
-   member), that left [own] undetermined; where [own] is established and
-   [other] undetermined, the read a closure closed over; None where [other] is
+(* The judgement of a condition (ch. 1.5): one value of Kleene's strong table;
+   see "open values and the judgement of a condition" below. [open_read] is
+   the read, as (object, member), that left it undetermined; None where it is
    established *)
 type truth = Established of bool | Undetermined
-type judgement = { own : truth; other : truth; open_read : (string * World.member) option }
+type judgement = { truth : truth; open_read : (string * World.member) option }
 
 type member_found =
   | Member_value of Value.t (* a value fold: what the member contributes; Empty for a count *)
@@ -399,8 +397,8 @@ let refuse_uncarried (doc : document) =
     (* [lets]: the binders of the Lets around, each with whether the place is,
        within the body of its Let, in a member of a composite with more than one
        or in the filter or the matrix of a quantifier fold: a member read past
-       one that does not stand for another is read provisionally, and no binder
-       is ([judge_cond ~past]); and the barrier of a leeg binder in the first
+       an undetermined one is read provisionally, and no binder is
+       ([judge_cond ~past]); and the barrier of a leeg binder in the first
        member ends the Let, where with the binder open another member can
        decide *)
     let beside_others lets = SMap.map (fun _ -> true) lets in
@@ -1698,35 +1696,23 @@ let reversed : Ir_v0.Ast.compare_op -> Ir_v0.Ast.compare_op = function
    document nothing below meets one, and the evaluation is the one of ch.
    1.2-1.4. A read of an open member raises World.Open_read, and that
    breaks the evaluation off up to the boundary of one judgement or one
-   value ([open_read_boundary]): what reads an open value has no value and no verdict of
-   its own, and what it deposited up to there is dropped. So no operator
-   knows of open values.
+   value ([open_read_boundary]): what reads an open value has no value and no
+   verdict of its own, and what it deposited up to there is dropped. So no
+   operator knows of open values: a test on leeg or gevuld, a filled-value
+   count and a fold filter read an open value as every other node does.
 
-   The judgement of a condition is a pair: its truth for the form whose
-   condition it is ([own]), and for another form that reads the same
-   condition as the opposite of its own ([other]). The two differ in one
-   place only, a test that says an open value is leeg (ch. 1.5): for the
-   form that wrote it that is a closure, true, and for another form it is
-   undetermined.
-
-   So [other] never knows more than [own]: where [other] is established,
-   [own] is established with the same truth. A closure makes [own]
-   established and leaves [other] undetermined, and [count_verdict] is
-   monotone in what is known, so the composite keeps it. Of the nine pairs
-   five occur: both true, both false, both undetermined, and [own] true or
-   false beside an undetermined [other]. An undetermined [own] carries the
-   open read that left it so ([open_read]): an atomic condition the member it
-   read open; a composite and a quantifier fold that of their first member
-   that is undetermined for the form itself. A closure carries the read it
-   closed over, and a composite or a quantifier fold whose [other] alone is
-   undetermined that of its first member undetermined for another. *)
+   The judgement of a condition is one value of Kleene's strong table:
+   established true, established false, or undetermined. An undetermined
+   judgement carries the open read that left it so ([open_read]): an atomic
+   condition the member it read open; a composite and a quantifier fold that
+   of their first member that is undetermined. *)
 
 (* the judgement of a condition read on values that all stand *)
-let established b = { own = Established b; other = Established b; open_read = None }
+let established b = { truth = Established b; open_read = None }
 
 (* the judgement of a condition broken off by the open read of [member] on
    the object [label] *)
-let undetermined (label, member) = { own = Undetermined; other = Undetermined; open_read = Some (label, member) }
+let undetermined (label, member) = { truth = Undetermined; open_read = Some (label, member) }
 
 (* The verdict of a composite over [n] members (ch. 5.10) or of a count of
    members, [hits] of them established true and [fails] established false,
@@ -1749,125 +1735,63 @@ let count_verdict (q : quantifier_kind) ~cutoff ~n ~hits ~fails : truth =
       else if hits >= k && fails >= n - k then Established true
       else Undetermined
 
-(* The judgement of a count of members, [own] and [other] the (hits, fails)
-   of each walk, carrying [first] — the open read of its first member
-   undetermined for the form itself — where it is undetermined, and
-   [first_other] — that of its first member undetermined for another — where
-   only its judgement for another is *)
-let judged ~verdict ~own ~other ~first ~first_other =
-  let own = verdict ~hits:(fst own) ~fails:(snd own) and other = verdict ~hits:(fst other) ~fails:(snd other) in
-  { own; other; open_read = (match (own, other) with Undetermined, _ -> first | _, Undetermined -> first_other | _ -> None) }
+(* The judgement of a count of members, [counts] the (hits, fails) read so
+   far, carrying [first] — the open read of its first undetermined member —
+   where it is undetermined *)
+let judged ~verdict ~counts ~first =
+  let truth = verdict ~hits:(fst counts) ~fails:(snd counts) in
+  { truth; open_read = (match truth with Undetermined -> first | Established _ -> None) }
 
-(* A closure inside one judgement or one value: what the author wrote for an
-   absent value — a test on leeg or gevuld, a filled-value count, a fold filter
-   that tests on gevuld — applied to a value that is open. For the form itself
-   the outcome stands; for another form it does not, since another input could
-   fill the value. The node that applies it tells the innermost boundary under
-   way ([signal_closure]) with the read it closed over, and the boundary hands
-   the first such read back beside the value, so the expression keeps one
-   value and is evaluated once. *)
-let boundaries : (string * World.member) option ref list ref = ref []
-
-(* how many closures over an open value the session applied: a closure inside a
-   value or a judgement ([signal_closure]), an initialisation that writes a
-   target another writer leaves open, and the initialisation of a stack below
-   a default that is open (ch. 1.5). [over_subjects] tells each evaluation's
-   outcome whether it applied one *)
-let closures_applied = ref 0
-
-let signal_closure read =
-  incr closures_applied;
-  match !boundaries with
-  | b :: _ -> if !b = None then b := Some read
-  | [] ->
-      failwith
-        "ref/lib/eval.ml: a closure over an open value outside the boundary of one judgement or one value, where \
-         no form would learn that its outcome does not stand for another form"
-
-(* [f] evaluated as one judgement or one value: [Ok (x, closed)], its result
-   and, where a closure was applied to an open value inside it, the read the
-   first one closed over, with the deposits it made passed on to [err] in
-   their order; or [Error (label, member)] where it read [member] of [label]
-   open, its deposits dropped. Any other exception — a fault, the barrier of a
-   Let (ch. 10.6) — passes on with the deposits made before it, as it does
-   without the boundary. The barrier of a Let passes the closure on as well: it
-   is the value of that Let, leeg, and its evaluation applied the closure. A
-   fault is no value and no judgement, so no outcome rests on what its
-   evaluation closed over; passed on, the closure of a member that a fault
-   leaves undetermined ([judge_cond ~past]) would count for the value around a
-   composite that another member decides *)
+(* [f] evaluated as one judgement or one value: [Ok x], its result, with the
+   deposits it made passed on to [err] in their order; or [Error (label,
+   member)] where it read [member] of [label] open, its deposits dropped. Any
+   other exception — a fault, the barrier of a Let (ch. 10.6) — passes on with
+   the deposits made before it, as it does without the boundary *)
 let open_read_boundary ~err f =
   let deposits = ref [] in
-  let closed = ref None in
-  let outer = !boundaries in
-  boundaries := closed :: outer;
   let pass () = List.iter err (List.rev !deposits) in
   match f (fun d -> deposits := d :: !deposits) with
   | x ->
-      boundaries := outer;
       pass ();
-      Ok (x, !closed)
-  | exception World.Open_read { label; member } ->
-      boundaries := outer;
-      Error (label, member)
+      Ok x
+  | exception World.Open_read { label; member } -> Error (label, member)
   | exception e ->
       let trace = Printexc.get_raw_backtrace () in
-      boundaries := outer;
       pass ();
-      (match e with Let_barrier _ -> Option.iter signal_closure !closed | _ -> ());
       Printexc.raise_with_backtrace e trace
 
-(* The closure over the value [f] evaluates: where [f] reads an open value the
-   value is leeg for the form itself, and the enclosing boundary is told; what
-   [f] deposited before the open read is dropped. A closure inside [f] is
-   passed on *)
-let closure_over_open ~err f =
-  match open_read_boundary ~err f with
-  | Ok (v, closed) ->
-      Option.iter signal_closure closed;
-      v
-  | Error read ->
-      signal_closure read;
-      Value.Empty
-
 (* The truth of the judgement [j] of a condition inside a value — the filter
-   of a fold, the condition of an IfThenElse — for that value. Undetermined
-   for the form itself, the value has the open read that left [j] so;
-   established for the form itself and undetermined for another, a closure
-   decided it, and the boundary is told *)
+   of a fold, the condition of an IfThenElse — for that value. Undetermined,
+   the value has the open read that left [j] so *)
 let value_verdict (j : judgement) =
   match j with
-  | { own = Established b; other = Established _; _ } -> b
-  | { own = Established b; other = Undetermined; open_read = Some read } ->
-      signal_closure read;
-      b
-  | { own = Undetermined; open_read = Some (label, member); _ } -> raise (World.Open_read { label; member })
-  | { open_read = None; _ } ->
+  | { truth = Established b; _ } -> b
+  | { truth = Undetermined; open_read = Some (label, member) } -> raise (World.Open_read { label; member })
+  | { truth = Undetermined; open_read = None } ->
       failwith "ref/lib/eval.ml: an undetermined judgement without the open read that left it so"
 
 (* The three outcomes of a writer (ch. 1.5) — a rule, a default of a stack, a
    creation — kept in this one place. It decides, with what it writes; it fills
-   nothing, where it stands for another form that its condition is false or
-   that its value is settled leeg (a default gives way); or it leaves open what
-   it writes. [decide] is asked only where the condition is established true
-   for the writer itself, and gives the outcome of its value *)
+   nothing, where its condition is established false or its value is settled
+   leeg (a default gives way); or it leaves open what it writes. [decide] is
+   asked only where the condition is established true, and gives the outcome
+   of its value *)
 type 'a writer_outcome = Decides of 'a | Fills_nothing | Leaves_open
 
 let outcome_of (j : judgement) decide =
-  match j with
-  | { other = Established false; _ } -> Fills_nothing
-  | { own = Established false | Undetermined; _ } -> Leaves_open
-  | { own = Established true; _ } -> decide ()
+  match j.truth with
+  | Established false -> Fills_nothing
+  | Undetermined -> Leaves_open
+  | Established true -> decide ()
 
 (* The outcome of the value [f] evaluates as one value: it decides with a value
    that is filled, fills nothing with a settled leeg one, and leaves open where
-   it reads an open value or is leeg after a closure over one, since for another
-   form that leeg does not stand *)
+   it reads an open value *)
 let value_outcome ~err f =
   match open_read_boundary ~err f with
-  | Error _ | Ok (Value.Empty, Some _) -> Leaves_open
-  | Ok (Value.Empty, None) -> Fills_nothing
-  | Ok (v, _) -> Decides v
+  | Error _ -> Leaves_open
+  | Ok Value.Empty -> Fills_nothing
+  | Ok v -> Decides v
 
 let map_outcome f = function Decides x -> Decides (f x) | Fills_nothing -> Fills_nothing | Leaves_open -> Leaves_open
 
@@ -1876,16 +1800,15 @@ let map_outcome f = function Decides x -> Decides (f x) | Fills_nothing -> Fills
 let left_open ~label member ((w : World.t), changed) = (World.leave_open w ~label member, changed)
 
 (* The verdict of a condition at a position that reads one truth value. In a
-   document without open input every judgement is two-valued and equal for
-   both walks. A position whose form the strict reading does not carry — a
-   filter of a list, a day kind, a condition read per period — is
-   refused in a document with inferFromEmpty false before anything is
-   evaluated ([refuse_uncarried]), so it meets no other judgement; meeting one
-   is a fault of ref. *)
+   document without open input every judgement is established. A position
+   whose form the strict reading does not carry — a filter of a list, a day
+   kind, a condition read per period — is refused in a document with
+   inferFromEmpty false before anything is evaluated ([refuse_uncarried]), so
+   it meets no other judgement; meeting one is a fault of ref. *)
 let two_valued (c : condition_expr) (j : judgement) =
-  match j with
-  | { own = Established b; other = Established b'; _ } when b = b' -> b
-  | _ ->
+  match j.truth with
+  | Established b -> b
+  | Undetermined ->
       failwith
         (Printf.sprintf
            "ref/lib/eval.ml: %s has no two-valued verdict where an open value is read, at a position the strict \
@@ -2362,9 +2285,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
          NOTHING: a body that never reads the binder never forces [memo] — no
          leeg, no fault, no channel fact — and its outcome IS the Let's. The
          value is computed as one value ([open_read_boundary]): a computation
-         that reads an open value deposits nothing, and every read of the
-         binder tells its own boundary the closure the computation applied,
-         since the value read there rests on it (ch. 1.5) *)
+         that reads an open value deposits nothing (ch. 1.5) *)
       incr let_evaluations;
       let mine = !let_evaluations in
       let memo =
@@ -2373,11 +2294,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
           | Ok computed -> computed
           | Error (label, member) -> raise (World.Open_read { label; member }))
       in
-      let read () =
-        let v, closed = Lazy.force memo in
-        Option.iter signal_closure closed;
-        match v with Value.Empty -> raise (Let_barrier mine) | v -> v
-      in
+      let read () = match Lazy.force memo with Value.Empty -> raise (Let_barrier mine) | v -> v in
       let locals = SMap.add (norm binder) (Later read) env.locals in
       let btypes = SMap.add (norm binder) (bound_of env value, static_type env value) env.btypes in
       (try eval_expr { env with locals; btypes } world self ~err body with Let_barrier id when id = mine -> Value.Empty)
@@ -2471,8 +2388,7 @@ and eval_expr_node env world (self : World.instance) ~err (e : expr) : Value.t =
   | If_then_else { condition; then_; else_; _ } ->
       (* ch. 10.2: evaluate the condition under the ordinary comparison
          discipline, then exactly the chosen branch — strict, no coalesce. An
-         undetermined condition leaves the value open, and one a closure
-         decided tells the boundary (ch. 1.5) *)
+         undetermined condition leaves the value open (ch. 1.5) *)
       if value_verdict (judge_cond env world self ~err condition)
       then eval_expr env world self ~err then_
       else eval_expr env world self ~err else_
@@ -2875,10 +2791,6 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
       | None -> true
       | Some c -> value_verdict (judge_cond (at_member env self element_object_type) world i ~err c)
     in
-    (* the value of a member: the filled-value count is a closure, which counts
-       an open value as leeg for the form itself (ch. 1.5); every other fold
-       has an open read there *)
-    let member_value read = if kind = Filled_count then closure_over_open ~err (fun _ -> read ()) else read () in
     (* D8: the single argument of an instance fold that carries a range is
        its SET source. Under `count` it names the counted role and the count
        folds the reached INSTANCES; under every value fold and the filled
@@ -2936,7 +2848,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
            has no defined moment to rank, so it is refused rather than
            reading a value the timeline does not have at one instant. *)
         if not (Ir_v0.Checks.attr_temporal el_decl name) then
-          `Values (contributing_values members (map_in_order (fun i -> member_value (fun () -> World.read_attr world i name)) members))
+          `Values (contributing_values members (map_in_order (fun i -> World.read_attr world i name) members))
         else begin
           (match kind with
           | Sum_function | Total -> ()
@@ -3131,7 +3043,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
         in
         `Values
           (contributing_values members
-             (map_in_order (fun i -> member_value (fun () -> World.read_attr world i member)) members))
+             (map_in_order (fun i -> World.read_attr world i member) members))
     (* WF-037, the fold-source arm, in the verifier's sentence: the one
        argument of an aggregation that carries an elementType is an
        AttributeReference, and any other node there is refused by name. A
@@ -3367,12 +3279,12 @@ and eval_cond env world (self : World.instance) ~err (c : condition_expr) : bool
 
 (* The judgement of [c] (ch. 1.5), which the observer of a reading (ch. 5.12)
    is handed as it is. [past]: [c] is a member of a composite or the matrix of
-   a quantifier fold read while a member or a filter read before it does not
-   stand for another, the open read of the first such. Whether the ordinary
+   a quantifier fold read while a member or a filter read before it is
+   undetermined, the open read of the first such. Whether the ordinary
    reading reaches [c] then does not stand, so what [c] deposits is dropped
-   and a fault leaves it undetermined by that read, for the form itself and
-   for another; its truth counts as any member's. No binder of a Let around
-   [c] is read there (let-in-composite, [refuse_uncarried]) *)
+   and a fault leaves it undetermined by that read; its truth counts as any
+   member's. No binder of a Let around [c] is read there (let-in-composite,
+   [refuse_uncarried]) *)
 and judge_cond ?past env world (self : World.instance) ~err (c : condition_expr) : judgement =
   let node () =
     match past with
@@ -3383,12 +3295,10 @@ and judge_cond ?past env world (self : World.instance) ~err (c : condition_expr)
 
 (* An atomic condition: [verdict] read on values that all stand, undetermined
    where it reads an open value, its deposits dropped then
-   ([open_read_boundary]); where a closure was applied to an open value inside
-   it, established for the form itself and undetermined for another *)
+   ([open_read_boundary]) *)
 and atomic ~err verdict : judgement =
   match open_read_boundary ~err verdict with
-  | Ok (b, None) -> established b
-  | Ok (b, (Some _ as closed)) -> { own = Established b; other = Undetermined; open_read = closed }
+  | Ok b -> established b
   | Error read -> undetermined read
 
 and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) : judgement =
@@ -3477,14 +3387,12 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
       let verdict = Timeline.whole_period_empty_filled g ~populated ~tl in
       established (if gp.gp_negated then not verdict else verdict)
   (* the negated leeg test is the gevuld test and the negated gevuld test the
-     leeg test (ch. 1.2). Over an open value the test is a closure: the value
-     is leeg for the form that wrote it, so the leeg test is true and the
-     gevuld test false for it, and for another form both are undetermined
-     (ch. 1.5) *)
+     leeg test (ch. 1.2). Over an open value the test is undetermined, as every
+     atomic condition that reads one is (ch. 1.5) *)
   | Predicate { variety = (Empty_predicate | Filled) as variety; operand; negation; _ } ->
       let says_empty = (variety = Empty_predicate) <> negation in
       atomic ~err (fun err ->
-          let v = closure_over_open ~err (fun err -> eval_expr env world self ~err (req "Predicate.operand" operand)) in
+          let v = eval_expr env world self ~err (req "Predicate.operand" operand) in
           (v = Value.Empty) = says_empty)
   | Predicate { variety = Day_kind_predicate; day_kind; operand; negation; _ }
     when SMap.mem day_kind_binder env.locals ->
@@ -3599,13 +3507,13 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
          check is undetermined (ch. 1.5) *)
       match open_read_boundary ~err (fun _ -> role_linked_instances world self ~fact_type:rb.rb_fact_type role) with
       | Error read -> undetermined read
-      | Ok ([], _) -> (
+      | Ok [] -> (
           object_reached (Navigated_check c) None;
           match time_period with
           | Some gp -> established (whole_period_characteristic env world ~ot:reached ~inst:None ~characteristic:k ~negation gp)
           (* over an absent link the check stands, false (ch. 1.5) *)
           | None -> established false)
-      | Ok ([ target ], _) -> (
+      | Ok [ target ] -> (
           object_reached (Navigated_check c) (Some target.label);
           match time_period with
           | Some gp ->
@@ -3638,15 +3546,13 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
          no longer change (maintainer decision 2026-09-07). A threshold that
          already covers the whole member list therefore settles on the EMPTY
          prefix and reads nothing at all — vacuously true for at-most at d >=
-         n, vacuously false for at-least and exactly above n. Each walk counts
-         its own verdicts, and the read goes on until the judgement for
-         another form is established, which establishes the form's own as
-         well, or every member is read: an undetermined member does not stop
-         it, and a member after it can still decide. Whether ch. 5.10 would
-         reach a member read past one undetermined for another does not
-         stand, so that member is read provisionally ([judge_cond ~past]):
-         its truth counts, what it deposits and a fault of it do not (ch.
-         1.5). *)
+         n, vacuously false for at-least and exactly above n. The read goes
+         on until the judgement is established or every member is read: an
+         undetermined member does not stop it, and a member after it can
+         still decide. Whether ch. 5.10 would reach a member read past an
+         undetermined one does not stand, so that member is read
+         provisionally ([judge_cond ~past]): its truth counts, what it
+         deposits and a fault of it do not (ch. 1.5). *)
       let n = List.length components in
       let verdict = count_verdict quantifier_kind ~cutoff ~n in
       let count (hits, fails) = function
@@ -3654,20 +3560,18 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
         | Established false -> (hits, fails + 1)
         | Undetermined -> (hits, fails)
       in
-      (* [first]: the open read of the first member undetermined for the form
-         itself, which the composite carries where it is undetermined;
-         [first_other]: that of the first member undetermined for another *)
-      let rec read own other first first_other parts =
-        let j = judged ~verdict ~own ~other ~first ~first_other in
+      (* [first]: the open read of the first undetermined member, which the
+         composite carries where it is undetermined *)
+      let rec read counts first parts =
+        let j = judged ~verdict ~counts ~first in
         match (j, parts) with
-        | { other = Established _; _ }, _ | _, [] -> j
+        | { truth = Established _; _ }, _ | _, [] -> j
         | _, c :: rest ->
-            let part = judge_cond ?past:first_other env world self ~err c in
-            let first = if first = None && part.own = Undetermined then part.open_read else first in
-            let first_other = if first_other = None && part.other = Undetermined then part.open_read else first_other in
-            read (count own part.own) (count other part.other) first first_other rest
+            let part = judge_cond ?past:first env world self ~err c in
+            let first = if first = None && part.truth = Undetermined then part.open_read else first in
+            read (count counts part.truth) first rest
       in
-      read (0, 0) (0, 0) None None components
+      read (0, 0) None components
   | Rule_status_check { rule_def; _ } ->
       established (World.channel_has world ~rule:(req "Regelversie.regel" rule_def))
   | Role_membership { fact_type; role; counterpart_type; negated; _ } ->
@@ -3729,12 +3633,12 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
      the subselection says which members the sentence is about, and that
      question is not short-circuited by the answer. The MATRIX then
      short-circuits, exactly as a composite condition does (ch. 5.10): the
-     read stops at the first member after which the fold's judgement for
-     another form stands, so a member never reached produces no fault and no
-     §9.5 channel fact.
+     read stops at the first member after which the fold's judgement
+     stands, so a member never reached produces no fault and no §9.5 channel
+     fact.
 
      Each member is one member of a composite over the RANGE, filter and
-     matrix judged per walk (ch. 1.5): for `all` (and `the`) it holds where
+     matrix each a judgement (ch. 1.5): for `all` (and `the`) it holds where
      its filter is false or its matrix true, for the other quantifiers where
      both are true, by Kleene's strong table, and the fold counts the members
      with [count_verdict] as the composite does. A member whose filter is
@@ -3759,7 +3663,7 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
          fold is undetermined (ch. 1.5) *)
       match open_read_boundary ~err (fun _ -> fold_members ?binding:kv_source_role ?path:kv_source_path env world self ~element:el) with
       | Error read -> undetermined read
-      | Ok (range, _) ->
+      | Ok range ->
       let filters =
         map_in_order
           (fun (i : World.instance) ->
@@ -3784,10 +3688,10 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
         | Established false -> (hits, fails + 1)
         | Undetermined -> (hits, fails)
       in
-      (* a member whose filter is false in a walk: true for `all`, false for the others *)
-      let excluded walk =
+      (* a member whose filter is false: true for `all`, false for the others *)
+      let excluded =
         List.fold_left
-          (fun acc (_, f) -> if walk f = Established false then count acc (Established implication) else acc)
+          (fun acc (_, (f : judgement)) -> if f.truth = Established false then count acc (Established implication) else acc)
           (0, 0) filters
       in
       (* ch. 5.12: the reading records the table of ch. 3.9a over every
@@ -3837,25 +3741,24 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
                 contribute ~reached:false m.label found)
               parts
       in
-      (* the filters are read before every matrix: where one of them does not
-         stand for another, whether ch. 3.9a reads a matrix does not stand
+      (* the filters are read before every matrix: where one of them is
+         undetermined, whether ch. 3.9a reads a matrix does not stand
          either — its own filter may be false, a later one may stop the read
          by being false — so each matrix is read provisionally, as a member
-         past one undetermined for another is ([judge_cond ~past], ch. 1.5) *)
-      let filter_past = List.find_map (fun (_, (f : judgement)) -> if f.other = Undetermined then f.open_read else None) filters in
-      (* [first]: the open read of the first member undetermined for the form
-         itself — of its filter where that is undetermined, else of its
-         matrix — which the fold carries where it is undetermined; [first_other]
-         the same for another *)
-      let rec read own other first first_other (parts : (World.instance * judgement) list) =
-        let j = judged ~verdict ~own ~other ~first ~first_other in
+         past an undetermined one is ([judge_cond ~past], ch. 1.5) *)
+      let filter_past = List.find_map (fun (_, (f : judgement)) -> if f.truth = Undetermined then f.open_read else None) filters in
+      (* [first]: the open read of the first undetermined member — of its
+         filter where that is undetermined, else of its matrix — which the
+         fold carries where it is undetermined *)
+      let rec read counts first (parts : (World.instance * judgement) list) =
+        let j = judged ~verdict ~counts ~first in
         match (j, parts) with
-        | { other = Established _; _ }, _ ->
+        | { truth = Established _; _ }, _ ->
             unreached (List.map fst parts);
             j
         | _, [] -> j
         | _, (m, f) :: rest ->
-            let past = if filter_past <> None then filter_past else first_other in
+            let past = if filter_past <> None then filter_past else first in
             let t =
               try judge_cond ?past (at_member env self (Some el)) world m ~err test
               with Value.Fault { code; _ } as fault ->
@@ -3864,19 +3767,15 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
                 raise fault
             in
             (match !observer with None -> () | Some _ -> contribute m.label (Member_verdict t));
-            let step counts fw tw = if fw = Established false then counts else count counts (member fw tw) in
-            let first_of walk earlier =
-              if earlier <> None || walk f = Established false || member (walk f) (walk t) <> Undetermined then earlier
-              else if walk f = Undetermined then f.open_read
+            let truth = member f.truth t.truth in
+            let first =
+              if first <> None || truth <> Undetermined then first
+              else if f.truth = Undetermined then f.open_read
               else t.open_read
             in
-            read (step own f.own t.own) (step other f.other t.other)
-              (first_of (fun j -> j.own) first)
-              (first_of (fun j -> j.other) first_other)
-              rest
+            read (count counts truth) first rest
       in
-      read (excluded (fun j -> j.own)) (excluded (fun j -> j.other)) None None
-        (List.filter (fun (_, (f : judgement)) -> f.other <> Established false) filters))
+      read excluded None (List.filter (fun (_, (f : judgement)) -> f.truth <> Established false) filters))
   | Time_window { starting_at; up_to; to_inclusive; _ } ->
       (* ch. 3.10, the SCALAR target's evaluation-date gate — the chapter's
          first case, in its own six clauses: vanaf inclusive, tot exclusive,
@@ -3991,7 +3890,6 @@ let over_subjects ?(exact = false) ?(except = []) ?read ?(only = fun _ -> true) 
          reader that read it before must evaluate again (ch. 1.5) *)
       let opened_before = World.opened_by w ~form ~at:self.label in
       let reopened w' = World.opened_by w' ~form ~at:self.label <> opened_before in
-      let closures_before = !closures_applied in
       match body w self err with
       | w', ch ->
           let w' =
@@ -3999,7 +3897,7 @@ let over_subjects ?(exact = false) ?(except = []) ?read ?(only = fun _ -> true) 
               (fun w (d : Value.deposit) -> World.insert_error w ~rule ~subject:self.label ~code:d.code)
               w' !pending
           in
-          let w' = World.close_evaluation ~closure:(!closures_applied > closures_before) w' ~form ~at:self.label in
+          let w' = World.close_evaluation w' ~form ~at:self.label in
           (w', changed || ch || reopened w')
       | exception Value.Fault { code; params; text } ->
           let w' =
@@ -4854,27 +4752,25 @@ let run_rule ?only env world (r : resolved_rule) =
               | Some Initialisation when temporal_target -> World.release_timeline_init w ~form ~label:self.label ~attr
               | _ -> World.release w ~form ~label:self.label ~attr:member
             in
-            (* an initialisation whose guard blocks it does not decide, so neither
-               its condition nor its value is evaluated (ch. 5.4, 7.1, 7.3); on a
-               timeline target the guard is read per day *)
+            (* an initialisation is the lowest writer of its target: it is at its
+               turn where its target holds no value but its own and it stands of
+               every writer above it, the input among them, that it fills
+               nothing (ch. 1.5, 5.4). One that is not at its turn does not
+               decide, so neither its condition nor its value is evaluated (ch.
+               5.4, 7.1, 7.3); on a timeline target the guard is read per day *)
             let blocked =
               r.rr_presentation = Some Initialisation
               && (not temporal_target)
-              && not (World.init_may_write w ~label:self.label ~attr:member)
+              && ((not (World.init_may_write w ~label:self.label ~attr:member))
+                 || World.open_beside_initialisation w ~form ~label:self.label ~attr:member)
             in
             (* the rule does not decide on [self]: what it wrote is given back,
                and where it does not stand that it fills nothing its target is
                open (ch. 1.5) *)
             let undecided () = left_open ~label:self.label (written_member r member) (release ()) in
-            (* the rule decides where its condition is established true for
-               itself; where it is established false for another form, it
-               stands that the rule fills nothing (ch. 1.5) *)
-            (* an initialisation at its turn on a target another writer
-               leaves open closes over that writer (ch. 1.5): whatever it comes
-               to rests on the closure *)
-            if r.rr_presentation = Some Initialisation && (not blocked)
-               && World.open_beside_initialisation w ~label:self.label ~attr:member
-            then incr closures_applied;
+            (* the rule decides where its condition is established true; where it
+               is established false, it stands that the rule fills nothing (ch.
+               1.5) *)
             let judged =
               if blocked then established false
               else
@@ -4956,7 +4852,7 @@ let run_rule ?only env world (r : resolved_rule) =
               | None -> Value.fault "rule %S has no kind" (rule_name r))
             with
             | Decides written -> written
-            (* established false for another form, or a settled leeg value *)
+            (* established false, or a settled leeg value *)
             | Fills_nothing -> release ()
             | Leaves_open -> undecided ())
     | _ -> Value.faultc ~params:[ ("rule", (rule_name r)) ] "REF-012" "rule %S: unsupported target shape" (rule_name r)
@@ -5124,7 +5020,7 @@ let run_fact_creation env ~read world (fc : resolved_fact_creation) =
             open_read_boundary ~err (fun _ ->
                 hop (List.fold_left (fun insts (t : path_step) -> hop insts t.ts_role) [ self ] fc.intermediates) fc.join_role)
           with
-          | Ok (targets, _) -> Some targets
+          | Ok targets -> Some targets
           | Error _ -> None
         in
         (* the relation this creation could link [self] to the [targets] over
@@ -5342,15 +5238,13 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
                            an absent atom is both. The boolean constant above
                            stays the v0 form; a truly non-boolean value (a
                            number, a text) still faults fast. A value with an
-                           open read, or false or leeg after a closure over
-                           one, leaves the characteristic open on the object
-                           made (ch. 1.5) *)
+                           open read leaves the characteristic open on the
+                           object made (ch. 1.5) *)
                         match open_read_boundary ~err (fun err -> eval_expr env read self ~err e) with
-                        | Error _ | Ok ((Value.Bool false | Value.Empty), Some _) ->
-                            World.leave_open w ~label (World.characteristic m)
-                        | Ok (Value.Bool true, _) -> fst (World.set_char w ~label ~char:m)
-                        | Ok ((Value.Bool false | Value.Empty), None) -> w
-                        | Ok (v, _) ->
+                        | Error _ -> World.leave_open w ~label (World.characteristic m)
+                        | Ok (Value.Bool true) -> fst (World.set_char w ~label ~char:m)
+                        | Ok (Value.Bool false | Value.Empty) -> w
+                        | Ok v ->
                             Value.fault
                               "characteristic assignment of %S is not boolean: %s"
                               m (Value.to_string v))
@@ -5742,7 +5636,7 @@ let run_defaults_group ?only env world ~world0 ~owner
                   let after = function
                     | Decides d -> Decided d
                     | Fills_nothing -> go (i + 1) rest
-                    | Leaves_open -> closing (i + 1) rest
+                    | Leaves_open -> Left_open
                   in
                   let fall_through () =
                     (* a form-a default falls back to its own decision; a
@@ -5767,20 +5661,8 @@ let run_defaults_group ?only env world ~world0 ~owner
                       match reconcile ~path:sub_path results with
                       | (Conflict _ | Decided _) as d -> d
                       | Undecided -> fall_through ()
-                      | Left_open -> closing (i + 1) rest)
+                      | Left_open -> Left_open)
                   | None -> after (own_outcome env r))
-            (* below a default that is open only an initialisation decides: it
-               is a closure over the stack (ch. 1.5, 7.3); no other default is
-               evaluated, and the chain is open where none decides *)
-            and closing i = function
-              | [] -> Left_open
-              | (r : default) :: rest when r.default_initialisation -> (
-                  match own_outcome (env_at i) r with
-                  | Decides d ->
-                      incr closures_applied;
-                      Decided d
-                  | Fills_nothing | Leaves_open -> closing (i + 1) rest)
-              | _ :: rest -> closing (i + 1) rest
             in
             go 0 defaults
           in
@@ -5827,9 +5709,9 @@ let run_consistency env world (c : resolved_consistency) =
     let world, _ =
       over_subjects env world ~form:c.cons_pointer ~otype:(req "ConsistencyVersion.subject" c.cons_subject) ~rule:name
         (fun w self err ->
-          (* it reports where its assertion is established false for itself
-             (ch. 1.5), not where the assertion reads an open value *)
-          match (judge_cond env w self ~err (req "ConsistencyVersion.assertion" c.assertion)).own with
+          (* it reports where its assertion is established false (ch. 1.5),
+             not where the assertion is undetermined *)
+          match (judge_cond env w self ~err (req "ConsistencyVersion.assertion" c.assertion)).truth with
           | Established false -> (World.insert_error w ~rule:name ~subject:self.label ~code:(Some "EF-025"), false)
           | Established true | Undetermined -> (w, false))
     in
@@ -6315,10 +6197,12 @@ let instance_depth env world0 (o : Ir_v0.Checks.instance_order) =
 (* The open members of the input world: in a document with inferFromEmpty
    false, every input member the case gives no value and whose declaration does
    not say that its input is complete (complete, IR-SPEC ch. 2.2;
-   RUNTIME-SEMANTICS ch. 1.5). A member is input on an object where no rule and
-   no defaults group writes it on the object's type; a member one of them
-   writes there follows its writers, also where the case gives it no value, and
-   its field changes nothing there. [closed_inputs] treats every input member as
+   RUNTIME-SEMANTICS ch. 1.5). A member is input on an object where no rule but
+   an initialisation and no defaults group writes it on the object's type: an
+   initialisation is its lowest writer, below the input, so a member it alone
+   writes is an input member with a default value. A member a rule or a
+   defaults group writes there follows its writers, also where the case gives
+   it no value, and its field changes nothing there. [closed_inputs] treats every input member as
    complete (runner --closed-inputs, the measurement of preservation with
    complete knowledge). The one place the property is read for the evaluation:
    a document without it has no open member, and nothing in the evaluation
@@ -6329,6 +6213,8 @@ let open_inputs env ~closed_inputs (world : World.t) =
     let written ~otype (m : World.member) =
       List.exists
         (fun (r : resolved_rule) ->
+          r.rr_presentation <> Some Initialisation
+          &&
           match target_member env r.objective with
           | Some (ot, a, _) -> written_member r a = m && isa env otype ot
           | None -> false)

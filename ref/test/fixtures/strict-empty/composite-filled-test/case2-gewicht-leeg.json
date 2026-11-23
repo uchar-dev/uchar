@@ -22,12 +22,9 @@
   },
   "expected": [
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "V1",
-      "attribute": "getuigentoeslag",
-      "value": {
-        "number": "7"
-      }
+      "attribute": "getuigentoeslag"
     },
     {
       "kind": "attributeOpen",
@@ -35,12 +32,9 @@
       "attribute": "schadetoeslag"
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "V1",
-      "attribute": "vindloon",
-      "value": {
-        "number": "9"
-      }
+      "attribute": "vindloon"
     },
     {
       "kind": "consistent"

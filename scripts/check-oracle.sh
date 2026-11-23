@@ -21,9 +21,9 @@
 #      member complete (`runner --closed-inputs`), plays its own cases — see
 #      below;
 #   6. monotonicity (the same section): per golden that check 5 carries or
-#      that carries the property itself, per case and per input the case
-#      gives, the end state without that input keeps every outcome of the end
-#      state with it, but where a closure decided — see below.
+#      that carries the property itself, per case and per open input member
+#      the case gives, the end state without that input keeps every outcome
+#      of the end state with it, without exception — see below.
 #
 # With explicit arguments (ir.json case.json) it replays just that pair.
 set -u
@@ -70,14 +70,13 @@ EXPECTED_MIN_PRESERVED_CASES=782    # 2026-11-22: measured 782 (check 5: their c
 # strict reading from the ordinary one, and the gate fails.
 PRESERVATION_MUTANT=jutterswet-leeg-deeltal
 
-EXPECTED_MIN_MONOTONE_RUNS=2226     # 2026-11-22: measured 2226 (check 6: runs without one input compared with the case; 2276 before that golden's fifty)
-EXPECTED_MIN_MONOTONE_CLOSURES=396  # 2026-11-23: measured 396, lowered with the card one-empty, which drops the goldens of the absence markers (401 on 2026-11-22; check 6: runs without one input in which a closure decided, counted apart; 443 while the opgave of the goldens with an opgave marker was open without a value and their initialisation closed over it: declared complete, it is settled leeg, so of those 42 runs the 27 without the opgave count as a member not open without its value and the 15 without another input are compared)
+EXPECTED_MIN_MONOTONE_RUNS=2648     # 2026-11-23: measured 2648 (check 6: runs without one input compared with the case), raised from 2226 with the card one-empty, part 2: a test on leeg or gevuld, the filled-value count, a fold filter on gevuld and an initialisation read over an open value as every other read is, so the 396 runs in which a closure decided, until then counted apart, are compared
 
-# check 6's own red row: a run in which a closure decided, compared all the same, must lose an outcome. Measured
-# 2026-11-21: jutterswet-afleiden-uit-leeg case1 without the taxatie of V1, where "ongetaxeerd indien zijn taxatie leeg
-# is" holds by its closure and stands not to hold with the taxatie of 2000. Where it keeps every outcome, the
+# check 6's own red row: a run whose member left out is not open without its value, compared all the same, must lose
+# an outcome. Measured 2026-11-23: jutterswet-volledig-gegeven case2 without the toeslag of V1, which is declared
+# complete: without its value it is settled leeg, and the uitbetaling 55 becomes 50. Where it keeps every outcome, the
 # comparison could not see a change, and the gate fails.
-MONOTONE_MUTANT='jutterswet-afleiden-uit-leeg/case1-alles-gegeven.json|attribute|V1|taxatie'
+MONOTONE_MUTANT='jutterswet-volledig-gegeven/case2-bijslag-open.json|attribute|V1|toeslag'
 
 # check 6: the runs whose difference is a gap of RUNTIME-SEMANTICS ch. 1.5 rather than a fault of ref, one per line,
 # '<golden>/<case file>|<attribute or characteristic>|<object>|<member>|<reason>', the input "-" for a case whose run
@@ -296,21 +295,18 @@ PYEOF
     status=1
 fi
 
-# check 6: monotonicity (RUNTIME-SEMANTICS ch. 1.5, "The two requirements"): giving an input member a value adds
-# outcomes and changes none, but through a closure. Per golden that check 5 carries (every case of its strict copy
-# plays) and per golden that carries the property itself, per case file and per input the case gives (an attribute
-# value, a characteristic in `characteristics` or in `characteristicsAbsent`), the case without that input runs beside
-# the case as it is, both with `runner --end-state`: the end state of ch. 5.12a with its open members, and a line
-# `closure <form> <object>` per evaluation at the fixpoint that applied a closure to an open value (or, where the
-# session faults, `closures <n>`, those applied before the fault). The run without the input keeps every outcome of
-# its end state in the other: each of its lines that is not open stands there; a member it has no line for (settled
-# leeg, or standing not to hold) has none there either; a link or an object the other adds lies on a relation it has
-# open. A run in which the member left out is not open without its value (a value the case gives a derived member, or
-# a member declared complete, ch. 1.5) is counted apart, and so is a run in which a closure decided, the exception
-# ch. 1.5 names: the leg does not assign outcomes to the closure, it leaves that whole run out. Every other difference
-# fails by name unless MONOTONE_GAPS lists it; the comparison passes rows of its own, and the run of MONOTONE_MUTANT,
-# compared all the same, must lose an outcome. The runs go in one batch, one runner per core, and are judged in corpus
-# order.
+# check 6: monotonicity (RUNTIME-SEMANTICS ch. 1.5, "The two requirements"): giving an open input member a value adds
+# outcomes and changes none, without exception. Per golden that check 5 carries (every case of its strict copy plays)
+# and per golden that carries the property itself, per case file and per input the case gives (an attribute value, a
+# characteristic in `characteristics` or in `characteristicsAbsent`), the case without that input runs beside the case
+# as it is, both with `runner --end-state`: the end state of ch. 5.12a with its open members. The run without the input
+# keeps every outcome of its end state in the other: each of its lines that is not open stands there; a member it has
+# no line for (settled leeg, or standing not to hold) has none there either; a link or an object the other adds lies on
+# a relation it has open. A run in which the member left out is not open without its value (a value the case gives a
+# derived member, or a member declared complete, ch. 1.5) is counted apart: that member is no open input member. Every
+# other difference fails by name unless MONOTONE_GAPS lists it; the comparison passes rows of its own, and the run of
+# MONOTONE_MUTANT, compared all the same, must lose an outcome. The runs go in one batch, one runner per core, and are
+# judged in corpus order.
 if ! python3 -I - "$list" "$work" <<'PYEOF'
 import collections, copy, json, os, sys
 
@@ -376,12 +372,11 @@ if ! parallel_run "$work/mono/run" "$procs"; then
     echo 'check-oracle: FAIL (parallel_run failed over the monotonicity runs; the parallel line above says why)' >&2
     exit 1
 fi
-if ! monotone=$(python3 -I - "$work" "$MONOTONE_MUTANT" "$MONOTONE_GAPS" "$EXPECTED_MIN_MONOTONE_RUNS" \
-        "$EXPECTED_MIN_MONOTONE_CLOSURES" <<'PYEOF'
+if ! monotone=$(python3 -I - "$work" "$MONOTONE_MUTANT" "$MONOTONE_GAPS" "$EXPECTED_MIN_MONOTONE_RUNS" <<'PYEOF'
 import collections, os, re, sys
 
 work, mutant, gaps_text = sys.argv[1], sys.argv[2], sys.argv[3]
-min_runs, min_closures = int(sys.argv[4]), int(sys.argv[5])
+min_runs = int(sys.argv[4])
 problems = []
 
 # --- the end state, read back (RUNTIME-SEMANTICS ch. 5.12a) ---
@@ -502,9 +497,7 @@ def read_run(key):
     with open(run + ".out", encoding="utf-8") as f:
         out = f.read().splitlines()
     state = [l[len("state "):] for l in out if l.startswith("state ")]
-    closures = [l for l in out if l.startswith("closure ")]
-    before_fault = [int(l.split()[1]) for l in out if l.startswith("closures ")]
-    return rc, state, closures, (before_fault[0] if before_fault else 0)
+    return rc, state
 
 
 def quote(s):
@@ -518,7 +511,7 @@ mutant_lost = None
 for line in open(os.path.join(work, "mono", "tasks.tsv"), encoding="utf-8"):
     key, name, case_file, what, _doc, _file = line.rstrip("\n").split("\t")
     case = name + "/" + case_file
-    rc, state, closures, before_fault = read_run(key)
+    rc, state = read_run(key)
     if what == "-":
         gap = case + "|-|-|-"
         if rc == "0":
@@ -537,18 +530,12 @@ for line in open(os.path.join(work, "mono", "tasks.tsv"), encoding="utf-8"):
     gap = case + "|" + what
     kind, label, member = what.split("|", 2)
     if rc == "0":
+        if case == mutant_case and what == mutant_what:
+            mutant_lost = lost(state, full[case])
         if "%s %s %s open" % (kind, quote(label), quote(member)) not in state:
             counts["derived"] += 1
             continue
-        if case == mutant_case and what == mutant_what:
-            mutant_lost = lost(state, full[case])
-        if closures:
-            counts["closures"] += 1
-            continue
         found = lost(state, full[case])
-    elif rc == "1" and before_fault > 0:
-        counts["closures"] += 1
-        continue
     else:
         found = ["the run without the input faults (exit %s)" % rc]
     counts["runs"] += 1
@@ -568,15 +555,12 @@ elif not mutant_lost:
     problems.append("the red row: the run of MONOTONE_MUTANT %s keeps every outcome, so the comparison cannot see a change" % mutant)
 if counts["runs"] < min_runs:
     problems.append("%d run(s) compared, but EXPECTED_MIN_MONOTONE_RUNS pins at least %d" % (counts["runs"], min_runs))
-if counts["closures"] < min_closures:
-    problems.append("%d run(s) with a closure, but EXPECTED_MIN_MONOTONE_CLOSURES pins at least %d" % (counts["closures"], min_closures))
 if problems:
     sys.stderr.write("".join("check-oracle: FAIL (monotonicity) — %s\n" % p for p in problems))
     sys.exit(1)
-print("monotonicity: %d cases, %d runs without one input compared, floor %d, %d with a closure apart, floor %d, %d of "
-      "a member not open without its value; %d listed gap(s) of ch. 1.5; %d comparison rows; red row: %s loses %d outcome(s)"
-      % (counts["cases"], counts["runs"], min_runs, counts["closures"], min_closures, counts["derived"], len(gaps),
-         len(rows), mutant, len(mutant_lost)))
+print("monotonicity: %d cases, %d runs without one input compared, floor %d, %d of a member not open without its "
+      "value; %d listed gap(s) of ch. 1.5; %d comparison rows; red row: %s loses %d outcome(s)"
+      % (counts["cases"], counts["runs"], min_runs, counts["derived"], len(gaps), len(rows), mutant, len(mutant_lost)))
 PYEOF
 ); then
     status=1

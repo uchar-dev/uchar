@@ -15,12 +15,12 @@
   },
   "expected": [
     {
-      "kind": "characteristicPresent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "vrijgesteld"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "opslagtoeslag"
     },

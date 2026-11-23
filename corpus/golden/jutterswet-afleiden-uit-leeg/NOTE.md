@@ -24,9 +24,9 @@ The expectations, computed by hand. "absent" in the input is `characteristicsAbs
 |---|---|---|---|---|---|---|---|
 | case1, V1 | taxatie 2000, gewicht 5, gemeld | holds | 15 | settled leeg | stands not | holds | 3 |
 | case1, V2 | taxatie 50, gewicht 0, gemeld absent | stands not | 10 | 5 | stands not | stands not | settled leeg |
-| case2 | gewicht 5, gemeld | open | 15 | open | holds | holds | 3 |
+| case2 | gewicht 5, gemeld | open | 15 | open | open | holds | 3 |
 | case3 | taxatie 50, gemeld absent | stands not | open | 5 | stands not | stands not | settled leeg |
-| case4 | nothing | open | open | open | holds | open | open |
+| case4 | nothing | open | open | open | open | open | open |
 
 | case | input | betwist | premie | vindloon |
 |---|---|---|---|---|
@@ -36,12 +36,13 @@ The expectations, computed by hand. "absent" in the input is `characteristicsAbs
 
 Where everything is given (case1) every member stands, as in the reading of ch. 1.2–1.4. Without a taxatie the
 comparison is undetermined, so kostbaar is open, and so is the bewakingstoeslag, whose "niet kostbaar" is undetermined
-as well; ongetaxeerd holds, since a leeg test over an open value is true for the form that writes it (a closure). With
+as well; ongetaxeerd is open, since a leeg test over an open value is undetermined, as every condition that reads one
+is: whether the taxatie comes, the document does not know. With
 kostbaar holding, "niet kostbaar" stands false and the bewakingstoeslag is settled leeg. Without a gewicht the vindloon,
 which reads it, is open. A gemeld that the case states absent stands not to hold, so the meldloon is settled leeg; a
 gemeld the case names nowhere is open, and so is the meldloon. No case deposits a §9.5 fact. In the reading of ch.
 1.2–1.4 a Vondst without a taxatie is not kostbaar and gets the bewakingstoeslag 5, one without a gewicht has the
-vindloon 10, and one that does not name gemeld has no meldloon.
+vindloon 10 and is ongetaxeerd, and one that does not name gemeld has no meldloon.
 
 The premie is a stack: the exception decides where betwist holds (0); where it stands not to hold, the exception gives
 way and the base below it decides (10); where the case names betwist nowhere the exception is open, and the base does
@@ -49,7 +50,6 @@ not decide below an open default, so the premie is open. In the reading of ch. 1
 Cases 1 to 4 name betwist nowhere and expect nothing of the premie.
 
 `scenario.rgs` writes the six cases in RegelSpraak ("- is niet gemeld", "- het vindloon van V1 staat niet vast"), and
-gate 16 holds that it gives them byte for byte. The reference interpreter plays the cases (gate 5), and so do both
-Drools branches (gate 12). The ASP backend refuses the document with CLINGO-049 (gate 6), and the Drools build with
-readings with DROOLS-370 (gate 17); those gates list the golden by name. The red case
+gate 16 holds that it gives them byte for byte. The reference interpreter plays the cases (gate 5), and so do the ASP
+backend (gate 6) and both Drools branches (gate 12); gate 17 compares the readings of ref and Drools. The red case
 `corpus/red/jutterswet-kenmerk-wel-en-niet` carries the same document.

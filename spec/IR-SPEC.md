@@ -697,8 +697,11 @@ complete, `layer: core`: it changes outcomes. In a document with
 object where it is input and the case gives it no value or does not name it;
 with the field it is settled leeg there, and a characteristic the case does
 not name stands not to hold (`RUNTIME-SEMANTICS.md` ch. 1.5, "Complete
-input"). On an object where a rule or a defaults group writes the member, the
-member follows its writers and the field changes nothing; in a document
+input"). On an object where a rule other than an initialisation or a
+defaults group writes the member, the member follows its writers and the
+field changes nothing; a member that only an initialisation writes is input,
+and with the field it is settled leeg below the case and above the
+initialisation, which gives its value; in a document
 without `inferFromEmpty: false` nothing is open, and the field changes no
 outcome. A subtype inherits the member with the field, as it inherits its
 facets. In the Jutterswet, with "de uitbetaling van een Vondst is zijn

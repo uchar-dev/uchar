@@ -39,22 +39,19 @@
       "attribute": "verzekeringstoeslag"
     },
     {
-      "kind": "characteristicPresent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "ongetaxeerd"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "taxatietoeslag"
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "V1",
-      "attribute": "taxatiekosten",
-      "value": {
-        "number": "2"
-      }
+      "attribute": "taxatiekosten"
     },
     {
       "kind": "characteristicAbsent",
@@ -101,9 +98,7 @@
       }
     },
     {
-      "kind": "inconsistent",
-      "rule": "controle taxatie",
-      "label": "V1"
+      "kind": "consistent"
     }
   ]
 }

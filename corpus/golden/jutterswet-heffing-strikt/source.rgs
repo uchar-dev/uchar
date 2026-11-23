@@ -1,0 +1,32 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    de taxatie Numeriek (geheel getal);
+    de heffing Numeriek (geheel getal);
+    de stapelheffing Numeriek (geheel getal);
+    de heffingscode Numeriek (geheel getal);
+    de codeheffing Numeriek (geheel getal);
+
+Regel heffing
+    geldig altijd
+        De heffing van een Vondst moet gesteld worden op 0 indien zijn taxatie gevuld is.
+
+Regel heffing aanvankelijk
+    geldig altijd
+        De heffing van een Vondst moet geïnitialiseerd worden op 25.
+
+Regel stapelheffing
+    geldig altijd
+        De stapelheffing van een Vondst moet gesteld worden op 25.
+
+Afwijking van stapelheffing: getaxeerde stapelheffing
+    geldig altijd
+        De stapelheffing van een Vondst moet gesteld worden op 0 indien zijn taxatie gevuld is.
+
+Regel heffingscode
+    geldig altijd
+        De heffingscode van een Vondst moet gesteld worden op 1 indien zijn taxatie leeg is.
+
+Regel codeheffing
+    geldig altijd
+        De codeheffing van een Vondst moet berekend worden als 25 maal zijn heffingscode.

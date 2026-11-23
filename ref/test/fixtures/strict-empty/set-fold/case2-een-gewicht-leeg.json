@@ -109,12 +109,9 @@
       "attribute": "zwaaraantal"
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "J1",
-      "attribute": "gewogen aantal",
-      "value": {
-        "number": "2"
-      }
+      "attribute": "gewogen aantal"
     }
   ]
 }

@@ -11,6 +11,14 @@ branch `card/strict-empty-lowering` and does not land on `main` (§3). Where thi
 document of that branch with case files whose expectations were computed by hand. Every example is own work in the
 domain of the Jutterswet.*
 
+*The reading this document designs is normative in RUNTIME-SEMANTICS ch. 1.5, with one change of the owner's decision
+of 2026-11-23 (card `one-empty`, part 2): a test on leeg or gevuld, the filled-value count and a fold filter that
+tests on gevuld are undetermined or open over an open value, for every form, and an initialisation is the lowest
+writer of its target and no closure. Every judgement is one value of Kleene's strong table; the pair "for the form
+that wrote it / for another form" and the closures of §1 point 3, §5.4 and §7.4 are not part of it, and only
+`(volledig gegeven)` on an input member closes. Where an example below rests on such a closure, ch. 1.5 and the
+witnesses under `ref/test/fixtures/strict-empty/` give its outcome.*
+
 ## 1. The rule in three sentences
 
 1. **A value is filled, settled leeg, or open.** Settled leeg means it is established that there is no value: an input

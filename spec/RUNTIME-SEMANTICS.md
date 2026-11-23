@@ -475,25 +475,29 @@ object, an attribute or a characteristic, in three states instead of two:
 filled, settled leeg, or open, where neither stands. Where ch. 1.2–1.4 read an
 input member that the case leaves out as leeg, it is open here, unless its
 declaration says that its input is complete. A form that reads an open member
-draws nothing from it, unless its outcome stands without that read, or the form
-says in so many words what it does where the member is absent (a closure,
-below). This section says what that changes; what it does not name reads as ch.
-1.2–1.4 lay down. It defines the reading for a rule (an equation, a
-calculation, a characteristic attribution, an initialisation), a defaults group
-on a target without a timeline, a creation off a cycle, a consistency rule, and
-a condition or an expression without a timeline, a quantifier fold, a fold over
-a set and an IfThenElse among them; for every other form the reading is not
-defined here, and IR-SPEC ch. 2 says what an executor does with a document that
-holds one. Each example is a test of the reference interpreter's suite under
-the name given; the examples are from the Jutterswet, on a Vondst whose
-attributes are whole numbers.
+draws nothing from it, unless its outcome stands without that read: whether
+the member gets a value is a matter of what the case delivers, of which the
+rules know nothing. A judgement is one value of Kleene's strong table, and
+only the author closes, at the edge, by declaring that the input of a member
+is complete (below). This section says what that changes; what it does not
+name reads as ch. 1.2–1.4 lay down. It defines the reading for a rule (an
+equation, a calculation, a characteristic attribution, an initialisation), a
+defaults group on a target without a timeline, a creation off a cycle, a
+consistency rule, and a condition or an expression without a timeline, a
+quantifier fold, a fold over a set and an IfThenElse among them; for every
+other form the reading is not defined here, and IR-SPEC ch. 2 says what an
+executor does with a document that holds one. Each example is a test of the
+reference interpreter's suite under the name given; the examples are from the
+Jutterswet, on a Vondst whose attributes are whole numbers.
 
 **The three states.** A member of an object is *filled* (an attribute has a
 value, a characteristic holds), *settled leeg* (it stands that the attribute
 has no value, or that the characteristic does not hold) or *open* (neither
-stands). An input member — an attribute or a characteristic that no rule
-and no defaults group writes on the object's type — is open where the case gives it no value or
-does not name it, unless its declaration says that its input is complete (below). A
+stands). An input member — an attribute or a characteristic that no rule but
+an initialisation and no defaults group writes on the object's type — is open
+where the case gives it no value or does not name it, unless its declaration
+says that its input is complete (below). An initialisation is the lowest
+writer of its target, below the input, and makes no member derived (below). A
 document without the property has no open member: a member without a value is
 settled leeg, and the rest of this section then reads as ch. 1.2–1.4. Example
 (WV-1.5-open-input, WV-1.5-no-open-without-the-property): "de uitbetaling van
@@ -508,16 +512,15 @@ a characteristic toeslag, "een Vondst is toeslag indien hij getuigd is", a
 case that does not name gemerkt, with getuigd complete (below), leaves the
 attribute open, and the characteristic stands not to hold; with the attribute
 written and no writer for the characteristic, the characteristic is input,
-open where the case does not name it.
-Whether a member is input is asked per object (WV-1.5-input-per-object): with
-"het vindloon van een Strandvondst is 10 indien zijn taxatie groter is dan
-1000", the vindloon of a Vondst that is no Strandvondst is input, and open
-without a value, while that of a Strandvondst with taxatie 50 is settled leeg.
-A rule outside its window of validity (ch. 3.10) writes its target as well,
-and fills nothing there (WV-1.5-outside-the-window): with that vindloon valid
-from 2030, on 1 June 2026 a Vondst without a taxatie has a settled leeg
-vindloon and an uitbetaling of 3 at bergloon 3; on 1 June 2031 the vindloon is
-open.
+open where the case does not name it. Whether a member is input is asked per
+object (WV-1.5-input-per-object): with "het vindloon van een Strandvondst is
+10 indien zijn taxatie groter is dan 1000", the vindloon of a Vondst that is
+no Strandvondst is input, and open without a value, while that of a
+Strandvondst with taxatie 50 is settled leeg. A rule outside its window of
+validity (ch. 3.10) writes its target as well, and fills nothing there
+(WV-1.5-outside-the-window): with that vindloon valid from 2030, on 1 June
+2026 a Vondst without a taxatie has a settled leeg vindloon and an uitbetaling
+of 3 at bergloon 3; on 1 June 2031 the vindloon is open.
 
 **What stands reads as before.** An expression or a condition whose reads are
 all filled or settled leeg is evaluated as ch. 1.2–1.4 lay down: a settled
@@ -528,32 +531,37 @@ settled leeg (below); the uitbetaling is 3, and "een Vondst is beloond indien
 zijn vindloon ongelijk is aan 5" holds. Without a taxatie beloond is open.
 
 **An open read.** An evaluation reads what the ordinary reading reaches (ch.
-5.11): an empty dividend decides a division without its divisor (ch. 1.4
-point 4), a binder of a `Let` is read where its body reads it (ch. 10.6), and
-a composite reads its members as below. An evaluation that reaches an open
-value is broken off: the expression has no value, and what the evaluation
-deposited in the §9.5 channel up to there is dropped. The boundary is one
-value — the value of a rule — or one atomic condition (below). Within one
-boundary a deposit made before the open read is dropped, a fault raised
-before it stays a fault, and a fault that would come after it does not
-arise, since the evaluation does not get there. Example
-(WV-1.5-open-passes-on): the uitbetaling above with an open vindloon has no
-value; "het aandeel van een Vondst is zijn gewicht gedeeld door zijn
-getuigen", with gewicht 10 and getuigen open, has no value and deposits
-nothing, where the document without the property deposits EF-031. Example
-(WV-1.5-reached): "het aandeel van een Vondst is zijn vindloon gedeeld door
-zijn getuigen", with the vindloon of the card settled leeg (taxatie 50) and
-getuigen open, is 0: the divisor is not reached; with taxatie 2000 it has no
-value. "Het drempelgewicht van een Vondst is zijn vindloon gedeeld door de
-vangst, daarbij geldt: de vangst is zijn gewicht plus zijn schade", with
-taxatie 50, gewicht 5 and schade open, is 0: the binder is never read; with
-taxatie 2000 it has no value. Example (WV-1.5-boundary-*): "het restgewicht
-van een Vondst is zijn gewicht gedeeld door 0 plus zijn schade", gewicht 10,
-is 2 with the EF-005 fact of the division at schade 2, and has no value and
-no fact with schade open. "De vrachtprijs van een Vondst is het TARIEF maal
-zijn gewicht", the parameter unbound, faults with EF-014 also where the
-gewicht is open; written "zijn gewicht maal het TARIEF" it has no value there,
-and no fault.
+5.11): an empty dividend decides a division without its divisor (ch. 1.4 point
+4), a binder of a `Let` is read where its body reads it (ch. 10.6), and a
+composite reads its members as below. An evaluation that reaches an open value
+is broken off: the expression has no value, and what the evaluation deposited
+in the §9.5 channel up to there is dropped. The boundary is one value — the
+value of a rule — or one atomic condition (below). Within one boundary a
+deposit made before the open read is dropped, a fault raised before it stays a
+fault, and a fault that would come after it does not arise, since the
+evaluation does not get there. Example (WV-1.5-open-passes-on): the
+uitbetaling above with an open vindloon has no value; "het aandeel van een
+Vondst is zijn gewicht gedeeld door zijn getuigen", with gewicht 10 and
+getuigen open, has no value and deposits nothing, where the document without
+the property deposits EF-031. Example (WV-1.5-reached): "het aandeel van een
+Vondst is zijn vindloon gedeeld door zijn getuigen", with the vindloon of the
+card settled leeg (taxatie 50) and getuigen open, is 0: the divisor is not
+reached; with taxatie 2000 it has no value. "Het drempelgewicht van een Vondst
+is zijn vindloon gedeeld door de vangst, daarbij geldt: de vangst is zijn
+gewicht plus zijn schade", with taxatie 50, gewicht 5 and schade open, is 0:
+the binder is never read; with taxatie 2000 it has no value. Example
+(WV-1.5-boundary-*): "het restgewicht van een Vondst is zijn gewicht gedeeld
+door 0 plus zijn schade", gewicht 10, is 2 with the EF-005 fact of the
+division at schade 2, and has no value and no fact with schade open. "De
+vrachtprijs van een Vondst is het TARIEF maal zijn gewicht", the parameter
+unbound, faults with EF-014 also where the gewicht is open; written "zijn
+gewicht maal het TARIEF" it has no value there, and no fault. The computation
+of a binder of a `Let` (ch. 10.6) is one value: one that reads an open value
+deposits nothing, and the binder is open at every read. Example
+(WV-1.5-binder-broken-off-*): "de uitkering van een Vondst is, daarbij geldt:
+t is zijn taxatie gedeeld door 0 plus zijn schade, 1 als t gevuld is, anders
+0", at taxatie 50, is 1 with the EF-005 fact of the division at schade 5, and
+open without a fact where the schade is open.
 
 **The judgement of a condition.** A condition is established true,
 established false, or undetermined. An atomic condition — a comparison, the
@@ -571,15 +579,18 @@ table:
 | `atMost` *k* | *f* ≥ *n* − *k* | *h* ≥ *k* + 1 |
 | `exactly` *k* | *h* ≥ *k* and *f* ≥ *n* − *k* | *h* ≥ *k* + 1, or *f* ≥ *n* − *k* + 1 |
 
-and is undetermined otherwise. It reads its members left to right, and
-where it stops is said with its two judgements below. An undetermined member
-does not stop the read, so a member after it can decide the composite.
-Whether ch. 5.10 would read a member that comes after one undetermined for
-another form (below) does not stand, so that member is read provisionally:
-its judgement counts, what it deposits in the §9.5 channel is dropped, and a
-fault of it does not end the evaluation but leaves the member undetermined,
-for the form itself and for another. A member after members that all stand
-for another is read as ch. 5.10 reads it. "Niet A" is `none` over A. Example
+and is undetermined otherwise. It reads its members left to right until its
+judgement is established, every member not yet read taken as undetermined, or
+every member is read; in a document without open members this is the stop of
+ch. 5.10. An undetermined member does not stop the read, so a member after it
+can decide the composite. Whether ch. 5.10 would read a member that comes
+after an undetermined one does not stand, so that member is read
+provisionally: its judgement counts, what it deposits in the §9.5 channel is
+dropped, and a fault of it does not end the evaluation but leaves the member
+undetermined. This keeps the §9.5 facts and the faults of ch. 5.10 monotone: a
+value given to the undetermined member can stop the read before the member
+after it. A member after members that are all established is read as ch. 5.10
+reads it. "Niet A" is `none` over A. Example
 (WV-1.5-past-undetermined-deposit, WV-1.5-past-undetermined-fault): "de
 vrijstelling van een Vondst is 1 indien alle van: zijn gewicht is groter dan
 10, zijn taxatie gedeeld door zijn getuigen is groter dan 3", with taxatie 50
@@ -599,10 +610,10 @@ member the read of a leeg binder ends the `Let`, where with the binder open a
 later member can decide the composite. This section gives no reading to a
 binder there: a document in which a member of a composite with more than one
 member, or the filter or the matrix of a quantifier fold, reads one is refused
-(`let-in-composite`, below). Example (WV-1.5-let-in-composite-*): "de uitkering
-van een Vondst is, daarbij geldt: de toeslag is zijn vindloon, 10 als ten
-minste één van: de toeslag is groter dan 5, zijn gewicht is groter dan 10;
-anders 0" is refused, also with the two members exchanged, and so is the
+(`let-in-composite`, below). Example (WV-1.5-let-in-composite-*): "de
+uitkering van een Vondst is, daarbij geldt: de toeslag is zijn vindloon, 10
+als ten minste één van: de toeslag is groter dan 5, zijn gewicht is groter dan
+10; anders 0" is refused, also with the two members exchanged, and so is the
 uitkering with the condition "alle van: zijn gewicht is groter dan 10, ten
 minste één van: de toeslag is groter dan 5, zijn schade is groter dan 1";
 without the property the first is 10 at taxatie 2000 without a gewicht. So is
@@ -610,79 +621,69 @@ without the property the first is 10 at taxatie 2000 without a gewicht. So is
 van het gewicht van zijn vondsten waarvan ten minste één van: t is groter dan
 5, zijn gewicht is groter dan 10", with "het vindloon van een Jutter is 10
 indien zijn taxatie groter is dan 1000": over one vondst of gewicht 20 an open
-t would leave the sum at 20, and a leeg t would end the Let. With the condition
-"ten minste één van: de toeslag is groter dan 5", a composite of one member,
-the uitkering has a reading (WV-1.5-let-in-composite-not-*): it is 10 at
-taxatie 2000, settled leeg at taxatie 50, where the read of the leeg toeslag
-ends the Let, and open without a taxatie. So has the vondstloon with the filter
-"t is groter dan 5", over that vondst 20 at taxatie 2000, settled leeg at
-taxatie 50 and open without a taxatie, and so has the uitkering with "7 als
-alle van: zijn gewicht is groter dan 10, zijn schade is groter dan 1; anders de
-toeslag", which reads the binder outside every condition: without a gewicht, at
-schade 0, it is 10 at taxatie 2000 and settled leeg at taxatie 50. Example
-(WV-1.5-atom, WV-1.5-table-*): "een Vondst is zwaar indien zijn gewicht groter
-is dan 100" is undetermined without a gewicht. With "een Vondst is opvallend
-indien [Q] van: zijn gewicht groter is dan 100 (A), zijn schatting groter is
-dan 1000 (B), zijn lengte groter is dan 2 (C)": `all` over A undetermined and B
-false is false; `atLeast 1` over A undetermined and B true is true; over A
-true, B true and C undetermined, `atLeast 2` is true and `atMost 1` and
-`exactly 1` are false; over A true, B false and C undetermined, all three are
-undetermined; over A false, B false and C undetermined, `atLeast 2` is false,
-`atMost 1` true and `exactly 1` undetermined. The suite holds all nine rows of
-`all`, `atLeast 1` and `none` over A and B, and the three rows of "niet A".
+t would leave the sum at 20, and a leeg t would end the Let. With the
+condition "ten minste één van: de toeslag is groter dan 5", a composite of one
+member, the uitkering has a reading (WV-1.5-let-in-composite-not-*): it is 10
+at taxatie 2000, settled leeg at taxatie 50, where the read of the leeg
+toeslag ends the Let, and open without a taxatie. So has the vondstloon with
+the filter "t is groter dan 5", over that vondst 20 at taxatie 2000, settled
+leeg at taxatie 50 and open without a taxatie, and so has the uitkering with
+"7 als alle van: zijn gewicht is groter dan 10, zijn schade is groter dan 1;
+anders de toeslag", which reads the binder outside every condition: without a
+gewicht, at schade 0, it is 10 at taxatie 2000 and settled leeg at taxatie 50.
+Example (WV-1.5-atom, WV-1.5-table-*): "een Vondst is zwaar indien zijn
+gewicht groter is dan 100" is undetermined without a gewicht. With "een Vondst
+is opvallend indien [Q] van: zijn gewicht groter is dan 100 (A), zijn
+schatting groter is dan 1000 (B), zijn lengte groter is dan 2 (C)": `all` over
+A undetermined and B false is false; `atLeast 1` over A undetermined and B
+true is true; over A true, B true and C undetermined, `atLeast 2` is true and
+`atMost 1` and `exactly 1` are false; over A true, B false and C undetermined,
+all three are undetermined; over A false, B false and C undetermined, `atLeast
+2` is false, `atMost 1` true and `exactly 1` undetermined. The suite holds all
+nine rows of `all`, `atLeast 1` and `none` over A and B, and the three rows of
+"niet A".
 
-**For the form itself and for another.** The judgement of a condition is a
-pair: its truth for the form whose condition it is, and its truth for another
-form, which reads from it that the form fills nothing. The two differ only at
-a test on leeg or gevuld over an open value (below); everywhere else they are
-equal. So the judgement for another form is never established where the
-judgement for the form itself is not, and where it is established the two are
-equal. A composite reads its members until its judgement for another form is
-established, every unread member taken as undetermined — which establishes
-its judgement for the form itself as well — or until every member is read; in
-a document without open members this is the stop of ch. 5.10. A member read
-after the form's own judgement stands comes after one undetermined for
-another, and is read provisionally (above). Example (WV-1.5-read-for-another):
-"de vrijstelling van een Vondst is 1 indien ten minste één van: zijn gewicht
-is leeg, zijn taxatie gedeeld door zijn getuigen is groter dan 3", with
-gewicht open, getuigen complete without a value and taxatie 50: the first
-member is true for the form itself and undetermined for another, so the
-second is read; its division would deposit EF-031, which is dropped, and it
-is false; the vrijstelling is 1 without a fact. With the gewicht complete as
-well the first member is true for both, the read stops there, and there is no
-fact.
+**A rule** decides where its condition is established true and its value has
+no open read; it then writes as ch. 1.2 and 5 lay down, a leeg value writing
+nothing. Where its condition is established false, it stands that the rule
+fills nothing. Otherwise it decides nothing and leaves its target open.
+Example (WV-1.5-rule-*): "het vindloon van een Vondst is zijn taxatie gedeeld
+door 100 indien zijn gewicht groter is dan 10" gives 5 with gewicht 20 and
+taxatie 500, fills nothing with gewicht 5 whatever the taxatie, and leaves the
+vindloon open without a gewicht, and with gewicht 20 and no taxatie.
 
-**A rule** decides where its condition is established true for itself and
-its value has no open read; it then writes as ch. 1.2 and 5 lay down, a leeg
-value writing nothing. Where its condition is established false for another
-form, it stands that the rule fills nothing. Otherwise it decides nothing and
-leaves its target open. Example (WV-1.5-rule-*): "het vindloon van een Vondst
-is zijn taxatie gedeeld door 100 indien zijn gewicht groter is dan 10" gives
-5 with gewicht 20 and taxatie 500, fills nothing with gewicht 5 whatever the
-taxatie, and leaves the vindloon open without a gewicht, and with gewicht 20
-and no taxatie.
+**An initialisation** is the lowest writer of its target (ch. 5.4): it is at
+its turn where its target holds no value but its own and it stands of every
+writer above it, the input among them, that it fills nothing, and there its
+condition and value are read as a rule's. Where its target is an open input
+member, or another writer leaves it open, the initialisation is not at its
+turn, and the target is open. Example (WV-1.5-initialisation): "het strandloon
+van een Vondst is zijn vangst maal 2 indien hij gemeld is" and "het strandloon
+van een Vondst moet geïnitialiseerd worden op 5": with vangst 4 and gemeld
+named the strandloon is 8; where the case does not name gemeld the rule leaves
+it open, and it is open; with gemeld declared complete and not named it is 5.
+With "… op 5 indien zijn vangst groter is dan 1" and gemeld complete it is 5
+at vangst 4 and open without a vangst. An initialisation makes no member
+derived: a member that only an initialisation writes is an input member with a
+default value, open where the case gives it no value, unless its input is
+declared complete; then it is settled leeg above the initialisation, which
+gives its value. Example (WV-1.5-initialisation-input): with "het strandloon
+van een Vondst moet geïnitialiseerd worden op 5" alone the strandloon is open
+where the case gives it no value, 7 where the case gives 7, and 5 where it is
+declared complete and the case gives it none.
 
-**An initialisation** is a rule that writes only where its target has no
-value (ch. 5.4), also where another writer leaves the target open: it closes
-over the writers of its target. Its own condition and value are read as a
-rule's. Example (WV-1.5-initialisation): "het strandloon van een Vondst is
-zijn vangst maal 2 indien hij gemeld is" and "het strandloon van een Vondst
-moet geïnitialiseerd worden op 5": with vangst 4 and gemeld named the
-strandloon is 8, and where the case does not name gemeld it is 5. With "… op
-5 indien zijn vangst groter is dan 1" it stays open without a vangst.
-
-**A derived member** — one a rule or a defaults group writes on the object's type — follows its
-writers, also where the case gives it no value: it is filled where a writer
-decides with a value, settled leeg where it stands of every writer that it
-fills nothing or decides with a leeg value, and open otherwise; a
-characteristic holds, stands not to hold, or is open, in the same way. A value
-the case gives it stands where it stands of every writer that it fills
-nothing (ch. 7.8), and the member is open while a writer leaves it open: a
-characteristic the case names holds whatever its writers do, since a writer
-only grants it. Example (WV-1.5-input-beside-a-writer): with the vindloon of
-the card and a case that gives the vindloon 7, the vindloon is open without a
-taxatie, and so is the uitbetaling that reads it; it is 10 at taxatie 2000 and
-7 at taxatie 50. The
+**A derived member** — one a rule other than an initialisation or a defaults
+group writes on the object's type — follows its writers, also where the case
+gives it no value: it is filled where a writer decides with a value, settled
+leeg where it stands of every writer that it fills nothing or decides with a
+leeg value, and open otherwise; a characteristic holds, stands not to hold, or
+is open, in the same way. A value the case gives it stands where it stands of
+every writer that it fills nothing (ch. 7.8), and the member is open while a
+writer leaves it open: a characteristic the case names holds whatever its
+writers do, since a writer only grants it. Example
+(WV-1.5-input-beside-a-writer): with the vindloon of the card and a case that
+gives the vindloon 7, the vindloon is open without a taxatie, and so is the
+uitbetaling that reads it; it is 10 at taxatie 2000 and 7 at taxatie 50. The
 states are those at the fixpoint of the session (ch. 5): a rule that leaves
 its target open changes it as a write does, so a form that read the target
 before is evaluated again. Example (WV-1.5-derived-*): the vindloon of the
@@ -693,15 +694,14 @@ indien zijn taxatie groter is dan 1000" holds at taxatie 2000, stands not to
 hold at 50, and is open without a taxatie. An open member passes on to its
 reader: without a taxatie the vindloon is open and so is the uitbetaling that
 reads it, in either order of the two rules; with taxatie 2000 and bergloon 3
-the uitbetaling is 13. "De toeslag is 5 indien zijn vindloon groter is dan
-5", first in the document, is open without a taxatie as well. An
-instance-ordered part (ch. 6.2) reaches its fixpoint per object in the same
-way. Example (WV-1.5-instance-ordered), the Vergunningen of WV-6.4-i: without
-a stopdag of V1 its restant is open, and the einddag of V2 is its basiseinddag,
-01-12-2026, written by "einddag zonder restant", whose leeg test of the
-restant of V1 closes over the open value; with the stopdag of V1 given it is
-03-03-2027, as without the property. The restant of V2, which has no stopdag,
-is open in both.
+the uitbetaling is 13. "De toeslag is 5 indien zijn vindloon groter is dan 5",
+first in the document, is open without a taxatie as well. An instance-ordered
+part (ch. 6.2) reaches its fixpoint per object in the same way. Example
+(WV-1.5-instance-ordered), the Vergunningen of WV-6.4-i: without a stopdag of
+V1 its restant is open, and so is the einddag of V2, since the leeg test of
+"einddag zonder restant" over the open restant of V1 is undetermined; with the
+stopdag of V1 given it is 03-03-2027, as without the property. The restant of
+V2, which has no stopdag, is open in both.
 
 **A negated characteristic check** is true where it stands that the
 characteristic does not hold, false where it holds, and undetermined where it
@@ -712,96 +712,122 @@ drijfhout the case does not name, is open.
 
 **The test on leeg and gevuld.** Over a filled or a settled leeg value the
 test reads as ch. 1.2. Over an open value, or a computed value whose
-evaluation has an open read, the gevuld test is false for the form itself and
-undetermined for another; the leeg test is true for the form itself — a
-closure: the author has written what the form does where the value is absent
-— and undetermined for another. A negated test is its sister test (ch. 1.2).
-The form's own negation of a gevuld test closes as a leeg test does, since the
-composite keeps the pair: "geen van: X is gevuld" over an open X is true for
-the form itself and undetermined for another. Example (WV-1.5-own-negation):
-"een Vondst is ongetaxeerd indien geen van: zijn taxatie is gevuld" holds
-over an open taxatie and stands not to hold at taxatie 50.
+evaluation has an open read, it is undetermined, as every atomic condition
+that reads an open value is: the test asks whether a value is there, and of an
+open value that does not stand. A negated test is its sister test (ch. 1.2),
+and "geen van: X is gevuld" over an open X is undetermined, as "X is leeg" is.
+A consistency "X moet gevuld zijn" reports nothing over an open X. Where the
+author wants the test to decide over a value the case does not give, the
+author declares the input member complete (**Complete input**, below): without
+a value it is then settled leeg, and the test reads as ch. 1.2.
 
-| the rule, over an open X | for the form itself | for another form |
-|---|---|---|
-| "K indien X gevuld is en X groter is dan 1000" | K is not attributed | it does not stand that K does not hold: K is open |
-| "K indien X leeg is" | K holds | — |
-| "X moet gevuld zijn" | it reports | — |
+| over X | "X is gevuld" | "X is leeg" | "X moet gevuld zijn" |
+|---|---|---|---|
+| filled | true | false | holds |
+| settled leeg | false | true | reports |
+| open | undetermined | undetermined | reports nothing |
 
-Example (WV-1.5-filled-test-*, WV-1.5-filled-guard): "een Vondst is
-getaxeerd indien zijn taxatie gevuld is" and "ongetaxeerd indien zijn taxatie
-leeg is": at taxatie 50 getaxeerd holds and ongetaxeerd does not; at a
-settled leeg taxatie (a complete member, below) getaxeerd does not hold and
-ongetaxeerd holds; at an open taxatie getaxeerd is open and ongetaxeerd
-holds. "Kostbaar indien zijn taxatie gevuld is en zijn taxatie groter is dan
-1000" is no closure: over an open taxatie kostbaar is open, and so is "de
+Example (WV-1.5-filled-test-*, WV-1.5-filled-guard,
+WV-1.5-negated-filled-test): "een Vondst is getaxeerd indien zijn taxatie
+gevuld is" and "ongetaxeerd indien zijn taxatie leeg is": at taxatie 50
+getaxeerd holds and ongetaxeerd does not; at a settled leeg taxatie (a
+complete member, below) getaxeerd does not hold and ongetaxeerd holds; at an
+open taxatie both are open, and so is "ongetaxeerd indien geen van: zijn
+taxatie is gevuld". "Kostbaar indien zijn taxatie gevuld is en zijn taxatie
+groter is dan 1000" is open over an open taxatie, and so is "de
 bewakingstoeslag is 5 indien hij niet kostbaar is"; over a settled leeg
-taxatie kostbaar stands not to hold and the bewakingstoeslag is 5. "De
-taxatie van een Vondst moet gevuld zijn" reports over an open taxatie. Over a
+taxatie kostbaar stands not to hold and the bewakingstoeslag is 5. "De taxatie
+van een Vondst moet gevuld zijn" reports nothing over an open taxatie. Over a
 computed value (WV-1.5-filled-test-computed): "de getuigentoeslag is 7 indien
-zijn gewicht gedeeld door zijn getuigen leeg is" is 7 where the gewicht or the
-getuigen is open, without a §9.5 fact, and 7 with an EF-005 fact at gewicht 10
-and getuigen 0, a division by 0 of standing values being settled leeg (ch.
-1.4); "de schadetoeslag is 3 indien zijn gewicht plus zijn schade gevuld is"
-is open where the gewicht is open.
+zijn gewicht gedeeld door zijn getuigen leeg is" is open where the gewicht or
+the getuigen is open, without a §9.5 fact, and 7 with an EF-005 fact at
+gewicht 10 and getuigen 0, a division by 0 of standing values being settled
+leeg (ch. 1.4); "de schadetoeslag is 3 indien zijn gewicht plus zijn schade
+gevuld is" is open where the gewicht is open. In a composite
+(WV-1.5-filled-test-in-a-composite): "de vrijstelling van een Vondst is 1
+indien ten minste één van: zijn gewicht is leeg, zijn taxatie gedeeld door
+zijn getuigen is groter dan 3", with the gewicht open, the getuigen complete
+without a value and taxatie 50: the first member is undetermined, so the
+second is read provisionally; its division would deposit EF-031, which is
+dropped, and it is false; the vrijstelling is open, without a fact. With the
+gewicht complete as well the first member is true, the read stops there, and
+the vrijstelling is 1 without a fact. Past an undetermined member
+(WV-1.5-filled-test-past-undetermined): "de schadetoeslag van een Vondst is 1
+als alle van: zijn gewicht is groter dan 10, (1 als zijn getuigen leeg is,
+anders 0) plus het Rekenjaar is groter dan 3, zijn schade is groter dan 100;
+anders zijn vindloon", without a gewicht, getuigen and an evaluation date, at
+schade 3 and taxatie 50: the second member is undetermined by its leeg test
+before the Rekenjaar is read, the third is false, and the schadetoeslag is
+settled leeg, as the vindloon is.
 
-**A consistency rule** reports where its assertion is established false for
-itself, and not where its assertion is undetermined. Example
-(WV-1.5-consistency): "het gewicht van een Vondst moet groter of gelijk zijn
-aan 0" reports at gewicht −1, and not without a gewicht.
+One choice written in three forms has one outcome (WV-1.5-three-forms, the
+golden `jutterswet-heffing-strikt`): "the heffing of a Vondst is 0 where its
+taxatie is gevuld and 25 where it is leeg", as a rule "op 0 indien zijn
+taxatie gevuld is" with the initialisation "op 25" below it, as a stack, "op
+25" with the exception "op 0 indien zijn taxatie gevuld is", and through a
+helper attribute, "de heffingscode is 1 indien zijn taxatie leeg is" read by
+"de codeheffing is 25 maal zijn heffingscode". All three are open over an open
+taxatie, 0 at taxatie 50, and 25 with the taxatie declared complete and not
+given.
+
+**A consistency rule** reports where its assertion is established false, and
+not where its assertion is undetermined. Example (WV-1.5-consistency): "het
+gewicht van een Vondst moet groter of gelijk zijn aan 0" reports at gewicht
+−1, and not without a gewicht.
 
 **A stack.** A default of a defaults group (ch. 7.1) has the three outcomes
-of a rule: it decides where its justification is established true for
-itself and its value is filled; it gives way where its justification is
-established false for another form, or where it holds with a settled leeg
-value (the fall-through of ch. 7.1); and it is open otherwise. The stack is
-read from high to low: the first default that decides decides the target, a
-lower default decides only where it stands of every higher one that it gives
-way, and at the first default that is open the target is open. Example
-(WV-1.5-stack-first-decides): "het vindloon van een Vondst is zijn gewicht
-maal 2", with above it "… op 0 indien hij betwist is": at gewicht 50 the
-vindloon is 100 where betwist stands not to hold, 0 where it holds, and open
-where the case does not name it; without a gewicht it is 0 where betwist
-holds and open where it stands not to hold. Example
-(WV-1.5-stack-gives-way): "het bergloon van een Vondst is 7 indien hij
-gemeld is", with above it "… zijn vindloon indien hij gemeld is en zijn
-gewicht groter is dan 100" and the vindloon of the card: a gemelde Vondst of
-gewicht 200 has a bergloon of 7 at taxatie 50, where the vindloon is settled
-leeg, of 10 at taxatie 2000, and an open bergloon without a taxatie. Where
-every default gives way and no initialisation stands below them, the target
-is settled leeg (WV-1.5-stack-settled-leeg): that bergloon where gemeld
-stands not to hold.
+of a rule: it decides where its justification is established true and its
+value is filled; it gives way where its justification is established false, or
+where it holds with a settled leeg value (the fall-through of ch. 7.1); and it
+is open otherwise. The stack is read from high to low: the first default that
+decides decides the target, a lower default decides only where it stands of
+every higher one that it gives way, and at the first default that is open the
+target is open. Example (WV-1.5-stack-first-decides): "het vindloon van een
+Vondst is zijn gewicht maal 2", with above it "… op 0 indien hij betwist is":
+at gewicht 50 the vindloon is 100 where betwist stands not to hold, 0 where it
+holds, and open where the case does not name it; without a gewicht it is 0
+where betwist holds and open where it stands not to hold. Example
+(WV-1.5-stack-gives-way): "het bergloon van een Vondst is 7 indien hij gemeld
+is", with above it "… zijn vindloon indien hij gemeld is en zijn gewicht
+groter is dan 100" and the vindloon of the card: a gemelde Vondst of gewicht
+200 has a bergloon of 7 at taxatie 50, where the vindloon is settled leeg, of
+10 at taxatie 2000, and an open bergloon without a taxatie. Where every
+default gives way, the target is settled leeg (WV-1.5-stack-settled-leeg):
+that bergloon where gemeld stands not to hold.
 
-**The initialisation of a stack** (ch. 7.3) is a closure over the stack, as
-an initialisation rule is over the writers of its target: it decides where
-nothing above it decides, also where a default above it is open. A value the
-case gives the target stands above it. Example
-(WV-1.5-stack-initialisation): below the vindloon above, "… moet
-geïnitialiseerd worden op 5" gives 5 at gewicht 50 where betwist is not
-named, and 5 without a gewicht where betwist stands not to hold; with "… op
-zijn schatting" in its place the vindloon is open without a schatting and 4
-at schatting 4. With a vindloon of 7 in the case it is open where betwist is
-not named, and 100 where betwist stands not to hold. Of two initialisations in
+**The initialisation of a stack** (ch. 7.3) is its lowest default and is read
+as any default: it decides where it stands of every default above it that it
+gives way, and below a default that is open the target is open. A value the
+case gives the target stands above it. Example (WV-1.5-stack-initialisation):
+"het vindloon van een Vondst is zijn gewicht maal 2 indien zijn gewicht groter
+is dan 10", with above it "… op 0 indien hij betwist is" and below it "… moet
+geïnitialiseerd worden op 5": at gewicht 5 the vindloon is 5 where betwist
+stands not to hold, and open where betwist is not named; without a gewicht it
+is open; with "… op zijn schatting" in its place it is open without a
+schatting and 4 at schatting 4, at gewicht 5 where betwist stands not to hold.
+With a vindloon of 7 in the case it is open where betwist is not named, and
+100 at gewicht 50 where betwist stands not to hold. Of two initialisations in
 one stack (ch. 7.10, an inherited one above its own) each reads so. Example
 (WV-1.5-stack-two-initialisations): with "het vindloon van een Vondst moet
 geïnitialiseerd worden op 2 maal zijn gewicht indien zijn gewicht groter is
 dan 10" and, for a Wrakvondst, a Vondst, "… op 0 indien hij betwist is" above
-"… moet geïnitialiseerd worden op 5", a Wrakvondst whose betwist is not named
-has a vindloon of 40 at gewicht 20 and of 5 at gewicht 5; without a gewicht,
-where the upper initialisation is open, it is 5, also where betwist stands not
-to hold. With a vindloon of 7 in the case it is open at gewicht 5.
+"… moet geïnitialiseerd worden op 5", a Wrakvondst where betwist stands not to
+hold has a vindloon of 40 at gewicht 20, and of 5 at gewicht 5 and with the
+gewicht complete and not given; without a gewicht it is open, and where
+betwist is not named it is open whatever the gewicht, also with a vindloon of
+7 in the case.
 
 **An opgave** — a stack whose highest default is the value the case may give
 for its target, "het bergloon (mag opgegeven worden)" — reads as any default
-over an input member: where the case gives the opgave no value it is open,
-and the computation below it does not decide; an initialisation closes over
-an open opgave. An opgave declared complete (below) is settled leeg where the
-case gives it no value: its default gives way, and the computation decides.
-Example (WV-1.5-stack-opgave): "het bergloon van een Vondst is zijn opgegeven
-bergloon", above "… zijn gewicht maal 2", at gewicht 10: 30 with an opgave of
-30, open without one, and 25 above "… moet geïnitialiseerd worden op 25";
-with the opgave declared complete it is 20 without one and 30 with an opgave
-of 30.
+over an input member: where the case gives the opgave no value it is open, and
+no default below it decides, an initialisation among them. An opgave declared
+complete (below) is settled leeg where the case gives it no value: its default
+gives way, and the computation decides. Example (WV-1.5-stack-opgave): "het
+bergloon van een Vondst is zijn opgegeven bergloon", above "… zijn gewicht
+maal 2", at gewicht 10: 30 with an opgave of 30, and open without one, also
+above "… moet geïnitialiseerd worden op 25"; with the opgave declared complete
+it is 20 without one, also above that initialisation, and 30 with an opgave of
+30.
 
 **A stack on a characteristic** decides to attribute or not to attribute
 (ch. 7.1). Where a default decides not to attribute, or every default gives
@@ -840,27 +866,26 @@ defined here (WV-1.5-stack-timeline-refused).
 
 **A creation** (ch. 5.5) has the three outcomes of a rule. An object creation
 makes its object, and a fact creation lays its links, where its condition is
-established true for itself; where its condition is established false for
-another form, it stands that it makes nothing. Where its condition is
-undetermined, what it would make is open: the relation over which it would
-link its object to the subject, or lay its links, is open on the subject, and
-for a fact creation on every object it could reach, so a count, a fold, a
-quantifier fold, a role check and a navigated read over that relation from
-there are open reads. Example (WV-1.5-creation-condition,
-WV-1.5-creation-open): "een Jutter heeft een proefvondst met gewicht gelijk
-aan 3 indien hij niet ervaren is", with "een Jutter is ervaren indien zijn
-ervaring groter is dan 5", the number of his vondsten, the sum of their
-gewicht and "een Jutter is vindend indien hij een vondst heeft": at ervaring
-2 the proefvondst is made, the number is 1, the sum 3 and vindend holds; at
-ervaring 8 none is made, the number is 0, the sum settled leeg and vindend
-stands not to hold; without an ervaring all three are open, also beside a
-vondst the case links to the Jutter. Example (WV-1.5-fact-creation): "een
-hulpvondst van een Jutter is een vondst van de Jutter indien de Jutter niet
-gemeld is", "het hulptal van een Jutter is het aantal hulpvondsten" and "een
-Vondst is geholpen indien hij een hulpjutter heeft", over two vondsten: the
-hulptal is 2 and V1 is geholpen where gemeld stands not to hold, 0 and not
-geholpen where gemeld holds, and both are open where the case does not name
-gemeld.
+established true; where its condition is established false, it stands that it
+makes nothing. Where its condition is undetermined, what it would make is
+open: the relation over which it would link its object to the subject, or lay
+its links, is open on the subject, and for a fact creation on every object it
+could reach, so a count, a fold, a quantifier fold, a role check and a
+navigated read over that relation from there are open reads. Example
+(WV-1.5-creation-condition, WV-1.5-creation-open): "een Jutter heeft een
+proefvondst met gewicht gelijk aan 3 indien hij niet ervaren is", with "een
+Jutter is ervaren indien zijn ervaring groter is dan 5", the number of his
+vondsten, the sum of their gewicht and "een Jutter is vindend indien hij een
+vondst heeft": at ervaring 2 the proefvondst is made, the number is 1, the sum
+3 and vindend holds; at ervaring 8 none is made, the number is 0, the sum
+settled leeg and vindend stands not to hold; without an ervaring all three are
+open, also beside a vondst the case links to the Jutter. Example
+(WV-1.5-fact-creation): "een hulpvondst van een Jutter is een vondst van de
+Jutter indien de Jutter niet gemeld is", "het hulptal van een Jutter is het
+aantal hulpvondsten" and "een Vondst is geholpen indien hij een hulpjutter
+heeft", over two vondsten: the hulptal is 2 and V1 is geholpen where gemeld
+stands not to hold, 0 and not geholpen where gemeld holds, and both are open
+where the case does not name gemeld.
 
 **An object made** has the member values its creation assigns, as the input
 of an object (ch. 7.8): an attribute it assigns is filled, settled leeg where
@@ -899,39 +924,37 @@ false, each as a judgement; the set is complete, as a relation is. Each member
 of the range is a member of a composite: for `all` and `the` it is true where
 its filter is false or its matrix true, for the other quantifiers where both
 are true, by Kleene's table, and the fold is the table of the composite over
-those members, read until its judgement for another form stands. An open read
-in the filter or the matrix of one member leaves that member undetermined,
-not the fold. Where every filter stands this is the count of ch. 3.9a over
-the contributors, with its stop. A matrix is read provisionally, as a member
-of a composite is (**The judgement of a condition**), where a member before it
-is undetermined for another form, and also where a filter is: every filter is
-read before every matrix, and whether ch. 3.9a reads a matrix depends on its
-own filter and, through the members it excludes, on every other. Example
-(WV-1.5-past-undetermined-fold, WV-1.5-past-undetermined-filter): "een Jutter
-is gelijkmatig indien al zijn vondsten een gewicht gedeeld door hun
-deelnemers groter dan 2 hebben", over V1 with 2 deelnemers and V2 with gewicht
-9 and 0 deelnemers: without the gewicht of V1, V2 is false and gelijkmatig
-stands not to hold, without the EF-005 fact of the division; at a gewicht of
-10 for V1 it stands not to hold with the fact. "… van zijn vondsten die
-gemerkt zijn …", over one vondst V1 of gewicht 9 with 0 deelnemers: where the
-case does not name gemerkt, gelijkmatig is open without the fact, and where V1
-is gemerkt it stands not to hold with it; "ten minste twee van zijn vondsten
-die gemerkt zijn …", with that V1 gemerkt and a V2 of gewicht 10 and 2
-deelnemers whose gemerkt the case does
-not name, stands not to hold without the fact; where V2 is gemerkt it stands
-not to hold with the fact, and where it stands that V2 is not gemerkt the
-read stops before the matrix of V1. Example (WV-1.5-quantifier-fold-*): "een
-Jutter is [Q] indien [Q] van zijn vondsten een gewicht groter dan 10
-hebben", over vondsten of 20, 30 and one without a gewicht: `all` is open,
-`none` stands not to hold, `atLeast` 1 and 2 hold, `atMost` 1 and `exactly` 1
-stand not to hold; over 5, 6 and one without: `atLeast` 2 stands not to hold,
-`atMost` 1 holds, `exactly` 1 is open; with the vondst without a gewicht
-first, the members after it decide as they do. "Een Jutter is keurder indien
-al zijn vondsten die gemerkt zijn een gewicht groter dan 10 hebben", with a
-gemerkt vondst of 20 and one of 5 whose gemerkt the case does not name, is
-open, where the document without the property attributes keurder; with that
-second vondst at 30 it holds. Over no vondst `all` holds and `atLeast` 1
-stands not to hold.
+those members, read until its judgement stands. An open read in the filter or
+the matrix of one member leaves that member undetermined, not the fold. Where
+every filter stands this is the count of ch. 3.9a over the contributors, with
+its stop. A matrix is read provisionally, as a member of a composite is (**The
+judgement of a condition**), where a member before it is undetermined, and
+also where a filter is: every filter is read before every matrix, and whether
+ch. 3.9a reads a matrix depends on its own filter and, through the members it
+excludes, on every other. Example (WV-1.5-past-undetermined-fold,
+WV-1.5-past-undetermined-filter): "een Jutter is gelijkmatig indien al zijn
+vondsten een gewicht gedeeld door hun deelnemers groter dan 2 hebben", over V1
+with 2 deelnemers and V2 with gewicht 9 and 0 deelnemers: without the gewicht
+of V1, V2 is false and gelijkmatig stands not to hold, without the EF-005 fact
+of the division; at a gewicht of 10 for V1 it stands not to hold with the
+fact. "… van zijn vondsten die gemerkt zijn …", over one vondst V1 of gewicht
+9 with 0 deelnemers: where the case does not name gemerkt, gelijkmatig is open
+without the fact, and where V1 is gemerkt it stands not to hold with it; "ten
+minste twee van zijn vondsten die gemerkt zijn …", with that V1 gemerkt and a
+V2 of gewicht 10 and 2 deelnemers whose gemerkt the case does not name, stands
+not to hold without the fact; where V2 is gemerkt it stands not to hold with
+the fact, and where it stands that V2 is not gemerkt the read stops before the
+matrix of V1. Example (WV-1.5-quantifier-fold-*): "een Jutter is [Q] indien
+[Q] van zijn vondsten een gewicht groter dan 10 hebben", over vondsten of 20,
+30 and one without a gewicht: `all` is open, `none` stands not to hold,
+`atLeast` 1 and 2 hold, `atMost` 1 and `exactly` 1 stand not to hold; over 5,
+6 and one without: `atLeast` 2 stands not to hold, `atMost` 1 holds, `exactly`
+1 is open; with the vondst without a gewicht first, the members after it
+decide as they do. "Een Jutter is keurder indien al zijn vondsten die gemerkt
+zijn een gewicht groter dan 10 hebben", with a gemerkt vondst of 20 and one of
+5 whose gemerkt the case does not name, is open, where the document without
+the property attributes keurder; with that second vondst at 30 it holds. Over
+no vondst `all` holds and `atLeast` 1 stands not to hold.
 
 **A fold over a set** — the sum, the minimum, the maximum, the first, the
 last, the count and the filled-value count over the members of a range (ch.
@@ -939,97 +962,77 @@ last, the count and the filled-value count over the members of a range (ch.
 first and then its value. A member whose filter is false does not count, a
 settled leeg value is skipped as ch. 1.2 skips a leeg value, and a member
 whose filter is undetermined or whose value is open makes the fold open; a
-count reads no value, so only an undetermined filter makes it open. A fold
-over no contribution is settled leeg, or its fallback. Example
-(WV-1.5-set-fold): "het totaalgewicht van een Jutter is de som van het
-gewicht van zijn vondsten", "het zwaargewicht … van zijn vondsten die een
-gewicht groter dan 10 hebben", their minimum, "het zwaaraantal" and "het
-vondstaantal": over vondsten of 20 and 5 they are 25, 20, 5, 1 and 2; over 20
-and a vondst without a gewicht all are open but the vondstaantal, 2; over no
-vondst the sums and the minimum are settled leeg and the counts 0, and "de
-som … of 0 als die er niet zijn" is 0. The sum of the vindloon of the card over
-a vondst of taxatie 2000 and one of taxatie 50 is 10, the settled leeg
-vindloon skipped; with the second taxatie missing it is open.
-
-**A closure inside a value.** The filled-value count (ch. 3.4c) and a fold
-filter that tests on gevuld are closures inside an expression: for the form
-itself an open value is leeg, so the count counts what is filled and the
-filter leaves the member out; for another form what they give does not
-stand. The evaluation tells its boundary that it applied a closure to an open
-value, beside the one value it computes. An atomic condition is then
-established for the form itself and undetermined for another — the test on
-leeg and gevuld is this closure on one value. A rule whose value applied one
-decides with that value; where that value is leeg, it does not stand for
-another form that the rule fills nothing, and its target is open. Example
-(WV-1.5-closure-in-a-value): "het aantal gewogen vondsten van een Jutter is
-het aantal gevulde gewichten van zijn vondsten", over vondsten of 20, without
-a gewicht and of 30, is 2. "Een Jutter is volledig gewogen indien het aantal
-gevulde gewichten van zijn vondsten gelijk is aan 3" is open there: false for
-itself, undetermined for another; "… groter is dan 1" holds. "Het gewogen
-totaal is de som van het gewicht van zijn vondsten waarvan het gewicht
-gevuld is" is 50 there; over vondsten that all lack a gewicht it is open, and
-over no vondst settled leeg. A binder of a `Let` (ch. 10.6) whose computation
-applied a closure rests on it at every read: each read tells its own boundary.
-Example (WV-1.5-closure-of-a-binder-*, WV-5.12-closure-of-a-binder): "een
-Jutter is bijzonder indien (daarbij geldt: t is het aantal gevulde gewichten
-van zijn vondsten, 10 als t groter is dan 3, anders 20 als t groter is dan 2,
-anders t) gelijk is aan 2", over a vondst of gewicht 20 and one of gewicht 1,
-holds; where the second has no gewicht, t is 1 after a closure, each of the two
-conditions on t is false for the form itself and undetermined for another, and
-bijzonder is open. The computation of a binder is one value: one that reads an
-open value deposits nothing. Example (WV-1.5-binder-broken-off-*): "de
-uitkering van een Vondst is, daarbij geldt: t is zijn taxatie gedeeld door 0
-plus zijn schade, 1 als t gevuld is, anders 0", at taxatie 50, is 1 with the
-EF-005 fact of the division at schade 5, and 0 without a fact where the schade
-is open. Where the barrier of a Let ends an atomic condition, that condition
-has no judgement, and the closures applied in it count for the value of the
-Let, which is leeg. Example (WV-1.5-closure-before-a-barrier): "het keurgewicht
-van een Jutter is, daarbij geldt: t is de som van het gewicht van zijn vondsten
-waarvan getuigen gevuld is, 1 als t gelijk is aan 3, anders t", over a vondst
-of gewicht 5, is 5 at getuigen 2; without getuigen the comparison reads the
-leeg t, and the keurgewicht is open. A closure applied before a fault does not
-count: what faulted has no value and no judgement. Example
-(WV-1.5-closure-before-a-fault): "de schadetoeslag van een Vondst is 1 als alle
-van: zijn gewicht is groter dan 10, (1 als zijn getuigen leeg is, anders 0)
-plus het Rekenjaar is groter dan 3, zijn schade is groter dan 100; anders zijn
-vindloon", without a gewicht, getuigen and an evaluation date, at schade 3 and
-taxatie 50: the second member faults and is undetermined, the third is false,
-and the schadetoeslag is settled leeg, as the vindloon is.
+count reads no value, so only an undetermined filter makes it open, and the
+filled-value count reads the value of each member, so an open value makes it
+open as it makes a sum open. A filter that tests on gevuld or leeg is
+undetermined for a member whose value is open (**The test on leeg and
+gevuld**), and makes the fold open as well. A fold over no contribution is
+settled leeg, or its fallback. Example (WV-1.5-set-fold): "het totaalgewicht
+van een Jutter is de som van het gewicht van zijn vondsten", "het zwaargewicht
+… van zijn vondsten die een gewicht groter dan 10 hebben", their minimum, "het
+zwaaraantal" and "het vondstaantal": over vondsten of 20 and 5 they are 25,
+20, 5, 1 and 2; over 20 and a vondst without a gewicht all are open but the
+vondstaantal, 2; over no vondst the sums and the minimum are settled leeg and
+the counts 0, and "de som … of 0 als die er niet zijn" is 0. The sum of the
+vindloon of the card over a vondst of taxatie 2000 and one of taxatie 50 is
+10, the settled leeg vindloon skipped; with the second taxatie missing it is
+open. Example (WV-1.5-filled-in-a-fold): "het aantal gewogen vondsten van een
+Jutter is het aantal gevulde gewichten van zijn vondsten", over vondsten of
+20, without a gewicht and of 30, is open, and so are "een Jutter is volledig
+gewogen indien het aantal gevulde gewichten van zijn vondsten gelijk is aan
+3", "gedeeltelijk gewogen indien … groter is dan 1" and "het gewogen totaal is
+de som van het gewicht van zijn vondsten waarvan het gewicht gevuld is". With
+the gewicht declared complete the vondst without one is settled leeg: the
+count is 2, volledig gewogen stands not to hold, gedeeltelijk gewogen holds,
+and the gewogen totaal is 50. Over no vondst the count is 0 and the gewogen
+totaal settled leeg. A binder (**An open read**) that such a fold computes is
+open where the fold is (WV-1.5-filled-count-in-a-binder-*,
+WV-5.12-filled-count-in-a-binder): "een Jutter is bijzonder indien (daarbij
+geldt: t is het aantal gevulde gewichten van zijn vondsten, 10 als t groter is
+dan 3, anders 20 als t groter is dan 2, anders t) gelijk is aan 2", over a
+vondst of gewicht 20 and one of gewicht 1, holds, and where the second has no
+gewicht it is open. Where the binder stands, the barrier of a leeg binder ends
+the condition that reads it, as ch. 10.6 lays down
+(WV-1.5-filled-filter-in-a-binder): "het keurgewicht van een Jutter is,
+daarbij geldt: t is de som van het gewicht van zijn vondsten waarvan getuigen
+leeg is, 1 als t gelijk is aan 3, anders t", with the gewicht declared
+complete, over one vondst: at getuigen 2 the filter is false, t is leeg and
+the keurgewicht settled leeg; without getuigen it is open.
 
 **An IfThenElse in a value** (ch. 10.2) reads its condition as a judgement,
 and then the branch it chooses and no other. Where the condition is
-undetermined the value has an open read; where a closure decided it, the
-value stands for the form itself and not for another, as a closure inside a
-value does. Example (WV-1.5-if-then-else): "het vindloon van een Vondst is 10
-als zijn taxatie groter is dan 1000, anders zijn gewicht" is 10 at taxatie
-2000, 3 at taxatie 50 and gewicht 3, open at taxatie 50 without a gewicht,
-and open without a taxatie. "De bergtoeslag is 5 als zijn taxatie leeg is,
-anders 0" is 5 without a taxatie, and "een Vondst is gewoon indien (1 als
-zijn taxatie leeg is, anders 0) gelijk is aan 0" is open there — false for
-itself, undetermined for another — and holds at taxatie 50.
+undetermined the value has an open read. Example (WV-1.5-if-then-else): "het
+vindloon van een Vondst is 10 als zijn taxatie groter is dan 1000, anders zijn
+gewicht" is 10 at taxatie 2000, 3 at taxatie 50 and gewicht 3, open at taxatie
+50 without a gewicht, and open without a taxatie. "De bergtoeslag is 5 als
+zijn taxatie leeg is, anders 0" is open without a taxatie, and so is "een
+Vondst is gewoon indien (1 als zijn taxatie leeg is, anders 0) gelijk is aan
+0", which holds at taxatie 50.
 
 **Complete input.** The declaration of an attribute or a characteristic can
 say that its input is complete (`complete`, IR-SPEC ch. 2.2); a subtype
 inherits the member with it. On an object where the member is input, a
 complete member without a value is settled leeg, and a complete
-characteristic the case does not name stands not to hold. On an object where
-a rule or a defaults group writes the member, it follows its writers and the
-field changes nothing; in a document without the property nothing is open,
-and the field changes no outcome. A session can treat every input member as
-complete, the measurement of preservation below. Example (WV-1.5-complete-*):
-the uitbetaling of the first example, with the vindloon declared complete and
-bergloon 3, is 3, and so with the vindloon and the bergloon declared complete,
-and in a session that treats every input member as complete; with only the
-bergloon declared complete it stays open. "De drijftoeslag is 2 indien hij
-niet drijfhout is", with drijfhout declared complete and not named, is 2. With
-the vindloon declared complete on the Vondst, a Strandvondst with bergloon 3
-and no vindloon has the uitbetaling 3. The vindloon of the card, declared
-complete, is open without a taxatie, as without the field; with "het vindloon
-van een Strandvondst is 10 indien zijn taxatie groter is dan 1000" as its one
-writer, the vindloon of a Vondst that is no Strandvondst is settled leeg
-without a value, and that of a Strandvondst without a taxatie is open. In the
-document without the property the uitbetaling is 3 with the field and without
-it.
+characteristic the case does not name stands not to hold. On an object where a
+rule other than an initialisation or a defaults group writes the member, it
+follows its writers and the field changes nothing; a member that only an
+initialisation writes is input, and declared complete it is settled leeg above
+the initialisation, which gives its value (WV-1.5-initialisation-input); in a
+document without the property nothing is open, and the field changes no
+outcome. A session can treat every input member as complete, the measurement
+of preservation below. Example (WV-1.5-complete-*): the uitbetaling of the
+first example, with the vindloon declared complete and bergloon 3, is 3, and
+so with the vindloon and the bergloon declared complete, and in a session that
+treats every input member as complete; with only the bergloon declared
+complete it stays open. "De drijftoeslag is 2 indien hij niet drijfhout is",
+with drijfhout declared complete and not named, is 2. With the vindloon
+declared complete on the Vondst, a Strandvondst with bergloon 3 and no
+vindloon has the uitbetaling 3. The vindloon of the card, declared complete,
+is open without a taxatie, as without the field; with "het vindloon van een
+Strandvondst is 10 indien zijn taxatie groter is dan 1000" as its one writer,
+the vindloon of a Vondst that is no Strandvondst is settled leeg without a
+value, and that of a Strandvondst without a taxatie is open. In the document
+without the property the uitbetaling is 3 with the field and without it.
 
 **The case.** Beside the characteristics that hold, the input of an object
 can name the characteristics that stand not to hold (`characteristicsAbsent`,
@@ -1050,32 +1053,29 @@ nowhere; without the property it is 2 either way. Kostbaar in
 taxatie 50, and holds at taxatie 2000. The golden `jutterswet-afleiden-uit-leeg` has a case per
 state.
 
-**The two requirements.** *Monotonicity*: giving an input member a value adds
-outcomes and changes none — an outcome being a value, a settled leeg
-attribute, a characteristic that holds or stands not to hold, or a §9.5 fact
-— except through a closure: a test on leeg or gevuld, or a gevuld assertion,
-over an open value (the form's own negation of a gevuld test among them), a
-filled-value count and a filter of a fold, over a set or with a quantifier,
-that tests on gevuld over an open value, an initialisation, and a member
-declared complete. A value the case gives a derived member is no input
-member's: where every writer fills nothing it stands in place of settled leeg.
-The requirement is over the input members of the objects of a case: its links
-are complete (but where a creation could still lay one), and adding a link or
-an object is not giving a member a value. It holds where both sessions end: an
-input given can make a session fault that ended without it, where an evaluation
-then reaches a fault, or a member that faults is no longer read provisionally.
-*Preservation with complete knowledge*: where nothing is open, every input
-member given or complete, the outcomes are those of ch. 1.2–1.4. Example
-(WV-1.5-monotone, WV-1.5-preserved): every example of this section, run once
-with each input member it gives left out, and once with every input member
-complete against the same document without the property; the closures the first
-meets are listed in the test, with the outcomes each adds. Gate 5 holds both
-over the corpus: every golden whose forms the reference interpreter carries,
-with the property, plays its own cases with every input member complete; and
-per case and per input member it gives, the end state without that input (ch.
-5.12a) keeps its every outcome in the end state with it, a run in which a
-closure decided, and one whose member left out is not open there (a member
-declared complete among them), counted apart.
+**The two requirements.** *Monotonicity*: giving an open input member a value
+adds outcomes and changes none — an outcome being a value, a settled leeg
+attribute, a characteristic that holds or stands not to hold, or a §9.5 fact —
+without exception. A member declared complete is not open: without a value it
+is settled leeg, and a value the case gives it can change an outcome; that is
+the author's closing at the edge. A value the case gives a derived member is
+no input member's: where every writer fills nothing it stands in place of
+settled leeg. The requirement is over the input members of the objects of a
+case: its links are complete (but where a creation could still lay one), and
+adding a link or an object is not giving a member a value. It holds where both
+sessions end: an input given can make a session fault that ended without it,
+where an evaluation then reaches a fault, or a member that faults is no longer
+read provisionally. *Preservation with complete knowledge*: where nothing is
+open, every input member given or complete, the outcomes are those of ch.
+1.2–1.4. Example (WV-1.5-monotone, WV-1.5-preserved): every example of this
+section, run once with each open input member it gives left out, and once with
+every input member complete against the same document without the property.
+Gate 5 holds both over the corpus: every golden whose forms the reference
+interpreter carries, with the property, plays its own cases with every input
+member complete; and per case and per input member it gives, the end state
+without that input (ch. 5.12a) keeps its every outcome in the end state with
+it, a run whose member left out is not open there (a member declared complete,
+or a derived member) counted apart.
 
 Broader examples, a document per form with cases whose expectations were
 computed by hand (`spec/proposals/STRICT-EMPTY.md` §5), are in the suite
@@ -5088,6 +5088,15 @@ either document order; `gewicht` 8,00 gives bergloon **leeg** and vindloon
 On a timeline target the guard is read per day: the initialisation decides
 the days on which the input reads no value and no writer decides (ch. 7.8).
 
+In a document with `inferFromEmpty: false` (ch. 1.5) the target is empty
+where it is settled leeg. The initialisation is the lowest writer of its
+target: it is at its turn where it stands of every writer above it, the
+input among them, that it fills nothing. Where the target is an open input
+member, or another writer leaves it open, the initialisation does not write,
+and the target is open; a member that only an initialisation writes is an
+input member with a default value (WV-1.5-initialisation,
+WV-1.5-initialisation-input).
+
 Two initialisations on one target are ill-formed (`IR-SPEC.md` WF-079, its
 initialisation arm), conditional or not: where both apply nothing ranks
 them, and the fixpoint does not define which value the target takes — the
@@ -7318,10 +7327,10 @@ allocation, a creation — has none: there is nothing to read.
 | `FAILS` | the condition does not hold | the nodes of the condition |
 | `FAULTS` | the evaluation of the condition faults (ch. 5.7) | the nodes, the fault at those it reached |
 | `FAULTS` | the form has a dated validity and the session no evaluation date (ch. 8.1) | none |
-| `DISPLACED` | the form is a default that is not at its turn because a higher default of its chain decided or settled (ch. 7.1, 7.9): a default below the one that decides, at the root or in an exception group, and every default inside its exception groups; the content of a default whose exception groups settled; an ordinary rule that ch. 7.10 folds into a stack, below the default that decides; the initialisation default below the default that decides, where the input leaves its target empty; on a timeline target, a default at its turn on no day (ch. 7.11); below a default that is open, every default but the initialisation default, and the content of a default whose exception groups are open (**Open values**, below) | the nodes of the condition, and of the value where the condition holds, as at its turn (**A displaced default is read**, below) |
-| `DISPLACED` | the target of an initialisation — a rule's, a folded one's in a stack, or the initialisation default's — holds a value of the input or of another writer (ch. 5.4, 7.3), on a timeline target on every day; the subject of an object creation of the 1:1 shape is linked in the input (ch. 5.5) | none |
+| `DISPLACED` | the form is a default that is not at its turn because a higher default of its chain decided or settled (ch. 7.1, 7.9): a default below the one that decides, at the root or in an exception group, and every default inside its exception groups; the content of a default whose exception groups settled; an ordinary rule that ch. 7.10 folds into a stack, below the default that decides; the initialisation default below the default that decides, where the input leaves its target empty; on a timeline target, a default at its turn on no day (ch. 7.11); below a default that is open, every default, the initialisation default among them, and the content of a default whose exception groups are open (**Open values**, below) | the nodes of the condition, and of the value where the condition holds, as at its turn (**A displaced default is read**, below) |
+| `DISPLACED` | the target of an initialisation — a rule's, a folded one's in a stack, or the initialisation default's — holds a value of the input or of another writer (ch. 5.4, 7.3), on a timeline target on every day; in a document with `inferFromEmpty: false`, the target of an initialisation rule is an open input member, or a writer above it leaves the target open (ch. 1.5); the subject of an object creation of the 1:1 shape is linked in the input (ch. 5.5) | none |
 | `OUTSIDE_VALIDITY` | the validity window of the form does not admit the evaluation date (ch. 8.2) | none |
-| `OPEN` | in a document with `inferFromEmpty: false`, the form leaves its target open, or a consistency's assertion is undetermined (ch. 1.5; **Open values**, below, which says where `HOLDS` and `FAILS` stand there) | the nodes of the condition, and of the value where the condition is true for the form itself |
+| `OPEN` | in a document with `inferFromEmpty: false`, the form leaves its target open, or a consistency's assertion is undetermined (ch. 1.5; **Open values**, below, which says where `HOLDS` and `FAILS` stand there) | the nodes of the condition, and of the value where the condition is true |
 
 The session does not evaluate a form that is not at its turn or outside its
 validity. Every default below the one that decides is displaced, and with
@@ -7509,9 +7518,7 @@ both branches).
 reading is the same evaluation, and each node records what that evaluation
 has there:
 
-- a condition its truth for the form itself, `true`, `false` or
-  `undetermined`, and `closure` after a truth for the form itself where its
-  truth for another form is undetermined: a closure decided it;
+- a condition its truth, `true`, `false` or `undetermined`;
 - a node that an open read broke off is `undetermined` and has no value:
   the node that read the open member, and every node the read passed on its
   way out to the boundary of ch. 1.5, one atomic condition or one value;
@@ -7524,35 +7531,33 @@ has there:
   attribute and a characteristic of one name each by its own declaration, or a
   relation open on the object (ch. 1.5) by its role. At a node broken
   off and at an atomic condition that is the member the evaluation read open;
-  at a composite, the open read of its first member that is undetermined for
-  the form itself; at a quantifier fold, the relation of its range where that
-  is open, and else the open read of its first member that is undetermined for
-  the form itself, of its filter where the filter is undetermined and else of
-  its matrix; at a node that an undetermined condition broke off, that
-  condition's; at a member of a composite or a matrix of a quantifier fold
-  that a fault left undetermined (ch. 1.5, read provisionally), the open read
-  of the first member or filter read before it that is undetermined for
-  another form, for a closure the read it closed over. Inside such a member
+  at a composite, the open read of its first undetermined member; at a
+  quantifier fold, the relation of its range where that is open, and else the
+  open read of its first undetermined member, of its filter where the filter
+  is undetermined and else of its matrix; at a node that an undetermined
+  condition broke off, that condition's; at a member of a composite or a
+  matrix of a quantifier fold that a fault left undetermined (ch. 1.5, read
+  provisionally), the open read of the first member or filter read before it
+  that is undetermined. Inside such a member
   the node that faulted, and every node the fault passed on its way out to the
   member, carries `fault` with its code.
 
 A composite and a quantifier fold read their members until their judgement
-for another form stands (ch. 1.5), and the members after that are not
-reached. A contributor of a quantifier fold carries the truth of the matrix on
-it for the form itself, `undetermined` among them; a fold over a set that an
-open read broke off carries no contributors. The status follows the three
-outcomes of ch. 1.5: `HOLDS` where the condition is true for the form itself
-and the value has no open read, a leeg value and a value that faults
-included; `FAILS` where the condition is false for another form; and `OPEN`
-where the form leaves its target open, its condition neither true for itself
-nor false for another, or its value open or leeg after a closure over an
-open value. A consistency is `HOLDS`, `FAILS` or `OPEN` as its assertion is
-true, false or undetermined for itself. In a stack, below a default that is
-`OPEN` the initialisation default is at its turn, a closure over the stack,
-and every other default is `DISPLACED` and read as at its turn; so is the
-content of a default whose exception groups are open. A document without the
-property has no open value: every judgement is one truth, no node is broken
-off, and no form is `OPEN`.
+stands (ch. 1.5), and the members after that are not reached. A contributor
+of a quantifier fold carries the truth of the matrix on it, `undetermined`
+among them; a fold over a set that an open read broke off carries no
+contributors. The status follows the three outcomes of ch. 1.5: `HOLDS` where
+the condition is true and the value has no open read, a leeg value and a
+value that faults included; `FAILS` where the condition is false; and `OPEN`
+where the form leaves its target open, its condition undetermined or its
+value open. A consistency is `HOLDS`, `FAILS` or `OPEN` as its assertion is
+true, false or undetermined. In a stack, below a default that is `OPEN` every
+default is `DISPLACED` and read as at its turn, the initialisation default
+among them; so is the content of a default whose exception groups are open.
+An initialisation rule whose target is an open input member, or which a
+writer above it leaves open, is not at its turn and `DISPLACED` without
+nodes (ch. 1.5). A document without the property has no open value: every
+judgement is established, no node is broken off, and no form is `OPEN`.
 
 Worked example (absolute; the golden `jutterswet-afleiden-uit-leeg` of
 ch. 1.5, verbatim in the `ref/` test `WV-5.12-afleiden-uit-leeg`). Case 2
@@ -7560,7 +7565,8 @@ gives V1 a gewicht of 5 and no taxatie. Rule 0, "een Vondst is kostbaar
 indien zijn taxatie groter is dan 1000", reads the taxatie open, so the
 comparison is undetermined and the literal after it not reached; rule 2, "de
 bewakingstoeslag … 5 indien hij niet kostbaar is", reads kostbaar open; and
-rule 3, "ongetaxeerd indien zijn taxatie leeg is", decides by its closure:
+rule 3, "ongetaxeerd indien zijn taxatie leeg is", reads the taxatie open as
+well:
 
 ```
 /rules/rules/0/versions/0 "V1" 0 Comparison undetermined open "V1" "taxatie"
@@ -7570,9 +7576,9 @@ rule 3, "ongetaxeerd indien zijn taxatie leeg is", decides by its closure:
 /rules/rules/2/versions/0 "V1" 0 CharacteristicCheck undetermined open "V1" "kostbaar"
 /rules/rules/2/versions/0 "V1" 1 Literal unreached
 /rules/rules/2/versions/0 "V1" OPEN
-/rules/rules/3/versions/0 "V1" 0 Predicate true closure
+/rules/rules/3/versions/0 "V1" 0 Predicate undetermined open "V1" "taxatie"
 /rules/rules/3/versions/0 "V1" 1 AttributeReference undetermined open "V1" "taxatie"
-/rules/rules/3/versions/0 "V1" HOLDS
+/rules/rules/3/versions/0 "V1" OPEN
 ```
 
 In case 3, without a gewicht, the vindloon "zijn gewicht plus 10" reads `0
@@ -7613,8 +7619,8 @@ undetermined open "V2" "gewicht"`, without contributors. Example
 (`WV-5.12-open-stack`): over "het bergloon is zijn opgegeven bergloon", "…
 zijn berekende bergloon" and "… moet geïnitialiseerd worden op 25", without
 an opgave, the opgave reads `1 AttributeReference undetermined open "V1"
-"opgegeven bergloon"`, `OPEN`, the computation `DISPLACED`, and the
-initialisation default `0 Literal 25`, `HOLDS`. Example
+"opgegeven bergloon"`, `OPEN`, and the computation and the initialisation
+default below it are `DISPLACED`, the latter reading `0 Literal 25`. Example
 (`WV-5.12-open-creation`, `WV-5.12-open-path`): the creation of a
 proefvondst "indien hij niet ervaren is", for a Jutter without an ervaring,
 reads `0 CharacteristicCheck undetermined open "J1" "ervaren"`, `OPEN`, and a
@@ -7824,7 +7830,7 @@ a creation made as `«"<creation>"»(<subject>)#<k>`, the name of its
 creation, the object it was made for and its number among the objects that
 creation made for it, which is 1, since a creation makes one object per
 subject (ch. 5.5). `<found>` is `unreached`; `true` or `false`, followed by
-`closure` where the truth for another form is undetermined; `undetermined
+`undetermined
 open <object> "<member>"` (**Open values**, below); `fault`
 with the EF code, or `fault -` for a fault without one; or the value: a
 number as its exact decimal without trailing zeros where it terminates, and
@@ -7863,8 +7869,8 @@ does a node that was not reached, that faulted (card
 `reading-read-objects`, 2026-10-27) or that is undetermined. After the node of a fold over a set
 stand its contributors,
 `contributors [<object> <value|verdict|fault> reached|unreached; …]`,
-sorted, each found written as at a node, a verdict as the truth for the
-form itself (`true`, `false`, `undetermined`), and `unordered` in place of the
+sorted, each found written as at a node, a verdict as its truth (`true`,
+`false`, `undetermined`), and `unordered` in place of the
 position where the executor keeps no order. `runner --trace` prints this
 text for a golden case, each line after `reading `.
 
@@ -8375,8 +8381,8 @@ object «"stel het penningbesluit vast"»("J2")#1 "Penningbesluit"
 **Worked example — open members** (absolute; the golden
 `jutterswet-afleiden-uit-leeg` of ch. 1.5, case 4, verbatim in the `ref/`
 test `WV-5.12a-afleiden-uit-leeg`). The case gives V1 nothing: every input
-member is open, and so is every member a rule writes from one, but
-ongetaxeerd, which its closure attributes (ch. 1.5):
+member is open, and so is every member a rule writes from one, ongetaxeerd
+among them, whose leeg test over the open taxatie is undetermined (ch. 1.5):
 
 ```
 attribute "V1" "bewakingstoeslag" open
@@ -8388,7 +8394,7 @@ attribute "V1" "vindloon" open
 characteristic "V1" "betwist" open
 characteristic "V1" "gemeld" open
 characteristic "V1" "kostbaar" open
-characteristic "V1" "ongetaxeerd"
+characteristic "V1" "ongetaxeerd" open
 object "V1" "Vondst"
 ```
 
@@ -9579,7 +9585,10 @@ is left standing; the initialisation alone fills the empty target
 (25). The worked pair of ch. 5.4 is binding unchanged. Phase 4 changes
 the *justification* from mechanism (a guard) to declaration (the
 lowest default), so the Drools lowering derives the guard instead of
-embodying it.
+embodying it. In a document with `inferFromEmpty: false` the initialisation
+default is read as any default (ch. 1.5): it decides where it stands of every
+default above it that it gives way, and below a default that is open the
+target is open (WV-1.5-stack-initialisation).
 
 ### 7.4 What defeasibility is *not* — and what it must not break
 

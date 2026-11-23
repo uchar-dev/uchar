@@ -31,7 +31,7 @@ Met als verwacht resultaat:
 - of V1 kostbaar is, staat niet vast
 - het vindloon van V1 is 15
 - de bewakingstoeslag van V1 staat niet vast
-- V1 is ongetaxeerd
+- of V1 ongetaxeerd is, staat niet vast
 - het meldloon van V1 is 3
 - de gegevens zijn consistent
 
@@ -56,7 +56,7 @@ Met als verwacht resultaat:
 - of V1 kostbaar is, staat niet vast
 - het vindloon van V1 staat niet vast
 - de bewakingstoeslag van V1 staat niet vast
-- V1 is ongetaxeerd
+- of V1 ongetaxeerd is, staat niet vast
 - of V1 gemeld is, staat niet vast
 - het meldloon van V1 staat niet vast
 - de gegevens zijn consistent

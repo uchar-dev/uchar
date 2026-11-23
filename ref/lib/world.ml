@@ -61,11 +61,6 @@ type outcome = {
          (RUNTIME-SEMANTICS ch. 1.5): the form wrote no value there and it
          does not stand that it fills nothing. Empty in a document without
          open input *)
-  closure : bool;
-      (* this evaluation applied a closure to an open value (ch. 1.5): what it
-         came to stands for the form itself, and not as an outcome that a
-         further input keeps (the two requirements). False in a document
-         without open input *)
 }
 
 module Key = Map.Make (struct
@@ -694,24 +689,23 @@ let opened_of outcomes =
     Member.empty outcomes
 
 (* the evaluation of [form] on [at] came to [deposits] or [fault], leaving
-   [opened] open, with or without a [closure]: this replaces its earlier
-   outcome *)
-let set_outcome w ~form ~at ~deposits ~fault ~opened ~closure =
+   [opened] open: this replaces its earlier outcome *)
+let set_outcome w ~form ~at ~deposits ~fault ~opened =
   let mine o = String.equal o.form form && String.equal o.at at in
   let standing = List.find_opt mine w.outcomes in
   let unchanged =
     match standing with
-    | None -> deposits = [] && fault = None && opened = [] && not closure
-    | Some o -> o.deposits = deposits && o.fault = fault && o.opened = opened && o.closure = closure
+    | None -> deposits = [] && fault = None && opened = []
+    | Some o -> o.deposits = deposits && o.fault = fault && o.opened = opened
   in
   if unchanged then w
   else
-    let entry = { form; at; deposits; fault; opened; closure } in
+    let entry = { form; at; deposits; fault; opened } in
     let outcomes =
-      match (standing, deposits, fault, opened, closure) with
-      | Some _, [], None, [], false -> List.filter (fun o -> not (mine o)) w.outcomes
-      | Some _, _, _, _, _ -> List.map (fun o -> if mine o then entry else o) w.outcomes
-      | None, _, _, _, _ -> w.outcomes @ [ entry ]
+      match (standing, deposits, fault, opened) with
+      | Some _, [], None, [] -> List.filter (fun o -> not (mine o)) w.outcomes
+      | Some _, _, _, _ -> List.map (fun o -> if mine o then entry else o) w.outcomes
+      | None, _, _, _ -> w.outcomes @ [ entry ]
     in
     { w with outcomes; channel = channel_of outcomes; opened = opened_of outcomes }
 
@@ -721,27 +715,24 @@ let opened_by w ~form ~at =
   | Some (o : outcome) -> o.opened
   | None -> []
 
-(* the evaluation under way ended without a fault; [closure]: it applied a
-   closure to an open value *)
-let close_evaluation ?(closure = false) w ~form ~at =
+(* the evaluation under way ended without a fault *)
+let close_evaluation w ~form ~at =
   set_outcome { w with evaluating = []; opening = [] } ~form ~at ~deposits:(List.rev w.evaluating) ~fault:None
-    ~opened:(List.sort compare w.opening) ~closure
+    ~opened:(List.sort compare w.opening)
 
 (* the evaluation ended in [fault]; [w] is the world before it, so what it wrote,
    deposited and left open is gone *)
 let fault_evaluation w ~form ~at fault =
-  set_outcome w ~form ~at ~deposits:[] ~fault:(Some fault) ~opened:[] ~closure:false
+  set_outcome w ~form ~at ~deposits:[] ~fault:(Some fault) ~opened:[]
 
-(* the standing evaluations, as (form, subject), that applied a closure to an
-   open value (ch. 1.5) *)
-let closures w = List.filter_map (fun o -> if o.closure then Some (o.form, o.at) else None) w.outcomes
-
-(* whether the attribute [attr] of [label] is open but for what an
-   initialisation wrote there: open input, or left open by a standing outcome
-   (ch. 1.5) *)
-let open_beside_initialisation w ~label ~attr =
+(* whether the attribute [attr] of [label] is open beside the initialisation
+   [form]: open input, or left open by the standing outcome of another form.
+   Then it does not stand of every writer above the initialisation that it
+   fills nothing, and the initialisation is not at its turn (ch. 1.5) *)
+let open_beside_initialisation w ~form ~label ~attr =
   let m = (label, attribute attr) in
-  Member.mem m w.open_input || Member.mem m w.opened
+  Member.mem m w.open_input
+  || List.exists (fun o -> (not (String.equal o.form form && String.equal o.at label)) && List.mem m o.opened) w.outcomes
 
 (* the faults that stand, in an order the order of the rules does not move *)
 let standing_faults w =

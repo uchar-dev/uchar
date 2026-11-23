@@ -1,0 +1,71 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "2000"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "heffing",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "stapelheffing",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "codeheffing",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V2",
+      "attribute": "heffing"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V2",
+      "attribute": "stapelheffing"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V2",
+      "attribute": "codeheffing"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

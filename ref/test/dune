@@ -150,6 +150,8 @@
   (glob_files fixtures/infer-from-empty/*.json)
   ; the witnesses of a document that infers nothing from an empty value, a directory per form (ch. 1.5)
   (glob_files_rec fixtures/strict-empty/*.json)
+  ; one choice in three forms, each open over an open value (ch. 1.5)
+  ../../corpus/golden/jutterswet-heffing-strikt/ir.json
   ; the sum types: the forms of RUNTIME-SEMANTICS ch. 9.4 no executor carries, and the documents of the suite of
   ; the ASP backend
   (glob_files_rec fixtures/sum-types/*.json)

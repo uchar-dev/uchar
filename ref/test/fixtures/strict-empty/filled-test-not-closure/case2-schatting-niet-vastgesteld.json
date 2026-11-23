@@ -62,22 +62,19 @@
       "attribute": "taxatiekosten"
     },
     {
-      "kind": "characteristicPresent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "ongeschat"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "V1",
       "attribute": "schattingstoeslag"
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "V1",
-      "attribute": "schattingskosten",
-      "value": {
-        "number": "2"
-      }
+      "attribute": "schattingskosten"
     },
     {
       "kind": "attributeOpen",
@@ -98,9 +95,7 @@
       "attribute": "bergloon"
     },
     {
-      "kind": "inconsistent",
-      "rule": "controle schatting",
-      "label": "V1"
+      "kind": "consistent"
     }
   ]
 }
