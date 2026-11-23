@@ -1473,8 +1473,9 @@ public final class ScenarioResolver {
                 Named named = expectedMember(label, written, situation, line);
                 if (named == null) continue;
                 String attr = named.attribute();
-                if (!openAdmitted(label, Msg.frontend("PART.member-phrase.attribute", "name", attr), line)) continue;
+                // a timeline is refused in either kind of document, so before the refusal of the document's kind
                 if (withoutPeriodOnTimeline(label, attr, situation, line)) continue;
+                if (!openAdmitted(label, Msg.frontend("PART.member-phrase.attribute", "name", attr), line)) continue;
                 result.add(new Expectation(ExpectationKind.ATTRIBUTE_OPEN, label, attr, null, null, null, null, null, line));
             } else if (v instanceof VerwachtKenmerkContext k) {
                 Expectation r = expectCharacteristic(k.UPPER_ID().getText(), withoutArticle(src(k.kaleNaam())), false,
@@ -1618,13 +1619,14 @@ public final class ScenarioResolver {
             return null;
         }
         if (!verbFits(i.objectType(), characteristic, has, line)) return null;
-        if (open && !openAdmitted(label,
-                Msg.frontend("PART.member-phrase.characteristic-name", "name", characteristic), line)) return null;
-        // the case format has no expectation over the periods of a characteristic, and a scalar one names no day
+        // the case format has no expectation over the periods of a characteristic, and a scalar one names no day; in
+        // either kind of document, so before the refusal of the document's kind
         if (i.objectType().characteristicGranularityOf(characteristic) != null) {
             error(line, "RGS-400", params("characteristic", characteristic, "label", label));
             return null;
         }
+        if (open && !openAdmitted(label,
+                Msg.frontend("PART.member-phrase.characteristic-name", "name", characteristic), line)) return null;
         ExpectationKind kind = open ? ExpectationKind.CHARACTERISTIC_OPEN
                 : absent ? ExpectationKind.CHARACTERISTIC_ABSENT : ExpectationKind.CHARACTERISTIC_PRESENT;
         return new Expectation(kind, label, null, null, characteristic, null, null, null, line);

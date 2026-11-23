@@ -595,8 +595,10 @@ class ScenarioStrictTest {
         }
     }
 
+    /** Each of these is refused in either kind of document, so a document that infers from an empty value gets the
+     *  same refusal and not RGS-467, whose advice ('Afleiden uit leeg: nee') would not admit the bullet. */
     @Test void staat_niet_vast_on_a_timeline_a_cell_or_with_the_wrong_verb_is_refused() {
-        String scenario = NEE + MODEL + """
+        String bullets = """
                 Scenario open met tijdlijn
                 Gegeven is de volgende situatie:
                 een Vondst V1
@@ -607,14 +609,17 @@ class ScenarioStrictTest {
                 - of V1 strandrecht is, staat niet vast
                 - of V1 niet afhaalbaar is, staat niet vast
                 """;
-        assertEquals(List.of("RGS-399 {attribute=opslagkosten, label=V1}"), errorsOn(scenario, "opslagkosten van V1"));
-        assertEquals(List.of("RGS-400 {characteristic=aangespoeld, label=V1}"), errorsOn(scenario, "aangespoeld is"));
-        assertEquals(List.of("RGS-468 {attribute=seizoensgewicht, written=seizoensgewicht in voorjaar}"),
-                errorsOn(scenario, "seizoensgewicht in voorjaar"));
-        assertEquals(List.of("RGS-244 {characteristic=strandrecht}"), errorsOn(scenario, "strandrecht is,"));
-        // the open form takes no negation: the name is read as written
-        assertEquals(List.of("RGS-241 {characteristic=niet afhaalbaar, objectType=Vondst}"),
-                errorsOn(scenario, "niet afhaalbaar is"));
+        for (String scenario : List.of(NEE + MODEL + bullets, MODEL + bullets)) {
+            assertEquals(List.of("RGS-399 {attribute=opslagkosten, label=V1}"),
+                    errorsOn(scenario, "opslagkosten van V1"));
+            assertEquals(List.of("RGS-400 {characteristic=aangespoeld, label=V1}"), errorsOn(scenario, "aangespoeld is"));
+            assertEquals(List.of("RGS-468 {attribute=seizoensgewicht, written=seizoensgewicht in voorjaar}"),
+                    errorsOn(scenario, "seizoensgewicht in voorjaar"));
+            assertEquals(List.of("RGS-244 {characteristic=strandrecht}"), errorsOn(scenario, "strandrecht is,"));
+            // the open form takes no negation: the name is read as written
+            assertEquals(List.of("RGS-241 {characteristic=niet afhaalbaar, objectType=Vondst}"),
+                    errorsOn(scenario, "niet afhaalbaar is"));
+        }
     }
 
     /** 'staat' and 'vast' are matched on their text after the label of an expectation only, and 'of' and 'niet' keep
