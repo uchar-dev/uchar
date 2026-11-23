@@ -1548,8 +1548,7 @@ public final class TmsTranspiler {
      * A computation of an attribute on a timeline of the subject (RUNTIME-SEMANTICS ch. 3.11): the rule writes a whole
      * timeline at once, which a pro-rata part (ch. 3.7) or a day count (ch. 3.8) over the subject's own characteristic
      * produces ({@link #timelineValue}), or the period arithmetic of ch. 3.4 and 3.5 over all time
-     * ({@link #periodArithmetic}), or, on a target of a sum type, the constructor of a literal on every day
-     * ({@link #constructorTimeline}, ch. 9.4), and inserts it as the {@link Value} of the target, an immutable
+     * ({@link #periodArithmetic}), and inserts it as the {@link Value} of the target, an immutable
      * {@code List<Period>}; an empty result is the temporal leeg and inserts nothing. The rule decides the days of its
      * segments, and the target is the union of its writers' segments with its input on the days none of them decides
      * ({@link #timelineWriters}; ch. 3.11, ch. 5.7, "Two writers per day"), on a target of one writer as of two or more.
@@ -1577,7 +1576,7 @@ public final class TmsTranspiler {
         if (!others.isEmpty())
             throw new Refusal(DroolsCode.TIME_TARGET_SECOND_WRITER.reason("attribute", member.name(), "declarant", member.declarant().name, "writers", String.join(", ", others.stream().map(x -> "\"" + x + "\"").toList())));
         Expr produced = letBound(r.value());
-        if (!isPeriodArithmetic(produced) && !constructorOfLiteral(produced, member)
+        if (!isPeriodArithmetic(produced)
                 && !(produced instanceof Expr.FunctionCall f && (f.kind() == Expr.FunctionKind.TIJDSEVENREDIG_DEEL
                 || f.kind() == Expr.FunctionKind.AANTAL_DAGEN_IN)))
             throw new Refusal(DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE.reason("attribute", member.name(), "declarant", member.declarant().name, "snippet", r.value() == null ? DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE.part("without-value")
@@ -1736,11 +1735,7 @@ public final class TmsTranspiler {
         Condition.Operator op = left ? v.op() : Operators.reverse(v.op());
         if (isDateOperator(op)) throw periodConditionForm(v, target);
         Member member = timeMember(reads.subject, tested.attribute(), false, description);
-        // a timeline of a sum type is compared with a constructor value by equality alone (ch. 9.3, 9.4)
-        boolean sum = member.datatype() instanceof Datatype.SumType;
-        if (sum ? !(eff.typeOf(boundExpr) instanceof Datatype.SumType)
-                || op != Condition.Operator.GELIJK && op != Condition.Operator.ONGELIJK
-                : !member.datatype().isNumberLike() || !eff.typeOf(boundExpr).isNumberLike())
+        if (!member.datatype().isNumberLike() || !eff.typeOf(boundExpr).isNumberLike())
             throw periodConditionForm(v, target);
         int timeline = reads.timeline(member);
         int subjectType = reads.member();
@@ -1749,14 +1744,10 @@ public final class TmsTranspiler {
                 + "\" of ", subjectType, " whole; the case supplies only the asOfDate-bucket scalar, which carries no"
                 + " period", member.name(), true, source(tested.source()));
         note(tested, whole);
-        Term bound = sum ? value(boundExpr, reads) : restated(value(boundExpr, reads), eff.unitOf(boundExpr),
-                eff.unitOf(tested), DroolsCode.UNIT_CONFLICT.part("period-condition"));
-        Term inner = sum
-                ? new Term.Call(StaticFunction.PERIOD_WHERE_EQUAL, List.of(left ? whole : bound, left ? bound : whole,
-                        constant(op == Condition.Operator.GELIJK), constant(left)),
-                        v.period() == null ? source(v.source()) : null)
-                : new Term.Call(StaticFunction.PERIOD_WHERE, List.of(left ? whole : bound, left ? bound : whole,
-                        constant(Operators.symbol(op)), constant(left)), v.period() == null ? source(v.source()) : null);
+        Term bound = restated(value(boundExpr, reads), eff.unitOf(boundExpr), eff.unitOf(tested),
+                DroolsCode.UNIT_CONFLICT.part("period-condition"));
+        Term inner = new Term.Call(StaticFunction.PERIOD_WHERE, List.of(left ? whole : bound, left ? bound : whole,
+                constant(Operators.symbol(op)), constant(left)), v.period() == null ? source(v.source()) : null);
         if (v.period() != null) {
             requireFits(v, qualifierGrid(v.period()), null, target);
             Term t = wholeBuckets(inner, v.period(), source(v.source()));
@@ -1876,24 +1867,6 @@ public final class TmsTranspiler {
         return false;
     }
 
-    /** Whether {@code e}, the value of a rule on the timeline target {@code target} of a sum type, is a constructor of a
-     *  literal: a scalar operand of ch. 3.11, which holds on every day (RUNTIME-SEMANTICS ch. 9.4), a nullary
-     *  constructor or a unary one of a literal. */
-    private static boolean constructorOfLiteral(Expr e, Member target) {
-        return target.datatype() instanceof Datatype.SumType && e instanceof Expr.Construct c
-                && (c.argument() == null || c.argument() instanceof Expr.Literal);
-    }
-
-    /** The timeline a rule writes into a timeline target of a sum type from the constructor of a literal
-     *  {@code value} ({@link #constructorOfLiteral}; RUNTIME-SEMANTICS ch. 9.4, 3.11): the constructor value on
-     *  every day, restricted to the periods {@code periods} in which the rule's condition holds where it is read per
-     *  period, its filled segments written ({@link PeriodArithmetic#writtenValues}). */
-    private Term constructorTimeline(Expr value, Reads reads, Term periods) {
-        Term timeline = new Term.Call(StaticFunction.PERIOD_SCALAR, List.of(value(value, reads)), null);
-        return new Term.Call(StaticFunction.PERIOD_WRITTEN_VALUES, List.of(clipped(periods, timeline)),
-                source(value.source()));
-    }
-
     /** Whether a rule or an initialisation writes {@code member} by period arithmetic ({@link #isPeriodArithmetic}),
      *  its value read through its {@link #letBound} producer as the writer reads it: such a timeline divides all time,
      *  so the subject's own total reads it whole (RUNTIME-SEMANTICS ch. 3.6, 7.8). */
@@ -1920,42 +1893,25 @@ public final class TmsTranspiler {
      * or without a condition, as the reference interpreter's trace reads them (RUNTIME-SEMANTICS ch. 5.12); the root has
      * the timeline the rule writes.
      *
-     * <p>On a target of a sum type the value is the copy of an own timeline of a sum type, which the verifier holds to
-     * the target's domain (IR-SPEC WF-023): read whole as an own timeline is above, restricted to the periods of the
-     * condition, its filled segments written as they stand (RUNTIME-SEMANTICS ch. 9.4, {@link PeriodArithmetic#writtenValues}).
-     *
-     * <p>Refused by name: any other value on a target that is no number, and as a limit of this branch a value whose
-     * unit needs a restatement into the target's ({@link #periodUnit}).
+     * <p>Refused by name: a target that is no number, and as a limit of this branch a value whose unit needs a
+     * restatement into the target's ({@link #periodUnit}).
      */
     private Term periodArithmetic(Expr value, Member target, ObjectType subject, Reads reads, Term periods) {
-        ProducedTimeline produced = producedTimeline(value, target, subject, reads);
-        Term timeline = produced.term();
+        Term timeline = producedTimeline(value, target, subject, reads);
         if (periods != null) timeline = new Term.Call(StaticFunction.PERIOD_CLIPPED, List.of(periods, timeline), null);
-        if (produced.values())
-            return new Term.Call(StaticFunction.PERIOD_WRITTEN_VALUES, List.of(timeline), source(value.source()));
         return new Term.Call(StaticFunction.PERIOD_WRITTEN, List.of(timeline, constant(ceiling(target.datatype())),
                 constant(target.spelled())), source(value.source()));
     }
 
     /** The timeline of the period arithmetic {@code value} into {@code target} of {@code subject} before it is cut and
-     *  written ({@link #periodArithmetic}): on a number target its operand timeline, and on a target of a sum type the
-     *  copy of an own timeline of a sum type, whose values are constructor values. Refused by name as
-     *  {@link #periodArithmetic} refuses. */
-    private ProducedTimeline producedTimeline(Expr value, Member target, ObjectType subject, Reads reads) {
-        boolean copy = copyOfOwnTimeline(value, target, subject);
-        if (!target.datatype().isNumberLike() && !copy)
+     *  written ({@link #periodArithmetic}): its operand timeline. Refused by name as {@link #periodArithmetic}
+     *  refuses. */
+    private Term producedTimeline(Expr value, Member target, ObjectType subject, Reads reads) {
+        if (!target.datatype().isNumberLike())
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(value.source())));
         Term timeline = periodOperand(value, target, subject, reads);
-        if (!copy) periodUnit(periodUnitOf(value), unitCarrier(value), target.datatype().unitOf());
-        return new ProducedTimeline(timeline, copy);
-    }
-
-    /** Whether {@code value} into {@code target} of {@code subject} is the copy of an own timeline of a sum type: a target
-     *  of a sum type and an own time-dependent attribute, which the verifier holds to the target's domain (WF-023). */
-    private boolean copyOfOwnTimeline(Expr value, Member target, ObjectType subject) {
-        return target.datatype() instanceof Datatype.SumType && value instanceof Expr.AttributeReference a
-                && a.attribute() != null && a.objectType() != null && subject.chain().contains(a.objectType())
-                && declared(subject, a.attribute(), false).time() != null;
+        periodUnit(periodUnitOf(value), unitCarrier(value), target.datatype().unitOf());
+        return timeline;
     }
 
     /**
@@ -2035,11 +1991,9 @@ public final class TmsTranspiler {
     }
 
     /** {@code member}, an attribute on a timeline that the period arithmetic into {@code target} reads at {@code read},
-     *  where it may: a number, or a sum type copied into a target of a sum type, on a grid as coarse as the target's or
-     *  coarser (RUNTIME-SEMANTICS ch. 3.4, 9.4). */
+     *  where it may: a number, on a grid as coarse as the target's or coarser (RUNTIME-SEMANTICS ch. 3.4). */
     private void periodMember(Member member, Expr read, Member target) {
-        if (!member.datatype().isNumberLike()
-                && !(member.datatype() instanceof Datatype.SumType && target.datatype() instanceof Datatype.SumType))
+        if (!member.datatype().isNumberLike())
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(read.source())));
         if (member.time().ordinal() < target.time().ordinal())
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_FINER_OPERAND.reason("attribute", member.name(),
@@ -2185,7 +2139,7 @@ public final class TmsTranspiler {
             if (created) range = new Range(range.join(),
                     fieldRange(pair, reads.subject, elem, snippet(f.source())).perRoute());
             contributionRules(key, name, Expr.FunctionKind.SOM, reads.subject, elem, range, 0,
-                    null, a, null, null, rules, readings, true);
+                    null, a, null, rules, readings, true);
             return new Fold(key, List.copyOf(rules), List.copyOf(readings), false, false, false, false, false, true,
                     false, false);
         });
@@ -2480,7 +2434,7 @@ public final class TmsTranspiler {
      * timeline or holds a window, and else as a gate. Of the periods of the condition it decides the days the other
      * writers and the input leave ({@link PeriodDefaults#initialisationDays}), a {@code Let} whose binder ends the
      * evaluation where none is left, so that its value is not evaluated there; and of those the days on which its value,
-     * the period arithmetic of ch. 3.4 and 3.5 or the constructor of a literal, a scalar on every day, reads a value
+     * the period arithmetic of ch. 3.4 and 3.5, reads a value
      * ({@link PeriodDefaults#initialised}). Its consequence is a decision ({@link Consequence.Decision}): where it decides
      * no day it inserts nothing, and what its value deposited does not stand, as a default's (ch. 7.11). The
      * asOfDate-bucket scalar of its target carries no day, and the initialisation faults with EF-037.
@@ -2499,8 +2453,7 @@ public final class TmsTranspiler {
         Set<Class<?>> absorbed = absorbed(target, member);
         oneInitialisation(member, target);
         Expr produced = letBound(r.value());
-        boolean constructor = constructorOfLiteral(produced, member);
-        if (!isPeriodArithmetic(produced) && !constructor)
+        if (!isPeriodArithmetic(produced))
             throw new Refusal(DroolsCode.TIME_TARGET_PRODUCER_VALUE.reason("form",
                     DroolsCode.TIME_TARGET_PRODUCER_VALUE.part("initialisation"), "attribute", member.name(),
                     "declarant", member.declarant().name, "snippet", snippet(r.value() == null ? null : r.value().source())));
@@ -2524,17 +2477,14 @@ public final class TmsTranspiler {
                 new Term.SlotValue(input, null), new Term.SlotValue(bucket, null), constant(member.name()),
                 new Term.SlotValue(self, null)), null);
         Term days = periods == null ? left : new Term.Call(StaticFunction.DAYS_WITHIN, List.of(periods, left), null);
-        ProducedTimeline timeline = constructor
-                ? new ProducedTimeline(new Term.Call(StaticFunction.PERIOD_SCALAR, List.of(value(produced, reads)), null), true)
-                : producedTimeline(produced, member, subject, reads);
-        Term value = dayLet(reads, "beslissende dagen", days, d -> timeline.values()
-                ? new Term.Call(StaticFunction.DAYS_INITIALISED_VALUES, List.of(d, timeline.term()), source(produced.source()))
-                : new Term.Call(StaticFunction.DAYS_INITIALISED, List.of(d, timeline.term(),
-                        constant(ceiling(member.datatype())), constant(member.spelled())), source(produced.source())));
+        Term timeline = producedTimeline(produced, member, subject, reads);
+        Term value = dayLet(reads, "beslissende dagen", days, d -> new Term.Call(StaticFunction.DAYS_INITIALISED,
+                List.of(d, timeline, constant(ceiling(member.datatype())), constant(member.spelled())),
+                source(produced.source())));
         // the reading: where a day is left to it, the timeline it reads and computes, its root the filled segments of
         // its value within the periods of its condition (RUNTIME-SEMANTICS ch. 5.12)
         Term root = new Term.Call(StaticFunction.DAYS_FILLED_WITHIN, List.of(periods == null ? constant(null) : periods,
-                timeline.term()), null);
+                timeline), null);
         Term reading = dayLet(reads, "beslissende dagen", days, d -> new Term.Choice(new Term.Call(
                 StaticFunction.DAYS_AT_TURN, List.of(d), null), root, constant(null), null));
         // a Let whose body reads its binder and nothing else stands for its bound value (RUNTIME-SEMANTICS ch. 10.6)
@@ -2562,10 +2512,6 @@ public final class TmsTranspiler {
         out.addAll(conditionSideRules(ends, ruleName, fresh, r.condition(), name, null, name, null, null));
         return out;
     }
-
-    /** The timeline that a producer writes into a timeline target before its days are cut ({@link #producedTimeline}),
-     *  and whether its values are constructor values, which have no decimals (RUNTIME-SEMANTICS ch. 9.4). */
-    private record ProducedTimeline(Term term, boolean values) {}
 
     /** The input of {@code member} on the bean of the object bound at slot {@code subject}, as a test that reads it where it
      *  evaluates takes it ({@link Term.Input}): the field of an attribute as it is, and of a cell the entry its key names
@@ -2609,8 +2555,6 @@ public final class TmsTranspiler {
         Expr produced = member.time() != null ? letBound(r.value()) : r.value();
         boolean periodArithmetic = member.time() != null && isPeriodArithmetic(produced);
         Term value = periodArithmetic ? periodArithmetic(produced, member, subject, reads, periods)
-                : member.time() != null && constructorOfLiteral(produced, member)
-                ? constructorTimeline(produced, reads, periods)
                 : member.time() != null ? timelineValue((Expr.FunctionCall) produced, member, subject, reads, periods)
                 : fitted(restated(value(r.value(), reads), eff.unitOf(r.value()), member.datatype().unitOf(),
                         DroolsCode.UNIT_CONFLICT.part("write-boundary-target")), member, null);
@@ -3105,7 +3049,6 @@ public final class TmsTranspiler {
             case Expr.TextComposition t -> t.parts().stream()
                     .anyMatch(d -> d instanceof Expr.TextComposition.EmbeddedExpression i && deposits(i.expr(), site));
             case Expr.Construct c -> deposits(c.argument(), site);
-            case Expr.PayloadAccess p -> deposits(p.base(), site);
             default -> false;
         };
     }
@@ -3576,13 +3519,12 @@ public final class TmsTranspiler {
 
     /** The timeline that the member value {@code value} of an object creation gives the time-dependent attribute
      *  {@code member} of the object it makes, read on the creation's subject {@code subject} (RUNTIME-SEMANTICS ch. 7.8):
-     *  the period arithmetic of ch. 3.4 and 3.5, a scalar on every day, or the constructor of a literal on every day,
-     *  its filled segments written ({@link #periodArithmetic}, {@link #constructorTimeline}). It is the input of the
+     *  the period arithmetic of ch. 3.4 and 3.5, a scalar on every day among it, its filled segments written
+     *  ({@link #periodArithmetic}). It is the input of the
      *  made object per day, which a rule on the member displaces on the days it decides and an initialisation finds
      *  filled. Refused by name: any other value ({@link DroolsCode#TIME_TARGET_PRODUCER_VALUE}, ch. 3.12 row 10). */
     private Term madeTimeline(Expr value, Member member, ObjectType subject, Reads reads) {
         Expr produced = letBound(value);
-        if (constructorOfLiteral(produced, member)) return constructorTimeline(produced, reads, null);
         if (!isPeriodArithmetic(produced))
             throw new Refusal(DroolsCode.TIME_TARGET_PRODUCER_VALUE.reason("form",
                     DroolsCode.TIME_TARGET_PRODUCER_VALUE.part("member"), "attribute", member.name(), "declarant",
@@ -4679,10 +4621,7 @@ public final class TmsTranspiler {
         if (!isPeriodArithmetic(consequence))
             throw new Refusal(DroolsCode.TIME_TARGET_UNSUPPORTED_VALUE.reason("attribute", b.member.name(), "declarant",
                     b.member.declarant().name, "snippet", snippet(consequence.source())));
-        // on a target of a sum type the consequence is the copy of an own timeline of that sum type: the opgave and the
-        // computation of the opgave marker on an attribute with markers (ch. 9.4)
-        boolean copy = copyOfOwnTimeline(consequence, b.member, k.levelOf());
-        if (!b.member.datatype().isNumberLike() && !copy)
+        if (!b.member.datatype().isNumberLike())
             throw new Refusal(DroolsCode.PERIOD_ARITHMETIC_OPERAND.reason("snippet", snippet(consequence.source())));
         Reads reads = new Reads(k.levelOf());
         reads.addSubjectAlpha(concreteType(b.javaClass));
@@ -4701,7 +4640,7 @@ public final class TmsTranspiler {
         beginReading();
         Term periods = d.condition() == null ? null : periodCondition(d.condition(), b.member, reads);
         Term timeline = periodOperand(consequence, b.member, k.levelOf(), reads);
-        if (!copy) periodUnit(periodUnitOf(consequence), unitCarrier(consequence), b.member.datatype().unitOf());
+        periodUnit(periodUnitOf(consequence), unitCarrier(consequence), b.member.datatype().unitOf());
         // the days it may decide, each narrowing a Let whose empty binder ends the evaluation (ch. 7.11)
         Term value;
         Term within = periods;
@@ -4779,11 +4718,8 @@ public final class TmsTranspiler {
         reads.stop();
         Term reconciled = new Term.Call(StaticFunction.DAYS_RECONCILED, List.of(constant(b.targetForm), roots), null);
         Term decided = new Term.Call(StaticFunction.DAYS_DECIDED_OF, List.of(reconciled), null);
-        // a target of a sum type holds constructor values, which carry no decimals to bound (ch. 9.4)
-        Term written = b.member.datatype() instanceof Datatype.SumType
-                ? new Term.Call(StaticFunction.PERIOD_WRITTEN_VALUES, List.of(decided), null)
-                : new Term.Call(StaticFunction.PERIOD_WRITTEN, List.of(decided, constant(ceiling(b.member.datatype())),
-                        constant(b.member.spelled())), null);
+        Term written = new Term.Call(StaticFunction.PERIOD_WRITTEN, List.of(decided, constant(ceiling(b.member.datatype())),
+                constant(b.member.spelled())), null);
         if (key == null)
             return reads.rulePlan(b.name + ": eens wortel", reads.plan(null, Set.of()),
                     new Consequence.Value(SUBJECT, b.member.key(), b.name, written,
@@ -5036,42 +4972,20 @@ public final class TmsTranspiler {
                 yield new Term.Fail(ComputeFault.UNRESOLVED, source(o.source()));
             }
             case Expr.Construct c -> construct(c, reads);
-            case Expr.PayloadAccess p -> payloadAccess(p, reads);
         };
         note(e, planned);
         return planned;
     }
 
     /** A constructor value (RUNTIME-SEMANTICS ch. 9.1): a nullary constructor filled by construction, a unary one of its
-     *  argument, leeg where the argument is. The payload is a value of the declared payload datatype (WF-062 reads the
-     *  argument as a write), so a number in another unit is restated into the unit of the payload in the declaration
-     *  of the domain, as the write boundary restates (ch. 2.4, 2.6) and as the reference interpreter builds it. */
+     *  argument, leeg where the argument is. The payload is the argument's value as it is, as the reference interpreter
+     *  builds it: a payload declares no unit (ch. 9.4, {@code payload-unit}), so there is nothing to restate. */
     private Term construct(Expr.Construct c, Reads reads) {
         String source = source(c.source());
         if (c.argument() == null)
             return new Term.Call(StaticFunction.CONSTRUCTOR_VALUE, List.of(constant(c.constructor())), source);
-        Datatype payload = EffectiveUnit.payloadOf(declaredDomain(c.type()), c.constructor());
-        Term argument = restated(value(c.argument(), reads), eff.unitOf(c.argument()),
-                payload == null ? null : payload.unitOf(), DroolsCode.UNIT_CONFLICT.part("write-boundary-target"));
-        return new Term.Call(StaticFunction.CONSTRUCT, List.of(constant(c.constructor()), argument), source);
-    }
-
-    /** The declaration of the domain the sum type {@code t} names (RUNTIME-SEMANTICS ch. 2.10: a consumer derives from
-     *  declarations); the use site's copy where the document declares none, which the verifier precludes (WF-088). */
-    private Datatype declaredDomain(Datatype.SumType t) {
-        for (Map.Entry<String, Datatype> d : model.domains.entrySet())
-            if (Namen.norm(d.getKey()).equals(Namen.norm(t.domain()))) return d.getValue();
-        return t;
-    }
-
-    /** The payload of a sum-typed value where it carries the constructor of the node, leeg elsewhere (RUNTIME-SEMANTICS
-     *  ch. 9.5). Refused by name, as the reference interpreter refuses it: the access to an attribute on a timeline, which
-     *  has a reading per day. */
-    private Term payloadAccess(Expr.PayloadAccess p, Reads reads) {
-        if (p.base() instanceof Expr.AttributeReference a && temporal(a.objectType(), a.attribute(), false))
-            throw new Refusal(DroolsCode.PAYLOAD_ACCESS_OF_TIMELINE.reason("attribute", a.attribute()));
-        return new Term.Call(StaticFunction.PAYLOAD, List.of(value(p.base(), reads), constant(p.constructor())),
-                source(p.source()));
+        return new Term.Call(StaticFunction.CONSTRUCT, List.of(constant(c.constructor()), value(c.argument(), reads)),
+                source);
     }
 
     /** Notes that {@code t} computes the node {@code node} of the IR, a condition or an expression, where the condition
@@ -6178,18 +6092,11 @@ public final class TmsTranspiler {
         // the labels of the cell each member gives, where the source is a cell of a dimensioned attribute of the
         // element type (ALEF's fold of one cell over a role, RUNTIME-SEMANTICS ch. 5.8c); null for an attribute
         List<String> cell = null;
-        // the constructor whose payload each member gives, where the source is a payload access to an attribute of the
-        // element type, read under the filter's test of it (RUNTIME-SEMANTICS ch. 9.5, WF-127); null for an attribute
-        String payload = null;
         if (!count) {
             Expr operand = f.arguments().get(0);
             if (operand instanceof Expr.DimensionCellRead c && c.attribute() != null && c.attribute().attribute() != null) {
                 arg = c.attribute();
                 cell = c.labels() == null ? List.of() : c.labels();
-            } else if (operand instanceof Expr.PayloadAccess p && p.base() instanceof Expr.AttributeReference a
-                    && a.attribute() != null) {
-                arg = a;
-                payload = p.constructor();
             } else if (operand instanceof Expr.AttributeReference a && a.attribute() != null) arg = a;
             else throw new Refusal(DroolsCode.AGGREGATION_NON_ATTRIBUTE_OPERAND.reason("kind", kind, "snippet", snippet(f.source())));
         }
@@ -6205,19 +6112,13 @@ public final class TmsTranspiler {
         // fold order (RUNTIME-SEMANTICS ch. 3.6, 8.4), and a made link has no place in that order
         // a dimensioned attribute lies on no timeline (WF-125)
         boolean timelineMember = member != null && cell == null && declared(elem, member.attribute(), false).time() != null;
-        // the payload of a member on a timeline has a reading per day, as the reference interpreter refuses it
-        if (timelineMember && payload != null)
-            throw new Refusal(DroolsCode.PAYLOAD_ACCESS_OF_TIMELINE.reason("attribute", member.attribute()));
         // a member on a timeline is asked by the per-element fold, which refuses one that is no number (integreerbaar)
         if (member != null && !timelineMember) {
-            Datatype declaredType = cell == null ? declared(elem, member.attribute(), false).datatype()
-                    : dimensionedMember(elem, member.attribute()).datatype();
-            Reason setSource = setSourceRefusal(kind, elem, member, payload == null ? declaredType
-                    : EffectiveUnit.payloadOf(declaredType, payload));
+            Reason setSource = setSourceRefusal(kind, elem, member, cell == null
+                    ? declared(elem, member.attribute(), false).datatype() : dimensionedMember(elem, member.attribute()).datatype());
             if (setSource != null) throw new Refusal(setSource);
         }
         List<String> labels = cell;
-        String constructor = payload;
         RoleBindingRef source = roleBindings.get(f);
         if (timelineMember && source != null && source.factType() != null
                 && createdRelations.contains(Namen.norm(source.factType())))
@@ -6226,7 +6127,7 @@ public final class TmsTranspiler {
             List<RulePlan> rules = new ArrayList<>();
             List<Reads> readings = new ArrayList<>();
             Ends ends = contributionRules(key, name, kind, reads.subject, elem, range(f, reads.subject, elem), 0,
-                    f.filter(), member, labels, constructor, rules, readings, false);
+                    f.filter(), member, labels, rules, readings, false);
             refuseMixedDeposits(name, Collections.singletonList(f.filter()));
             return new Fold(key, List.copyOf(rules), List.copyOf(readings), ends.fault(), deposits(f.filter()), false, false,
                     false, timelineMember, ends.open(), ends.closes());
@@ -6744,7 +6645,7 @@ public final class TmsTranspiler {
                     throw new Refusal(DroolsCode.UNION_BRANCH_WITHOUT_TYPE.reason("snippet", snippet(t.source())));
                 Ends own = contributionRules(key, name + ", selectie " + k, Expr.FunctionKind.AANTAL, subject,
                         t.elementType(), oneStepRange(t.sourceRole(), subject, t.elementType(), snippet(t.source())), k,
-                        t.filter(), null, null, null, rules, readings, false);
+                        t.filter(), null, null, rules, readings, false);
                 ends = new Ends(ends.fault() || own.fault(), ends.open() || own.open(), ends.closes() || own.closes());
                 deposits |= deposits(t.filter());
                 filters.add(t.filter());
@@ -6783,7 +6684,7 @@ public final class TmsTranspiler {
      */
     private Ends contributionRules(String key, String name, Expr.FunctionKind kind, ObjectType subject,
                                    ObjectType elem, Range range, int selection, Condition filter,
-                                   Expr.AttributeReference arg, List<String> cell, String payload, List<RulePlan> out,
+                                   Expr.AttributeReference arg, List<String> cell, List<RulePlan> out,
                                    List<Reads> readings, boolean whole) {
         // in a build with readings a fold that can be open names the first member that leaves it so (ch. 5.12): the member's
         // join then binds its place, which the reads of the filter and of the value decide
@@ -6827,7 +6728,7 @@ public final class TmsTranspiler {
         Consequence.Input input = new Consequence.Input.Count();
         if (kind != Expr.FunctionKind.AANTAL) {
             Consequence.Input.MemberValue of = new Consequence.Input.MemberValue(value, total, fixed,
-                    kind == Expr.FunctionKind.AANTAL_GEVULDE, cellKey, payload, whole);
+                    kind == Expr.FunctionKind.AANTAL_GEVULDE, cellKey, whole);
             input = openInput < 0 ? of : new Consequence.Input.IncompleteInput(of, openInput, memberValue.key());
         }
         if (ends.open()) use.addAll(read);

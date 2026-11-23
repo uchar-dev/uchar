@@ -550,13 +550,13 @@ final class FormsPlan {
                 new Consequence.Input.Count(), null, List.of(0), 1, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidwaarde", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: som", 1,
-                new Consequence.Input.MemberValue(0, null, null, false, null, null, false), null, List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+                new Consequence.Input.MemberValue(0, null, null, false, null, false), null, List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidtijdlijn", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: som per periode", 1,
-                new Consequence.Input.MemberValue(0, null, null, false, null, null, true), null, List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+                new Consequence.Input.MemberValue(0, null, null, false, null, true), null, List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("lidwaarde per maand", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: totaal", 1,
-                new Consequence.Input.MemberValue(0, "MAAND", null, true, null, null, false), null, List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
+                new Consequence.Input.MemberValue(0, "MAAND", null, true, null, false), null, List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("oordeel", "proef", null, table(heightSlot(), memberSlot(1)),
                 List.of(foldSubject, member(post, v, height)), new Consequence.Contribution(v, "proefvouw: oordeel", 1,
                 new Consequence.Input.Verdict(matrix), null, List.of(0, 1), 2, Consequence.Insertion.LOGICAL)));
@@ -617,7 +617,7 @@ final class FormsPlan {
         Term filter = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(read, number("5"), text(">")), "de hoogte groter dan 5");
         TestItem filtered = new TestItem("filter", TestItem.Role.ACTS, filter, -1, List.of(0, 1, 2), 3, true);
         Consequence.Input.IncompleteInput input = new Consequence.Input.IncompleteInput(
-                new Consequence.Input.MemberValue(0, null, null, true, null, null, false), 2, key);
+                new Consequence.Input.MemberValue(0, null, null, true, null, false), 2, key);
         List<RulePlan> rules = new ArrayList<>();
         ReadTable table = table(heightSlot(), memberSlot(1), openInput);
         rules.add(new RulePlan("open lidwaarde", "proef", null, table, List.of(foldSubject, member(post, v, height)),

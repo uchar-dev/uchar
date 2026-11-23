@@ -233,18 +233,6 @@ public final class PeriodArithmetic {
     }
 
     /**
-     * The timeline a rule writes into a target of a sum type (RUNTIME-SEMANTICS ch. 9.4, 3.11): the filled segments of
-     * {@code timeline}, constructor values, adjacent equal ones one segment. A constructor value has no decimals, so no
-     * write boundary applies.
-     */
-    public static List<Period> writtenValues(Object timeline) {
-        List<Period> out = new ArrayList<>();
-        for (Exact p : pieces(timeline))
-            if (p.value() != null) out.add(new Period(p.from(), p.to(), p.value()));
-        return Span.coalesced(out);
-    }
-
-    /**
      * The temporal total of ch. 3.6 of {@code timeline}, the attribute {@code attribute} of {@code object}, on the grid
      * {@code granularity} laid from the fixed start point {@code fixed} (null: the calendar's grid), each closed segment
      * weighed as {@link #weighed} weighs it, by the calendar where {@code calendar} names the time unit of the rate's

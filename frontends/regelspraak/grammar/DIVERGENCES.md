@@ -3212,8 +3212,10 @@ and carries bullets: an attribute value (`de|het <attribuut> is <waarde>`),
 a to-one role (`de|het <rol> is <LABEL>`), a to-many role (`de|het <rol>
 zijn <LABEL>, <LABEL> en <LABEL>`), a characteristic (`is|heeft
 [een|de|het] <kenmerk>`) and a characteristic that does not hold (`is niet
-<kenmerk>`, `heeft geen <kenmerk>`, `heeft niet het <kenmerk>`: the word
-`niet` or `geen` before the name, as in an expectation). As in a rule, the
+[een|de|het] <kenmerk>`, `is geen <kenmerk>`, `heeft niet [een|de|het]
+<kenmerk>`, `heeft geen <kenmerk>`: the word `niet` or `geen` before the
+name, `niet` followed by an article or not, as in an expectation). As in a
+rule, the
 whole written name is read first, in a situation and in an expectation: a
 characteristic declared as `niet drijfhout` is named by `- is niet
 drijfhout`, and only where the whole name names no characteristic is the
@@ -3299,7 +3301,7 @@ ends at the first header keyword. The expectations, one bullet each:
 | `- de\|het <cel> van <LABEL> is <waarde>` | `cellValue` |
 | `- de\|het <cel> van <LABEL> is leeg` | `cellEmpty` |
 | `- <LABEL> is\|heeft [een\|de\|het] <kenmerk>` | `characteristicPresent` (a characteristic without a timeline) |
-| `- <LABEL> is\|heeft niet\|geen <kenmerk>` | `characteristicAbsent` (a characteristic without a timeline) |
+| `- <LABEL> is\|heeft niet [een\|de\|het] <kenmerk>`, `- <LABEL> is\|heeft geen <kenmerk>` | `characteristicAbsent` (a characteristic without a timeline) |
 | `- de\|het <attribuut> van <LABEL> staat niet vast` | `attributeOpen` (an attribute without a timeline, in a document with `Afleiden uit leeg: nee`) |
 | `- of <LABEL> [een\|de\|het] <kenmerk> is\|heeft[,] staat niet vast` | `characteristicOpen` (a characteristic without a timeline, in a document with `Afleiden uit leeg: nee`) |
 | `- de gegevens zijn consistent` | `consistent` |
@@ -3428,9 +3430,8 @@ scenario blocks then resolve against that model (`ScenarioResolver`):
   object from an anchor a rule writes, and a week grid or a grid of several
   units without a date start lays none a day can be held against: those are
   left to the readers. A characteristic's periods count in days whatever its
-  grid, as the readers take them and as the pinned anchor cases write them
-  (the case schema's description of `characteristicTimelines` asks for the
-  grid; the readers and the anchors do not).
+  grid, as the readers take them, as the pinned anchor cases write them and as
+  the case schema describes `characteristicTimelines`.
 - **Two gates**, over the forms the scenario carries: a form with a validity
   window, or one that reads the evaluation date, needs a peildatum; every
   parameter a form reads needs a value in the merged situation or in the
@@ -3462,8 +3463,9 @@ serialiser, so a case file and an IR document share one shape.
   order. An instance writes `characteristics`, then `characteristicsAbsent`
   where a characteristic does not hold, then `characteristicTimelines` where a
   time-dependent characteristic holds somewhere, the last two only when they
-  are not empty: the case schema's key order, which gate 2 holds every case
-  file to. An expectation `staat niet vast` is an `attributeOpen` with its
+  are not empty: the `properties` order of the case schema, and gate 16 holds
+  every case file it writes for a golden byte for byte to the one pinned
+  beside the golden. An expectation `staat niet vast` is an `attributeOpen` with its
   label and attribute, or a `characteristicOpen` with its label and
   characteristic.
 - The cells of one attribute are its `cells`, in first-seen order, each with

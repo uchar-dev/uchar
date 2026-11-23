@@ -162,7 +162,6 @@ final class UncarriedForms {
                     expr(c.maximum());
                 }
                 case Expr.Construct c -> found.add("construct");
-                case Expr.PayloadAccess p -> expr(p.base());
                 case Expr.Let l -> {
                     expr(l.value());
                     binding(l.binder()).expr(l.body());

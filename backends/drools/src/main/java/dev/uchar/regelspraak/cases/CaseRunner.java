@@ -1005,13 +1005,12 @@ public final class CaseRunner {
         return Spelling.GRANULARITY.spelling(gran);
     }
 
-    /** The value of one segment: a number, a constructor value on a timeline of a sum type (RUNTIME-SEMANTICS
-     *  ch. 9.4), or a text, which the whole-period qualifier tests per day (ch. 3.9). The analysis computes per period
-     *  with numbers and compares constructor values, so a timeline of any other value has no reading here — a
-     *  reason-carrying not-carried, never a coercion. */
+    /** The value of one segment: a number, or a text, which the whole-period qualifier tests per day
+     *  (RUNTIME-SEMANTICS ch. 3.9). The analysis computes per period with numbers, so a timeline of any other value has
+     *  no reading here — a reason-carrying not-carried, never a coercion. */
     Object segmentValue(JsonNode w, String field) {
         Object v = valueToArg(w, field);
-        if (v == null || v instanceof BigDecimal || v instanceof ConstructorValue || v instanceof String) return v;
+        if (v == null || v instanceof BigDecimal || v instanceof String) return v;
         throw new Excluded(DroolsCode.TIMELINE_VALUE_NON_NUMERIC.reason("attribute", field));
     }
 
@@ -1200,7 +1199,7 @@ public final class CaseRunner {
 
     /** The §13.3.6 timeline read-back: the doel's {@code List<Segment>} against the pinned segment list, both in
      *  the canonical form of RUNTIME-SEMANTICS ch. 3.1 ({@link #canonical}), then equal length, van/tot EXACT,
-     *  waarde scale-safe ({@code compareTo == 0}) or a constructor value by its equality, compared index-for-index. The expectation pins what the
+     *  waarde scale-safe ({@code compareTo == 0}) or a text by its equality, compared index-for-index. The expectation pins what the
      *  timeline reads on each day, not how the backend or the case divides a run of equal values into segments.
      *  A never-written target (a null field) matches an explicitly empty expectation: both read leeg on every day
      *  (ch. 3.1), exactly as ref and clingo pin it. */
@@ -1616,10 +1615,6 @@ public final class CaseRunner {
     public static void inputFits(JsonNode w, Datatype dt, String place) {
         if (w == null || w.isNull() || dt == null) return;
         if (dt instanceof Datatype.SumType s) {
-            if (w.has("timeline")) {
-                for (JsonNode segment : w.get("timeline")) inputFits(segment.get("value"), dt, place);
-                return;
-            }
             constructorFits(w, s, place);
             return;
         }

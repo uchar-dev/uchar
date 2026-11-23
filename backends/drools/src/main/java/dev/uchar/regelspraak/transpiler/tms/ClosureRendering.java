@@ -385,14 +385,12 @@ final class ClosureRendering {
             case PERIOD_PARAMETER -> x -> PeriodArithmetic.parameter(x[0], (String) x[1]);
             case PERIOD_SUM -> x -> PeriodArithmetic.sum(x[0], x[1]);
             case PERIOD_WRITTEN -> x -> PeriodArithmetic.written(x[0], (Integer) x[1], (String) x[2]);
-            case PERIOD_WRITTEN_VALUES -> x -> PeriodArithmetic.writtenValues(x[0]);
             case PERIOD_TOTAL -> x -> PeriodArithmetic.total(x[0], (String) x[1], (String) x[2], (String) x[3],
                     (String) x[4], x[5]);
             case PERIOD_CLIPPED -> x -> PeriodArithmetic.clipped(x[0], x[1]);
             case PERIOD_TRUE_PERIODS -> x -> PeriodCondition.truePeriods(x[0]);
             case PERIOD_OUTSIDE -> x -> PeriodCondition.outside(x[0]);
             case PERIOD_WHERE -> x -> PeriodCondition.where(x[0], x[1], (String) x[2], (Boolean) x[3]);
-            case PERIOD_WHERE_EQUAL -> x -> PeriodCondition.whereEqual(x[0], x[1], (Boolean) x[2], (Boolean) x[3]);
             case PERIOD_WHOLE_BUCKETS -> x -> PeriodCondition.wholeBuckets(x[0], (String) x[1], (Boolean) x[2]);
             case PERIOD_MEMBER -> x -> PeriodCondition.member(x[0], x[1]);
             case PERIOD_COMPOSITE -> x -> PeriodCondition.composite(x[0], (Condition.Quantifier) x[1], (Integer) x[2]);
@@ -411,7 +409,6 @@ final class ClosureRendering {
             case DAYS_INPUT_EMPTY -> x -> PeriodDefaults.inputEmpty(x[0], x[1], (String) x[2], x[3]);
             case DAYS_INITIALISATION -> x -> PeriodDefaults.initialisationDays(x[0], x[1], x[2], (String) x[3], x[4]);
             case DAYS_INITIALISED -> x -> PeriodDefaults.initialised(x[0], x[1], (Integer) x[2], (String) x[3]);
-            case DAYS_INITIALISED_VALUES -> x -> PeriodDefaults.initialisedValues(x[0], x[1]);
             case DAYS_RECONCILED -> x -> PeriodDefaults.reconciled((String) x[0], x[1]);
             case DAYS_DECIDED_OF -> x -> PeriodDefaults.decidedOf(x[0]);
             case DAYS_CONFLICTED -> x -> PeriodDefaults.conflicted(x[0], (String) x[1]);
@@ -447,7 +444,6 @@ final class ClosureRendering {
             case FALLBACK -> x -> ComputeHelpers.fallback(x[0], x[1]);
             case CONSTRUCTOR_VALUE -> x -> ComputeHelpers.constructorValue((String) x[0]);
             case CONSTRUCT -> x -> ComputeHelpers.construct((String) x[0], x[1]);
-            case PAYLOAD -> x -> ComputeHelpers.payload(x[0], (String) x[1]);
             case COUNT -> x -> ComputeHelpers.countOf(x[0]);
             case STANDING_COUNT -> x -> ComputeHelpers.standingCount(x[0], x[1]);
             case FOLD_VALUE -> x -> ComputeHelpers.foldValue(x[0], x[1], x[2]);

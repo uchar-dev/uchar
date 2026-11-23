@@ -939,7 +939,7 @@ public final class FactModelGenerator {
             import java.time.LocalDate;
 
             /** One tijdvak [van, tot) of a §13.3.6 temporal attribute's Tijdreeks (generated, the explicit fact-model contract):
-             *  a number, or a constructor value on a timeline of a sum type (RUNTIME-SEMANTICS ch. 9.4). */
+             *  a number, or a text on a timeline of a text, which the whole-period qualifier reads (RUNTIME-SEMANTICS ch. 3.9). */
             public class Segment {
                 private LocalDate van;
                 private LocalDate tot;

@@ -1659,7 +1659,7 @@ final class DrlRendering {
             String value = i == null ? variable(l.value()) : input(variable(l.value()), variable(x.member()), i.member());
             return route(place == null ? Route.CONTRIBUTION : Route.CONTRIBUTION_AT) + "(" + str(x.fold()) + ", " + x.subject() + ", " + variable(x.member()) + ", "
                     + (l.cell() != null ? route(Route.CELL) + "(" + value + ", " + consequenceConstant(l.cell()).text() + ")"
-                            : l.payload() != null ? route(Route.PAYLOAD) + "(" + value + ", " + str(l.payload()) + ")" : value)
+                            : value)
                     + ", " + (l.total() == null ? "null" : str(l.total())) + ", "
                     + (l.fixed() == null ? "null" : str(l.fixed())) + ", " + l.filled() + ", " + l.whole() + last(place) + ")";
         }

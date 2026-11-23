@@ -18,8 +18,9 @@ import java.util.function.Predicate;
  * becomes the set of forms the IR document beside the case files carries. The case format changes in nothing and no
  * executor learns anything new: a scenario is a case file written in RegelSpraak.
  *
- * <p>The key order is the schema's {@code properties} order, which gate 2 holds every case file of the corpus to. The
- * serialiser is the emitter's own ({@link IrEmitter.Json}), so a case file and an IR document share one shape.
+ * <p>The key order is the case schema's {@code properties} order, and gate 16 holds every case file it writes for a
+ * golden byte for byte to the one pinned beside the golden. The serialiser is the emitter's own
+ * ({@link IrEmitter.Json}), so a case file and an IR document share one shape.
  */
 public final class CaseEmitter {
 
@@ -66,7 +67,7 @@ public final class CaseEmitter {
         return k;
     }
 
-    /** The case file of {@code s}: two-space indented, a trailing newline, the corpus's key order. */
+    /** The case file of {@code s}: two-space indented, a trailing newline, the case schema's key order. */
     public static String emit(ResolvedScenario s) {
         IrEmitter.Json w = new IrEmitter.Json();
         w.beginObject();

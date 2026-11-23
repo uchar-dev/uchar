@@ -58,26 +58,6 @@ public final class PeriodCondition {
     }
 
     /**
-     * The periods of all time on which the equality of a timeline of a sum type with a constructor value holds per day,
-     * or, where {@code equal} is false, the inequality (RUNTIME-SEMANTICS ch. 9.3, 9.4): equal where both are filled
-     * and the same value, unequal where exactly one is leeg or the two differ, so a gap day of the timeline holds
-     * "ongelijk aan" against a filled value and neither against a leeg one. The order of the two and the place of the
-     * timeline are as in {@link #where}.
-     */
-    public static List<Period> whereEqual(Object first, Object second, boolean equal, boolean timelineFirst) {
-        Object timeline = timelineFirst ? first : second, bound = timelineFirst ? second : first;
-        List<Period> segments = segmentsOf(timeline);
-        List<Period> out = new ArrayList<>();
-        LocalDate previous = null;
-        for (LocalDate c : Span.cuts(List.of(segments))) {
-            if (previous != null && ComputeHelpers.textEqual(Span.read(segments, previous), bound, equal))
-                out.add(new Period(previous, c, null));
-            previous = c;
-        }
-        return merged(out);
-    }
-
-    /**
      * The reading of a comparison read per period (RUNTIME-SEMANTICS ch. 5.12): the filled segments of its timeline
      * {@code timeline} cut to the periods {@code periods} in which it holds, with their values, and the gaps of the
      * timeline within those periods, where a leeg side satisfies it, each without a value, in the order of their days.

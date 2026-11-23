@@ -99,8 +99,7 @@ public record ConditionReading(Object object, String form, Status status, List<N
      * ended (ch. 10.6, clause 2) is reached and has neither.
      *
      * <p>In a document with {@code inferFromEmpty: false} (ch. 1.5) a reached node tells four things apart. A value is
-     * filled, and the markers "onbekend" and "niet van toepassing" of a sum type are filled values like any other; a null
-     * without a fault and without {@code open} is leeg that stands, settled leeg; {@code open} says that the node is
+     * filled; a null without a fault and without {@code open} is leeg that stands, settled leeg; {@code open} says that the node is
      * undetermined, an open read having broken it off or left its judgement so, and has no value; and {@code closure} says
      * that its truth stands for the form itself and not for another. In every other document {@code closure} is false and
      * {@code open} null.

@@ -122,8 +122,6 @@ public enum StaticFunction {
     /** The timeline a rule of period arithmetic writes: its filled segments, each under the write boundary of the
      *  target's decimals, an {@code Integer} constant, and its attribute, a {@code String} constant (ch. 2.4, 3.1). */
     PERIOD_WRITTEN(PeriodArithmetic.class, "written", true),
-    /** The timeline a rule writes into a target of a sum type: its filled segments, constructor values (ch. 9.4). */
-    PERIOD_WRITTEN_VALUES(PeriodArithmetic.class, "writtenValues", false),
     /** The total over time of a timeline on a grid, a {@code String} constant, laid from the fixed start point a second
      *  {@code String} constant names, or the calendar's grid where it is null (ch. 3.6), by the calendar where a third
      *  {@code String} constant names the time unit of the rate's denominator and by the length in units of the grid
@@ -142,10 +140,6 @@ public enum StaticFunction {
      *  order the comparison names them, the operator a {@code String} constant as {@code Operators.symbol} spells it with
      *  the timeline on its left, and a {@code Boolean} constant that says whether the timeline comes first. */
     PERIOD_WHERE(PeriodCondition.class, "where", false),
-    /** The periods of all time on which the equality of a timeline of a sum type with a constructor value holds per
-     *  day, or the inequality where a {@code Boolean} constant is false, the two in the order the comparison names
-     *  them and a {@code Boolean} constant that says whether the timeline comes first (ch. 9.3, 9.4). */
-    PERIOD_WHERE_EQUAL(PeriodCondition.class, "whereEqual", false),
     /** The whole-period qualifier per bucket of its grid, a {@code String} constant ("MAAND" or "JAAR"), over the periods
      *  in which its test holds, complemented over all time where a {@code Boolean} constant says it is negated (ch. 3.9 on
      *  a timeline target). */
@@ -200,8 +194,6 @@ public enum StaticFunction {
      *  decimals an {@code Integer} and the attribute a {@code String} constant, null where it decides none: the fault of
      *  a segment that does not fit (ch. 2.4 point 1). */
     DAYS_INITIALISED(PeriodDefaults.class, "initialised", true),
-    /** As {@link #DAYS_INITIALISED}, on a timeline target of a sum type. */
-    DAYS_INITIALISED_VALUES(PeriodDefaults.class, "initialisedValues", false),
     /** The reconciliation per day of the outcomes of member chains under a conflict key, a {@code String} constant
      *  (ch. 7.2, 7.9, 7.11), null where it settles no day. */
     DAYS_RECONCILED(PeriodDefaults.class, "reconciled", false),
@@ -284,9 +276,6 @@ public enum StaticFunction {
     /** The value of a unary constructor, its tag a {@code String} constant, of a payload; leeg where the payload is
      *  (ch. 9.1). */
     CONSTRUCT(ComputeHelpers.class, "construct", false),
-    /** The payload of a constructor value where it carries the constructor a {@code String} constant names, and leeg
-     *  where it carries another or is leeg (ch. 9.5). */
-    PAYLOAD(ComputeHelpers.class, "payload", false),
     /** A value, or the fallback where it is leeg. */
     FALLBACK(ComputeHelpers.class, "fallback", false),
     /** A count bound off an accumulate, as a number. */

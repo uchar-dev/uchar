@@ -171,8 +171,9 @@ public final class DroolsBackend {
      *
      *  @throws IrLoader.Refusal      a form the loader does not carry; the replay reports it as {@code loader: …}
      *  @throws IrLoader.DocumentError a document that is not well-formed {@code uchar-ir-v1}
-     *  @throws CaseRunner.Excluded   a form the backend does not carry past the loader: a document that carries
-     *      {@code inferFromEmpty: false} and a form whose reading of RUNTIME-SEMANTICS ch. 1.5 this backend does not
+     *  @throws CaseRunner.Excluded   a form the backend does not carry past the loader: a sum type in a form of
+     *      RUNTIME-SEMANTICS ch. 9.4 ({@code DROOLS-373} with the slug of the form, {@code SumTypeForms}, before a bean is
+     *      generated), a document that carries {@code inferFromEmpty: false} and a form whose reading of RUNTIME-SEMANTICS ch. 1.5 this backend does not
      *      carry, or a build with readings of such a document ({@code DROOLS-370} with the slug of the form,
      *      {@code UncarriedForms}, before a bean is generated or where the analysis lowers it), two declarations on one
      *      Java name of the bean model, a reciprocal self-relation the bean model cannot hold, a bean-contract
@@ -206,6 +207,10 @@ public final class DroolsBackend {
         IrLoader.Positioned positioned = IrLoader.loadWithPositions(document);
         IrLoader.Loaded loaded = positioned.loaded();
         RegelSpraakModel model = loaded.model();
+        // a sum type in a form no executor carries (RUNTIME-SEMANTICS ch. 9.4) is refused before anything is built,
+        // naming the form, as the reference interpreter and the ASP backend refuse it
+        String sumForm = SumTypeForms.first(model, loaded.prioritizedDefaults());
+        if (sumForm != null) throw new Excluded(DroolsCode.SUM_TYPE_FORM_NOT_CARRIED.reason("form", sumForm));
         // a document with inferFromEmpty false is read as RUNTIME-SEMANTICS ch. 1.5 lays down; one that
         // holds a form whose reading this backend does not carry is refused before anything is built, naming the form,
         // since an answer in the reading of ch. 1.2-1.4 would be a wrong answer without a word

@@ -403,14 +403,10 @@ final class ExpressionBuilder {
             case Expr.BinderRef x -> { return e; }
             case Expr.Constant x -> { return e; }
             case Expr.Unresolved x -> { return e; }
-            // the anchor stands on the read whose value or marker the node is (IR-SPEC ch. 4.1a, 4.7)
+            // the anchor stands on the read whose value the node is (IR-SPEC ch. 4.1a, 4.7)
             case Expr.Construct c -> {
                 Expr moved = again.apply(c.argument());
                 return moved == c.argument() ? c : new Expr.Construct(c.type(), c.constructor(), moved, c.source());
-            }
-            case Expr.PayloadAccess p -> {
-                Expr moved = again.apply(p.base());
-                return moved == p.base() ? p : new Expr.PayloadAccess(moved, p.constructor(), p.type(), p.source());
             }
         }
     }
@@ -817,9 +813,8 @@ final class ExpressionBuilder {
             case Expr.TextComposition ignored -> null;
             case Expr.InstanceSetUnion ignored -> null;
             case Expr.Unresolved ignored -> null;        // no claim: the marker carries its own diagnostic
-            // a constructor value is no count, and a payload is as its declaration
+            // a constructor value is no count
             case Expr.Construct ignored -> null;
-            case Expr.PayloadAccess p -> typeRational(p);
         };
     }
 

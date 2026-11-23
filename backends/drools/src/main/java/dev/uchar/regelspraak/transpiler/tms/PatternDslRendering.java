@@ -402,8 +402,7 @@ final class PatternDslRendering {
         Consequence.Input.IncompleteInput i = g.input() instanceof Consequence.Input.IncompleteInput o ? o : null;
         Consequence.Input.MemberValue l = i != null ? i.of() : (Consequence.Input.MemberValue) g.input();
         Object bound = i == null ? w[l.value()] : ComputeHelpers.input(w[l.value()], w[i.openInput()], member, i.member());
-        Object value = l.cell() != null ? ComputeHelpers.cell(bound, l.cell())
-                : l.payload() != null ? ComputeHelpers.payload(bound, l.payload()) : bound;
+        Object value = l.cell() != null ? ComputeHelpers.cell(bound, l.cell()) : bound;
         return ComputeHelpers.contributionAt(g.fold(), carrier, member, value, l.total(), l.fixed(), l.filled(), l.whole(),
                 placeOf(g, w));
     }

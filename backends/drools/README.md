@@ -434,7 +434,7 @@ member is **open** where neither a value nor leeg stands, and so is the outcome 
 neither true nor false, and so is, in a reading, a node an open read broke off (`NodeReading.undetermined`, with the open
 read in `NodeReading.open`). A member is **settled leeg** where it stands that no writer fills it, or its declaration says
 that its input is complete (`(volledig gegeven)`, `complete`): in an end state it is in neither list, in a reading it is a
-value that is null. The **absence markers** `onbekend` and `niet van toepassing` of a sum type are filled values.
+value that is null.
 
 The analysis computes once which members can be open (`OpenableMembers`, the one place
 of the lowering that reads `inferFromEmpty`): an input member that holds one value, on the objects of a type on which no
@@ -571,10 +571,8 @@ of the target: its `Value` is the timeline of the days it decides, each segment 
 target's input stands on every other day, as beside a computing rule (below, "Writers per day"); a conflict deposits
 one EF-027 fact per key on the subject. In a build with readings each default reads its justification per period and
 its consequence where that holds on some day, and is `HOLDS` where it is at its turn on some day and `DISPLACED`
-where on none (ch. 5.12). On a target of a sum type a consequence is the copy of an own timeline of that sum type,
-and the root writes the constructor values it decides as they stand (`PeriodArithmetic.writtenValues`, ch. 9.4).
-Refused by name: a consequence that is no period arithmetic (DROOLS-105), and on a target that is no number a
-consequence that is no such copy (DROOLS-303). Witnesses `TmsDefaultsPerDayWitnessTest` (the documents of
+where on none (ch. 5.12). Refused by name: a consequence that is no period arithmetic (DROOLS-105), and a target that
+is no number (DROOLS-303). Witnesses `TmsDefaultsPerDayWitnessTest` (the documents of
 `ref/test/fixtures/defaults-per-day` and the cases of `ref/test/fixtures/defaults-per-day-cases`), golden
 `jutterswet-opgave-per-periode`.
 
@@ -835,23 +833,17 @@ within a window"); the case reader refuses one given in the flat list of charact
 `PeriodTest`, `TmsTimelineWitnessTest`, `TmsTimelineFoldWitnessTest`, `TmsEverUniquenessWitnessTest`, and for the
 refusals below `TmsTimelineRefusalWitnessTest`.
 
-**Sum types and absence markers.** A sum type (RUNTIME-SEMANTICS ch. 9) is carried as a datatype, and its value is a
-`ConstructorValue`, its tag and, for a unary constructor, its payload, on a bean, in a fact and in a segment of a
-timeline; two are equal where their tags are one declared name and their payloads one value, numbers by value, and
-their hash code agrees with it. A `Construct` builds one, leeg where its argument is and with a number restated into
-the unit of the payload in the declaration of the domain (ch. 9.1, WF-062); an equality with one is the equality of a
-text (ch. 9.3); a `PayloadAccess` is the payload where the value carries its constructor and leeg elsewhere (ch. 9.5),
-also as the source of a fold over members, whose contribution takes the member's payload. The absence markers of the
-RegelSpraak dialect are such values, in an attribute and in a cell of a dimensioned one. On a timeline of a sum type a
-rule writes a constructor of a literal, or a copy of an own timeline of the same sum type,
-in the periods of its condition (`PeriodArithmetic.writtenValues`), a comparison with a constructor value is read per
-period (`PeriodCondition.whereEqual`), the input and the writers are read per day as on every timeline target, and
-the generated `Segment` holds the constructor value. A defaults group on an attribute of a sum type passes on the
-value of a member of that sum type as it stands, scalar and per day: the opgave and the computation of the dialect's
-opgave marker on an attribute with markers, with a constructor value as the initialisation below them, a value or a
-marker, and a computation whose payload is computed (a date plus a duration, an arithmetic of numbers). Refused by name: a `Match` (DROOLS-021), the payload of a
-timeline (DROOLS-314), whose reading per day this backend does not execute, and every other value on a timeline of a
-sum type (DROOLS-303).
+**Sum types.** A sum type (RUNTIME-SEMANTICS ch. 9) is carried as a datatype, and its value is a `ConstructorValue`,
+its tag and, for a unary constructor, its payload, on a bean and in a fact; two are equal where their tags are one
+declared name and their payloads one value, numbers by value, and their hash code agrees with it. A `Construct`
+builds one, leeg where its argument is, its payload the argument's value as it is (ch. 9.1); an equality with one is
+the equality of a text (ch. 9.3); a text composition writes one with its payload in the declared form. A document with
+a sum type in a form of ch. 9.4 that no executor carries (on a timeline, in a cell of a dimensioned attribute, in an
+object creation, with a payload that declares a unit, as the target of a defaults group or an initialisation) is
+refused before anything is built, naming the first form of that table (`SumTypeForms`, DROOLS-373), as ref and clingo
+refuse it. Refused by name besides: a `Match` (DROOLS-021, by the loader), and a `Construct` in a document with
+`inferFromEmpty: false` (DROOLS-370, `UncarriedForms`). Witness `SumTypeWitnessTest`, on the documents of
+`ref/test/fixtures/sum-types`.
 
 **Period arithmetic over all time.** A timeline divides all time (RUNTIME-SEMANTICS ch. 3.1), so a segment may have an
 open bound: in a `Period` an open `from` is `Period.OPEN_FROM` (`LocalDate.MIN`) and an open `to` `Period.OPEN_TO`

@@ -335,7 +335,7 @@ public enum DroolsCode {
     TIMELINE_WRITERS_READ("DROOLS-311", Kind.RETIRED, "timeline-writers-read", "attribute,declarant", null),
     NON_TERMINATING_SEGMENT("DROOLS-312", Kind.LIMIT, "non-terminating-segment", "value,from,to,attribute", null),
     EXPR_PAYLOAD_ACCESS("DROOLS-313", Kind.RETIRED, "expr-payload-access", "node", null),
-    PAYLOAD_ACCESS_OF_TIMELINE("DROOLS-314", Kind.REFUSAL, "payload-access-of-timeline", "attribute", null),
+    PAYLOAD_ACCESS_OF_TIMELINE("DROOLS-314", Kind.RETIRED, "payload-access-of-timeline", "attribute", null),
     ALLOCATION_TIME_DEPENDENT_ATTRIBUTE("DROOLS-315", Kind.CONTRACT, "allocation-time-dependent-attribute", "allocation,field,attribute,objectType", null),
     TIME_TARGET_PRODUCER_VALUE("DROOLS-316", Kind.REFUSAL, "time-target-producer-value", "form,attribute,declarant,snippet", null),
     BEAN_GETTER_OF_OBJECT("DROOLS-317", Kind.LIMIT, "bean-getter-of-object", "property,objectType,getter", null),
@@ -393,7 +393,8 @@ public enum DroolsCode {
     TEXT_PART_UNIT_UNDECLARED("DROOLS-369", Kind.CONTRACT, "text-part-unit-undeclared", "snippet,unit,factor,unitSystem", null),
     INFER_FROM_EMPTY_FALSE("DROOLS-370", Kind.REFUSAL, "infer-from-empty-false", "form", null),
     INSERT_ABSENT_CHARACTERISTIC("DROOLS-371", Kind.CONTRACT, "insert-absent-characteristic", "bean,characteristic,reason", null),
-    LIST_PLACE_MISSING_OPEN_MEMBER("DROOLS-372", Kind.CONTRACT, "list-place-missing-open-member", "fold,member,field", null);
+    LIST_PLACE_MISSING_OPEN_MEMBER("DROOLS-372", Kind.CONTRACT, "list-place-missing-open-member", "fold,member,field", null),
+    SUM_TYPE_FORM_NOT_CARRIED("DROOLS-373", Kind.REFUSAL, "sum-type-form-not-carried", "form", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */

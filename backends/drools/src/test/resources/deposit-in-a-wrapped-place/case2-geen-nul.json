@@ -30,17 +30,6 @@
     {
       "kind": "attributeValue",
       "label": "V2",
-      "attribute": "toeslag",
-      "value": {
-        "constructor": "waarde",
-        "payload": {
-          "number": "8.00"
-        }
-      }
-    },
-    {
-      "kind": "attributeValue",
-      "label": "V2",
       "attribute": "vindloon",
       "value": {
         "number": "5.00"
@@ -51,7 +40,7 @@
       "label": "V2",
       "attribute": "taxatie",
       "value": {
-        "constructor": "waarde",
+        "constructor": "Getaxeerd",
         "payload": {
           "number": "3.00"
         }

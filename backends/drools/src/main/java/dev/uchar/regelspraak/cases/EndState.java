@@ -32,8 +32,7 @@ import java.util.function.Function;
  * ({@link DroolsBackend#endStateOf}): every object, of the input and made by a creation, with its type and every member
  * of it that holds a value; every link; and the §9.5 facts. Where {@link Fixpoint} gives what the rules derived, this
  * gives what stands: the input of a member where nothing derived it, the derived value where something did. In a
- * document with {@code inferFromEmpty: false} (ch. 1.5) a member of an object is filled, {@link EndObject#members},
- * among them the markers "onbekend" and "niet van toepassing" of a sum type, which are values; open,
+ * document with {@code inferFromEmpty: false} (ch. 1.5) a member of an object is filled, {@link EndObject#members}; open,
  * {@link EndObject#open}, also where its bean holds a value that does not stand; or settled leeg, in neither list. In every
  * other document nothing is open.
  * {@link DroolsBackend#standingOf} gives the same record for a session in which an evaluation fault stands, which has

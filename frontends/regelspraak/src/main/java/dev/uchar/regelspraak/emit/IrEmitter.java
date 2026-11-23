@@ -1075,21 +1075,14 @@ public final class IrEmitter {
             case Expr.IfThenElse ignored -> throw new UnsupportedOperationException(
                     "IfThenElse is never emitter-produced (IR-SPEC ch. 4.10): the resolver builds none, "
                             + "so this emitter has no verified wire shape for it");
-            // IR-SPEC ch. 4.7: the two nodes of a sum type, which a backend's IR loader reads off the wire; the resolver
-            // builds neither
+            // IR-SPEC ch. 4.7: the constructor value of a sum type, which a backend's IR loader reads off the wire; the
+            // resolver builds none
             case Expr.Construct c -> {
                 w.key("node").value("Construct");
                 w.key("type"); datatype(c.type());
                 w.key("constructor").value(c.constructor());
                 w.key("argument"); expr(c.argument());
                 sourceReference(c.source().snippet());
-            }
-            case Expr.PayloadAccess p -> {
-                w.key("node").value("PayloadAccess");
-                w.key("type"); datatype(p.type());
-                w.key("base"); expr(p.base());
-                w.key("constructor").value(p.constructor());
-                sourceReference(p.source().snippet());
             }
             // the §5.7 concatenation as an instance set (IR-SPEC ch. 4.3, WF-110). No "type" key:
             // the node denotes INSTANCES and carries no datatype, which is why the verifier's type

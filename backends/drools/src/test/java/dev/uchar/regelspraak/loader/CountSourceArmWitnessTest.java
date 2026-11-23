@@ -120,20 +120,15 @@ class CountSourceArmWitnessTest {
         }
     }
 
-    /** The two nodes of the absence markers are carried (RUNTIME-SEMANTICS ch. 9.5): written whole they load, and at
-     *  a count's source the shape is refused, a constructor value as every value is, and the payload of each
-     *  contributor as well, which a value fold reads and a count, which folds instances, does not. */
-    @Test void a_constructor_or_a_payload_as_count_source_is_refused() throws Exception {
-        String sum = "{\"node\":\"SumType\",\"domain\":\"d\",\"constructors\":[{\"name\":\"waarde\",\"payload\":"
-                + WHOLE + "},{\"name\":\"onbekend\",\"payload\":null}]}";
-        String construct = "{\"node\":\"Construct\",\"type\":" + sum + ",\"constructor\":\"onbekend\",\"argument\":null}";
-        String payload = "{\"node\":\"PayloadAccess\",\"type\":" + WHOLE + ",\"base\":{\"node\":\"AttributeReference\","
-                + "\"attribute\":\"x\",\"subjectType\":\"Vondst\"},\"constructor\":\"waarde\"}";
-        for (String[] row : new String[][] { { "Construct", construct }, { "PayloadAccess", payload } }) {
-            ObjectNode ir = negative("wf037-count-element-type-literal");
-            ((ObjectNode) value(ir)).putArray("arguments").add(JSON.readTree(row[1]));
-            refuses(ir, "a count aggregation carries elementType \"Vondst\" and a " + row[0] + SOURCE_ARM);
-        }
+    /** A constructor value is carried (RUNTIME-SEMANTICS ch. 9.1): written whole it loads, and at a count's source the
+     *  shape is refused, a constructor value as every value is. */
+    @Test void a_constructor_as_count_source_is_refused() throws Exception {
+        String sum = "{\"node\":\"SumType\",\"domain\":\"d\",\"constructors\":[{\"name\":\"Toegekend\",\"payload\":"
+                + WHOLE + "},{\"name\":\"Afgewezen\",\"payload\":null}]}";
+        String construct = "{\"node\":\"Construct\",\"type\":" + sum + ",\"constructor\":\"Afgewezen\",\"argument\":null}";
+        ObjectNode ir = negative("wf037-count-element-type-literal");
+        ((ObjectNode) value(ir)).putArray("arguments").add(JSON.readTree(construct));
+        refuses(ir, "a count aggregation carries elementType \"Vondst\" and a Construct" + SOURCE_ARM);
     }
 
     @Test void a_non_carried_node_as_source_of_the_sum_is_refused() throws Exception {

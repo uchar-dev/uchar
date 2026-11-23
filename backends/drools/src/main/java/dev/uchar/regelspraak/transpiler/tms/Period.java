@@ -21,10 +21,9 @@ import java.util.Objects;
  * ({@link #list}) and back where the write-back puts it on one ({@link #beans}); nothing in between sees a
  * {@code Segment}.
  *
- * <p>A value is a number, a constructor value ({@link ConstructorValue}) on a timeline of a sum type (ch. 9.4), or a
- * text on a timeline of a text, which the whole-period qualifier reads per day (ch. 3.9). Two
- * segments are equal where they have the same {@code from}, the same {@code to}, and values that are equal as numbers,
- * equal constructor values, equal texts or both leeg: 7 and 7.00 are one value, as in the reference interpreter's comparison of two
+ * <p>A value is a number, or a text on a timeline of a text, which the whole-period qualifier reads per day (ch. 3.9).
+ * Two segments are equal where they have the same {@code from}, the same {@code to}, and values that are equal as
+ * numbers, equal texts or both leeg: 7 and 7.00 are one value, as in the reference interpreter's comparison of two
  * timelines ({@code World.write_timeline}, {@code Arith.equal}) and the change detection of ch. 3.1. The hash code is
  * taken over a number without trailing zeros, so that it agrees with that equality: a record's own hash code is that
  * of {@code BigDecimal}, which depends on the scale, and would give two facts for one value. Two timelines are equal
@@ -37,7 +36,7 @@ import java.util.Objects;
  * {@code getTot()} and {@code getWaarde()} ({@link RegelSpraakRuntime#get}) and make one through the public constructor
  * of {@code (LocalDate, LocalDate, BigDecimal)} ({@link RegelSpraakRuntime#newSegment}): given this class as their
  * segment class they compute with it as with the bean model's, and nothing in {@code runtime/} changes. They compute
- * with numbers only, so a timeline of constructor values never reaches them.
+ * with numbers only, so a timeline of texts never reaches them.
  *
  * <p>A timeline divides all time (ch. 3.1), so a segment may have an open bound: an open {@code from} is
  * {@link #OPEN_FROM}, before every day, and an open {@code to} is {@link #OPEN_TO}, past every day. The two ends of the
@@ -56,10 +55,8 @@ public record Period(LocalDate from, LocalDate to, Object value) implements Span
     public Period {
         Objects.requireNonNull(from, "van");
         Objects.requireNonNull(to, "to");
-        if (value != null && !(value instanceof BigDecimal) && !(value instanceof ConstructorValue)
-                && !(value instanceof String))
-            throw new IllegalArgumentException("a segment holds a decimal, a constructor value or a text, not a "
-                    + value.getClass().getName());
+        if (value != null && !(value instanceof BigDecimal) && !(value instanceof String))
+            throw new IllegalArgumentException("a segment holds a decimal or a text, not a " + value.getClass().getName());
     }
 
     /** The constructor the runtime's timeline helpers make a segment through ({@link RegelSpraakRuntime#newSegment}). */
@@ -138,16 +135,15 @@ public record Period(LocalDate from, LocalDate to, Object value) implements Span
         return out;
     }
 
-    /** One segment of the bean model's {@code segmentClass}: a number through the runtime's constructor, and a
-     *  constructor value or a text through the one of {@code (LocalDate, LocalDate, Object)} the bean model generates
-     *  beside it. */
+    /** One segment of the bean model's {@code segmentClass}: a number through the runtime's constructor, and a text
+     *  through the one of {@code (LocalDate, LocalDate, Object)} the bean model generates beside it. */
     public static Object bean(Class<?> segmentClass, LocalDate from, LocalDate to, Object value) {
         if (value == null || value instanceof BigDecimal)
             return RegelSpraakRuntime.newSegment(segmentClass, from, to, (BigDecimal) value);
         try {
             return segmentClass.getConstructor(LocalDate.class, LocalDate.class, Object.class).newInstance(from, to, value);
         } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("no segment of a constructor value on " + segmentClass.getName(), e);
+            throw new IllegalStateException("no segment of a text on " + segmentClass.getName(), e);
         }
     }
 }

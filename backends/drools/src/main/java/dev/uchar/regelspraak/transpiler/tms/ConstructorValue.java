@@ -8,10 +8,9 @@ import java.util.Objects;
 
 /**
  * A constructor value of a sum type (RUNTIME-SEMANTICS ch. 9.1): the tag {@code constructor} and, for a unary
- * constructor, its payload, never leeg; null for a nullary one. A value of this branch in working memory, on a bean and
- * in a segment of a timeline ({@link Period}), as a case and a {@code Construct} give it. An absence marker of ch. 9.5
- * is such a value, {@code onbekend} or {@code niet van toepassing}, and the value of an attribute with markers is one of
- * the constructor {@code waarde}.
+ * constructor, its payload, never leeg; null for a nullary one. A value of this branch in working memory and on a bean,
+ * as a case and a {@code Construct} give it; a sum type on a timeline is a form of ch. 9.4 that the build refuses
+ * ({@code SumTypeForms}).
  *
  * <p>Two constructor values are equal where their tags are one declared name (WF-001, the identity the reference
  * interpreter compares tags by) and their payloads are equal values, numbers by value, so that 300 and 300.00 are one

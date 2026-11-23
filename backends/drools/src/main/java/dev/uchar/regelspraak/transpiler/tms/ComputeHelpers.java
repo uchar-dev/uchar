@@ -463,18 +463,6 @@ public final class ComputeHelpers {
         return payload == null ? null : new ConstructorValue(tag, payload);
     }
 
-    /** The payload of {@code value} where it carries the constructor {@code tag}, and leeg where it carries another or
-     *  is leeg (RUNTIME-SEMANTICS ch. 9.5): a failed access; an open value of a member of a fold stays open (ch. 1.5). A
-     *  value that is no constructor value breaks the contract of a sum-typed base (WF-127) and is thrown, never read as
-     *  leeg. */
-    public static Object payload(Object value, String tag) {
-        if (value == null || value instanceof OpenMember) return value;
-        if (!(value instanceof ConstructorValue c))
-            throw new IllegalStateException("a payload access reads a constructor value, not a "
-                    + value.getClass().getName());
-        return Namen.norm(c.constructor()).equals(Namen.norm(tag)) ? c.payload() : null;
-    }
-
     /** {@code value}, or {@code fallback} where it is leeg: a sum's {@code emptyFallback} (§5.8.2), which is evaluated
      *  whether it is used or not (RUNTIME-SEMANTICS ch. 5.11). */
     public static Object fallback(Object value, Object fallback) {

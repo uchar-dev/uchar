@@ -562,7 +562,6 @@ public final class IrLoader {
             case Expr.Constant x -> { }
             case Expr.Unresolved x -> { }
             case Expr.Construct c -> checkValue(c.argument(), s);
-            case Expr.PayloadAccess p -> checkValue(p.base(), s);
         }
     }
 
@@ -1558,8 +1557,7 @@ public final class IrLoader {
             keyNames("BinderRef", List.of("node", "name"), "source"),
             keyNames("IfThenElse", List.of("node", "type", "condition", "then", "else"), "source"),
             keyNames("InstanceSetUnion", List.of("node", "branches"), "source"),
-            keyNames("Construct", List.of("node", "type", "constructor", "argument"), "source"),
-            keyNames("PayloadAccess", List.of("node", "type", "base", "constructor"), "source"));
+            keyNames("Construct", List.of("node", "type", "constructor", "argument"), "source"));
 
     /** Every condition node this loader reads, with the schema's keys. The condition marker carries no type: that
      *  field is the expression marker's alone. */
@@ -1739,18 +1737,13 @@ public final class IrLoader {
                     throw new Refusal(DroolsCode.INSTANCE_UNION_ONE_BRANCH.reason("branchCount", branches.size()), "InstanceSetUnion.branches");
                 yield new Expr.InstanceSetUnion(List.copyOf(branches), source(n));
             }
-            // IR-SPEC ch. 4.7: a constructor value and the payload access of the absence markers (RUNTIME-SEMANTICS
-            // ch. 9.1, 9.5); the constructor's and the type's agreement is the verifier's (WF-062, WF-127)
+            // IR-SPEC ch. 4.7: a constructor value (RUNTIME-SEMANTICS ch. 9.1); the constructor's and the type's
+            // agreement is the verifier's (WF-062)
             case "Construct" -> {
                 String p = pathOf(n);
                 if (!(typeField(n) instanceof Datatype.SumType type))
                     throw new DocumentError(p + "/type", "the type of a Construct is a SumType");
                 yield new Expr.Construct(type, textAt(n, p, "constructor"), expr(nodeField(n, "argument")), source(n));
-            }
-            case "PayloadAccess" -> {
-                String p = pathOf(n);
-                yield new Expr.PayloadAccess(required("PayloadAccess", "base", expr(nodeField(n, "base"))),
-                        textAt(n, p, "constructor"), required("PayloadAccess", "type", typeField(n)), source(n));
             }
             // the members of IR-SPEC ch. 4's expression union that have no record here: a form this backend does not
             // carry (the temporal read's keys are checked all the same, see EXPRESSION)
@@ -1891,10 +1884,6 @@ public final class IrLoader {
         // one cell of each contributor (ALEF's fold of a cell over a role): the value folds and the filled count read
         // it; a count counts instances and a total integrates a timeline, which a cell does not carry
         if (operandKind.equals("DimensionCellRead") && !aggregationKind.equals("count") && !aggregationKind.equals("total"))
-            return null;
-        // the payload of each contributor (RUNTIME-SEMANTICS ch. 9.5), read under the filter's test of its constructor
-        // (WF-127): the value folds and the filled count read it, a count and a total do not
-        if (operandKind.equals("PayloadAccess") && !aggregationKind.equals("count") && !aggregationKind.equals("total"))
             return null;
         return head + " and " + ("AEIOU".indexOf(operandKind.charAt(0)) >= 0 ? "an " : "a ") + operandKind
                 + " operand: the source of an instance fold is an AttributeReference";
@@ -3120,7 +3109,6 @@ public final class IrLoader {
             case Expr.Constant x -> { }
             case Expr.Unresolved x -> { }
             case Expr.Construct c -> checkTypes(c.argument(), types);
-            case Expr.PayloadAccess p -> checkTypes(p.base(), types);
         }
     }
 

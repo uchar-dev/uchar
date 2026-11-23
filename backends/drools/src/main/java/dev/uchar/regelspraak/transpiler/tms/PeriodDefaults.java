@@ -138,13 +138,6 @@ public final class PeriodDefaults {
         return cut.isEmpty() ? null : PeriodArithmetic.written(cut, decimals, attribute);
     }
 
-    /** As {@link #initialised}, on a timeline target of a sum type, whose constructor values have no decimals
-     *  ({@link PeriodArithmetic#writtenValues}, ch. 9.4). */
-    public static List<Period> initialisedValues(Object days, Object timeline) {
-        List<PeriodArithmetic.Exact> cut = cut(timeline, PeriodCondition.periodsOf(days));
-        return cut.isEmpty() ? null : PeriodArithmetic.writtenValues(cut);
-    }
-
     /** The days on which {@code timeline}, a timeline of working memory, reads a value, as periods without one; none
      *  for an absent timeline. */
     private static List<Period> filled(Object timeline) {
