@@ -1,7 +1,7 @@
 # ASP translation
 
 *Status: the systematic construct-by-construct translation (Part I,
-sections S1–S19, complete for the translated core) — the Phase-3
+sections S1–S20, complete for the translated core) — the Phase-3
 deliverable this document was always growing toward. Part I describes what `backends/clingo` provably does:
 every claim is distilled from `backends/clingo/lib/translate.ml` and
 witnessed by the gate set (gate 6, `scripts/check-clingo.sh`, replays
@@ -28,7 +28,8 @@ S14 sum types and total match; S15 folds and function values; S16
 structs (the record datatype); S17 nested exception groups; S18 the
 `Let`, guarded consequences and the split money multiplication;
 S19 the complete inventory of loud non-translations — what the backend
-does not translate is stated there, never silently absent.
+does not translate is stated there, never silently absent; S20 the
+strict reading (`inferFromEmpty: false`, `RUNTIME-SEMANTICS.md` ch. 1.5).
 
 ### S1. Program shape and conventions
 
@@ -3529,6 +3530,396 @@ Gate 8 keeps the observable-fault subset honest
 (`corpus/red/`), and the catch-alls guarantee the list can only
 shrink by *translation*, never by silence.
 
+### S20. The strict reading (`inferFromEmpty: false`)
+
+A document with `inferFromEmpty: false` (`IR-SPEC.md` ch. 2; RegelSpraak:
+`Afleiden uit leeg: nee`) takes the three-state reading of
+`RUNTIME-SEMANTICS.md` ch. 1.5: a member is filled, settled leeg or open,
+and every condition has one value of Kleene's strong table. This section
+specifies how `backends/clingo/lib/translate.ml` encodes that reading and
+how `backends/clingo/lib/model.ml` reads the resulting model. The normative
+semantics lives in `RUNTIME-SEMANTICS.md` ch. 1.5 (and ch. 5.12, "Open
+values", where it defines the fixpoint reading of forms; this backend
+emits the stable model alone and produces no node-by-node reading).
+
+**Mode detection and invariance of ordinary documents.** At the entry of
+`translate_guarded`, `let strict = not doc.infer_from_empty` is stored in
+`ctx.strict`, and the session flag `closed_inputs` (default `false`,
+enabled by `--closed-inputs` in `backends/clingo/bin/clingo_runner.ml`)
+in `ctx.closed_inputs`. For a document without `inferFromEmpty: false`,
+`ctx.strict` is `false`: `refuse_uncarried` returns without walking the
+document, `Ir_v0.Desugar.document` runs as in S1, `ctx.case_only` is `[]`,
+`ctx.boundary` stays `None`, neither `input_states` nor `member_states`
+runs, none of the strict predicates or `#show` directives are emitted,
+conditions lower directly through `cond_atoms` rather than `judge`, and
+the generated program is identical to S1–S18. `Model.check` reads
+`let strict = not doc.infer_from_empty` as well: on a strict document it
+checks `attributeEmpty`/`attributeOpen` and
+`characteristicAbsent`/`characteristicOpen` against the shown `settled/2`
+and `hasnot/2` atoms (`#show settled/2. #show hasnot/2.`).
+
+**The three states and their atoms.** A member of an object is carried in
+three disjoint states:
+
+| member kind | filled | settled leeg | open |
+|---|---|---|---|
+| attribute | `val(I,A,V)` | `settled(I,A)` | neither derived |
+| characteristic | `has(I,K)` | `hasnot(I,K)` | neither derived |
+
+Both standing states are derived positively, so open is the absence of
+both. When `ctx.strict` is `true`, the program preamble declares
+`#defined settled/2. #defined hasnot/2. #defined wnila/2. #defined ropen/2. #defined aopen/2. #defined kopen/2. #defined given/2. #defined iopen/2.`
+and defines standing attributes via:
+
+```
+stands(I,A) :- val(I,A,_).
+stands(I,A) :- settled(I,A).
+```
+
+To avoid coupling case-only reads through the derived `stands/2`
+component, `case_only_attributes` collects every declared normalised
+attribute name across the document that no `resolved_rule` target, no
+`prioritized_defaults` attribute target, and no `object_creations`
+created object type's declared attributes include (`ctx.case_only`). For
+those attributes `input_states` emits ground `given(label,attr).` facts
+whenever the attribute is filled or settled leeg, and `stands_atom` emits
+`given/2` instead of `stands/2` so grounding resolves the read directly.
+
+Per concrete type `otype` of a case instance `i`, `input_states`
+classifies each declared member using `written_on` (any `resolved_rule`
+of matching kind or `prioritized_defaults` declared on a supertype of
+`otype` targeting the member) and `derived_on` (for attributes, any
+`resolved_rule` other than `Characteristic_attribution` or
+`Initialisation`, or any `prioritized_defaults` with a default where
+`not d.default_initialisation || d.default_exceptions <> None`, declared
+on a supertype of `otype`):
+
+- **Unwritten input attribute** (`not (written_on ...)`): when the case
+  gives no value and either `ctx.closed_inputs` holds or the attribute
+  carries `complete: true` on `i.otype`'s effective type
+  (`ot.attribute_complete`), emits `settled(label,a).`; otherwise emits
+  nothing (open).
+- **Initialisation-only attribute** (`written_on` and
+  `not (derived_on ...)`): when the case gives no value and neither
+  `ctx.closed_inputs` nor `complete` holds, emits `iopen(label,a).`.
+- **Unwritten input characteristic**: when absent from `i.chars` and
+  `ctx.closed_inputs`, `ot.characteristic_complete` (`complete: true`),
+  or `characteristicsAbsent` (`case.world.stated_absent`) names it, emits
+  `hasnot(label,k).`; otherwise emits nothing (open).
+
+For written members, `member_states` derives `settled/2`, `hasnot/2` and
+`wnila/2` per concrete type `tname` in `doc.object_types`, from every
+non-absorbed rule writer's `wnil<index>/1` (`ctx.fills_nothing`,
+excluding non-characteristic rules absorbed into a subtype stack by
+`Ir_v0.Desugar.absorbed_on`) and every defaults group's `grp<g>_nil/1`
+owned by `tname` (`ctx.group_writers`):
+
+```
+hasnot(S,k) :- is_a(S,tname), wnil<i1>(S), ..., grp<g>_nil(S), ...,
+               not has(S,k), not kopen(S,k).
+wnila(S,a)  :- is_a(S,tname), wnil<c1>(S), ...        % computing rules only
+settled(S,a) :- is_a(S,tname), wnila(S,a), wnil<init>(S), ..., grp<g>_nil(S), ...,
+                not val(S,a,_), not aopen(S,a), not iopen(S,a).
+```
+
+Case or creation input on a written attribute enters as `inputval/3`
+(S2/S10) and re-enters `val/3` only where every computing rule fills
+nothing (`no_writer_decides` emits `wnila(S,a)` instead of
+`not wdecides(S,a)`), or beside a defaults group only where
+`grp<g>_nil(S)` holds. On an object minted by an object creation
+(`translate_object_creation`), `leaves_open` derives `aopen(ocI(S),m)`
+when an assigned attribute expression opens its boundary and
+`kopen(ocI(S),m)` when a boolean-expression characteristic assignment
+reads an attribute that does not stand (`bool_atoms`, `not stands`). For
+any member of the created type with `not (written_on ...)`,
+`assigns_nothing` derives `settled(ocI(S),m)` or `hasnot(ocI(S),m)` when
+an assignment evaluates to settled leeg (`not vdef<k>(S), not ob<n>(S)`),
+assigns `false` or a standing false boolean expression, or omits the
+member altogether.
+
+**Boundaries and open reads.** One value expression or one atomic
+condition is translated as one boundary (`within_boundary`,
+`RUNTIME-SEMANTICS.md` ch. 1.5, "An open read"): a fresh predicate
+`ob<n>/<arity>` keyed by `judged_at` (`subject` at form level, and
+`(form_subject, member)` inside a filter or quantifier fold where a node
+can read the form subject, an identity check or an outer `Let` binder;
+`coalesce0` and `Instance_set_union` key their helpers accordingly in
+strict mode). Nesting one boundary directly inside another faults; a
+condition inside a value (a fold filter) is judged with boundaries of its
+own and reported to the outer boundary by `fold_reads`. Within a boundary,
+`boundary_read` emits per read in evaluation order:
+
+```
+ob<n>_r<k>(key) :- <bd_base>, <ctx.reach>, <open-read body>.
+ob<n>(key)      :- ob<n>_r<k>(key).
+```
+
+and appends `ob<n>_r<k>` to `b.bd_reads`. `open_read` calls
+`boundary_read` with `path @ [not stands_atom(holder,attr)]` (at
+`member_read`, `symbolic_term`, `dt_term`, `sum_term`, `struct_base`); an
+absent link fails `path`, so it derives no open read and evaluates as
+settled leeg. In a document with creations, `open_relation` calls
+`boundary_read` with `path @ [ropen(holder,rel)]` on each navigation hop
+in `member_read` and on `Role_membership`. `reached_after` extends
+`ctx.reach` so only reached reads open the boundary: a division's divisor
+waits for its dividend's binding atoms (`translate_division`), an
+`IfThenElse` arm waits for its condition atoms and branch guard
+(`translate_ite`, `value_branches`), and a `Let` body waits for its
+binder's value atoms (`bind_let`), while the binder's value itself is
+translated inside the enclosing boundary so an open read in the binder
+opens every read of it.
+
+A boundary suppresses outcomes and orders faults and deposits:
+- every value head (`write_head` in `translate_rule`, `member_head` in
+  `translate_object_creation`, `consequence` in `translate_chain`)
+  carries `not ob<n>(key)`;
+- `deposit` appends `not ob<n>(key)` and `ctx.member_gate`, dropping any
+  §9.5 fact within an open boundary (before or after the open read);
+- `emit_viol` appends `not ob<n>_r<k>(key)` for every prior read in
+  `b.bd_reads`, so a fault after an open read within the boundary does
+  not arise while a fault before it still fires.
+
+**The judgement of a condition and Kleene's strong table.** `judge`
+lowers every condition to `type judgement = { holds : string list; fails : string list }`
+over the key of `judged_at`, reifying disjunctions and negations through
+fresh `jd<n>/<arity>` helpers; where neither `holds` nor `fails` is
+derivable, the condition is undetermined:
+
+- **Own characteristic check**: `holds = [has(S,k)]`,
+  `fails = [hasnot(S,k)]`; under a narrowing host `e` (`RUNTIME-SEMANTICS.md`
+  ch. 5.8b rule 4), `not isa(S,e)` is established false (`fails`).
+  `negation` swaps `holds` and `fails`.
+- **Navigated characteristic check**: to-one hop `role(S,rel,N)`; an
+  absent link (`not jd(key)` over `role(S,rel,_)`) is established false
+  in both polarities (preserving ch. 5.8's asymmetry for standing links),
+  while a present link reads `has(N,k)` vs `hasnot(N,k)`. When the
+  document contains creations, both `holds` and `fails` append
+  `not ropen(S,rel)`.
+- **Other atomic conditions** (`Comparison`, `Predicate` including
+  `Empty_predicate` and `Filled`, `Role_membership`, `Identity_check`):
+  `cond_atoms` runs inside `within_boundary` and reifies `jd<n>(key)`.
+  The judgement is `{ holds = [jd<n>(key); not ob<m>(key)]; fails = [not jd<n>(key); not ob<m>(key)] }`.
+  For `Empty_predicate` and `Filled` (`leeg`/`gevuld`), `cond_atoms`
+  lowers the operand through `filled_operand_atoms` inside that boundary,
+  so any open member, open relation or open computed operand opens
+  `ob<m>` and leaves the test undetermined.
+- **Composite (`Compound`)**: a 0-member composite (such as `"altijd"`,
+  `all` over no members) is decided statically at `h = f = 0`. For
+  `n >= 1` members, each member is judged recursively, reified as
+  `jd` helpers for its `holds` and `fails` sides, and combined directly
+  by `#count` aggregates implementing the table of `RUNTIME-SEMANTICS.md`
+  ch. 1.5 (`all`/`the` for conjunction `en`, `atLeast 1` for disjunction
+  `of`, `none` over one member for `niet`, and `atLeast k`, `atMost k`,
+  `exactly k`, `none` over `n` members).
+- **Quantifier fold (`Quantifier_fold`)**: emits `qf<n>_*` helpers over
+  `(key, X)` for range members (`m`), range-open status (`ro`, via
+  `range_open_reads`), filter (`ft`/`ff`) and matrix (`tt`/`tf`), and
+  combines filter and matrix per member into `ot`/`of` by Kleene's table
+  (for `all`/`the`: `ot` on `ff` or `tt`, `of` on `ft` and `tf`; for the
+  other quantifiers: `ot` on `ft` and `tt`, `of` on `ff` or `tf`). The
+  verdict applies the same `H`/`F`/`N` table over `qf<n>_ot`, `qf<n>_of`
+  and `qf<n>_n`, gated by `not qf<n>_ro(key)`.
+
+**Provisional reading past an undetermined member (`member_gate` and `limit_gate`).**
+In a composite or quantifier fold, reading past an undetermined member
+keeps §9.5 deposits and semantic evaluation faults monotone
+(`RUNTIME-SEMANTICS.md` ch. 1.5, ch. 5.10) while still firing encoding
+limits:
+
+- In `Compound`, a prefix chain `cj<c>_0(key,0)` … `cj<c>_i(key,H)`
+  advances only across established members (`j.holds` adds 1, `j.fails`
+  adds 0; an undetermined member stops the chain). While translating
+  member `i`, `ctx.member_gate` extends with
+  `cj<c>_i(key,H) :: unsettled q ~cutoff ~n ~i H` — holding iff every
+  prior member is established and ch. 5.10 has not stopped. For `i > 0`,
+  `ctx.limit_gate` extends with `cj<c>_l<i>(key)`, derived from `#count`
+  of established true (`H`) and false (`F`) among prior members whenever
+  `undecided q ~cutoff ~n` still holds (including after an undetermined
+  member; at `i = 0`, `ctx.limit_gate` stays unchanged).
+- In `Quantifier_fold`, filters run with both `ctx.member_gate` and
+  `ctx.limit_gate` extended by `[qf<n>_m(key,X); not qf<n>_ro(key)]`.
+  Matrices compute `qf<n>_k` (filter not false), `qf<n>_rch` (reached
+  while `undecided` holds over false-filtered members plus earlier `k`
+  members in range order `use_ro`), `qf<n>_fp` (some filter undetermined),
+  `qf<n>_pv` (provisional: `qf<n>_fp` holds or an earlier `k` member is
+  undetermined), and `qf<n>_rd` (`qf<n>_rch`, `not qf<n>_pv`,
+  `not qf<n>_ro`). The matrix translates with `ctx.member_gate` extended
+  by `qf<n>_rd` (registered in `ctx.order_atoms` for `CLINGO-035` when
+  `ro.ro_dynamic`) and `ctx.limit_gate` extended by
+  `[qf<n>_rch(key,X); not qf<n>_ro(key)]`.
+- Inside `emit_viol`, a guard whose registered code starts with `"EF-"`
+  (an evaluation fault of `RUNTIME-SEMANTICS.md` ch. 5.7b) both derives
+  `ob<n>(key)` under `body` — leaving a suppressed provisional member
+  undetermined — and guards its `viol/2` head with `ctx.member_gate`.
+  Every other guard (an encoding limit, carrying a `CLINGO-*` code or no
+  code) derives no `ob<n>(key)` and guards its `viol/2` head with
+  `ctx.limit_gate`, so an encoding limit inside a provisionally read
+  member makes the program UNSAT instead of returning a model. `deposit`
+  guards with `ctx.member_gate`, dropping §9.5 facts in provisional
+  members.
+
+**Effect of undetermined and open on rules, stacks, consistencies and creations.**
+- **Rules (`translate_rule`, `fills_nothing`)**: the condition is judged
+  by `judge` (`j.holds` gates the write, `j.fails` feeds `fills_nothing`),
+  and the write runs inside `within_boundary`. `fills_nothing` derives
+  `wnil<index>(S)` when `j.fails` holds, when (for non-characteristic
+  rules) `j.holds` holds with a settled leeg value
+  (`not vdef<k>(S), not ob<n>(S)`), or when the rule's validity gate does
+  not hold (`ungated`, `base, not valid(W)`). An undetermined condition
+  or an open value derives neither `val`/`has` nor `wnil<index>`, leaving
+  the target open unless another writer decides it.
+- **Stacks (`translate_chain`, `translate_group`, `translate_defaults_group`)**:
+  each chain and exception group carries `stack_atoms = { s_out; s_cfl; s_gw; s_st }`
+  (`nl<t>_*` / `ng<t>_*`). Default `n` is reached at `nl<t>_rch<n>(S)`,
+  which chains from `nl<t>_rch0(S) :- base, outer_displaced.` through
+  `nl<t>_rch<n+1>(S) :- nl<t>_rch<n>(S), nl<t>_gw<n>(S).` — a lower
+  default is reached only when every higher default stands to give way.
+  Default `n` gives way (`nl<t>_gw<n>(S)`) only when its justification is
+  established false (`j.fails`, or `grp<g>_has_input(S)` for an
+  initialisation default) or, on an attribute default, when its
+  justification holds with a settled leeg consequence
+  (`not vdef<k>(S), not ob<m>(S)`); a default with exception groups falls
+  back to its own content (or gives way, for a group-default) only on
+  `ng<t>_gw(S)`. When a default is open, `nl<t>_rch<n+1>` is not derived
+  and the chain derives none of `s_out`, `s_cfl`, `s_gw`, `s_st`. In an
+  exception group or an unordered root group, `stands_beside` requires
+  `m.s_st(S)` for every other member before any member decides, and
+  `ng<t>_gw` requires every member's `s_gw`. A top-level member outside
+  its validity window derives both `s_gw` and `s_st`. At the root,
+  `grp<g>_nil(S)` holds when every member gives way, on `grp<g>_conflict(S)`,
+  or on a characteristic `0` decision with all siblings standing; it is
+  registered in `ctx.group_writers` and guards the defeasible `inputval/3`
+  pass-through.
+- **Consistency rules (`translate_consistency`)**: deposits `inconsistent/2`
+  (with `EF-025`) on `isa(S,subject_ot) :: (judge ... assertion).fails` —
+  reporting only when established false and depositing nothing when
+  undetermined.
+- **Creations (`creation_condition`, `translate_object_creation`, `translate_fact_creation`)**:
+  `creation_condition` reifies `j.holds` and `j.fails` as `cc<k>(S)` and
+  `cc<k+1>(S)`, with undetermined `[not holds; not fails]`. An object
+  creation derives `ropen(S,new_role)` under its undetermined body (and
+  the 1:1 `not inputrole` guard). A fact creation derives `fco<k>(S)`
+  when any hop of `intermediates @ [join_role]` encounters `ropen`,
+  guards its `role/3` heads with `not fco<k>(S)`, and derives `ropen/2`
+  in both directions when its anchor condition is undetermined (on the
+  anchor and every target reached by the chain), when its target-hosted
+  condition is undetermined (on anchor and target along the chain), or
+  when `fco<k>(S)` holds under a non-false anchor condition (on the
+  anchor and every instance of `fc_target`).
+
+**Open reads in folds over a set.** For a set-ranged `Function_call`
+(`Sum_function`, `Total`, `Count`, `Filled_count`, `Minimum`, `Maximum`,
+`First`, `Last`, with `source_role <> None || source_path <> None` and
+`dimension_selections = None`) and for each branch of a `Count` over an
+`Instance_set_union`, `fold_reads` runs before the fold's aggregate and
+records open reads on the enclosing boundary `b`:
+1. `range_open_reads` adds a read of `b` for any hop of `source_role` or
+   `source_path` that hits `ropen/2`.
+2. When `filter = Some c`, `fold_reads` derives `ff<n>_m(bd_key,X)` for
+   range members and judges `c` per `(bd_key,X)` (with `ctx.boundary`
+   temporarily cleared so `c` opens its own boundaries), reifying `holds`
+   and `fails` as `fj<p>(form,X)` helpers. Any member with neither
+   `holds` nor `fails` derives `ff<n>_u(bd_key,X)`, which is added as a
+   read of `b` — including a filter testing `gevuld` or `leeg` over an
+   open attribute, whose atomic judgement is undetermined. `emit_before`
+   derives `ff<n>_b(bd_key,X)` when an earlier member's filter is
+   undetermined: inside the filter, `ctx.deposit_guard` waits for
+   `not ob<n>(bd_key)`, and `ctx.member_gate` and `ctx.limit_gate` wait
+   for `ff<n>_m`, `not ff<n>_b` and no prior open read before the fold.
+3. For every kind other than `Count` — including `Sum_function`, `Total`,
+   `Filled_count`, `Minimum`, `Maximum`, `First` and `Last` — `fold_reads`
+   adds a read of `b` on `not_false @ [not stands_atom(X,a)]`, so an open
+   value on any member whose filter is not false makes the fold or the
+   filled-value count open.
+
+`expr_term` then translates the fold itself with `ctx.fold_filter` set to
+`fun y -> [holds y]`, so `fold_filter` supplies the established-true
+members to the aggregate while `ob<n>` blocks any outcome whenever a
+filter is undetermined or a read value is open.
+
+**Initialisation as lowest writer.** In a strict document, the ch. 7.7
+desugaring (`Ir_v0.Desugar.document`) is not run (`translate_guarded`);
+an initialisation rule beside computing rules is translated natively by
+`translate_rule` (while ch. 7.10 effective stack composition via
+`Ir_v0.Desugar.effective_defaults` and `absorbed_on` still folds a
+supertype initialisation into a subtype's defaults group). On a native
+`Initialisation` rule, `init_guard` is:
+
+```
+not inputfilled(S,a), wnila(S,a), not iopen(S,a), not aopen(S,a)
+```
+
+so the initialisation writes only where neither case/creation input nor
+an open input (`iopen/2`) nor an open creation assignment (`aopen/2`)
+occupies the target and every computing rule fills nothing (`wnila/2`).
+In a defaults group, `grp<g>_has_input(S)` is derived from
+`inputval(S,a,_)` and `iopen(S,a)` (`translate_defaults_group`), and the
+initialisation default requires `not grp<g>_has_input(S)` (giving way on
+`grp<g>_has_input(S)`).
+
+When an attribute is written only by `Initialisation` rules and/or by
+defaults groups whose every default has `default_initialisation = true`
+and `default_exceptions = None`, `derived_on` returns `false`. It is
+therefore treated as an input member with a default value: without a case
+value and without `complete: true` (or `ctx.closed_inputs`),
+`input_states` emits `iopen(label,a).`, which prevents both the
+initialisation and `settled/2` from firing and leaves the attribute open;
+with `complete: true` or `--closed-inputs`, no `iopen/2` is emitted and
+the initialisation is at its turn. Adding an exception group to the
+initialisation default makes `derived_on` return `true`, so no `iopen/2`
+is emitted and the attribute is derived.
+
+**What clingo refuses in a strict document.** Two pre-translation passes
+run at the start of `translate_guarded`, in this order:
+
+1. **`refuse_sum_type_forms` (`CLINGO-052`, parameter `form`)**: runs on
+   **every** document (strict or ordinary) and refuses the five forms of
+   `RUNTIME-SEMANTICS.md` ch. 9.4 in order (`sum_type_forms`: `timeline`,
+   `dimension`, `creation`, `payload-unit`, `defaults-group`), reporting
+   the first present (S14, S19). Because this pass runs first, a strict
+   document containing one of those forms fails with `CLINGO-052` before
+   `refuse_uncarried` runs.
+2. **`refuse_uncarried` (`CLINGO-049`, parameter `form`)**: runs when
+   `not doc.infer_from_empty` and refuses any form in `uncarried_forms`,
+   reporting the first slug present:
+   - the 24 slugs of `RUNTIME-SEMANTICS.md` ch. 1.5 ("Forms without the
+     reading"), in that exact order: `allocation`, `creation-cycle`,
+     `uniqueness`, `start-point`, `day-kind`, `function-def`,
+     `timeline-member`, `dimension-cell`, `dimension-fold`,
+     `time-proportional-part`, `temporal-total`, `builtin-filter`,
+     `variable-reference`, `unresolved`, `temporal-read`, `match`,
+     `construct`, `record`, `list-family`, `invoke`, `whole-period`,
+     `time-window`, `rule-status-check`, `let-in-composite`;
+   - followed by two backend-specific slugs for forms `ref` carries under
+     ch. 1.5 that this translation does not:
+     - `let-binder-not-first`: a `Let` whose body does not read its
+       binder first (`first_read body <> Binder (norm binder)`; `first_read`
+       descends `Literal`, `Binder_ref`, `Binary`, `Rounding`, `Clamp`,
+       `Let`, and `If_then_else` over a `Comparison` or `Predicate`, and
+       returns `Other` otherwise — including a 1-member `Compound` in an
+       `If_then_else` condition);
+     - `let-in-filter`: a `Let` inside a fold filter or quantifier fold
+       whose binder is read inside a nested fold filter (or
+       `Instance_set_union` branch filter) in its body, because
+       `judged_at` keys filter judgements on `(form_subject, member)`
+       alone and cannot distinguish members of the outer fold.
+
+Every general non-translation and encoding limit of S19 still applies
+with its own code in a strict document — in particular `CLINGO-005`
+(non-literal clamp bound), `CLINGO-023` (a value-position `IfThenElse`
+condition other than a comparison over bound operands, such as a
+`leeg`/`gevuld` test), `CLINGO-042` (`TextComposition`/`concatenation`),
+`CLINGO-046` (`Exact_digits`), `CLINGO-007` (listed `sum`), non-number /
+non-date native initialisations, and the runtime `viol/2` limits such as
+`CLINGO-034` and `CLINGO-035`.
+
+Witnesses: corpus goldens `jutterswet-afleiden-uit-leeg`,
+`jutterswet-volledig-gegeven`, `jutterswet-afhaalbaar-strikt` and
+`jutterswet-heffing-strikt` (gate 6); the `WV-1.5-*` differential frames
+and `ref/test/fixtures/strict-empty/` witnesses in
+`backends/clingo/test/test_clingo.ml` (including `CLINGO-049` and
+`CLINGO-052` refusal frames and the `CLINGO-034` provisional-limit frame).
+
 ## Part II — The hand exercises and encoding notes (historical)
 
 *The chapters below predate Part I and keep their original numbers —
@@ -4264,7 +4655,7 @@ refuses loudly, exactly like this fence.
 quantitative machinery beyond the art. 3 threshold, and any systematic
 core-IR-to-ASP mapping — all Phase-3 work. This document grows with
 each hand exercise until that systematic mapping replaces it. *That
-promise is kept: Part I (S1–S19) is the systematic mapping. The
+promise is kept: Part I (S1–S20) is the systematic mapping. The
 constructs this chapter deferred have long since landed — hardheid in
 the defaults anchors (S10), the temporalisation in the timeline
 machinery (S9, historically ch. 6d), the quantitative corpus
