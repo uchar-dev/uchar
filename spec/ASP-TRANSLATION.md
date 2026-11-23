@@ -3630,7 +3630,8 @@ nothing (`no_writer_decides` emits `wnila(S,a)` instead of
 (`translate_object_creation`), `leaves_open` derives `aopen(ocI(S),m)`
 when an assigned attribute expression opens its boundary and
 `kopen(ocI(S),m)` when a boolean-expression characteristic assignment
-reads an attribute that does not stand (`bool_atoms`, `not stands`). For
+reads an attribute that does not stand (`bool_atoms` over `stands_atom`:
+`given/2` for a case-only attribute, `stands/2` otherwise). For
 any member of the created type with `not (written_on ...)`,
 `assigns_nothing` derives `settled(ocI(S),m)` or `hasnot(ocI(S),m)` when
 an assignment evaluates to settled leeg (`not vdef<k>(S), not ob<n>(S)`),
@@ -3643,8 +3644,9 @@ condition is translated as one boundary (`within_boundary`,
 `ob<n>/<arity>` keyed by `judged_at` (`subject` at form level, and
 `(form_subject, member)` inside a filter or quantifier fold where a node
 can read the form subject, an identity check or an outer `Let` binder;
-`coalesce0` and `Instance_set_union` key their helpers accordingly in
-strict mode). Nesting one boundary directly inside another faults; a
+`Instance_set_union` keys its helpers by `judged_at` as well, while
+`coalesce0` keys its helpers with `helper_key`, which carries the form
+subject only where its atoms read it). Nesting one boundary directly inside another faults; a
 condition inside a value (a fold filter) is judged with boundaries of its
 own and reported to the outer boundary by `fold_reads`. Within a boundary,
 `boundary_read` emits per read in evaluation order:
@@ -3739,8 +3741,8 @@ limits:
 - In `Quantifier_fold`, filters run with both `ctx.member_gate` and
   `ctx.limit_gate` extended by `[qf<n>_m(key,X); not qf<n>_ro(key)]`.
   Matrices compute `qf<n>_k` (filter not false), `qf<n>_rch` (reached
-  while `undecided` holds over false-filtered members plus earlier `k`
-  members in range order `use_ro`), `qf<n>_fp` (some filter undetermined),
+  while the fold's own table over the counts `qf<n>_n` of the earlier
+  `k` members in range order `use_ro` leaves the verdict undetermined), `qf<n>_fp` (some filter undetermined),
   `qf<n>_pv` (provisional: `qf<n>_fp` holds or an earlier `k` member is
   undetermined), and `qf<n>_rd` (`qf<n>_rch`, `not qf<n>_pv`,
   `not qf<n>_ro`). The matrix translates with `ctx.member_gate` extended
@@ -3775,8 +3777,9 @@ limits:
   `nl<t>_rch<n+1>(S) :- nl<t>_rch<n>(S), nl<t>_gw<n>(S).` — a lower
   default is reached only when every higher default stands to give way.
   Default `n` gives way (`nl<t>_gw<n>(S)`) only when its justification is
-  established false (`j.fails`, or `grp<g>_has_input(S)` for an
-  initialisation default) or, on an attribute default, when its
+  established false (`j.fails`; for an initialisation default
+  `grp<g>_has_input(S)`, and for a conditional one also its `j.fails`
+  where the input does not fill the target) or, on an attribute default, when its
   justification holds with a settled leeg consequence
   (`not vdef<k>(S), not ob<m>(S)`); a default with exception groups falls
   back to its own content (or gives way, for a group-default) only on
@@ -3855,7 +3858,9 @@ occupies the target and every computing rule fills nothing (`wnila/2`).
 In a defaults group, `grp<g>_has_input(S)` is derived from
 `inputval(S,a,_)` and `iopen(S,a)` (`translate_defaults_group`), and the
 initialisation default requires `not grp<g>_has_input(S)` (giving way on
-`grp<g>_has_input(S)`).
+`grp<g>_has_input(S)`). `aopen/2` does not enter `grp<g>_has_input`: an
+object creation never assigns the target of a defaults group
+(WF-050, `creation-also-writes`, `creation-through-chain`).
 
 When an attribute is written only by `Initialisation` rules and/or by
 defaults groups whose every default has `default_initialisation = true`
@@ -3909,8 +3914,10 @@ with its own code in a strict document — in particular `CLINGO-005`
 (non-literal clamp bound), `CLINGO-023` (a value-position `IfThenElse`
 condition other than a comparison over bound operands, such as a
 `leeg`/`gevuld` test), `CLINGO-042` (`TextComposition`/`concatenation`),
-`CLINGO-046` (`Exact_digits`), `CLINGO-007` (listed `sum`), non-number /
-non-date native initialisations, and the runtime `viol/2` limits such as
+`CLINGO-046` (`Exact_digits`), non-number / non-date native
+initialisations (a listed `sum`, whose S19 code is `CLINGO-007`, is a
+`temporal-total` form in a strict document and meets `CLINGO-049`
+first), and the runtime `viol/2` limits such as
 `CLINGO-034` and `CLINGO-035`.
 
 Witnesses: corpus goldens `jutterswet-afleiden-uit-leeg`,

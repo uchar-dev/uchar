@@ -482,8 +482,8 @@ spec bug.
   stands (`stands/2`). An attribute whose state the case alone decides
   stands in facts of its own (`given/2`), so that grounding decides the
   read; that is decided per normalised attribute name over the whole
-  document, not per type: no rule or defaults group writes an attribute
-  of that name, and no creation makes an object that declares one
+  document, not per type: no rule of any kind and no defaults group
+  targets an attribute of that name, and no creation makes an object that declares one
   (`case_only_attributes`, `spec/ASP-TRANSLATION.md` S20).
   - *A value and an atomic condition* are translated as in any other
     document, each as one boundary (`ob<n>`) that holds where a read the
@@ -541,8 +541,9 @@ spec bug.
   (`Translate.uncarried_forms`): the slugs of the table of ch. 1.5, in
   its order, and after them `let-binder-not-first`, a Let whose body
   reads something before its binder, the form of [S1], and
-  `let-in-filter`, a Let in the filter of a fold or in a quantifier test
-  whose binder a filter in its body reads: a judgement in that filter
+  `let-in-filter`, a Let in the filter of a fold, in the filter or test of
+  a quantifier fold, or in a branch filter of an instance-set union, whose
+  binder a filter in its body reads: a judgement in that filter
   holds of the form subject and its own member, and would not tell the
   members of the outer one apart. `let-in-composite` is a Let whose
   binder is read in a member of a composite with more than one member,
