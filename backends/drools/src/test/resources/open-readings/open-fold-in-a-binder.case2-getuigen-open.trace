@@ -1,9 +1,9 @@
-reading /rules/rules/0/versions/0 "J1" 0 Let 8
-reading /rules/rules/0/versions/0 "J1" 1 Aggregation 7 contributors ["V2" 7 reached]
-reading /rules/rules/0/versions/0 "J1" 6 Binary 8
-reading /rules/rules/0/versions/0 "J1" 7 BinderRef 7
-reading /rules/rules/0/versions/0 "J1" 8 Literal 1
-reading /rules/rules/0/versions/0 "J1" HOLDS
+reading /rules/rules/0/versions/0 "J1" 0 Let undetermined open "V1" "getuigen"
+reading /rules/rules/0/versions/0 "J1" 1 Aggregation undetermined open "V1" "getuigen"
+reading /rules/rules/0/versions/0 "J1" 6 Binary undetermined open "V1" "getuigen"
+reading /rules/rules/0/versions/0 "J1" 7 BinderRef undetermined open "V1" "getuigen"
+reading /rules/rules/0/versions/0 "J1" 8 Literal unreached
+reading /rules/rules/0/versions/0 "J1" OPEN
 reading /rules/rules/1/versions/0 "J1" 0 Let 24
 reading /rules/rules/1/versions/0 "J1" 1 Aggregation 12 contributors ["V1" 5 reached; "V2" 7 reached]
 reading /rules/rules/1/versions/0 "J1" 3 Binary 24
@@ -35,7 +35,7 @@ reading /rules/rules/5/versions/0 "J1" HOLDS
 state attribute "J1" "dubbelgewicht" 24
 state attribute "J1" "gift" 20
 state attribute "J1" "giftdeel" 10
-state attribute "J1" "keurgewicht" 8
+state attribute "J1" "keurgewicht" open
 state attribute "V1" "getuigen" open
 state attribute "V1" "gewicht" 5
 state attribute "V2" "getuigen" 1

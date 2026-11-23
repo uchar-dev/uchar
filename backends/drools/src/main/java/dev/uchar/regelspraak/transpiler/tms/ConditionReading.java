@@ -63,11 +63,11 @@ public record ConditionReading(Object object, String form, Status status, List<N
      * that decides with a leeg value, or stands to fill nothing, is {@link #HOLDS} or {@link #FAILS}.
      */
     public enum Status {
-        /** The condition holds for the form itself, and its value, where it computes one, has no open read; or the form has
+        /** The condition is established true, and its value, where it computes one, has no open read; or the form has
          *  none, computes a value and is at its turn. */
         HOLDS,
-        /** The condition does not hold, for another form as well: it stands that the form fills nothing. Of a
-         *  consistency, its assertion fails for itself. */
+        /** The condition is established false: it stands that the form fills nothing. Of a consistency, its assertion is
+         *  established false. */
         FAILS,
         /** The evaluation of the condition faults (RUNTIME-SEMANTICS ch. 5.2), or the form has a dated validity and the
          *  session has no evaluation date (ch. 8.1): the session has no answer. */
@@ -80,14 +80,16 @@ public record ConditionReading(Object object, String form, Status status, List<N
          *  status says it was not at its turn, the nodes what it found, a fault of its condition or its value at its
          *  nodes. The target of an initialisation, a default's or a rule's, holds a value of the input or of another
          *  writer (ch. 5.4, 7.3), or the subject of a creation of the 1:1 shape is linked in the input (ch. 5.5):
-         *  without nodes. Below a default that is {@link #OPEN} every default but an initialisation, which closes over the
-         *  stack and is at its turn, and the content of a default whose exception groups are open: read as at its turn. */
+         *  without nodes. Below a default that is {@link #OPEN} every default, the initialisation default among them, and
+         *  the content of a default whose exception groups are open: read as at its turn. In a document with
+         *  {@code inferFromEmpty: false}, the target of an initialisation rule is an open input member or another writer
+         *  leaves it open, or the target of an initialisation default is an open input member (ch. 1.5): without
+         *  nodes. */
         DISPLACED,
         /** The validity window of the form does not admit the session's evaluation date (ch. 8.2). */
         OUTSIDE_VALIDITY,
-        /** The form leaves its target open (ch. 1.5): its condition is neither true for itself nor false for another, or its
-         *  value has an open read or is leeg after a closure over one. Of a consistency, its assertion is undetermined. Only
-         *  in a document with {@code inferFromEmpty: false}. */
+        /** The form leaves its target open (ch. 1.5): its condition is undetermined, or its value has an open read. Of a
+         *  consistency, its assertion is undetermined. Only in a document with {@code inferFromEmpty: false}. */
         OPEN
     }
 
@@ -98,11 +100,10 @@ public record ConditionReading(Object object, String form, Status status, List<N
      * condition does not hold, is not reached, and has neither a value nor a fault. A node that a read of a leeg binder
      * ended (ch. 10.6, clause 2) is reached and has neither.
      *
-     * <p>In a document with {@code inferFromEmpty: false} (ch. 1.5) a reached node tells four things apart. A value is
-     * filled; a null without a fault and without {@code open} is leeg that stands, settled leeg; {@code open} says that the node is
-     * undetermined, an open read having broken it off or left its judgement so, and has no value; and {@code closure} says
-     * that its truth stands for the form itself and not for another. In every other document {@code closure} is false and
-     * {@code open} null.
+     * <p>In a document with {@code inferFromEmpty: false} (ch. 1.5) a reached node tells three things apart. A value is
+     * filled; a null without a fault and without {@code open} is leeg that stands, settled leeg; and {@code open} says that
+     * the node is undetermined, an open read having broken it off or left its judgement so, and has no value. In every
+     * other document {@code open} is null.
      *
      * @param node         the number of the node
      * @param kind         the kind of the node as the wire spells it, {@code Comparison}, {@code Aggregation}, …
@@ -127,25 +128,21 @@ public record ConditionReading(Object object, String form, Status status, List<N
      *                     walk tell an absent link from a node that reads no member
      * @param contributors for the node of a fold over a set that the evaluation reached, its contributors; empty for
      *                     every other node
-     * @param closure      for a condition, whether a closure over an open value decided it (ch. 1.5): {@code value} is its
-     *                     truth for the form itself, and its truth for another form is undetermined
      * @param open         the open read that left the node undetermined (ch. 5.12, "Open values"): the object, and the member
      *                     read open as its type declares it; null for a node that is not undetermined
      */
     public record NodeReading(int node, String kind, boolean reached, Object value, Unit unit, RuntimeException fault,
-                              Object object, List<Contributor> contributors, boolean closure, Fixpoint.OpenValue open) {
+                              Object object, List<Contributor> contributors, Fixpoint.OpenValue open) {
         public NodeReading {
             Objects.requireNonNull(kind, "kind");
             contributors = List.copyOf(contributors);
-            if (open != null && (!reached || value != null || fault != null || closure))
-                throw new IllegalArgumentException("an undetermined node is reached and has no value, no fault and no closure");
-            if (closure && !(value instanceof Boolean))
-                throw new IllegalArgumentException("a closure decides the truth of a condition, not " + value);
+            if (open != null && (!reached || value != null || fault != null))
+                throw new IllegalArgumentException("an undetermined node is reached and has no value and no fault");
         }
 
         /** The reading of a node in which nothing is open. */
         NodeReading(int node, String kind, boolean reached, Object value, Unit unit, RuntimeException fault, Object object) {
-            this(node, kind, reached, value, unit, fault, object, List.of(), false, null);
+            this(node, kind, reached, value, unit, fault, object, List.of(), null);
         }
 
         /** Whether the node is undetermined: an open read broke it off, or left the judgement of its condition so. */
@@ -167,13 +164,12 @@ public record ConditionReading(Object object, String form, Status status, List<N
      * set that an open read broke off (ch. 1.5); a quantifier fold that is undetermined has its own.
      *
      * @param member       the member, a bean of the build's bean model
-     * @param value        for a quantifier fold the verdict of its matrix on the member for the form itself, a
-     *                     {@code Boolean}, null where it faulted or is undetermined; for a value fold the value the member
+     * @param value        for a quantifier fold the verdict of its matrix on the member, a {@code Boolean}, null where
+     *                     it faulted or is undetermined; for a value fold the value the member
      *                     contributes, null for a count
      * @param fault        the evaluation fault the matrix raised for the member, unnamed, null where it raised none
      * @param reached      the position: whether the evaluation reached the member, null where the fold has none
-     * @param undetermined for a quantifier fold, whether its matrix is undetermined on the member for the form itself (ch.
-     *                     1.5)
+     * @param undetermined for a quantifier fold, whether its matrix is undetermined on the member (ch. 1.5)
      */
     public record Contributor(Object member, Object value, RuntimeException fault, Boolean reached, boolean undetermined) {
         public Contributor {

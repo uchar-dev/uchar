@@ -506,8 +506,7 @@ final class SessionDump {
      * its decimal without trailing zeros where it terminates and as {@code t/n} where it does not, a date and a date-time in the ISO form of the cases, a text quoted, a truth
      * value as {@code true} or {@code false}, leeg as {@code empty}, a timeline as its periods {@code [from to value]};
      * a unit by its rendering; a fault by the EF code of its kind (RUNTIME-SEMANTICS ch. 5.7b), {@code -} where it has
-     * none, and never by its sentence, which differs between executors; a truth a closure decided with {@code closure}
-     * behind it, and an undetermined node as {@code undetermined open}, the object and the member read open; after the value of a node that reads a member
+     * none, and never by its sentence, which differs between executors; an undetermined node as {@code undetermined open}, the object and the member read open; after the value of a node that reads a member
      * over a path ({@link dev.uchar.regelspraak.transpiler.tms.TmsTranspiler#navigates}) and did not fault, {@code on}
      * and the object the path reached, named as above, or {@code on none} where a link on it is absent; the
      * contributors of a fold sorted by member, each with its value, {@code undetermined} or the code of its fault and whether it was reached
@@ -528,7 +527,7 @@ final class SessionDump {
                 if (x.fault() != null) b.append(" fault ").append(code(x.fault()));
                 else if (x.undetermined())
                     b.append(" undetermined open ").append(n.nameOf(x.open().object())).append(' ').append(quote(x.open().member()));
-                else b.append(' ').append(canonical(x.value())).append(x.closure() ? " closure" : "");
+                else b.append(' ').append(canonical(x.value()));
                 if (x.unit() != null && !x.undetermined()) b.append(' ').append(quote(x.unit().rendering()));
                 // the object a read over a path reached; the subject's own member stands at the head of the line
                 if (x.fault() == null && !x.undetermined() && build.execModelTranspiler().navigates(r.form(), x.node()))

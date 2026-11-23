@@ -23,9 +23,9 @@ reading /rules/rules/3/versions/0 "J1" 3 Aggregation unreached
 reading /rules/rules/3/versions/0 "J1" 5 Literal 5
 reading /rules/rules/3/versions/0 "J1" FAILS
 reading /rules/rules/4/versions/0 "J1" 0 Compound false
-reading /rules/rules/4/versions/0 "J1" 1 Comparison true closure
-reading /rules/rules/4/versions/0 "J1" 2 Aggregation 0
-reading /rules/rules/4/versions/0 "J1" 4 Literal 2
+reading /rules/rules/4/versions/0 "J1" 1 Comparison undetermined open "V1" "gewicht"
+reading /rules/rules/4/versions/0 "J1" 2 Aggregation undetermined open "V1" "gewicht"
+reading /rules/rules/4/versions/0 "J1" 4 Literal unreached
 reading /rules/rules/4/versions/0 "J1" 5 Comparison false
 reading /rules/rules/4/versions/0 "J1" 6 AttributeReference empty
 reading /rules/rules/4/versions/0 "J1" 7 Literal 5

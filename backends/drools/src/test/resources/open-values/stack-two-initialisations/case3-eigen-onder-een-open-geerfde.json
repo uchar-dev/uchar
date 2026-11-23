@@ -18,12 +18,9 @@
   },
   "expected": [
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "W1",
-      "attribute": "bergloon",
-      "value": {
-        "number": "5"
-      }
+      "attribute": "bergloon"
     },
     {
       "kind": "consistent"

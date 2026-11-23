@@ -45,8 +45,8 @@ class OpenReadingsWitnessTest {
                     "/rules/rules/0/versions/0 \"V1\" OPEN",
                     "/rules/rules/2/versions/0 \"V1\" 0 CharacteristicCheck undetermined open \"V1\" \"kostbaar\"",
                     "/rules/rules/2/versions/0 \"V1\" OPEN",
-                    "/rules/rules/3/versions/0 \"V1\" 0 Predicate true closure",
-                    "/rules/rules/3/versions/0 \"V1\" HOLDS"))
+                    "/rules/rules/3/versions/0 \"V1\" 0 Predicate undetermined open \"V1\" \"taxatie\"",
+                    "/rules/rules/3/versions/0 \"V1\" OPEN"))
                 assertTrue(case2.contains("reading " + line), () -> branch + ": " + line);
         }
     }
@@ -64,8 +64,8 @@ class OpenReadingsWitnessTest {
     }
 
     /** WV-5.12-open-quantifier-fold: the witness of the reference interpreter, without a filter and under one that is open; in
-     *  the order of its members where the matrix can deposit; and under each quantifier a filter that is open or a closure over
-     *  a matrix that closes, deposits or faults, the contributors each with the truth of the matrix. */
+     *  the order of its members where the matrix can deposit; and under each quantifier a filter that is open over a matrix
+     *  with a test on leeg or gevuld, one that deposits or faults, the contributors each with the truth of the matrix. */
     @Test void wv_5_12_open_quantifier_fold() throws Exception {
         pinned("open-quantifier-fold", VALUES.resolve("quantifier-fold"));
         pinned("open-quantifier-fold-in-order", VALUES.resolve("past-undetermined-fold"));
@@ -100,8 +100,8 @@ class OpenReadingsWitnessTest {
         documents("reading-diamond");
     }
 
-    /** WV-5.12-open-stack: below an open default the initialisation at its turn, the lower of two as well, every other default
-     *  displaced and read; the content of a default whose exception groups are open. */
+    /** WV-5.12-open-stack: below an open default every default displaced and read, the initialisation among them, the lower
+     *  of two as well; the content of a default whose exception groups are open. */
     @Test void wv_5_12_open_stack() throws Exception {
         pinned("open-stack", VALUES.resolve("stack-opgave"));
         pinned("open-initialisation", VALUES.resolve("stack-two-initialisations"));
@@ -113,8 +113,8 @@ class OpenReadingsWitnessTest {
         pinned("open-path", VALUES.resolve("link"));
     }
 
-    /** Composites and quantifier folds in one another: a quantifier fold that closes on its first member and is undetermined on
-     *  a later, a member after it that faults, the form's own negation of a leeg test, a fault within a nested composite. */
+    /** Composites and quantifier folds in one another: a quantifier fold over a test on leeg that is undetermined on its
+     *  members, a member after it that faults, the negation of a leeg test, a fault within a nested composite. */
     @Test void composites_over_open_values() throws Exception {
         documents("reading-composite");
     }
@@ -141,10 +141,10 @@ class OpenReadingsWitnessTest {
     }
 
     /** WV-5.12-open-status: a rule is open exactly where the session left its target open; and a status, a judgement and a
-     *  value are told apart in the records: an undetermined node has no value, a closure has a truth. */
+     *  value are told apart in the records: an undetermined node has no value and names no object. */
     @Test void wv_5_12_open_status() throws Exception {
-        int open = 0, closures = 0;
-        for (String document : List.of("derived", "filled-test", "set-fold", "closure-in-a-value", "past-undetermined-fault"))
+        int open = 0, undetermined = 0;
+        for (String document : List.of("derived", "filled-test", "set-fold", "filled-in-a-fold", "past-undetermined-fault"))
             for (Path c : cases(VALUES.resolve(document))) {
                 CaseRunner runner = CaseRunner.reader(DroolsBackend.build(VALUES.resolve(document).resolve("ir.json"),
                         DroolsBackend.Branch.EXEC_MODEL, true));
@@ -159,15 +159,15 @@ class OpenReadingsWitnessTest {
                         if (r.status() == ConditionReading.Status.OPEN) n[0]++;
                         for (ConditionReading.NodeReading x : r.nodes()) {
                             assertFalse(x.undetermined() && (x.value() != null || x.object() != null));
-                            if (x.closure()) n[1]++;
+                            if (x.undetermined()) n[1]++;
                         }
                     }
                     return n;
                 });
                 open += counted[0];
-                closures += counted[1];
+                undetermined += counted[1];
             }
-        assertTrue(open > 0 && closures > 0, open + " open, " + closures + " closures");
+        assertTrue(open > 0 && undetermined > 0, open + " open, " + undetermined + " undetermined");
     }
 
     /** The pointer of the first version of the rule named {@code writer}. */

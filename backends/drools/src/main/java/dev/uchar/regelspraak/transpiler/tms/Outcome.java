@@ -22,8 +22,8 @@ import java.util.Objects;
  *
  * <p>A default that neither decides nor gives way settles {@code OPEN} (RUNTIME-SEMANTICS ch. 1.5, "A stack"), and so does
  * one whose exception groups have an open member and neither conflict nor decide differently: the lower defaults of its
- * chain and its exception groups are under the {@code not} of it as of any outcome, but the initialisation of the stack,
- * which closes over it, and a reconciliation over a member that is open decides nothing.
+ * chain and its exception groups are under the {@code not} of it as of any outcome, the initialisation of the stack among
+ * them, and a reconciliation over a member that is open decides nothing.
  *
  * <p>On a timeline target a default settles per day (RUNTIME-SEMANTICS ch. 7.11): its outcome is {@code DECIDED} with
  * the days it settled as its value, a {@link PeriodDefaults.Days} that holds the days it decides with their values and

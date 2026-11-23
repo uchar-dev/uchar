@@ -185,7 +185,7 @@ final class PatternDslRendering {
                 if (x.condition() == null) yield consequenceItem(x.opens().subject(), x.slots(), x.size(), decides);
                 Predicate<Object[]> condition = ClosureRendering.test(x.condition());
                 yield consequenceItem(x.opens().subject(), x.slots(), x.size(), (drools, subject, w) -> {
-                    if (ComputeHelpers.holdsForItself(() -> condition.test(w), x.withoutFault()))
+                    if (ComputeHelpers.establishedTrue(() -> condition.test(w), x.withoutFault()))
                         decides.run(drools, subject, w);
                     else leaveOpen(drools, x.opens(), subject);
                 });
@@ -521,7 +521,7 @@ final class PatternDslRendering {
             if (ComputeHelpers.reported(s))
                 insert(drools, g.insertion(), ComputeHelpers.inconsistency(deposit.form(), subject,
                         ComputeHelpers.depositCodes(s)));
-            // a value that is leeg after a closure leaves the target open and deposits (RUNTIME-SEMANTICS ch. 1.5)
+            // a value with an open read leaves the target open, without what it deposited (RUNTIME-SEMANTICS ch. 1.5)
             if (ComputeHelpers.isOpen(v)) leaveOpen(drools, opens, subject);
             else if (!ComputeHelpers.isEmpty(v) || g.writesEmpty())
                 insert(drools, g.insertion(), new Value(subject, g.target(), v, g.writer()));
@@ -980,6 +980,7 @@ final class PatternDslRendering {
         field(HasCharacteristic.class, "characteristic", HasCharacteristic::characteristic);
         field(LeftOpen.class, "subject", LeftOpen::subject);
         field(LeftOpen.class, "member", LeftOpen::member);
+        field(LeftOpen.class, "writer", LeftOpen::writer);
         field(BucketInput.class, "subject", BucketInput::subject);
         field(BucketInput.class, "attribute", BucketInput::attribute);
         field(PathState.class, "subject", PathState::subject);

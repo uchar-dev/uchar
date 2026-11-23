@@ -89,12 +89,9 @@
       "attribute": "gewicht kgevuld"
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "J1",
-      "attribute": "aantal kgevuld",
-      "value": {
-        "number": "0"
-      }
+      "attribute": "aantal kgevuld"
     },
     {
       "kind": "attributeOpen",

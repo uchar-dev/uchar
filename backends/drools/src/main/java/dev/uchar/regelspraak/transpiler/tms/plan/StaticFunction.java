@@ -281,8 +281,7 @@ public enum StaticFunction {
     /** A count bound off an accumulate, as a number. */
     COUNT(ComputeHelpers.class, "countOf", false),
     /** The count bound off an accumulate of a fold over a set that can be open, from that count and the list of the fold's
-     *  {@code FoldOpen} facts (ch. 1.5): an open read that breaks the evaluation off where the fold is open, and where a
-     *  closure decided a member, the boundary of the evaluation told. */
+     *  {@code FoldOpen} facts (ch. 1.5): an open read that breaks the evaluation off where the fold is open. */
     STANDING_COUNT(ComputeHelpers.class, "standingCount", false),
     /** The value of a fold from its count, its folded value and its fallback: the fallback over no contribution. */
     FOLD_VALUE(ComputeHelpers.class, "foldValue", false),
@@ -378,12 +377,9 @@ public enum StaticFunction {
     /** The negation of a condition's truth value: the test of a consistency, which holds where its assertion does not
      *  (IR-SPEC ch. 3.5). */
     NIET(ComputeHelpers.class, "not", false),
-    /** The negation of a condition whose judgement can be undetermined, a {@link Term.Deferred}: its judgement with the
-     *  truth for the form itself negated (ch. 1.5). */
-    NEGATED_OVER_OPEN(ComputeHelpers.class, "negatedOverOpen", false),
-    /** An atomic condition, a {@link Term.Deferred}, in which a fold can apply a closure to an open value (ch. 1.5): its
-     *  truth, and the judgement that it stands for the form itself alone where one did. */
-    ATOM(ComputeHelpers.class, "atom", false),
+    /** Whether the input of a member of an object is not complete in the session's {@code OpenInput} (ch. 1.5): the guard
+     *  of an initialisation, which is not at its turn where that member is open input. */
+    INCOMPLETE_INPUT(ComputeHelpers.class, "incompleteInput", false),
     /** Whether a value is the asOfDate-bucket scalar a case gives for a timeline (ch. 8.4), which a {@code Boolean}
      *  constant must equal: a part of a test a form composes itself. */
     BUCKET_SCALAR(ComputeHelpers.class, "bucketScalar", false),

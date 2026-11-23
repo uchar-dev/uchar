@@ -80,12 +80,12 @@
       "characteristic": "eenling"
     },
     {
-      "kind": "characteristicPresent",
+      "kind": "characteristicOpen",
       "label": "J1",
       "characteristic": "ongewogen"
     },
     {
-      "kind": "attributeEmpty",
+      "kind": "attributeOpen",
       "label": "J1",
       "attribute": "toeslag"
     },

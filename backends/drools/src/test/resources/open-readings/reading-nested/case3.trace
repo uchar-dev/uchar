@@ -1,11 +1,11 @@
-reading /rules/rules/0/versions/0 "J1" 0 Aggregation 1 contributors ["V1" 1 reached]
-reading /rules/rules/0/versions/0 "J1" HOLDS
-reading /rules/rules/0/versions/0 "J2" 0 Aggregation 4 contributors ["V3" 4 reached]
-reading /rules/rules/0/versions/0 "J2" HOLDS
-reading /rules/rules/1/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
-reading /rules/rules/1/versions/0 "J1" HOLDS
-reading /rules/rules/1/versions/0 "J2" 0 Aggregation 1 contributors ["V3" empty reached]
-reading /rules/rules/1/versions/0 "J2" HOLDS
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation undetermined open "K5" "score"
+reading /rules/rules/0/versions/0 "J1" OPEN
+reading /rules/rules/0/versions/0 "J2" 0 Aggregation undetermined open "K9" "score"
+reading /rules/rules/0/versions/0 "J2" OPEN
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation undetermined open "K5" "score"
+reading /rules/rules/1/versions/0 "J1" OPEN
+reading /rules/rules/1/versions/0 "J2" 0 Aggregation undetermined open "K9" "score"
+reading /rules/rules/1/versions/0 "J2" OPEN
 reading /rules/rules/10/versions/0 "J1" 0 Aggregation undetermined open "K5" "score"
 reading /rules/rules/10/versions/0 "J1" OPEN
 reading /rules/rules/10/versions/0 "J2" 0 Aggregation undetermined open "K9" "score"
@@ -18,42 +18,42 @@ reading /rules/rules/11/versions/0 "J2" 0 Comparison undetermined open "K9" "sco
 reading /rules/rules/11/versions/0 "J2" 1 Aggregation undetermined open "K9" "score"
 reading /rules/rules/11/versions/0 "J2" 12 Literal unreached
 reading /rules/rules/11/versions/0 "J2" OPEN
-reading /rules/rules/12/versions/0 "J1" 0 Aggregation undetermined open "K6" "score"
+reading /rules/rules/12/versions/0 "J1" 0 Aggregation undetermined open "S3" "inkt"
 reading /rules/rules/12/versions/0 "J1" OPEN
-reading /rules/rules/12/versions/0 "J2" 0 Aggregation undetermined open "K11" "score"
+reading /rules/rules/12/versions/0 "J2" 0 Aggregation undetermined open "S8" "inkt"
 reading /rules/rules/12/versions/0 "J2" OPEN
-reading /rules/rules/13/versions/0 "J1" 0 Aggregation undetermined open "K6" "score"
+reading /rules/rules/13/versions/0 "J1" 0 Aggregation undetermined open "S3" "inkt"
 reading /rules/rules/13/versions/0 "J1" OPEN
-reading /rules/rules/13/versions/0 "J2" 0 Aggregation undetermined open "K11" "score"
+reading /rules/rules/13/versions/0 "J2" 0 Aggregation undetermined open "S8" "inkt"
 reading /rules/rules/13/versions/0 "J2" OPEN
-reading /rules/rules/14/versions/0 "J1" 0 Aggregation undetermined open "K6" "score"
+reading /rules/rules/14/versions/0 "J1" 0 Aggregation undetermined open "S3" "inkt"
 reading /rules/rules/14/versions/0 "J1" OPEN
-reading /rules/rules/14/versions/0 "J2" 0 Aggregation undetermined open "K11" "score"
+reading /rules/rules/14/versions/0 "J2" 0 Aggregation undetermined open "S8" "inkt"
 reading /rules/rules/14/versions/0 "J2" OPEN
-reading /rules/rules/15/versions/0 "J1" 0 Comparison undetermined open "K6" "score"
-reading /rules/rules/15/versions/0 "J1" 1 Aggregation undetermined open "K6" "score"
+reading /rules/rules/15/versions/0 "J1" 0 Comparison undetermined open "S3" "inkt"
+reading /rules/rules/15/versions/0 "J1" 1 Aggregation undetermined open "S3" "inkt"
 reading /rules/rules/15/versions/0 "J1" 13 Literal unreached
 reading /rules/rules/15/versions/0 "J1" OPEN
-reading /rules/rules/15/versions/0 "J2" 0 Comparison undetermined open "K11" "score"
-reading /rules/rules/15/versions/0 "J2" 1 Aggregation undetermined open "K11" "score"
+reading /rules/rules/15/versions/0 "J2" 0 Comparison undetermined open "S8" "inkt"
+reading /rules/rules/15/versions/0 "J2" 1 Aggregation undetermined open "S8" "inkt"
 reading /rules/rules/15/versions/0 "J2" 13 Literal unreached
 reading /rules/rules/15/versions/0 "J2" OPEN
 reading /rules/rules/16/versions/0 "J1" 0 Aggregation undetermined open "K5" "score"
 reading /rules/rules/16/versions/0 "J1" OPEN
 reading /rules/rules/16/versions/0 "J2" 0 Aggregation undetermined open "K9" "score"
 reading /rules/rules/16/versions/0 "J2" OPEN
-reading /rules/rules/2/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
-reading /rules/rules/2/versions/0 "J1" HOLDS
-reading /rules/rules/2/versions/0 "J2" 0 Aggregation 1 contributors ["V3" empty reached]
-reading /rules/rules/2/versions/0 "J2" HOLDS
-reading /rules/rules/3/versions/0 "J1" 0 Comparison true closure
-reading /rules/rules/3/versions/0 "J1" 1 Aggregation 1 contributors ["V1" empty reached]
-reading /rules/rules/3/versions/0 "J1" 8 Literal 0
-reading /rules/rules/3/versions/0 "J1" HOLDS
-reading /rules/rules/3/versions/0 "J2" 0 Comparison true closure
-reading /rules/rules/3/versions/0 "J2" 1 Aggregation 1 contributors ["V3" empty reached]
-reading /rules/rules/3/versions/0 "J2" 8 Literal 0
-reading /rules/rules/3/versions/0 "J2" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 Aggregation undetermined open "K5" "score"
+reading /rules/rules/2/versions/0 "J1" OPEN
+reading /rules/rules/2/versions/0 "J2" 0 Aggregation undetermined open "K9" "score"
+reading /rules/rules/2/versions/0 "J2" OPEN
+reading /rules/rules/3/versions/0 "J1" 0 Comparison undetermined open "K5" "score"
+reading /rules/rules/3/versions/0 "J1" 1 Aggregation undetermined open "K5" "score"
+reading /rules/rules/3/versions/0 "J1" 8 Literal unreached
+reading /rules/rules/3/versions/0 "J1" OPEN
+reading /rules/rules/3/versions/0 "J2" 0 Comparison undetermined open "K9" "score"
+reading /rules/rules/3/versions/0 "J2" 1 Aggregation undetermined open "K9" "score"
+reading /rules/rules/3/versions/0 "J2" 8 Literal unreached
+reading /rules/rules/3/versions/0 "J2" OPEN
 reading /rules/rules/4/versions/0 "J1" 0 Aggregation undetermined open "K5" "score"
 reading /rules/rules/4/versions/0 "J1" OPEN
 reading /rules/rules/4/versions/0 "J2" 0 Aggregation undetermined open "K9" "score"
@@ -83,29 +83,29 @@ reading /rules/rules/9/versions/0 "J1" OPEN
 reading /rules/rules/9/versions/0 "J2" 0 Aggregation undetermined open "K9" "score"
 reading /rules/rules/9/versions/0 "J2" OPEN
 state attribute "J1" "aantal kdiep" open
-state attribute "J1" "aantal kgevuld" 1
+state attribute "J1" "aantal kgevuld" open
 state attribute "J1" "aantal kgrens" open
 state attribute "J1" "aantal ksom" open
 state attribute "J1" "gewicht kdiep" open
-state attribute "J1" "gewicht kgevuld" 1
+state attribute "J1" "gewicht kgevuld" open
 state attribute "J1" "gewicht kgrens" open
 state attribute "J1" "gewicht ksom" open
 state attribute "J1" "verenigd aantal" open
 state attribute "J1" "volle kdiep" open
-state attribute "J1" "volle kgevuld" 1
+state attribute "J1" "volle kgevuld" open
 state attribute "J1" "volle kgrens" open
 state attribute "J1" "volle ksom" open
 state attribute "J2" "aantal kdiep" open
-state attribute "J2" "aantal kgevuld" 1
+state attribute "J2" "aantal kgevuld" open
 state attribute "J2" "aantal kgrens" open
 state attribute "J2" "aantal ksom" open
 state attribute "J2" "gewicht kdiep" open
-state attribute "J2" "gewicht kgevuld" 4
+state attribute "J2" "gewicht kgevuld" open
 state attribute "J2" "gewicht kgrens" open
 state attribute "J2" "gewicht ksom" open
 state attribute "J2" "verenigd aantal" open
 state attribute "J2" "volle kdiep" open
-state attribute "J2" "volle kgevuld" 1
+state attribute "J2" "volle kgevuld" open
 state attribute "J2" "volle kgrens" open
 state attribute "J2" "volle ksom" open
 state attribute "K1" "deling" 0
@@ -147,11 +147,11 @@ state attribute "V2" "gewicht" 6
 state attribute "V3" "gewicht" 4
 state attribute "V4" "gewicht" open
 state characteristic "J1" "rijk kdiep" open
-state characteristic "J1" "rijk kgevuld"
+state characteristic "J1" "rijk kgevuld" open
 state characteristic "J1" "rijk kgrens" open
 state characteristic "J1" "rijk ksom" open
 state characteristic "J2" "rijk kdiep" open
-state characteristic "J2" "rijk kgevuld"
+state characteristic "J2" "rijk kgevuld" open
 state characteristic "J2" "rijk kgrens" open
 state characteristic "J2" "rijk ksom" open
 state characteristic "K1" "gestempeld" open

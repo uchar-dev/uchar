@@ -14,17 +14,18 @@ reading /rules/rules/4/versions/0 "J1" 0 QuantifierFold false contributors ["V1"
 reading /rules/rules/4/versions/0 "J1" FAILS
 reading /rules/rules/5/versions/0 "J1" 0 QuantifierFold false contributors ["V1" undetermined reached; "V2" true reached; "V3" true reached]
 reading /rules/rules/5/versions/0 "J1" FAILS
-reading /rules/rules/6/versions/0 "J1" 0 QuantifierFold true closure contributors ["V1" true reached; "V2" false reached; "V3" false reached]
-reading /rules/rules/6/versions/0 "J1" HOLDS
-reading /rules/rules/7/versions/0 "J1" 0 CharacteristicCheck false
+reading /rules/rules/6/versions/0 "J1" 0 QuantifierFold undetermined open "V1" "gewicht" contributors ["V1" undetermined reached; "V2" false reached; "V3" false reached]
+reading /rules/rules/6/versions/0 "J1" OPEN
+reading /rules/rules/7/versions/0 "J1" 0 CharacteristicCheck undetermined open "J1" "ongewogen"
 reading /rules/rules/7/versions/0 "J1" 1 Literal unreached
-reading /rules/rules/7/versions/0 "J1" FAILS
-reading /rules/rules/8/versions/0 "J1" 0 QuantifierFold false closure contributors ["V1" false reached; "V2" true reached; "V3" true reached]
+reading /rules/rules/7/versions/0 "J1" OPEN
+reading /rules/rules/8/versions/0 "J1" 0 QuantifierFold undetermined open "V1" "gewicht" contributors ["V1" undetermined reached; "V2" true reached; "V3" true reached]
 reading /rules/rules/8/versions/0 "J1" OPEN
 reading /rules/rules/9/versions/0 "J1" 0 Compound undetermined open "V1" "gewicht"
 reading /rules/rules/9/versions/0 "J1" 1 QuantifierFold true contributors ["V1" undetermined reached; "V2" true reached; "V3" true unreached]
 reading /rules/rules/9/versions/0 "J1" 5 QuantifierFold undetermined open "V1" "gewicht" contributors ["V1" undetermined reached; "V2" false reached; "V3" false reached]
 reading /rules/rules/9/versions/0 "J1" OPEN
+state attribute "J1" "toeslag" open
 state attribute "V1" "gewicht" open
 state attribute "V1" "schade" open
 state attribute "V2" "gewicht" 20
@@ -36,7 +37,7 @@ state characteristic "J1" "gemengd" open
 state characteristic "J1" "gewogen" open
 state characteristic "J1" "keurder"
 state characteristic "J1" "kundig" open
-state characteristic "J1" "ongewogen"
+state characteristic "J1" "ongewogen" open
 state characteristic "J1" "tweemaal"
 state link "vinding" "vinder" "J1" "vondst" "V1"
 state link "vinding" "vinder" "J1" "vondst" "V2"

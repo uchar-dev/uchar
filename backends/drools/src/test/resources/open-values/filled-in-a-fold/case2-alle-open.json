@@ -14,8 +14,7 @@
         "roles": {
           "vondst": [
             "V1",
-            "V2",
-            "V3"
+            "V2"
           ]
         },
         "characteristics": []
@@ -23,11 +22,7 @@
       {
         "label": "V1",
         "objectType": "Vondst",
-        "attributes": {
-          "gewicht": {
-            "number": "20"
-          }
-        },
+        "attributes": {},
         "roles": {},
         "characteristics": []
       },
@@ -37,69 +32,40 @@
         "attributes": {},
         "roles": {},
         "characteristics": []
-      },
-      {
-        "label": "V3",
-        "objectType": "Vondst",
-        "attributes": {
-          "gewicht": {
-            "number": "30"
-          }
-        },
-        "roles": {},
-        "characteristics": []
       }
     ],
     "parameters": {}
   },
   "expected": [
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "J1",
-      "attribute": "aantal gewogen vondsten",
-      "value": {
-        "number": "2"
-      }
+      "attribute": "aantal gewogen vondsten"
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "J1",
-      "attribute": "gewogen totaal",
-      "value": {
-        "number": "50"
-      }
+      "attribute": "gewogen totaal"
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "J1",
-      "attribute": "gewogen aantal",
-      "value": {
-        "number": "2"
-      }
+      "attribute": "gewogen aantal"
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "J1",
-      "attribute": "gemiddeld gewicht",
-      "value": {
-        "number": "25"
-      }
+      "attribute": "gemiddeld gewicht"
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "J1",
-      "attribute": "aandeel",
-      "value": {
-        "number": "5"
-      }
+      "attribute": "aandeel"
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "J1",
-      "attribute": "premie",
-      "value": {
-        "number": "7"
-      }
+      "attribute": "premie"
     },
     {
       "kind": "characteristicOpen",
@@ -107,7 +73,7 @@
       "characteristic": "volledig gewogen"
     },
     {
-      "kind": "characteristicPresent",
+      "kind": "characteristicOpen",
       "label": "J1",
       "characteristic": "meervoudig gewogen"
     },

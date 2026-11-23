@@ -84,7 +84,7 @@ final class UncarriedForms {
         }
         for (ResolvedConsistency c : model.consistencies) w.condition(c.assertion());
         // groups without an order between them, of which one has an initialisation: whether the initialisation of a group
-        // closes over its open default is asked per group, which the reconciliation of the groups does not
+        // is at its turn is asked per group, which the reconciliation of the groups does not
         for (PrioritizedDefaults p : defaults)
             if (p.defaults().stream().anyMatch(Default::initialisation) && defaults.stream().anyMatch(q -> q != p
                     && Namen.norm(q.subject()).equals(Namen.norm(p.subject())) && q.isCharacteristic() == p.isCharacteristic()

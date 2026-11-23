@@ -149,7 +149,7 @@ function Object oordeel_afwijkingOpgaveBergloon(Object $opgegevenBergloon, Objec
         if (lezing.stands()) {
             return lezing.verdict();
         }
-        lezing.read(() -> ComputeHelpers.emptyTestOverOpen(() -> ComputeHelpers.read($berekendeBergloon), Boolean.FALSE, null));
+        lezing.read(() -> ComputeHelpers.emptyTest(ComputeHelpers.read($berekendeBergloon), Boolean.FALSE));
         if (lezing.stands()) {
             return lezing.verdict();
         }
@@ -174,7 +174,7 @@ end
 
 // hij heeft geen afwijkende opgave bergloon
 function boolean toets_controleOpgaveBergloon(Object $afwijkendeOpgaveBergloon) {
-    return ComputeHelpers.holdsForItself(() -> ComputeHelpers.negatedOverOpen(() -> ComputeHelpers.characteristic(ComputeHelpers.read($afwijkendeOpgaveBergloon), Boolean.FALSE)), false);
+    return ComputeHelpers.establishedTrue(() -> ComputeHelpers.not(ComputeHelpers.characteristic(ComputeHelpers.read($afwijkendeOpgaveBergloon), Boolean.FALSE)), false);
 }
 
 rule "controle opgave bergloon"

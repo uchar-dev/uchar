@@ -67,13 +67,6 @@ final class ClosureRendering {
                 ValueFunction value = valueFunction(x.value());
                 yield w -> (Callable<Object>) () -> value.of(w);
             }
-            case Term.ClosureOverOpen o -> {
-                ValueFunction value = valueFunction(o.value());
-                boolean empty = o.empty();
-                int depositFlag = o.depositFlag();
-                yield w -> ComputeHelpers.emptyTestOverOpen((Callable<?>) value.of(w), empty,
-                        depositFlag < 0 ? null : w[depositFlag]);
-            }
             case Term.Call a -> call(a.function(), a.arguments());
             case Term.Restate h -> restate(h);
             case Term.Division d -> {
@@ -154,7 +147,7 @@ final class ClosureRendering {
         boolean open = t.open(), withoutFault = t.role() == TestItem.Role.WITHOUT_FAULT;
         return switch (t.role()) {
             case VORM -> test;
-            case CONDITION, WITHOUT_FAULT -> open ? w -> ComputeHelpers.holdsForItself(() -> test.test(w), withoutFault)
+            case CONDITION, WITHOUT_FAULT -> open ? w -> ComputeHelpers.establishedTrue(() -> test.test(w), withoutFault)
                     : withoutFault ? withoutFault(test) : test;
             case ACTS -> w -> ComputeHelpers.acts(ComputeHelpers.judge(() -> test.test(w), false));
             case ACTS_WITHOUT_FAULT -> w -> ComputeHelpers.acts(ComputeHelpers.judge(() -> test.test(w), true));
@@ -478,8 +471,7 @@ final class ClosureRendering {
                     x[4]);
             case CHANNEL -> x -> ComputeHelpers.channel(x[0]);
             case NIET -> x -> ComputeHelpers.not(x[0]);
-            case NEGATED_OVER_OPEN -> x -> ComputeHelpers.negatedOverOpen((Callable<?>) x[0]);
-            case ATOM -> x -> ComputeHelpers.atom((Callable<?>) x[0]);
+            case INCOMPLETE_INPUT -> x -> ComputeHelpers.incompleteInput(x[0], x[1], (ElementKey) x[2]);
             case QUANTIFIER_VERDICT_OVER_OPEN -> x -> ComputeHelpers.quantifierVerdictOverOpen(x[0], x[1], x[2],
                     (Condition.Quantifier) x[3], (Integer) x[4]);
             case BUCKET_SCALAR -> x -> ComputeHelpers.bucketScalar(x[0], (Boolean) x[1]);

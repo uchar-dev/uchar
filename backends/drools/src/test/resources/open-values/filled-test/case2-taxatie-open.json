@@ -24,7 +24,7 @@
       "characteristic": "getaxeerd"
     },
     {
-      "kind": "characteristicPresent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "ongetaxeerd"
     },
@@ -39,12 +39,9 @@
       "attribute": "bewakingstoeslag"
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "V1",
-      "attribute": "getuigentoeslag",
-      "value": {
-        "number": "7"
-      }
+      "attribute": "getuigentoeslag"
     },
     {
       "kind": "attributeOpen",
@@ -52,15 +49,12 @@
       "attribute": "schadetoeslag"
     },
     {
-      "kind": "characteristicPresent",
+      "kind": "characteristicOpen",
       "label": "V1",
       "characteristic": "onbekend"
     },
     {
-      "kind": "inconsistent",
-      "rule": "taxatieplicht",
-      "label": "V1",
-      "code": "EF-025"
+      "kind": "consistent"
     }
   ]
 }

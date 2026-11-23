@@ -108,7 +108,7 @@ class OpenValuesWitnessTest {
     }
 
     /** WV-1.5-instance-ordered: an instance-ordered part reaches its fixpoint per object, the leeg test of the
-     *  predecessor's member a closure over an open one. */
+     *  predecessor's member undetermined over an open one. */
     @Test void wv_1_5_instance_ordered() throws Exception {
         assertEquals(2, play("instance-ordered", "case"));
     }
@@ -156,8 +156,8 @@ class OpenValuesWitnessTest {
         assertEquals(9, play("composite-tables", "case"));
     }
 
-    /** WV-1.5-past-undetermined-deposit, WV-1.5-past-undetermined-fault: a member read after one undetermined for
-     *  another is read provisionally: its truth counts, its deposit is dropped and a fault leaves it undetermined; a
+    /** WV-1.5-past-undetermined-deposit, WV-1.5-past-undetermined-fault: a member read after one that is undetermined
+     *  is read provisionally: its truth counts, its deposit is dropped and a fault leaves it undetermined; a
      *  member read after members that all stand is read as ch. 5.10 reads it. */
     @Test void wv_1_5_past_undetermined() throws Exception {
         assertEquals(3, play("past-undetermined-deposit", "case"));
@@ -165,36 +165,36 @@ class OpenValuesWitnessTest {
         assertEquals(1, play("past-undetermined-fault", "red"));
     }
 
-    /** WV-1.5-read-for-another: a leeg test over an open value is true for the form itself and undetermined for
-     *  another, so the composite reads on, and the deposit of the member after it is dropped; with every input
-     *  member complete the first member stands for both and the read stops there. */
-    @Test void wv_1_5_read_for_another() throws Exception {
-        assertEquals(1, play("read-for-another", "case"));
-        assertEquals(1, play("read-for-another", "closed"));
+    /** WV-1.5-filled-test-in-a-composite: a leeg test over an open value is undetermined, so the composite reads on, the
+     *  deposit of the member after it is dropped, and the target is open; with every input member complete the first
+     *  member is established and the read stops there. */
+    @Test void wv_1_5_filled_test_in_a_composite() throws Exception {
+        assertEquals(1, play("filled-test-in-a-composite", "case"));
+        assertEquals(1, play("filled-test-in-a-composite", "closed"));
     }
 
-    /** WV-1.5-filled-test-*, WV-1.5-filled-guard, WV-1.5-filled-test-computed, WV-1.5-own-negation: the test on leeg
-     *  and gevuld over an open value or a computed value with an open read is a closure for the form itself and
-     *  undetermined for another; a guard of gevuld beside an ordering is no closure; the form's own negation of a
-     *  gevuld test closes as a leeg test does; an assertion of gevuld reports over an open value. */
+    /** WV-1.5-filled-test-*, WV-1.5-filled-guard, WV-1.5-filled-test-computed, WV-1.5-negated-filled-test: the test on
+     *  leeg and gevuld over an open value or a computed value with an open read is undetermined, as every atomic condition
+     *  that reads one is, and so is its negation; a guard of gevuld beside an ordering is undetermined with it; an
+     *  assertion of gevuld reports nothing over an open value. */
     @Test void wv_1_5_filled_test() throws Exception {
         assertEquals(2, play("filled-test", "case"));
     }
 
-    /** WV-1.5-rule-*: a rule decides, fills nothing where its condition fails for another, and leaves its target
+    /** WV-1.5-rule-*: a rule decides, fills nothing where its condition is established false, and leaves its target
      *  open where its condition is undetermined or its value has an open read. */
     @Test void wv_1_5_rule() throws Exception {
         assertEquals(5, play("rule", "case"));
     }
 
-    /** WV-1.5-initialisation: an initialisation closes over a writer that leaves its target open, and with a
-     *  condition of its own that is undetermined it leaves the target open. */
+    /** WV-1.5-initialisation: an initialisation is the lowest writer of its target: it is not at its turn where a writer
+     *  above it leaves the target open, and with a condition of its own that is undetermined it leaves the target open. */
     @Test void wv_1_5_initialisation() throws Exception {
         assertEquals(2, play("initialisation", "case"));
         assertEquals(2, play("initialisation-condition", "case"));
     }
 
-    /** WV-1.5-consistency: a consistency reports where its assertion fails for the form itself, and not where it is
+    /** WV-1.5-consistency: a consistency reports where its assertion is established false, and not where it is
      *  undetermined. */
     @Test void wv_1_5_consistency() throws Exception {
         assertEquals(3, play("consistency", "case"));
@@ -228,11 +228,12 @@ class OpenValuesWitnessTest {
         assertEquals(6, play("stack-gives-way", "case"));
     }
 
-    /** WV-1.5-stack-initialisation: the initialisation of a stack decides where nothing above it decides, also where a
-     *  default above it is open; an input of the target stands above it, and with an open value the target is open. In a
-     *  stack with an inherited initialisation above its own (ch. 7.10) each closes so, the lower one also where the upper
-     *  one gives way or is open (WV-1.5-stack-two-initialisations), and so does one below exception
-     *  groups, where it decides beside a group that is open and not beside one that conflicts. */
+    /** WV-1.5-stack-initialisation: the initialisation of a stack is its lowest default: it decides where it stands of
+     *  every default above it that it gives way, and below a default that is open the target is open; an input of the
+     *  target stands above it, and with an open value the target is open. In a stack with an inherited initialisation
+     *  above its own (ch. 7.10) each reads so, the lower one also below the upper one
+     *  (WV-1.5-stack-two-initialisations), and so does one below exception groups, which is open below a group that is
+     *  open and does not decide beside one that conflicts. */
     @Test void wv_1_5_stack_initialisation() throws Exception {
         assertEquals(6, play("stack-initialisation", "case"));
         assertEquals(2, play("stack-initialisation-value", "case"));
@@ -283,35 +284,34 @@ class OpenValuesWitnessTest {
         assertEquals(5, play("set-fold", "case"));
     }
 
-    /** WV-1.5-set-fold with a fold in the filter: a closure in the inner one (a filled-value count), an open value of it, its
-     *  own filter, two levels, and a count over a union of such selections. */
+    /** WV-1.5-set-fold with a fold in the filter: a filled-value count in the inner one, open over an open value, an open
+     *  value of it, its own filter, two levels, and a count over a union of such selections. */
     @Test void a_fold_in_a_filter() throws Exception {
         assertEquals(4, play("fold-in-a-filter", "case"));
     }
 
-    /** WV-1.5-closure-in-a-value: a filled-value count and a filter on gevuld are closures: they decide for the form
-     *  itself, a comparison of one that is false leaves its target open, and so does a value that is leeg after one, with
-     *  what it deposited. */
-    @Test void wv_1_5_closure_in_a_value() throws Exception {
-        assertEquals(5, play("closure-in-a-value", "case"));
+    /** WV-1.5-filled-in-a-fold: a filled-value count and a filter on gevuld over an open value are open and undetermined,
+     *  so the fold is open, and so is every condition and value that reads it, without what it would deposit. */
+    @Test void wv_1_5_filled_in_a_fold() throws Exception {
+        assertEquals(5, play("filled-in-a-fold", "case"));
     }
 
-    /** WV-1.5-closure-before-a-barrier and WV-1.5-reached, over a fold: the barrier of a Let over a binder that is leeg
-     *  after a closure leaves the target open, and a closure the evaluation does not reach, in the divisor of a leeg
-     *  dividend or an unread binder, does not count. */
+    /** WV-1.5-filled-filter-in-a-binder and WV-1.5-reached, over a fold: a binder computed by a fold under a filter on
+     *  gevuld is open where a member is, and so is the target of the Let that reads it; a fold the evaluation does not
+     *  reach, in the divisor of a leeg dividend or an unread binder, does not count. */
     @Test void wv_1_5_fold_in_a_binder() throws Exception {
         assertEquals(7, play("fold-in-a-binder", "case"));
     }
 
     /** WV-1.5-quantifier-fold-*, without a filter or under one that stands: each quantifier by Kleene's table, over no
-     *  member, over a matrix that closes, in a composite and in a consistency rule. */
+     *  member, over a matrix with a test on leeg or gevuld, in a composite and in a consistency rule. */
     @Test void wv_1_5_quantifier_fold() throws Exception {
         assertEquals(9, play("quantifier-fold", "case"));
     }
 
     /** WV-1.5-quantifier-fold-*, the keurder, under a filter that can be open, also of a derived member: each quantifier by
-     *  Kleene's table over filter and matrix, over no member, over a matrix that closes, with the member whose filter is open
-     *  before and after the others. */
+     *  Kleene's table over filter and matrix, over no member, over a matrix with a test on leeg or gevuld, with the member
+     *  whose filter is open before and after the others. */
     @Test void wv_1_5_quantifier_fold_filter() throws Exception {
         assertEquals(11, play("quantifier-fold-filter", "case"));
     }
@@ -414,8 +414,8 @@ class OpenValuesWitnessTest {
             between("set-fold", "case2-gewicht-open.json", branch, "J1", "zwaargewicht", "V2", "setGewicht", 5, "open", "20");
             between("anchored-read", "case2-drempel-open.json", branch, "J1", "merktal", "J1", "setDrempel", 10, "open", "1");
             between("anchored-read", "case2-drempel-open.json", branch, "J1", "drukgewicht", "J1", "setDrempel", 10, "open", "50");
-            between("closure-in-a-value", "case2-alle-open.json", branch, "J1", "gewogen totaal", "V2", "setGewicht", 5, "open",
-                    "5");
+            between("filled-in-a-fold", "case1-een-open.json", branch, "J1", "gewogen totaal", "V2", "setGewicht", 5, "open",
+                    "55");
         }
     }
 
@@ -451,17 +451,18 @@ class OpenValuesWitnessTest {
     }
 
     /** Who decided a stack with an open default ({@link DroolsBackend#decisionsOf}): no default where the target is open,
-     *  the initialisation where it closes over one, in either form the default that decided where none is open, and the
-     *  conflict of two members beside an open one. */
+     *  below an open default as well, where the initialisation is not at its turn; in either form the default that decided
+     *  where none is open, the initialisation among them; and the conflict of two members beside an open one. */
     @Test void the_decisions_of_a_stack_with_an_open_default() throws Exception {
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
             assertEquals("none", decision("stack-first-decides", "case3-betwist-open.json", branch));
             assertEquals("/rules/prioritizedDefaults/0/defaults/0 0",
                     decision("stack-first-decides", "case4-betwist-gewicht-open.json", branch));
-            assertEquals("/rules/prioritizedDefaults/0/defaults/2 5",
-                    decision("stack-initialisation", "case1-onder-een-open-uitzondering.json", branch));
+            assertEquals("none", decision("stack-initialisation", "case1-onder-een-open-uitzondering.json", branch));
+            assertEquals("/rules/prioritizedDefaults/0/defaults/1 5",
+                    decision("stack-two-initialisations", "case2-eigen-waar-de-geerfde-voorrang-geeft.json", branch));
             assertEquals("none", decision("stack-initialisation", "case5-onder-de-invoer.json", branch));
-            assertEquals("/rules/prioritizedDefaults/0/defaults/2 4", decision("stack-exception-groups-initialisation",
+            assertEquals("none", decision("stack-exception-groups-initialisation",
                     "case1-schatting-onder-een-open-groep.json", branch));
             assertEquals("none", decision("stack-exception-groups-initialisation",
                     "case2-schatting-open-onder-een-open-groep.json", branch));
@@ -497,14 +498,15 @@ class OpenValuesWitnessTest {
             s.filter(Files::isDirectory).forEach(p -> names.add(p.getFileName().toString()));
         }
         names.sort(null);
-        assertEquals(List.of("anchored-read", "boundary-after", "boundary-before", "closure-in-a-value", "complete", "complete-derived",
-                "composite-tables", "consistency", "derived", "filled-test", "fold-chain", "fold-in-a-binder",
+        assertEquals(List.of("anchored-read", "boundary-after", "boundary-before", "complete", "complete-derived",
+                "composite-tables", "consistency", "derived", "filled-in-a-fold", "filled-test", "filled-test-in-a-composite",
+                "fold-chain", "fold-in-a-binder",
                 "fold-in-a-date-stack", "fold-in-a-filter", "fold-over-a-parameter", "fold-over-a-union", "fold-over-the-date", "fold-subtype",
                 "fold-value-after-filters", "initialisation", "initialisation-condition", "input-per-object", "instance-ordered", "link",
                 "no-open-without-the-property", "open-input", "outside-the-window", "past-undetermined-deposit",
                 "past-undetermined-fault", "past-undetermined-filter", "past-undetermined-fold", "quantifier-fold",
                 "quantifier-fold-filter", "quantifier-fold-filter-faults", "quantifier-fold-matrix-faults",
-                "quantifier-fold-two-routes", "reach", "reach-without-the-property", "read-for-another", "rule",
+                "quantifier-fold-two-routes", "reach", "reach-without-the-property", "rule",
                 "set-fold", "stack-characteristic", "stack-deposit", "stack-exception-groups",
                 "stack-exception-groups-initialisation", "stack-exception-groups-nested",
                 "stack-first-decides", "stack-gives-way", "stack-initialisation", "stack-initialisation-value",

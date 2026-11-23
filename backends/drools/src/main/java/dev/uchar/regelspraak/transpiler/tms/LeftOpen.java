@@ -6,8 +6,7 @@ import java.util.Objects;
 
 /**
  * A writer that leaves {@code member} of {@code subject} open (RUNTIME-SEMANTICS ch. 1.5, "A rule"): on that object it
- * neither decides nor stands to fill nothing, since its condition is neither true for itself nor false for another, or
- * its value has an open read; a defaults stack leaves its target open through the first of its defaults that is open, or
+ * neither decides nor stands to fill nothing, since its condition is undetermined, or its value has an open read; a defaults stack leaves its target open through the first of its defaults that is open, or
  * through the reconciliation at its root. Inserted logically by the rule of the writer ({@code plan.Consequence.Writer},
  * {@code plan.Consequence.LeavesOpen}), so it goes when what it rested on changes. The
  * standing of the member reads it: a {@link Value} or a {@link HasCharacteristic} fills the member, else this fact leaves

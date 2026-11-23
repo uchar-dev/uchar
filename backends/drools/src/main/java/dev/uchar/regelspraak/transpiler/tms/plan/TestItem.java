@@ -11,7 +11,7 @@ import java.util.List;
  * writer acts on it, that it faults, or that it deposits, with the probe in slot {@code depositFlag} (-1 for
  * every other role). Where {@code open}, the condition reads a member that can be open, so its judgement can be
  * undetermined (ch. 1.5) and its evaluation can end in an open read; a rendering then answers the role for such an end
- * as well ({@code ComputeHelpers.holdsForItself} and the routes beside it).
+ * as well ({@code ComputeHelpers.establishedTrue} and the routes beside it).
  */
 public record TestItem(String id, Role role, Term test, int depositFlag, List<Integer> slots, int size, boolean open)
         implements LhsItem {
@@ -35,8 +35,7 @@ public record TestItem(String id, Role role, Term test, int depositFlag, List<In
     /**
      * What the test asks of the condition (RUNTIME-SEMANTICS ch. 5.2, 1.2, 1.5). An evaluation fault is a division by a
      * numeric zero or a fault of the branch's own ({@code ComputeFault}, {@code InputFormFault}); any other exception is a
-     * broken contract and leaves the test as it is. A condition holds where it is true for the form itself (ch. 1.5):
-     * established, or by a closure over an open value.
+     * broken contract and leaves the test as it is. A condition holds where it is established true (ch. 1.5).
      */
     public enum Role {
         /** The condition holds; it cannot fault. */
@@ -45,15 +44,15 @@ public record TestItem(String id, Role role, Term test, int depositFlag, List<In
          *  ({@link #FAULT}), and this test does not hold. */
         WITHOUT_FAULT,
         /** The writer whose condition it is decides or leaves its target open (ch. 1.5, "A rule"): the condition is not
-         *  false for another form, for which it would stand that the writer fills nothing; which of the two, the
-         *  consequence says ({@link Consequence.Writer}). It cannot fault. */
+         *  established false, for which it would stand that the writer fills nothing; which of the two, the consequence
+         *  says ({@link Consequence.Writer}). It cannot fault. */
         ACTS,
         /** As {@link #ACTS}, and its evaluation does not fault: where it faults, the rule of the fault takes it. */
         ACTS_WITHOUT_FAULT,
         /** The evaluation of the condition faults: the test of the rule that inserts the fault. */
         FAULT,
-        /** The evaluation of the condition faults or leaves it undetermined for the form itself (ch. 1.5): the test of the
-         *  rule of a filter that can do both ({@link Consequence.FilterFault}). */
+        /** The evaluation of the condition faults or leaves it undetermined (ch. 1.5): the test of the rule of a filter
+         *  that can do both ({@link Consequence.FilterFault}). */
         BREAKS_OFF,
         /** The evaluation of the condition reaches a place that deposits (§6.5, §6.6): the test puts a fresh probe in
          *  slot {@code depositFlag}, evaluates the condition, and holds where the probe heard a place; a fault after it leaves

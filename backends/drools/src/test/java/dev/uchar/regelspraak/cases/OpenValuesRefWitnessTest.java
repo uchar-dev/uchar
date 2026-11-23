@@ -84,7 +84,8 @@ class OpenValuesRefWitnessTest {
                 }
             }
         }
-        // the cases of the thirty-one witnesses that play, on two branches, counted 2026-11-23
-        assertEquals(2 * 140, played);
+        // the cases of the thirty-three witnesses that play, on two branches, counted 2026-11-23: 140 of thirty-one, and the
+        // 2 of defaults-initialisation-only and 6 of defaults-initialisation-exception
+        assertEquals(2 * 148, played);
     }
 }

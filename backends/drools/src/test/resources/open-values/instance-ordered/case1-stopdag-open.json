@@ -47,12 +47,9 @@
       "attribute": "restant"
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "V2",
-      "attribute": "einddag",
-      "value": {
-        "date": "2026-12-01"
-      }
+      "attribute": "einddag"
     },
     {
       "kind": "attributeOpen",

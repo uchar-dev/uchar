@@ -1,9 +1,9 @@
-reading /rules/rules/0/versions/0 "J1" 0 Aggregation undetermined open "V2" "gewicht"
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation undetermined open "K7" "score"
 reading /rules/rules/0/versions/0 "J1" OPEN
 reading /rules/rules/0/versions/0 "J2" 0 Aggregation 8 contributors ["V4" 8 reached]
 reading /rules/rules/0/versions/0 "J2" HOLDS
-reading /rules/rules/1/versions/0 "J1" 0 Aggregation 2 contributors ["V1" empty reached; "V2" empty reached]
-reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation undetermined open "K7" "score"
+reading /rules/rules/1/versions/0 "J1" OPEN
 reading /rules/rules/1/versions/0 "J2" 0 Aggregation 1 contributors ["V4" empty reached]
 reading /rules/rules/1/versions/0 "J2" HOLDS
 reading /rules/rules/10/versions/0 "J1" 0 Aggregation undetermined open "K7" "score"
@@ -18,22 +18,22 @@ reading /rules/rules/11/versions/0 "J2" 0 Comparison true
 reading /rules/rules/11/versions/0 "J2" 1 Aggregation 1 contributors ["V4" empty reached]
 reading /rules/rules/11/versions/0 "J2" 12 Literal 0
 reading /rules/rules/11/versions/0 "J2" HOLDS
-reading /rules/rules/12/versions/0 "J1" 0 Aggregation undetermined open "V2" "gewicht"
+reading /rules/rules/12/versions/0 "J1" 0 Aggregation undetermined open "S1" "inkt"
 reading /rules/rules/12/versions/0 "J1" OPEN
 reading /rules/rules/12/versions/0 "J2" 0 Aggregation 8 contributors ["V4" 8 reached]
 reading /rules/rules/12/versions/0 "J2" HOLDS
-reading /rules/rules/13/versions/0 "J1" 0 Aggregation 2 contributors ["V2" empty reached; "V3" empty reached]
-reading /rules/rules/13/versions/0 "J1" HOLDS
+reading /rules/rules/13/versions/0 "J1" 0 Aggregation undetermined open "S1" "inkt"
+reading /rules/rules/13/versions/0 "J1" OPEN
 reading /rules/rules/13/versions/0 "J2" 0 Aggregation 1 contributors ["V4" empty reached]
 reading /rules/rules/13/versions/0 "J2" HOLDS
-reading /rules/rules/14/versions/0 "J1" 0 Aggregation 1 contributors ["V3" empty reached]
-reading /rules/rules/14/versions/0 "J1" HOLDS
+reading /rules/rules/14/versions/0 "J1" 0 Aggregation undetermined open "S1" "inkt"
+reading /rules/rules/14/versions/0 "J1" OPEN
 reading /rules/rules/14/versions/0 "J2" 0 Aggregation 1 contributors ["V4" empty reached]
 reading /rules/rules/14/versions/0 "J2" HOLDS
-reading /rules/rules/15/versions/0 "J1" 0 Comparison true closure
-reading /rules/rules/15/versions/0 "J1" 1 Aggregation 2 contributors ["V2" empty reached; "V3" empty reached]
-reading /rules/rules/15/versions/0 "J1" 13 Literal 0
-reading /rules/rules/15/versions/0 "J1" HOLDS
+reading /rules/rules/15/versions/0 "J1" 0 Comparison undetermined open "S1" "inkt"
+reading /rules/rules/15/versions/0 "J1" 1 Aggregation undetermined open "S1" "inkt"
+reading /rules/rules/15/versions/0 "J1" 13 Literal unreached
+reading /rules/rules/15/versions/0 "J1" OPEN
 reading /rules/rules/15/versions/0 "J2" 0 Comparison true
 reading /rules/rules/15/versions/0 "J2" 1 Aggregation 1 contributors ["V4" empty reached]
 reading /rules/rules/15/versions/0 "J2" 13 Literal 0
@@ -42,14 +42,14 @@ reading /rules/rules/16/versions/0 "J1" 0 Aggregation undetermined open "K7" "sc
 reading /rules/rules/16/versions/0 "J1" OPEN
 reading /rules/rules/16/versions/0 "J2" 0 Aggregation 1 contributors ["V4" empty reached]
 reading /rules/rules/16/versions/0 "J2" HOLDS
-reading /rules/rules/2/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
-reading /rules/rules/2/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 Aggregation undetermined open "K7" "score"
+reading /rules/rules/2/versions/0 "J1" OPEN
 reading /rules/rules/2/versions/0 "J2" 0 Aggregation 1 contributors ["V4" empty reached]
 reading /rules/rules/2/versions/0 "J2" HOLDS
-reading /rules/rules/3/versions/0 "J1" 0 Comparison true closure
-reading /rules/rules/3/versions/0 "J1" 1 Aggregation 2 contributors ["V1" empty reached; "V2" empty reached]
-reading /rules/rules/3/versions/0 "J1" 8 Literal 0
-reading /rules/rules/3/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 Comparison undetermined open "K7" "score"
+reading /rules/rules/3/versions/0 "J1" 1 Aggregation undetermined open "K7" "score"
+reading /rules/rules/3/versions/0 "J1" 8 Literal unreached
+reading /rules/rules/3/versions/0 "J1" OPEN
 reading /rules/rules/3/versions/0 "J2" 0 Comparison true
 reading /rules/rules/3/versions/0 "J2" 1 Aggregation 1 contributors ["V4" empty reached]
 reading /rules/rules/3/versions/0 "J2" 8 Literal 0
@@ -82,8 +82,8 @@ reading /rules/rules/9/versions/0 "J1" 0 Aggregation undetermined open "K7" "sco
 reading /rules/rules/9/versions/0 "J1" OPEN
 reading /rules/rules/9/versions/0 "J2" 0 Aggregation 1 contributors ["V4" empty reached]
 reading /rules/rules/9/versions/0 "J2" HOLDS
-state attribute "J1" "aantal kdiep" 2
-state attribute "J1" "aantal kgevuld" 2
+state attribute "J1" "aantal kdiep" open
+state attribute "J1" "aantal kgevuld" open
 state attribute "J1" "aantal kgrens" open
 state attribute "J1" "aantal ksom" open
 state attribute "J1" "gewicht kdiep" open
@@ -91,8 +91,8 @@ state attribute "J1" "gewicht kgevuld" open
 state attribute "J1" "gewicht kgrens" open
 state attribute "J1" "gewicht ksom" open
 state attribute "J1" "verenigd aantal" open
-state attribute "J1" "volle kdiep" 1
-state attribute "J1" "volle kgevuld" 1
+state attribute "J1" "volle kdiep" open
+state attribute "J1" "volle kgevuld" open
 state attribute "J1" "volle kgrens" open
 state attribute "J1" "volle ksom" open
 state attribute "J2" "aantal kdiep" 1
@@ -145,8 +145,8 @@ state attribute "V1" "gewicht" 8
 state attribute "V2" "gewicht" open
 state attribute "V3" "gewicht" 9
 state attribute "V4" "gewicht" 8
-state characteristic "J1" "rijk kdiep"
-state characteristic "J1" "rijk kgevuld"
+state characteristic "J1" "rijk kdiep" open
+state characteristic "J1" "rijk kgevuld" open
 state characteristic "J1" "rijk kgrens" open
 state characteristic "J1" "rijk ksom" open
 state characteristic "J2" "rijk kdiep"

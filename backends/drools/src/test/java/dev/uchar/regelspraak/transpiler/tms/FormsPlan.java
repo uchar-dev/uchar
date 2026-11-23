@@ -65,8 +65,8 @@ final class FormsPlan {
             "ComputeHelpers.inconsistency(", "ComputeHelpers.writersConflict(", "new ParameterState(", "new EvaluationDate(",
             "new CharacteristicState(", "ComputeHelpers.bucketScalarOf(", "new PathState(", "new Reading($onderwerp, ",
             "lezing_lezing(", "ComputeHelpers.read(", "ComputeHelpers.composite(", "lezing.read(() -> ",
-            "ComputeHelpers.emptyTestOverOpen(() -> ", "ComputeHelpers.dividedLazily(", "ComputeHelpers.negatedOverOpen(() -> ",
-            "return ComputeHelpers.holdsForItself(() -> ", "return ComputeHelpers.faulted(() -> ",
+            "ComputeHelpers.dividedLazily(", "ComputeHelpers.not(", "ComputeHelpers.incompleteInput(open_invoer, ",
+            "return ComputeHelpers.establishedTrue(() -> ", "return ComputeHelpers.faulted(() -> ",
             "return ComputeHelpers.deposited(() -> ", "if (!ComputeHelpers.deposited(() -> ", "return ComputeHelpers.valued(() -> ",
             "return ComputeHelpers.decided(oordeel_schrijverVanEenWaarde(", "ComputeHelpers.isOpen(v)", "new LeftOpen($onderwerp, ",
             "ComputeHelpers.open($onderwerp, ", "global OpenInput open_invoer;", "ComputeHelpers.readInput($uitkijkbonus, open_invoer, ",
@@ -515,7 +515,7 @@ final class FormsPlan {
             "for (Object f : ComputeHelpers.contributed(oordeel_lidwaardeOnderEenOpenFilter(", "insertLogical(f);",
             "\"proefvouw: gefilterde telling\", $vouwonderwerp, $onderwerp, new Contribution(\"proefvouw: gefilterde telling\", ",
             "insertLogical(ComputeHelpers.judged(\"proefvouw: open oordeel\", $vouwonderwerp, $onderwerp, matrix_openOordeel(",
-            "Object matrix_openOordeel(", "FoldOpen( fold == \"proefvouw: open som\"", "ComputeHelpers.atom(() -> ",
+            "Object matrix_openOordeel(", "FoldOpen( fold == \"proefvouw: open som\"",
             "ComputeHelpers.countOf(ComputeHelpers.standingCount($aantal, $openleden))",
             "ComputeHelpers.quantifierVerdictOverOpen($aantal, $som, $openleden, ", "fout = ComputeHelpers.ended(e);",
             "$vouwonderwerp, $onderwerp, ComputeHelpers.filtered(oordeel_lidtoetsOnderEenOpenFilter(", "$onderwerp, lidtoets_lidtoetsOnderEenOpenFilter(",
@@ -671,10 +671,9 @@ final class FormsPlan {
                 List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, "$openleden")));
         ReadTable bound = table(new Read(0, ReadKind.FOLD_COUNT, "vouw", "$aantal"),
                 new Read(1, ReadKind.FOLDED_VALUE, "vouwwaarde", "$som"), new Read(2, ReadKind.FOLD_OPEN, "open leden", "$openleden"));
-        Term atom = new Term.Call(StaticFunction.ATOM, List.of(new Term.Deferred(new Term.Call(StaticFunction.RS_AGG_COMPARE,
-                List.of(new Term.Call(StaticFunction.COUNT, List.of(new Term.Call(StaticFunction.STANDING_COUNT,
-                        List.of(readOf(0), readOf(2)), null)), "de telling"), number("1"), text(">")), null), null)),
-                "de telling groter dan 1");
+        Term atom = new Term.Call(StaticFunction.RS_AGG_COMPARE, List.of(new Term.Call(StaticFunction.COUNT,
+                List.of(new Term.Call(StaticFunction.STANDING_COUNT, List.of(readOf(0), readOf(2)), null)), "de telling"),
+                number("1"), text(">")), "de telling groter dan 1");
         Term quantified = new Term.Call(StaticFunction.QUANTIFIER_VERDICT_OVER_OPEN, List.of(readOf(0), readOf(1), readOf(2),
                 new Term.Const(Condition.Quantifier.ALLE, null, null), new Term.Const(0, null, null)), "alle posten");
         for (Term t : List.of(atom, quantified))
@@ -732,7 +731,8 @@ final class FormsPlan {
                 "uitkijkbonus gedeeld door uitkijkbonus"), number("1"), text(">")), "de deling groter dan 1");
         Term composite = new Term.Compound(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, List.of(
                 new Term.Call(StaticFunction.EMPTY_TEST, List.of(number("1"), new Term.Const(Boolean.FALSE, null, null)), "1 gevuld is"),
-                new Term.ClosureOverOpen(new Term.Deferred(read, null), true, 1, "zijn uitkijkbonus leeg is"), depositing), 1, 1,
+                new Term.Call(StaticFunction.EMPTY_TEST, List.of(read, new Term.Const(Boolean.TRUE, null, null)),
+                        "zijn uitkijkbonus leeg is"), depositing), 1, 1,
                 "aan ten minste een voldoet");
         Term compositeWithoutProbe = new Term.Compound(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, List.of(read, read),
                 0, -1, "aan alle voldoet");
@@ -749,8 +749,8 @@ final class FormsPlan {
                 "zijn uitkijkbonus groter is dan 1");
         List<RulePlan> rules = new ArrayList<>();
         rules.add(new RulePlan("open consistentie", "proef", null, one, List.of(subject, new TestItem("open",
-                TestItem.Role.CONDITION, new Term.Call(StaticFunction.NEGATED_OVER_OPEN, List.of(new Term.Deferred(withoutProbe,
-                null)), "zijn uitkijkbonus groter is dan 1"), -1, List.of(0), 1, true)),
+                TestItem.Role.CONDITION, new Term.Call(StaticFunction.NIET, List.of(withoutProbe),
+                "zijn uitkijkbonus groter is dan 1"), -1, List.of(0), 1, true)),
                 new Consequence.Inconsistency(O, "proef", List.of(), Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("schrijver onder een samengestelde voorwaarde", "proef", null, one, List.of(subject,
                 new TestItem("oordeel", TestItem.Role.ACTS, compositeWithoutProbe, -1, List.of(0), 1, true)),
@@ -772,6 +772,11 @@ final class FormsPlan {
                 new Consequence.Writer(inputTest, true, List.of(0, 1, 2), 3, new Consequence.Value(O, bonus, "proef",
                         inputRead, List.of(0, 1, 2), 3, false, false, null, faultName, Consequence.Insertion.LOGICAL),
                         leftOpen(bonus))));
+        rules.add(new RulePlan("initialisatie buiten open invoer", "proef", null, withInput, List.of(subject,
+                new TestItem("geen-open-invoer", TestItem.Role.VORM, new Term.Call(StaticFunction.NIET, List.of(
+                        new Term.Call(StaticFunction.INCOMPLETE_INPUT, List.of(readOf(1), readOf(2),
+                                new Term.Const(bonus, null, null)), null)), null), -1, List.of(1, 2), 3, false)),
+                new Consequence.Inconsistency(O, "proef", List.of(), Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("schrijver van een kenmerk", "proef", null, one, List.of(subject,
                 new TestItem("oordeel", TestItem.Role.ACTS, withoutProbe, -1, List.of(0), 1, true)),
                 new Consequence.Writer(withoutProbe, false, List.of(0), 1, new Consequence.Characteristic(O, watch,

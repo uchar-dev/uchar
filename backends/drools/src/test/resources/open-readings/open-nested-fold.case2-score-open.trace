@@ -1,7 +1,7 @@
-reading /rules/rules/0/versions/0 "J1" 0 Aggregation empty
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation undetermined open "K2" "score"
 reading /rules/rules/0/versions/0 "J1" OPEN
-reading /rules/rules/1/versions/0 "J1" 0 Aggregation 0
-reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation undetermined open "K2" "score"
+reading /rules/rules/1/versions/0 "J1" OPEN
 reading /rules/rules/10/versions/0 "J1" 0 Aggregation undetermined open "K2" "score"
 reading /rules/rules/10/versions/0 "J1" OPEN
 reading /rules/rules/11/versions/0 "J1" 0 Comparison undetermined open "K2" "score"
@@ -20,11 +20,11 @@ reading /rules/rules/15/versions/0 "J1" 13 Literal 0
 reading /rules/rules/15/versions/0 "J1" FAILS
 reading /rules/rules/16/versions/0 "J1" 0 Aggregation undetermined open "K2" "score"
 reading /rules/rules/16/versions/0 "J1" OPEN
-reading /rules/rules/2/versions/0 "J1" 0 Aggregation 0
-reading /rules/rules/2/versions/0 "J1" HOLDS
-reading /rules/rules/3/versions/0 "J1" 0 Comparison false closure
-reading /rules/rules/3/versions/0 "J1" 1 Aggregation 0
-reading /rules/rules/3/versions/0 "J1" 8 Literal 0
+reading /rules/rules/2/versions/0 "J1" 0 Aggregation undetermined open "K2" "score"
+reading /rules/rules/2/versions/0 "J1" OPEN
+reading /rules/rules/3/versions/0 "J1" 0 Comparison undetermined open "K2" "score"
+reading /rules/rules/3/versions/0 "J1" 1 Aggregation undetermined open "K2" "score"
+reading /rules/rules/3/versions/0 "J1" 8 Literal unreached
 reading /rules/rules/3/versions/0 "J1" OPEN
 reading /rules/rules/4/versions/0 "J1" 0 Aggregation undetermined open "K2" "score"
 reading /rules/rules/4/versions/0 "J1" OPEN
@@ -41,7 +41,7 @@ reading /rules/rules/8/versions/0 "J1" OPEN
 reading /rules/rules/9/versions/0 "J1" 0 Aggregation undetermined open "K2" "score"
 reading /rules/rules/9/versions/0 "J1" OPEN
 state attribute "J1" "aantal kdiep" 0
-state attribute "J1" "aantal kgevuld" 0
+state attribute "J1" "aantal kgevuld" open
 state attribute "J1" "aantal kgrens" open
 state attribute "J1" "aantal ksom" open
 state attribute "J1" "gewicht kgevuld" open
@@ -49,7 +49,7 @@ state attribute "J1" "gewicht kgrens" open
 state attribute "J1" "gewicht ksom" open
 state attribute "J1" "verenigd aantal" open
 state attribute "J1" "volle kdiep" 0
-state attribute "J1" "volle kgevuld" 0
+state attribute "J1" "volle kgevuld" open
 state attribute "J1" "volle kgrens" open
 state attribute "J1" "volle ksom" open
 state attribute "K1" "deling" open

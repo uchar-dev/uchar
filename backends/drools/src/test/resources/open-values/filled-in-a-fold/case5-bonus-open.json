@@ -39,10 +39,7 @@
       "attribute": "aandeel"
     },
     {
-      "kind": "inconsistent",
-      "rule": "weging",
-      "label": "J1",
-      "code": "EF-025"
+      "kind": "consistent"
     }
   ]
 }

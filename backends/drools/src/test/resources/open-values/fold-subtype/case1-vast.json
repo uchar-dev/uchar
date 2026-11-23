@@ -87,12 +87,9 @@
       }
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "J1",
-      "attribute": "bodem",
-      "value": {
-        "number": "10"
-      }
+      "attribute": "bodem"
     },
     {
       "kind": "attributeValue",

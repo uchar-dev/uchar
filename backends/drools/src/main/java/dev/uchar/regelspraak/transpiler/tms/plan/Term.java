@@ -81,20 +81,9 @@ public sealed interface Term {
     /**
      * {@code value} as the argument of a function that evaluates it itself, where it needs it or to catch what it raises
      * (a {@code Callable}, since a function of a DRL text declares {@code Exception}): the divisor of a division that can read an open value
-     * ({@link StaticFunction#DIVIDED_LAZILY}), the operand of a closure ({@link ClosureOverOpen}) and the assertion a
-     * consistency negates ({@link StaticFunction#NEGATED_OVER_OPEN}). It stands as such an argument only.
+     * ({@link StaticFunction#DIVIDED_LAZILY}). It stands as such an argument only.
      */
     record Deferred(Term value, String source) implements Term {}
-
-    /**
-     * The test on leeg, where {@code empty}, or else on gevuld, of {@code value}, which can read an open value
-     * (RUNTIME-SEMANTICS ch. 1.5): where its evaluation reads one, a closure over that read, so that the value is leeg
-     * for the form itself and the test undetermined for another ({@code ComputeHelpers.emptyTestOverOpen}), with what
-     * the evaluation deposited dropped from the probe in slot {@code depositFlag} (-1: the position has none). An
-     * evaluation fault passes on. Over an operand that reads no member that can be open the test is a {@link Call} of
-     * {@link StaticFunction#EMPTY_TEST}.
-     */
-    record ClosureOverOpen(Deferred value, boolean empty, int depositFlag, String source) implements Term {}
 
     /** The function {@code function} on the values of {@code arguments}, evaluated in that order. */
     record Call(StaticFunction function, List<Term> arguments, String source) implements Term {

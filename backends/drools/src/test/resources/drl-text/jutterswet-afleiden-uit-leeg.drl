@@ -84,7 +84,7 @@ end
 
 // zijn taxatie leeg is
 function Object oordeel_ongetaxeerd(Object $taxatie, Object open_invoer, Object $onderwerp) {
-    return ComputeHelpers.judge(() -> ComputeHelpers.emptyTestOverOpen(() -> ComputeHelpers.readInput($taxatie, open_invoer, $onderwerp, ElementKey.of("vondst", "taxatie", false)), Boolean.TRUE, null), false);
+    return ComputeHelpers.judge(() -> ComputeHelpers.emptyTest(ComputeHelpers.readInput($taxatie, open_invoer, $onderwerp, ElementKey.of("vondst", "taxatie", false)), Boolean.TRUE), false);
 }
 
 rule "ongetaxeerd"

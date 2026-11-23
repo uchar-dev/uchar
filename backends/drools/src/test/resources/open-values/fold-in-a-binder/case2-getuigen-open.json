@@ -49,12 +49,9 @@
   },
   "expected": [
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "J1",
-      "attribute": "keurgewicht",
-      "value": {
-        "number": "8"
-      }
+      "attribute": "keurgewicht"
     },
     {
       "kind": "attributeValue",

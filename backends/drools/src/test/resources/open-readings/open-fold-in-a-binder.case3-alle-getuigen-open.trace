@@ -1,7 +1,7 @@
-reading /rules/rules/0/versions/0 "J1" 0 Let empty
-reading /rules/rules/0/versions/0 "J1" 1 Aggregation empty
-reading /rules/rules/0/versions/0 "J1" 6 Binary empty
-reading /rules/rules/0/versions/0 "J1" 7 BinderRef empty
+reading /rules/rules/0/versions/0 "J1" 0 Let undetermined open "V1" "getuigen"
+reading /rules/rules/0/versions/0 "J1" 1 Aggregation undetermined open "V1" "getuigen"
+reading /rules/rules/0/versions/0 "J1" 6 Binary undetermined open "V1" "getuigen"
+reading /rules/rules/0/versions/0 "J1" 7 BinderRef undetermined open "V1" "getuigen"
 reading /rules/rules/0/versions/0 "J1" 8 Literal unreached
 reading /rules/rules/0/versions/0 "J1" OPEN
 reading /rules/rules/1/versions/0 "J1" 0 Let 24

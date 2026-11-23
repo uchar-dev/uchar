@@ -27,7 +27,7 @@ import java.util.Set;
  *
  * <p>Where the filter of the fold can be undetermined (ch. 1.5, "A quantifier fold"), every contributor has such a test,
  * also of a matrix that can neither fault nor deposit, and it carries the judgement of the filter on the member where that
- * does not stand for another form ({@code filter}, null where the filter is true) and the {@code element} itself
+ * is undetermined ({@code filter}, null where the filter is true) and the {@code element} itself
  * ({@link #filtered}): in a build without readings such a matrix shows no order and the place is that of the selection
  * alone, and in a build with readings a member that two routes reach has a test per route and is read at its first.
  */
@@ -61,14 +61,13 @@ public final class MemberTest implements Comparable<MemberTest> {
     }
 
     /** This test of the member {@code element}, on which the fold's filter has the judgement {@code judgement}
-     *  ({@link ComputeHelpers#judge}), which is not false for another form. */
+     *  ({@link ComputeHelpers#judge}), which is not false. */
     MemberTest filtered(Object judgement, Object element) {
         return new MemberTest(place, holds, fault, deposited, codes, element,
                 judgement instanceof Undetermined u ? u : null);
     }
 
-    /** The judgement of the fold's filter on the member where it does not stand for another form; null where the filter is
-     *  true. */
+    /** The judgement of the fold's filter on the member where it is undetermined; null where the filter is true. */
     Undetermined filter() { return filter; }
 
     /** The tests {@code contributions}, what a rule bound of a fold's contributors, in the contributors' order, each member
@@ -82,7 +81,7 @@ public final class MemberTest implements Comparable<MemberTest> {
         return out;
     }
 
-    /** The open read of the first of {@code members} whose filter does not stand for another form, which makes every matrix
+    /** The open read of the first of {@code members} whose filter is undetermined, which makes every matrix
      *  of the fold a provisional read (ch. 1.5); null where every filter stands. */
     static OpenMember past(List<MemberTest> members) {
         for (MemberTest t : members) if (t.filter != null) return t.filter.read();
@@ -124,7 +123,7 @@ public final class MemberTest implements Comparable<MemberTest> {
                 : t.fault != null && t.fault.getClass() == fault.getClass()
                   && Objects.equals(t.fault.getMessage(), fault.getMessage()))
                 && t.element == element && (filter == null ? t.filter == null : t.filter != null
-                && Objects.equals(t.filter.own(), filter.own()) && t.filter.read().equals(filter.read()));
+                && t.filter.read().equals(filter.read()));
     }
 
     @Override public int hashCode() {

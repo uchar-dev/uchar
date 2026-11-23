@@ -437,9 +437,11 @@ that its input is complete (`(volledig gegeven)`, `complete`): in an end state i
 value that is null.
 
 The analysis computes once which members can be open (`OpenableMembers`, the one place
-of the lowering that reads `inferFromEmpty`): an input member that holds one value, on the objects of a type on which no
-form writes it, unless its declaration says that its input is complete; and every member a form writes that reads such a
-member, through any number of forms. In any other document there is none, and the analysis builds nothing of what
+of the lowering that reads `inferFromEmpty`): an input member that holds one value, on the objects of a type on which
+nothing but an initialisation writes it, unless its declaration says that its input is complete; and every member a form
+writes that reads such a member, through any number of forms. An initialisation, a rule or the initialisation default
+of a stack without an exception group, is the lowest writer of its target and makes no member derived (ch. 1.5, "The
+three states"). In any other document there is none, and the analysis builds nothing of what
 follows; nor does it, in a document with the property, for a member outside that set.
 
 What opens a member is a writer or the input. `LeftOpen(subject, member, writer)` is inserted logically by a writer that
@@ -456,22 +458,22 @@ and a standing derived before a writer left the member open is withdrawn as any 
 
 A read of an open member breaks the evaluation off with an `OpenRead`; the operators of the production runtime see no
 open value. The break is caught at the boundary of one atomic condition or one value, and what the probe heard within it
-is dropped: at a member of a composite, at the operand of a test on leeg or gevuld (`Term.ClosureOverOpen`, a closure),
-at the test of a rule, and in the consequence that computes a value, which then inserts the `LeftOpen` of its form. Each
+is dropped: at a member of a composite, at the test of a rule, and in the consequence that computes a value, which then
+inserts the `LeftOpen` of its form. A test on leeg or gevuld is an atomic condition as any other, so over an open value
+it is undetermined (ch. 1.5, "The test on leeg and gevuld"). Each
 boundary is one function of `ComputeHelpers` or `Composite` that takes what it evaluates as a `Callable`, a lambda in
 the DRL text (`Term.Deferred` where the analysis plans it), so that the text catches nothing itself; a division whose
 divisor can read an open value takes its divisor so as well, and evaluates it only where the dividend is filled. A
-condition whose judgement stands for the form itself and for another answers; any other throws `Undetermined`, which
-carries the truth for the form itself. `Composite` is the one reading of a composite, in every document: it counts the
-members for the form itself and for another by Kleene's table, stops where the judgement for another stands, and reads a
-member after one that is undetermined for another provisionally (ch. 1.5); where nothing is open that is the stop of ch.
-5.10.
+condition whose judgement is established answers; one that is undetermined throws `Undetermined`, which carries the
+open read that left it so: a judgement is one value of Kleene's strong table. `Composite` is the one reading of a
+composite, in every document: it counts the members by Kleene's table, stops where the judgement stands, and reads a
+member after one that is undetermined provisionally (ch. 1.5); where nothing is open that is the stop of ch. 5.10.
 
 `Reads.conditionTest` is the one place where a condition becomes the test of a rule. A form whose condition always
 stands tests that it holds. The rule of a writer whose condition can be undetermined has one function with the judgement
-of its condition (`ComputeHelpers.judge`): its test asks that the writer acts, that the condition is not false for
-another form, and its consequence asks which of the other two outcomes it is (`plan.Consequence.Writer`): it decides, or
-it inserts its `LeftOpen`, which it does as well where its value reads an open one or is leeg after a closure. So such a rule fires where the form decides and
+of its condition (`ComputeHelpers.judge`): its test asks that the writer acts, that the condition is not established
+false, and its consequence asks which of the other two outcomes it is (`plan.Consequence.Writer`): it decides, or it
+inserts its `LeftOpen`, which it does as well where its value reads an open one. So such a rule fires where the form decides and
 where it leaves its target open, and not where it fills nothing. The rule of a condition's fault and that of its
 deposits stand beside it as for any form. A consistency tests the negation of its assertion, which keeps the judgement
 where that can be undetermined.
@@ -479,23 +481,25 @@ where that can be undetermined.
 A default of a defaults stack is a writer with the same three outcomes. Where it is open it inserts, in the simple form,
 the `LeftOpen` of the target and its `Decides` with `open`, and in the general form an `Outcome` of the kind `OPEN`. The
 lower defaults of its chain, and their exception groups, stand under the `not` of either as under that of a decision, so
-their left-hand sides are those of any stack, and a default that gives way inserts nothing, as any default. The
-initialisation of a stack closes over an open default above it: its `not` asks only for the defaults that are not open,
-and its `Value` fills the target beside the `LeftOpen`. A reconciliation over a member that is `OPEN` decides nothing:
+their left-hand sides are those of any stack, and a default that gives way inserts nothing, as any default; below a
+default that is open no default decides, the initialisation default among them. An initialisation is the lowest writer
+of its target (ch. 1.5, "An initialisation"): the initialisation default and an initialisation rule are not at their
+turn where the target is open input, which the session's `OpenInput` names (`ComputeHelpers.incompleteInput`), and an
+initialisation rule neither where another writer leaves the target open (`LeftOpen`). A member that only an
+initialisation writes is input with a default value: open where the case gives it no value, and where it is declared
+complete the initialisation gives its value. A reconciliation over a member that is `OPEN` decides nothing:
 the rule of the agreement stands under a `not` over an `OPEN` member, and one rule more (`reconcile-open`) settles the
 default `OPEN`, or at the root inserts the `LeftOpen` of the target, unless a member conflicts or two decide
 differently. A stack of which no default can be open is lowered as any stack.
 
 A fold over a set whose members can be open keeps the contributions and the accumulate of any fold; the rule of a
 member's contribution says beside or in place of it, with a `FoldOpen(fold, subject, member, own, read)`, that what the
-member gives the fold does not stand: its filter is undetermined or its value open (`own` null), or a closure decided it,
-a filter on gevuld or a filled-value count over an open value (`own` true or false, as the member counts or not). Where
+member gives the fold does not stand: its filter is undetermined or its value open, a filled-value count's among them.
+Where
 the filter can be undetermined, the rule tests and evaluates its judgement as a writer does its condition
 (`plan.Consequence.FilteredContribution`). The rule that reads the fold lists those facts in one accumulate more, and
 the count of the contributions is taken through them (`ComputeHelpers.standingCount`), before the fallback: an
-undetermined member is an open read there, and a closure is told to the boundary around it (`Boundary`), one per value
-and one per atomic condition in which a fold can close (`StaticFunction.ATOM`). A condition that closed stands for the
-form itself alone, and a value that is leeg after a closure leaves its target open and deposits as it stands. A filter
+undetermined member is an open read there. A filter
 that can fault and be undetermined gives a `FilterFault` for a member of either, whose fault is the `OpenRead` where it is
 undetermined, so that the reading rule meets the first of both; a value that is open comes after every filter.
 
@@ -507,8 +511,8 @@ judgement that does not stand among them, and where the filter can be undetermin
 member, which the rule of the contribution tests and evaluates as that of a fold over a set. A filter that is undetermined
 does not break a quantifier fold off: it leaves its member undetermined but where the matrix decides it either way, and it
 makes every matrix of the fold a provisional read, since every filter is read before every matrix; a filter that faults
-does break it off, also past one that is undetermined. A member whose filter is false for another form contributes
-nothing, as in any fold. Such a fold over a matrix that can neither fault nor deposit binds no place in a build without
+does break it off, also past one that is undetermined. A member whose filter is false contributes nothing, as in any
+fold. Such a fold over a matrix that can neither fault nor deposit binds no place in a build without
 readings. A fold in the filter or the matrix of another is read there as any rule reads one, and a fold none of whose
 members can be open is lowered as any fold. An anchored read of an input member that can be open takes the subject of the
 form, which the contribution rule binds, as the object of its `OpenInput`.
@@ -516,12 +520,13 @@ form, which the contribution rule binds, as the object of its `OpenInput`.
 **The readings of open values** (RUNTIME-SEMANTICS ch. 5.12, "Open values"). The recording rendering evaluates the terms of a
 form with the functions of its rule, so it opens the boundaries the evaluation opens, and records the open read or the
 judgement it meets at every node it passes; a member of a composite or of a quantifier fold that is read provisionally and
-faults is undetermined by the read before it (`Composite.past`), and the nodes inside it carry the fault. The calls the
-analysis adds for a boundary or for the list of open members (`ATOM`, `STANDING_COUNT`) are no nodes. A value is read as one
-value (`ComputeHelpers.valued`), so a leeg one after a closure leaves the form `OPEN`. The reading rule of a form stands as its
-rule does: below a default that is open the initialisation is at its turn and every other default has its speculative
-reading. A fold that is broken off names the open read of the first member in the order of the fold, every filter before
-every value, and a quantifier fold that of its first member that is undetermined for the form itself. That order shows in
+faults is undetermined by the read before it (`Composite.past`), and the nodes inside it carry the fault. The call the
+analysis adds for the list of open members (`STANDING_COUNT`) is no node. A value is read as one value
+(`ComputeHelpers.valued`), so one with an open read leaves the form `OPEN`. The reading rule of a form stands as its rule
+does: below a default that is open every default has its speculative reading, the initialisation default among them; an
+initialisation whose target is open input, or an initialisation rule whose target another writer leaves open, has no
+reading there and is `DISPLACED` without nodes. A fold that is broken off names the open read of the first member in the order of the fold, every filter before
+every value, and a quantifier fold that of its first member that is undetermined. That order shows in
 a reading alone, so only a build with readings binds it: the contribution rule of a member that can be open binds its place
 as the filter fault rule does, and its `FoldOpen` carries the place; the functions that read those facts take the first. A
 build without readings lowers the document without places.

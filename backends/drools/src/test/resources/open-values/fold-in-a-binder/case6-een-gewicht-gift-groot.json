@@ -42,15 +42,12 @@
   },
   "expected": [
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "J1",
-      "attribute": "giftdeel",
-      "value": {
-        "number": "20"
-      }
+      "attribute": "giftdeel"
     },
     {
-      "kind": "characteristicPresent",
+      "kind": "characteristicOpen",
       "label": "J1",
       "characteristic": "gul"
     },

@@ -15,9 +15,9 @@ reading /rules/rules/1/versions/0 "V1" OPEN
 reading /rules/rules/2/versions/0 "V1" 0 CharacteristicCheck undetermined open "V1" "kostbaar"
 reading /rules/rules/2/versions/0 "V1" 1 Literal unreached
 reading /rules/rules/2/versions/0 "V1" OPEN
-reading /rules/rules/3/versions/0 "V1" 0 Predicate true closure
+reading /rules/rules/3/versions/0 "V1" 0 Predicate undetermined open "V1" "taxatie"
 reading /rules/rules/3/versions/0 "V1" 1 AttributeReference undetermined open "V1" "taxatie"
-reading /rules/rules/3/versions/0 "V1" HOLDS
+reading /rules/rules/3/versions/0 "V1" OPEN
 reading /rules/rules/4/versions/0 "V1" 0 CharacteristicCheck undetermined open "V1" "gemeld"
 reading /rules/rules/4/versions/0 "V1" 1 Literal unreached
 reading /rules/rules/4/versions/0 "V1" OPEN
@@ -30,5 +30,5 @@ state attribute "V1" "vindloon" open
 state characteristic "V1" "betwist" open
 state characteristic "V1" "gemeld" open
 state characteristic "V1" "kostbaar" open
-state characteristic "V1" "ongetaxeerd"
+state characteristic "V1" "ongetaxeerd" open
 state object "V1" "Vondst"

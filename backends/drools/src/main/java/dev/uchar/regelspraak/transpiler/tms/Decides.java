@@ -15,8 +15,7 @@ import java.util.Objects;
  *
  * <p>Where {@code open}, the default neither decides nor gives way (RUNTIME-SEMANTICS ch. 1.5, "A stack"): its
  * justification is undetermined, or its consequence has an open read. The fact then stands beside the {@link LeftOpen} of
- * the target, and displaces every lower default all the same, but the initialisation of the stack, which closes over it
- * and asks only that no default above it decides.
+ * the target, and displaces every lower default all the same, the initialisation of the stack among them.
  *
  * <p>Keyed and compared as {@link HasCharacteristic}: the subject by identity, the stack and the index by value.
  */

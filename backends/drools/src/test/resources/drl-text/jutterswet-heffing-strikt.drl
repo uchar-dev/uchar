@@ -1,0 +1,198 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.LeftOpen;
+import dev.uchar.regelspraak.transpiler.tms.OpenInput;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global OpenInput open_invoer;
+
+// zijn taxatie gevuld is
+function Object oordeel_heffing(Object $taxatie, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.emptyTest(ComputeHelpers.readInput($taxatie, open_invoer, $onderwerp, ElementKey.of("vondst", "taxatie", false)), Boolean.FALSE), false);
+}
+
+// 0
+function Object waarde_heffing(Object $taxatie, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.decided(oordeel_heffing($taxatie, open_invoer, $onderwerp), () -> ComputeHelpers.fitTarget(new java.math.BigDecimal("0"), Integer.valueOf(0), "heffing", null), null);
+}
+
+rule "heffing"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatie : taxatie )
+    eval( ComputeHelpers.acts(oordeel_heffing($taxatie, open_invoer, $onderwerp)) )
+then
+    Object v = waarde_heffing($taxatie, open_invoer, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "heffing", ComputeHelpers.designate(v, "heffing")));
+    } else if (ComputeHelpers.isOpen(v)) {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "heffing", false), "heffing"));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "heffing", false), v, "heffing"));
+        }
+    }
+end
+
+// 25
+function Object waarde_heffingAanvankelijk() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("25"), Integer.valueOf(0), "heffing", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "heffing aanvankelijk"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( heffing == null )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("vondst", "heffing", false) && writer != "heffing aanvankelijk", subject == $onderwerp ) )
+    not( $andere_opengelaten : LeftOpen( member == ElementKey.of("vondst", "heffing", false) && writer != "heffing aanvankelijk", subject == $onderwerp ) )
+then
+    Object v = waarde_heffingAanvankelijk();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "heffing aanvankelijk", ComputeHelpers.designate(v, "heffing aanvankelijk")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "heffing", false), v, "heffing aanvankelijk"));
+        }
+    }
+end
+
+// zijn taxatie leeg is
+function Object oordeel_heffingscode(Object $taxatie, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.emptyTest(ComputeHelpers.readInput($taxatie, open_invoer, $onderwerp, ElementKey.of("vondst", "taxatie", false)), Boolean.TRUE), false);
+}
+
+// 1
+function Object waarde_heffingscode(Object $taxatie, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.decided(oordeel_heffingscode($taxatie, open_invoer, $onderwerp), () -> ComputeHelpers.fitTarget(new java.math.BigDecimal("1"), Integer.valueOf(0), "heffingscode", null), null);
+}
+
+rule "heffingscode"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatie : taxatie )
+    eval( ComputeHelpers.acts(oordeel_heffingscode($taxatie, open_invoer, $onderwerp)) )
+then
+    Object v = waarde_heffingscode($taxatie, open_invoer, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "heffingscode", ComputeHelpers.designate(v, "heffingscode")));
+    } else if (ComputeHelpers.isOpen(v)) {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "heffingscode", false), "heffingscode"));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "heffingscode", false), v, "heffingscode"));
+        }
+    }
+end
+
+// 25 maal zijn heffingscode
+function Object waarde_codeheffing(Object $heffingscode) {
+    return ComputeHelpers.valued(() -> ComputeHelpers.fitTarget(RegelSpraakRuntime.rsMaal(new java.math.BigDecimal("25"), ComputeHelpers.read($heffingscode)), Integer.valueOf(0), "codeheffing", null), null);
+}
+
+rule "codeheffing"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : State( attribute == ElementKey.of("vondst", "heffingscode", false), subject == $onderwerp, $heffingscode : value )
+then
+    Object v = waarde_codeheffing($heffingscode);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "codeheffing", ComputeHelpers.designate(v, "codeheffing")));
+    } else if (ComputeHelpers.isOpen(v)) {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "codeheffing", false), "codeheffing"));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "codeheffing", false), v, "codeheffing"));
+        }
+    }
+end
+
+// zijn taxatie gevuld is
+function Object oordeel_defaultsAVondstStapelheffingDefault0(Object $taxatie, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.emptyTest(ComputeHelpers.readInput($taxatie, open_invoer, $onderwerp, ElementKey.of("vondst", "taxatie", false)), Boolean.FALSE), false);
+}
+
+rule "defaults A:Vondst.stapelheffing: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $taxatie : taxatie )
+    eval( ComputeHelpers.acts(oordeel_defaultsAVondstStapelheffingDefault0($taxatie, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsAVondstStapelheffingDefault0($taxatie, open_invoer, $onderwerp))) {
+        // 0
+        Object v = new java.math.BigDecimal("0");
+        if (v != null) {
+            Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "stapelheffing");
+            if (ComputeHelpers.isEvaluationFault(passend)) {
+                insertLogical(new Fault($onderwerp, "defaults A:Vondst.stapelheffing", ComputeHelpers.designate(passend, "defaults A:Vondst.stapelheffing")));
+                insertLogical(new Decides($onderwerp, "defaults A:Vondst.stapelheffing", 0));
+            } else {
+                insertLogical(new Value($onderwerp, ElementKey.of("vondst", "stapelheffing", false), passend, "defaults A:Vondst.stapelheffing"));
+                insertLogical(new Decides($onderwerp, "defaults A:Vondst.stapelheffing", 0));
+            }
+        }
+    } else {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "stapelheffing", false), "defaults A:Vondst.stapelheffing: default 0"));
+        insertLogical(new Decides($onderwerp, "defaults A:Vondst.stapelheffing", 0, true));
+    }
+end
+
+rule "defaults A:Vondst.stapelheffing: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    not( $hoger_12 : Decides( stack == "defaults A:Vondst.stapelheffing" && index < 1, subject == $onderwerp ) )
+then
+    // 25
+    Object v = new java.math.BigDecimal("25");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "stapelheffing");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.stapelheffing", ComputeHelpers.designate(passend, "defaults A:Vondst.stapelheffing")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.stapelheffing", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "stapelheffing", false), passend, "defaults A:Vondst.stapelheffing"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.stapelheffing", 1));
+        }
+    }
+end
+
+rule "stand Vondst.heffingscode: uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $waarde : Value( attribute == ElementKey.of("vondst", "heffingscode", false), subject == $onderwerp, $v : value )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "heffingscode", false), $v));
+end
+
+rule "stand Vondst.heffingscode: open door een schrijver"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "heffingscode", false), subject == $onderwerp ) )
+    exists( $opengelaten : LeftOpen( member == ElementKey.of("vondst", "heffingscode", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "heffingscode", false), ComputeHelpers.open($onderwerp, ElementKey.of("vondst", "heffingscode", false))));
+end
+
+rule "stand Vondst.heffingscode: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $invoer : heffingscode )
+    not( $waarde : Value( attribute == ElementKey.of("vondst", "heffingscode", false), subject == $onderwerp ) )
+    not( $opengelaten : LeftOpen( member == ElementKey.of("vondst", "heffingscode", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("vondst", "heffingscode", false), $invoer));
+end
+

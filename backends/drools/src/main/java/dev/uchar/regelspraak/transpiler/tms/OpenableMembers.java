@@ -23,7 +23,9 @@ import java.util.Set;
  * with it a member can be open
  * <ul>
  *   <li>as an input that is not complete ({@link #openInput}): a member that holds one value, on the objects of a type on
- *       which no rule and no defaults group writes it, unless its declaration says that its input is complete;</li>
+ *       which nothing but an initialisation writes it, unless its declaration says that its input is complete. An
+ *       initialisation, a rule or the initialisation default of a defaults group without an exception group, is the
+ *       lowest writer of its target and makes no member derived (ch. 1.5, "The three states");</li>
  *   <li>by a writer ({@link #leftOpen}): a member a form writes that reads a member that can be open, at any depth of
  *       its condition and value ({@link ProducerConsumer#forms}).</li>
  * </ul>
@@ -117,13 +119,16 @@ public final class OpenableMembers {
         return out;
     }
 
-    /** Whether a rule or a defaults group of the document writes the member {@code name}, a characteristic where
-     *  {@code characteristic}, on the objects of {@code type}: one on {@code type} or on a type above it. */
+    /** Whether a form other than an initialisation writes the member {@code name}, a characteristic where
+     *  {@code characteristic}, on the objects of {@code type}, one on {@code type} or on a type above it: a rule other
+     *  than an initialisation, or a defaults group with a default other than its initialisation default or with an
+     *  exception group, whose members decide above the input (ch. 7.9). */
     private static boolean written(RegelSpraakModel model, List<PrioritizedDefaults> defaults, ObjectType type, String name,
                                    boolean characteristic) {
         for (ResolvedRule r : model.resolvedRules) {
             Expr target = r.target() instanceof Expr.DimensionCellRead c ? c.attribute() : r.target();
-            if (target instanceof Expr.AttributeReference a && a.objectType() != null && a.attribute() != null
+            if (r.kind() != ResolvedRule.Kind.INITIALISATIE
+                    && target instanceof Expr.AttributeReference a && a.objectType() != null && a.attribute() != null
                     && (r.kind() == ResolvedRule.Kind.KENMERKTOEKENNING) == characteristic
                     && Namen.norm(a.attribute()).equals(Namen.norm(name)) && type.isA(a.objectType()))
                 return true;
@@ -131,7 +136,8 @@ public final class OpenableMembers {
         for (PrioritizedDefaults p : defaults) {
             ObjectType subject = model.objectTypeByName(p.subject());
             if (subject != null && p.target() != null && p.isCharacteristic() == characteristic
-                    && Namen.norm(p.target()).equals(Namen.norm(name)) && type.isA(subject))
+                    && Namen.norm(p.target()).equals(Namen.norm(name)) && type.isA(subject)
+                    && p.defaults().stream().anyMatch(d -> !d.initialisation() || d.exceptions() != null))
                 return true;
         }
         return false;

@@ -75,12 +75,9 @@
       "attribute": "drukgewicht"
     },
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "J1",
-      "attribute": "leegtal",
-      "value": {
-        "number": "2"
-      }
+      "attribute": "leegtal"
     }
   ]
 }

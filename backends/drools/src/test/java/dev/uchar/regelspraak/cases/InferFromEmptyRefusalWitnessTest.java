@@ -84,7 +84,7 @@ class InferFromEmptyRefusalWitnessTest {
     }
 
     /** A declared-unordered group of two defaults groups of which one has an initialisation is the one defaults group the
-     *  backend does not carry: whether the initialisation closes over the open default of its own group is asked per
+     *  backend does not carry: whether the initialisation is at its turn below the defaults of its own group is asked per
      *  group. Without it the same group is carried. */
     @Test void groups_without_an_order_of_which_one_has_an_initialisation_are_refused() throws Exception {
         Path path = Path.of("src", "test", "resources", "open-values", "stack-unordered", "ir.json");

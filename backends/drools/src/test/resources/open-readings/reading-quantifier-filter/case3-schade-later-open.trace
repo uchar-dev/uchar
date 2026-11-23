@@ -1,6 +1,6 @@
 reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" true reached; "V3" true reached]
 reading /rules/rules/0/versions/0 "J1" HOLDS
-reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold false closure contributors ["V3" false reached]
+reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold undetermined open "V3" "schade" contributors ["V3" false reached]
 reading /rules/rules/1/versions/0 "J1" OPEN
 reading /rules/rules/10/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" true reached; "V3" true reached]
 reading /rules/rules/10/versions/0 "J1" HOLDS

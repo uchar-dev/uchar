@@ -15,7 +15,7 @@ import java.util.function.Supplier;
 /**
  * The third rendering of a planned condition or value ({@link Term}), beside {@link ClosureRendering} and
  * {@code DrlRendering}: an evaluation over a rule's value array that records, per node of the term, whether the
- * evaluation reached it and what it found, a value, a truth a closure decided, an open read that broke it off or an
+ * evaluation reached it and what it found, a value, an open read that broke it off or left it undetermined, or an
  * evaluation fault ({@code TmsTranspiler#readingsOf}, card
  * fixpoint-readings). It evaluates as the rendering into closures does, node for node: the same functions of the plan
  * ({@link ClosureRendering#implementation}), the same reading of a composite ({@link Composite}), the same order
@@ -29,15 +29,13 @@ final class RecordingRendering {
 
     /** What the evaluation found at one node it reached: its value, or the evaluation fault it raised or passed on, or
      *  neither where a read of a leeg binder ended it (ch. 10.6, clause 2); and in a document with open values
-     *  {@code judgement}, where what it found does not stand for another form (ch. 1.5): undetermined, with the open read
-     *  that left it so, at a node an open read broke off and at a condition that is undetermined for the form itself, which
-     *  have no value; or the closure over that read that decided a condition, whose value is its truth for the form
-     *  itself. */
+     *  {@code judgement} where it is undetermined (ch. 1.5), with the open read that left it so, at a node an open read
+     *  broke off and at a condition that is undetermined, which have no value. */
     record Outcome(Object value, RuntimeException fault, Undetermined judgement) {
 
-        /** Whether the node is undetermined for the form itself. */
+        /** Whether the node is undetermined. */
         boolean undetermined() {
-            return judgement != null && judgement.own() == null;
+            return judgement != null;
         }
     }
 
@@ -48,8 +46,8 @@ final class RecordingRendering {
         return outcomes.get(t);
     }
 
-    /** The value of {@code t} over {@code w}, every node it reaches recorded; an evaluation fault, an open read and a
-     *  judgement that does not stand for another form pass on, recorded at every node they pass. */
+    /** The value of {@code t} over {@code w}, every node it reaches recorded; an evaluation fault, an open read and an
+     *  undetermined judgement pass on, recorded at every node they pass. */
     Object value(Term t, Object[] w) {
         Object v;
         try {
@@ -61,7 +59,7 @@ final class RecordingRendering {
             brokenOff(t, e.member());
             throw e;
         } catch (Undetermined e) {
-            outcomes.put(t, new Outcome(e.own(), null, e));
+            outcomes.put(t, new Outcome(null, null, e));
             throw e;
         } catch (RuntimeException e) {
             if (ComputeHelpers.isEvaluationFault(e)) outcomes.put(t, new Outcome(null, e, null));
@@ -73,7 +71,7 @@ final class RecordingRendering {
 
     /** Records that {@code t} is undetermined by the open read of {@code member}. */
     private void brokenOff(Term t, OpenMember member) {
-        outcomes.put(t, new Outcome(null, null, new Undetermined(null, member)));
+        outcomes.put(t, new Outcome(null, null, new Undetermined(member)));
     }
 
     /** Whether {@code t}, a condition, holds over {@code w}. */
@@ -93,8 +91,6 @@ final class RecordingRendering {
             case Term.Let l -> let(l, w);
             case Term.Choice k -> test(k.condition(), w) ? value(k.then(), w) : value(k.otherwise(), w);
             case Term.Deferred x -> (Callable<Object>) () -> value(x.value(), w);
-            case Term.ClosureOverOpen o -> ComputeHelpers.emptyTestOverOpen((Callable<?>) evaluate(o.value(), w), o.empty(),
-                    o.depositFlag() < 0 ? null : w[o.depositFlag()]);
             case Term.Call a -> {
                 Object[] x = new Object[a.arguments().size()];
                 for (int i = 0; i < x.length; i++) x[i] = value(a.arguments().get(i), w);

@@ -74,8 +74,8 @@ public sealed interface Consequence {
      * it neither decides nor fills nothing {@code opens}, on the same object. Where {@code condition} is not null, the
      * condition of the writer can be undetermined: the test of the rule asked it whether the writer acts
      * ({@link TestItem.Role#ACTS}), and it is evaluated again over the bound values at {@code slots} of a value array of
-     * {@code size}, without its fault where {@code withoutFault}; the writer decides where it is true for the form itself,
-     * and is open where not, since that the writer fills nothing is where the test does not hold. Where the value of
+     * {@code size}, without its fault where {@code withoutFault}; the writer decides where it is established true, and is
+     * open where not, since that the writer fills nothing is where the test does not hold. Where the value of
      * {@code decides} reads an open value, the writer is open as well, and what that evaluation deposited is dropped.
      */
     record Writer(Term condition, boolean withoutFault, List<Integer> slots, int size, Consequence decides,
@@ -373,9 +373,9 @@ public sealed interface Consequence {
     /**
      * The contribution {@code contributes} of a member to a fold whose filter, the condition {@code filter}, can
      * be undetermined (RUNTIME-SEMANTICS ch. 1.5): the test of the rule asked whether the filter is
-     * not false for another form ({@link TestItem.Role#ACTS}), and the consequence evaluates it again over the bound values
+     * not established false ({@link TestItem.Role#ACTS}), and the consequence evaluates it again over the bound values
      * of {@code contributes} and inserts what the member gives its fold by that judgement: to a fold over a set the
-     * contribution where the filter is true for the form itself, and a {@code FoldOpen} where it does not stand for another,
+     * contribution where the filter is established true, and a {@code FoldOpen} where it is undetermined,
      * made by the route {@link Route#CONTRIBUTED}; to a quantifier fold its test ({@link Input.MemberTest}) with the
      * judgement, made by the route {@link Route#FILTERED}.
      */
@@ -429,8 +429,8 @@ public sealed interface Consequence {
         record Verdict(Term matrix) implements Input {}
 
         /** The judgement of the matrix of a quantifier fold for the member, the condition {@code matrix}, which cannot fault
-         *  or deposit and can be undetermined (RUNTIME-SEMANTICS ch. 1.5): the verdict where it stands for another form, and
-         *  else a {@code FoldOpen}, made by the route {@link Route#JUDGED}. */
+         *  or deposit and can be undetermined (RUNTIME-SEMANTICS ch. 1.5): the verdict where it is established, and else a
+         *  {@code FoldOpen}, made by the route {@link Route#JUDGED}. */
         record Judged(Term matrix) implements Input {}
 
         /** The test of the member by the matrix of a quantifier fold, the condition {@code matrix}, which can fault or

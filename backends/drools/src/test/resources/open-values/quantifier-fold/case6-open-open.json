@@ -64,7 +64,7 @@
       "characteristic": "eenling"
     },
     {
-      "kind": "characteristicPresent",
+      "kind": "characteristicOpen",
       "label": "J1",
       "characteristic": "ongewogen"
     },

@@ -2141,7 +2141,7 @@ public final class TmsTranspiler {
             contributionRules(key, name, Expr.FunctionKind.SOM, reads.subject, elem, range, 0,
                     null, a, null, rules, readings, true);
             return new Fold(key, List.copyOf(rules), List.copyOf(readings), false, false, false, false, false, true,
-                    false, false);
+                    false);
         });
         int[] i = reads.fold(v, Accumulation.Kind.LIST);
         Term fallback = constant(null);
@@ -2378,6 +2378,10 @@ public final class TmsTranspiler {
      * WF-079 reads it: two initialisations on one type, or on a type and its ancestor, write one instance, and two on
      * sister subtypes never do (ch. 7.10).
      *
+     * <p>In a document with {@code inferFromEmpty: false} it is the lowest writer of its target (ch. 1.5, "An
+     * initialisation"): it is not at its turn where its target is open input ({@link #notOpenInput}) or another writer
+     * leaves the target open ({@link LeftOpen}), so that the target stays open there.
+     *
      * <p>Beside another writer of its target an initialisation is the lowest default (ch. 7.7), and only the default that
      * decides is evaluated (ch. 7.1). This rule is evaluated as soon as what it reads stands, also where the other writer
      * displaces it later. What it faulted or deposited then is logical and goes when the other writer's value matches the
@@ -2403,6 +2407,13 @@ public final class TmsTranspiler {
             Alpha another = new Alpha(id("andere-schrijver"), List.of(ofTarget, ofOther));
             out.add(new Not(new FactPattern(Value.class, "$andere_schrijver", List.of(another),
                     List.of(new Join(id("andere-schrijver-onderwerp"), "subject", SUBJECT)), List.of())));
+            out.addAll(notOpenInput(reads, member));
+            if (openable.leftOpen(key)) {
+                Alpha leaves = new Alpha(id("andere-opengelaten"), List.of(
+                        new Alpha.FieldTest("member", Alpha.Comparator.GELIJK, key), ofOther));
+                out.add(new Not(new FactPattern(LeftOpen.class, "$andere_opengelaten", List.of(leaves),
+                        List.of(new Join(id("andere-opengelaten-onderwerp"), "subject", SUBJECT)), List.of())));
+            }
             if (member.cell() != null) {
                 int subjectType = reads.member();
                 out.add(new TestItem(id("doel-leeg-in-de-invoer"), TestItem.Role.VORM,
@@ -2411,6 +2422,26 @@ public final class TmsTranspiler {
             }
             return out;
         }, absorbed);
+    }
+
+    /** The test that {@code member}, the target of an initialisation, is no open input on the subject of {@code reads}
+     *  (RUNTIME-SEMANTICS ch. 1.5, "An initialisation"): where the member can be open as an input that is not complete
+     *  ({@link OpenableMembers#openInput}), the initialisation is not at its turn where the session's {@link OpenInput}
+     *  names it, and the input, which leaves the target empty, does not stand to fill nothing; none where it cannot. */
+    private List<LhsItem> notOpenInput(Reads reads, Member member) {
+        if (!openable.openInput(member.key())) return List.of();
+        int subject = reads.member(), open = reads.openInput();
+        Term incomplete = new Term.Call(StaticFunction.INCOMPLETE_INPUT, List.of(new Term.SlotValue(open, null),
+                new Term.SlotValue(subject, null), constant(member.key())), null);
+        return List.of(new TestItem(id("doel-geen-open-invoer"), TestItem.Role.VORM,
+                new Term.Call(StaticFunction.NIET, List.of(incomplete), null), -1, List.of(open, subject), reads.size()));
+    }
+
+    /** {@code a} followed by {@code b}, as a list of its own. */
+    private static List<LhsItem> concat(List<LhsItem> a, List<LhsItem> b) {
+        List<LhsItem> out = new ArrayList<>(a);
+        out.addAll(b);
+        return out;
     }
 
     /** Refuses a second initialisation of {@code member} on an instance the initialisation on {@code target} writes
@@ -2714,8 +2745,8 @@ public final class TmsTranspiler {
      * The consequence of a writer, a rule or a default, whose rule asks {@code testTerm}, its condition over the values at
      * {@code read} ending as {@code ends} says: {@code decides}, which reads the values at {@code use}; and where the
      * condition can be undetermined, that consequence or {@code opens}, what the writer inserts where it leaves its target
-     * open, as the condition holds for the form itself or not (RUNTIME-SEMANTICS ch. 1.5, "A rule", "A stack"). Where the
-     * condition fails for another form, the rule does not fire ({@link Asked#ACTS}): it stands that the writer fills
+     * open, as the condition is established true or undetermined (RUNTIME-SEMANTICS ch. 1.5, "A rule", "A stack"). Where
+     * the condition is established false, the rule does not fire ({@link Asked#ACTS}): it stands that the writer fills
      * nothing. Where the value can read an open value ({@code openValue}), {@code opens} as well where it does.
      */
     private static Consequence writer(Ends ends, Term testTerm, Set<Integer> read, boolean openValue, Set<Integer> use,
@@ -2733,22 +2764,20 @@ public final class TmsTranspiler {
     }
 
     /** How the evaluation of a condition or a value can end beside its outcome: in an evaluation fault, and in an open
-     *  read, so that a condition's judgement can be undetermined (RUNTIME-SEMANTICS ch. 1.5); {@code closes} where it can
-     *  apply a closure to an open value, so that its outcome can stand for the form itself alone. */
-    private record Ends(boolean fault, boolean open, boolean closes) {}
+     *  read, so that a condition's judgement can be undetermined (RUNTIME-SEMANTICS ch. 1.5). */
+    private record Ends(boolean fault, boolean open) {}
 
     /** A part of a condition as a term, and whether it reads a member that can be open ({@link Reads#opened}). */
     private record Opened(Term term, boolean open) {}
 
     /**
      * What the test of a rule asks of a condition of the IR (RUNTIME-SEMANTICS ch. 1.5): the outcomes of its form on
-     * which the rule fires, or what the evaluation does beside them. A form decides where its condition holds for the
-     * form itself ({@code DECIDES}). A writer acts ({@code ACTS}) where it decides and where the condition neither holds
-     * for the form itself nor fails for another, so that the writer leaves its target open; which of the two, its
-     * consequence says ({@link #writer}). Where the condition fails for another form, the form fills nothing, and its
-     * rule does not fire; a member of a fold acts on the filter in the same way. Beside these the condition can fault
-     * ({@code FAULTS}) and deposit ({@code DEPOSITS}), and the filter of a fold can fault or be undetermined for the form
-     * itself ({@code BREAKS_OFF}). {@link Reads#conditionTest} turns each into a test.
+     * which the rule fires, or what the evaluation does beside them. A form decides where its condition is established
+     * true ({@code DECIDES}). A writer acts ({@code ACTS}) where it decides and where the condition is undetermined, so that
+     * the writer leaves its target open; which of the two, its consequence says ({@link #writer}). Where the condition is
+     * established false, the form fills nothing, and its rule does not fire; a member of a fold acts on the filter in the
+     * same way. Beside these the condition can fault ({@code FAULTS}) and deposit ({@code DEPOSITS}), and the filter of a
+     * fold can fault or be undetermined ({@code BREAKS_OFF}). {@link Reads#conditionTest} turns each into a test.
      */
     private enum Asked { DECIDES, ACTS, FAULTS, BREAKS_OFF, DEPOSITS }
 
@@ -2806,10 +2835,9 @@ public final class TmsTranspiler {
         Noted noted = endReading();
         Ends ends = reads.ends();
         reads.stop();
-        // where the assertion can be undetermined, its negation keeps the judgement, and the rule reports where the
-        // assertion fails for the form itself (RUNTIME-SEMANTICS ch. 1.5)
-        Term violated = new Term.Call(ends.open() ? StaticFunction.NEGATED_OVER_OPEN : StaticFunction.NIET,
-                List.of(ends.open() ? new Term.Deferred(holds, null) : holds), source(c.assertion().source()));
+        // where the assertion can be undetermined, so is its negation, and the rule reports only where the assertion is
+        // established false (RUNTIME-SEMANTICS ch. 1.5)
+        Term violated = new Term.Call(StaticFunction.NIET, List.of(holds), source(c.assertion().source()));
         List<LhsItem> items = reads.plan(Asked.DECIDES, ends, violated, read);
         String name = c.name();
         reads.recorder();
@@ -4070,8 +4098,8 @@ public final class TmsTranspiler {
      * which displace nothing: the session says which default decided ({@link #decisionsOf}; card defaults-decider).
      *
      * <p>A default that can be open (RUNTIME-SEMANTICS ch. 1.5, "A stack") inserts its open {@link Decides}, which
-     * displaces the lower defaults all the same, and the {@link LeftOpen} of the target, which the target's standing reads
-     * where nothing decides; the initialisation asks only that no default above it decides ({@link #closesOverOpen}).
+     * displaces the lower defaults all the same, the initialisation default among them, and the {@link LeftOpen} of the
+     * target, which the target's standing reads where nothing decides.
      */
     private List<RulePlan> simpleForm(StackBuild b, List<Node> chain) {
         List<Node> deciding = chain.stream().filter(k -> decidesSelf(b, k.d())).toList();
@@ -4090,18 +4118,11 @@ public final class TmsTranspiler {
             else if (Boolean.TRUE.equals(k.d().decision())) facts.add(new Consequence.StackFact.Characteristic(key));
             facts.add(new Consequence.StackFact.Decides(name, i));
             out.addAll(ownRule(b, k, RuleOrigin.Role.OWN, name + ": default " + k.label(),
-                    () -> higher ? List.of(noDecides(name, i, closesOverOpen(b, k))) : List.of(),
+                    () -> higher ? List.of(noDecides(name, i)) : List.of(),
                     facts, leavesOpen(new Consequence.StackFact.LeftOpen(key, name + ": default " + k.label()),
                             new Consequence.StackFact.OpenDefault(name, i))));
         }
         return out;
-    }
-
-    /** Whether the default {@code k} waits only on the defaults above it that do not stand open: an initialisation, which
-     *  closes over a default above it that is open (RUNTIME-SEMANTICS ch. 1.5, "The initialisation of a stack"), in a chain
-     *  with a default that can be. Every other default waits on every one above it. */
-    private static boolean closesOverOpen(StackBuild b, Node k) {
-        return k.d().initialisation() && b.openChains.contains(k.chain());
     }
 
     /**
@@ -4144,7 +4165,7 @@ public final class TmsTranspiler {
             int id = k.chain(), i = k.position();
             Supplier<List<LhsItem>> notHigher = () -> {
                 List<LhsItem> guard = new ArrayList<>(ancestors.get());
-                if (i > 0) guard.add(noOutcome(name, id, i, closesOverOpen(b, k)));
+                if (i > 0) guard.add(noOutcome(name, id, i));
                 return guard;
             };
             Consequence.StackFact decides = new Consequence.StackFact.Outcome(name, id, i, Outcome.Kind.DECIDED);
@@ -4316,28 +4337,24 @@ public final class TmsTranspiler {
         return new FactPattern(Outcome.class, variable, List.of(alpha), List.of(onSubject), beta, List.of());
     }
 
-    /** {@code not Uitkomst} over the positions above {@code position} in chain {@code chain}, for the subject; where
-     *  {@code settled}, over the outcomes that are not open. */
-    private LhsItem noOutcome(String name, int chain, int position, boolean settled) {
+    /** {@code not Uitkomst} over the positions above {@code position} in chain {@code chain}, for the subject. */
+    private LhsItem noOutcome(String name, int chain, int position) {
         String variable = "$hoger_" + idSeq;
         List<Alpha.FieldTest> tests = new ArrayList<>(List.of(
                 new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, name),
                 new Alpha.FieldTest("chain", Alpha.Comparator.GELIJK, chain),
                 new Alpha.FieldTest("position", Alpha.Comparator.UNDER, position)));
-        if (settled) tests.add(new Alpha.FieldTest("kind", Alpha.Comparator.NOT_EQUAL, Outcome.Kind.OPEN));
         Alpha higher = new Alpha(id("hoger-uitkomst"), tests);
         return new Not(new FactPattern(Outcome.class, variable, List.of(higher),
                 List.of(new Join(id("hoger-uitkomst-onderwerp"), "subject", SUBJECT)), List.of()));
     }
 
-    /** {@code not Beslist} over the indices above {@code index} in the stack, for the subject; where {@code settled}, over
-     *  the defaults that are not open. */
-    private LhsItem noDecides(String name, int index, boolean settled) {
+    /** {@code not Beslist} over the indices above {@code index} in the stack, for the subject. */
+    private LhsItem noDecides(String name, int index) {
         String variable = "$hoger_" + idSeq;
         List<Alpha.FieldTest> tests = new ArrayList<>(List.of(
                 new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, name),
                 new Alpha.FieldTest("index", Alpha.Comparator.UNDER, index)));
-        if (settled) tests.add(new Alpha.FieldTest("open", Alpha.Comparator.GELIJK, Boolean.FALSE));
         Alpha higher = new Alpha(id("hoger-beslist"), tests);
         return new Not(new FactPattern(Decides.class, variable, List.of(higher),
                 List.of(new Join(id("hoger-beslist-onderwerp"), "subject", SUBJECT)), List.of()));
@@ -4431,6 +4448,9 @@ public final class TmsTranspiler {
                     facts, Consequence.Insertion.LOGICAL);
         }
         boolean open = ends.open() || openValue;
+        // the initialisation default is not at its turn where its target is open input (RUNTIME-SEMANTICS ch. 1.5)
+        List<LhsItem> notOpen = d.initialisation() ? notOpenInput(reads, b.member) : List.of();
+        items.addAll(notOpen);
         b.readings.add(reads);
         b.defaultOf.put(reads, d);
         List<RulePlan> out = new ArrayList<>();
@@ -4440,7 +4460,8 @@ public final class TmsTranspiler {
         // Beside that reading rule, where control facts guard the turn, a speculative one without them reads the
         // default where it is displaced as well (ch. 5.12): the turn stays with truth maintenance, which keeps the
         // reading of the turn where the default is at its turn. The input test of an initialisation default is on the
-        // subject pattern, in both: a target the input fills leaves the default without a reading.
+        // subject pattern, in both, and so is the test that its target is no open input: a target the input fills or
+        // leaves open leaves the default without a reading.
         // A default without a justification, and an ordinary rule without a condition that the fold of ch. 7.10 took in
         // (its justification the fold's vacuous one, which stands nowhere in the document), has no condition to read:
         // on an attribute it has the reading of its consequence, which holds where it is at its turn; a characteristic
@@ -4448,11 +4469,12 @@ public final class TmsTranspiler {
         ResolvedRule madeFrom = stacks.ruleOf(d);
         boolean unconditional = testTerm == null || (madeFrom != null && madeFrom.condition() == null);
         if (noted != null && !(unconditional && b.characteristic))
-            readingRule(ruleName, pointerOf(d), reads, reads.readingPlan(control, false),
-                    control.isEmpty() ? null : reads.readingPlan(List.of(), false), unconditional ? null : testTerm,
+            readingRule(ruleName, pointerOf(d), reads, reads.readingPlan(concat(control, notOpen), false),
+                    control.isEmpty() ? null : reads.readingPlan(notOpen, false), unconditional ? null : testTerm,
                     null, value, unconditional ? null : d.condition(), b.characteristic ? null : d.consequence(), noted,
                     k.validity(), !control.isEmpty() || d.initialisation(), null, null);
-        out.addAll(conditionSideRules(ends, ruleName, fresh, d.condition(), name, l -> guard.get(), b.targetForm,
+        out.addAll(conditionSideRules(ends, ruleName, fresh, d.condition(), name,
+                l -> concat(guard.get(), d.initialisation() ? notOpenInput(l, b.member) : List.of()), b.targetForm,
                 l -> {
                     List<LhsItem> decided = new ArrayList<>(guard.get());
                     decided.add(decidedBy(facts, open));
@@ -4805,12 +4827,11 @@ public final class TmsTranspiler {
      * its speculative reading rule, the same left-hand side without those control facts ({@link Reading.Kind}), null
      * for every other form; and for a default of a stack on a timeline target, which decides per day, the term of the
      * days of its turn ({@code turn}) and, for its initialisation default, of the days on which the input leaves the
-     * target empty ({@code inputDays}), each null for every other form (RUNTIME-SEMANTICS ch. 5.12, 7.11); and whether the
-     * condition is the assertion of a consistency ({@code assertion}), which writes nothing.
+     * target empty ({@code inputDays}), each null for every other form (RUNTIME-SEMANTICS ch. 5.12, 7.11).
      */
     record ReadingRule(RulePlan plan, RulePlan speculative, String ownRule, String pointer, Validity validity,
                        boolean guarded, Term condition, Term periods, Term value, List<Site> sites, Term turn,
-                       Term inputDays, boolean assertion) {
+                       Term inputDays) {
 
         /** The subject pattern of the reading rule. */
         Subject subject() {
@@ -4900,7 +4921,7 @@ public final class TmsTranspiler {
                     n instanceof Condition.QuantifierFold q ? q : null, derived, object == null ? -1 : object));
         }
         readingRules.add(new ReadingRule(plan, speculative, ruleName, pointer, validity, guarded, condition, periods, value,
-                sites, turn, inputDays, pointer.startsWith("/rules/consistencies/")));
+                sites, turn, inputDays));
     }
 
     /** The reading rule ({@link #readingRule}) of a form whose reading is its condition alone: {@code condition} the
@@ -5713,8 +5734,6 @@ public final class TmsTranspiler {
                 yield first != null ? first
                         : a.function().canFail() || a.function().readsOpen() ? Boolean.FALSE : null;
             }
-            // a test on leeg and gevuld is a condition, as a composite is
-            case Term.ClosureOverOpen o -> Boolean.FALSE;
             // the function that takes it evaluates it on a condition, or catches what it raises
             case Term.Deferred x -> Boolean.FALSE;
             case Term.Restate h -> readsFirst(h.term(), slot);
@@ -5831,11 +5850,10 @@ public final class TmsTranspiler {
      *  ({@code filterOpen}), in which cases its contributions carry a {@link MemberTest} ({@link #quantifierFold}); and for a
      *  per-element fold over an attribute on a timeline, that a member's value can fault, in which case the rule that reads it binds its
      *  {@link MemberFault} facts as well ({@link #memberFaultRule}); and whether a member can leave it open what the member
-     *  gives the fold ({@code canBeOpen}, RUNTIME-SEMANTICS ch. 1.5; {@link #listsOpen}), and whether a closure can decide
-     *  what a member gives it ({@code closes}). */
+     *  gives the fold ({@code canBeOpen}, RUNTIME-SEMANTICS ch. 1.5; {@link #listsOpen}). */
     record Fold(String key, List<RulePlan> rules, List<Reads> readings, boolean canFail,
                 boolean deposits, boolean memberCanFail, boolean memberDeposits, boolean filterOpen, boolean valueCanFail,
-                boolean canBeOpen, boolean closes) {
+                boolean canBeOpen) {
         /** Whether the rule that reads the fold reads its contributors in order: a quantifier fold whose matrix can
          *  fault or deposit, or whose filter can be undetermined ({@link MemberTest}). */
         boolean tested() {
@@ -6058,8 +6076,8 @@ public final class TmsTranspiler {
      * the member in the same way: the reference interpreter evaluates the filter with this rule's collector, so the
      * deposit is this rule's, on its subject, where its evaluation reaches the fold ({@link #readFold}).
      *
-     * <p>A member that can be open to the fold, its filter undetermined or its value open, is a {@link FoldOpen}, and one
-     * that a closure decided as well (RUNTIME-SEMANTICS ch. 1.5, "A fold over a set", "A closure inside a value"). This rule
+     * <p>A member that can be open to the fold, its filter undetermined or its value open, a filled-value count's among
+     * them, is a {@link FoldOpen} (RUNTIME-SEMANTICS ch. 1.5, "A fold over a set"). This rule
      * lists those facts, and the fold's value reads the list with the count, after the faults of the filter and before the
      * fallback ({@link Reads#standingCount}).
      *
@@ -6130,7 +6148,7 @@ public final class TmsTranspiler {
                     f.filter(), member, labels, rules, readings, false);
             refuseMixedDeposits(name, Collections.singletonList(f.filter()));
             return new Fold(key, List.copyOf(rules), List.copyOf(readings), ends.fault(), deposits(f.filter()), false, false,
-                    false, timelineMember, ends.open(), ends.closes());
+                    false, timelineMember, ends.open());
         });
         Accumulation.Kind function = switch (kind) {
             case SOM, TOTAAL -> Accumulation.Kind.SUM;
@@ -6636,7 +6654,7 @@ public final class TmsTranspiler {
             List<RulePlan> rules = new ArrayList<>();
             List<Reads> readings = new ArrayList<>();
             boolean deposits = false;
-            Ends ends = new Ends(false, false, false);
+            Ends ends = new Ends(false, false);
             List<Condition> filters = new ArrayList<>();
             List<Integer> undetermined = new ArrayList<>();
             for (int k = 0; k < u.branches().size(); k++) {
@@ -6646,7 +6664,7 @@ public final class TmsTranspiler {
                 Ends own = contributionRules(key, name + ", selectie " + k, Expr.FunctionKind.AANTAL, subject,
                         t.elementType(), oneStepRange(t.sourceRole(), subject, t.elementType(), snippet(t.source())), k,
                         t.filter(), null, null, rules, readings, false);
-                ends = new Ends(ends.fault() || own.fault(), ends.open() || own.open(), ends.closes() || own.closes());
+                ends = new Ends(ends.fault() || own.fault(), ends.open() || own.open());
                 deposits |= deposits(t.filter());
                 filters.add(t.filter());
                 if (own.open() && !own.fault()) undetermined.add(k);
@@ -6661,7 +6679,7 @@ public final class TmsTranspiler {
             }
             refuseMixedDeposits(name, filters);
             return new Fold(key, List.copyOf(rules), List.copyOf(readings), ends.fault(), deposits, false, false, false, false,
-                    ends.open(), ends.closes());
+                    ends.open());
         });
     }
 
@@ -6676,8 +6694,8 @@ public final class TmsTranspiler {
      * ({@link #filterDepositRule}); {@code selection} is the number of the selection of an instance-set union, 0 for any
      * other fold. Where {@code whole}, the fold is the sum per period of RUNTIME-SEMANTICS ch. 3.5 and a member's value is
      * its whole timeline ({@link #periodSum}). The rules go into {@code out} and their reads into {@code readings}, to be
-     * registered with the form; returns whether the filter can fault, whether the member can be open to the fold, its filter
-     * undetermined or its value open, and whether a closure can decide it (RUNTIME-SEMANTICS ch. 1.5, "A fold over a set").
+     * registered with the form; returns whether the filter can fault, and whether the member can be open to the fold, its
+     * filter undetermined or its value open (RUNTIME-SEMANTICS ch. 1.5, "A fold over a set").
      * Such a member inserts its {@link FoldOpen} in the same rule, beside or in place of its contribution, in a build with
      * readings with its place in the order of the fold, which that rule then binds as the filter fault rule does. A fold in
      * the filter is read as any rule reads one, on the member.
@@ -6746,8 +6764,7 @@ public final class TmsTranspiler {
                 elem, range, selection, filter, memberValue, readings::add, MemberFaultKind.OPEN_SEGMENT));
         if (deposits(filter)) out.add(filterDepositRule(key, formName + ": filterdeponering in " + name, subject,
                 elem, range, filter, readings::add));
-        return new Ends(ends.fault(), ends.open() || openValue,
-                ends.closes() || openValue && kind == Expr.FunctionKind.AANTAL_GEVULDE);
+        return new Ends(ends.fault(), ends.open() || openValue);
     }
 
     /** The place of a member that can leave its fold open, in the selection {@code selection}, at the steps {@code steps}
@@ -7207,7 +7224,7 @@ public final class TmsTranspiler {
             case Condition.CharacteristicCheck k -> characteristicCheck(k, reads);
             case Condition.IdentityCheck i -> identityCheck(i, reads);
             case Condition.Compound s -> compound(s, reads);
-            case Condition.Comparison v -> atom(() -> comparison(v, reads), reads);
+            case Condition.Comparison v -> comparison(v, reads);
             case Condition.Predicate p -> predicate(p, reads);
             case Condition.TimeWindow p -> timeWindow(p, reads);
             case Condition.QuantifierFold q -> quantifierFold(q, reads);
@@ -7225,17 +7242,6 @@ public final class TmsTranspiler {
         };
         note(c, t);
         return t;
-    }
-
-    /** The atomic condition {@code compile} gives, over values: where a fold inside it can apply a closure to an open value,
-     *  its judgement is that of a boundary of its own (RUNTIME-SEMANTICS ch. 1.5, "A closure inside a value"). */
-    private static Term atom(Supplier<Term> compile, Reads reads) {
-        boolean outer = reads.closes;
-        reads.closes = false;
-        Term t = compile.get();
-        boolean closes = reads.closes;
-        reads.closes |= outer;
-        return closes ? new Term.Call(StaticFunction.ATOM, List.of(new Term.Deferred(t, null)), t.source()) : t;
     }
 
     /** The identity check (IR-SPEC ch. 4.5, WF-122; RUNTIME-SEMANTICS ch. 3.4a): whether the member, the subject of the
@@ -7601,13 +7607,13 @@ public final class TmsTranspiler {
             Term count = new Term.SlotValue(i[0], null), holding = new Term.SlotValue(i[1], null);
             if (!v.canBeOpen()) return readFold(v, i, reads, new Term.Call(StaticFunction.QUANTIFIER_VERDICT,
                     List.of(count, holding, constant(kw), constant(threshold)), source), source);
-            reads.markOpen(v.closes());
+            reads.markOpen();
             return readFold(v, i, reads, new Term.Call(StaticFunction.QUANTIFIER_VERDICT_OVER_OPEN, List.of(count, holding,
                     new Term.SlotValue(i[5], null), constant(kw), constant(threshold)), source), source);
         }
         int[] i = reads.fold(v, Accumulation.Kind.LIST);
         if (v.memberCanFail()) reads.markFail();
-        if (v.canBeOpen()) reads.markOpen(v.closes());
+        if (v.canBeOpen()) reads.markOpen();
         int depositFlag = v.memberDeposits() ? reads.depositFlag() : -1;
         return readFold(v, i, reads, new Term.QuantifierRead(StaticFunction.QUANTIFIER_READ, new Term.SlotValue(i[0], null),
                 new Term.SlotValue(i[1], null), kw, threshold, depositFlag, source), source);
@@ -7629,7 +7635,7 @@ public final class TmsTranspiler {
      * once, at its first route (RUNTIME-SEMANTICS ch. 3.4b, 5.11): that shape is refused. A member on which the matrix
      * does not stand inserts a {@link FoldOpen} in place of its contribution, or where the matrix can fault or deposit, a
      * {@link MemberTest} of how it ended (ch. 1.5, "A quantifier fold"). Where the filter can be undetermined, every member
-     * on which it is not false for another form inserts its {@link MemberTest} with the judgement of the filter
+     * on which it is not false inserts its {@link MemberTest} with the judgement of the filter
      * ({@link Consequence.FilteredContribution}); a matrix that can neither fault nor deposit shows no order there but to a
      * reading, so its place is bound in a build with readings alone.
      */
@@ -7697,8 +7703,7 @@ public final class TmsTranspiler {
                 subject, elem, range, kv.filter(), readings::add));
         refuseMixedDeposits(name, Collections.singletonList(kv.filter()));
         return new Fold(key, List.copyOf(rules), List.copyOf(readings), filterEnds.fault(), filterDeposits, memberCanFail,
-                memberDeposits, filterEnds.open(), false, filterEnds.open() || matrixEnds.open(),
-                filterEnds.closes() || matrixEnds.closes());
+                memberDeposits, filterEnds.open(), false, filterEnds.open() || matrixEnds.open());
     }
 
     /**
@@ -7781,18 +7786,13 @@ public final class TmsTranspiler {
         }
         switch (p.kind()) {
             case LEEG, GEVULD -> {
-                Opened operand = reads.opened(() -> value(p.operand(), reads));
-                boolean empty = p.kind() == Condition.PredicateKind.LEEG;
-                // over an operand whose evaluation reads an open value the test is a closure (RUNTIME-SEMANTICS ch. 1.5)
-                reads.closes |= operand.open();
-                return operand.open()
-                        ? new Term.ClosureOverOpen(new Term.Deferred(operand.term(), null), empty, reads.depositFlagSlot(),
-                                source(p.source()))
-                        : new Term.Call(StaticFunction.EMPTY_TEST, List.of(operand.term(), constant(empty)),
-                                source(p.source()));
+                // over an open value the test is undetermined, as every atomic condition that reads one is
+                // (RUNTIME-SEMANTICS ch. 1.5, "The test on leeg and gevuld")
+                return new Term.Call(StaticFunction.EMPTY_TEST, List.of(value(p.operand(), reads),
+                        constant(p.kind() == Condition.PredicateKind.LEEG)), source(p.source()));
             }
             case NUMERIEK_MET_EXACT -> {
-                return atom(() -> digitTrial(p, reads), reads);
+                return digitTrial(p, reads);
             }
             // a day kind is consulted as a classifier of a bare date before the rule graph, never as a read inside the
             // fixpoint (ch. 5.4); inside a day-kind definition the test is the definition's own (dagsoortpredikaat)
@@ -7867,9 +7867,9 @@ public final class TmsTranspiler {
         private final Set<String> channelNames = new LinkedHashSet<>();
         /** The indices the expression being compiled reads, or null outside such a compilation. */
         private Set<Integer> use;
-        /** Whether an expression compiled since the last {@link #follow} can raise an evaluation fault, whether it
-         *  reads a member that can be open ({@link OpenableMembers}), and whether it can apply a closure to one. */
-        private boolean fail, open, closes;
+        /** Whether an expression compiled since the last {@link #follow} can raise an evaluation fault, and whether it
+         *  reads a member that can be open ({@link OpenableMembers}). */
+        private boolean fail, open;
         /** The planned items before the subject pattern: the pattern of the source of an allocation's recipient rule,
          *  and of the fold's subject in a contribution rule ({@link #addToHeadPlan}). */
         private final List<LhsItem> headPlan = new ArrayList<>();
@@ -8128,7 +8128,6 @@ public final class TmsTranspiler {
             use = new TreeSet<>();
             fail = false;
             open = false;
-            closes = false;
             return use;
         }
 
@@ -8140,13 +8139,11 @@ public final class TmsTranspiler {
         /** How the evaluation of what compiled since the last {@link #follow} can end beside its outcome: a condition
          *  that can fault is tested without its fault, beside the rule that inserts it, and one whose judgement can be
          *  undetermined beside the rule of the open outcome ({@link #conditionTest}). */
-        Ends ends() { return new Ends(fail, open, closes); }
+        Ends ends() { return new Ends(fail, open); }
 
-        /** Records that the expression being compiled reads a fold that can be open, and where {@code closes} that a closure
-         *  can decide what a member gives it. */
-        void markOpen(boolean closes) {
+        /** Records that the expression being compiled reads a fold that can be open. */
+        void markOpen() {
             open = true;
-            this.closes |= closes;
         }
 
         /** The term {@code compile} gives, and whether it reads a member that can be open. */
@@ -8299,7 +8296,7 @@ public final class TmsTranspiler {
         Term standingCount(Fold v, int[] i) {
             Term count = new Term.SlotValue(i[0], null);
             if (!v.canBeOpen()) return count;
-            markOpen(v.closes());
+            markOpen();
             return new Term.Call(StaticFunction.STANDING_COUNT, List.of(count, new Term.SlotValue(i[5], null)), null);
         }
 
@@ -9010,11 +9007,6 @@ public final class TmsTranspiler {
             case Term.Deferred x -> {
                 Term z = withoutDepositFlag(x.value());
                 return z == x.value() ? x : new Term.Deferred(z, x.source());
-            }
-            case Term.ClosureOverOpen o -> {
-                Term.Deferred z = (Term.Deferred) withoutDepositFlag(o.value());
-                return o.depositFlag() < 0 && z == o.value() ? o
-                        : new Term.ClosureOverOpen(z, o.empty(), -1, o.source());
             }
             case Term.QuantifierRead k -> {
                 Term n = withoutDepositFlag(k.count()), b = withoutDepositFlag(k.contributions());

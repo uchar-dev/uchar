@@ -5,8 +5,8 @@ package dev.uchar.regelspraak.transpiler.tms;
  * so the expression has no value and what it deposited up to there is dropped. Thrown by {@link ComputeHelpers#read},
  * {@link ComputeHelpers#readInput} and {@link ComputeHelpers#standingCount}, a fold that is open, and caught at the
  * boundary of one atomic condition or one value: a member of a composite
- * ({@link Composite#read(java.util.concurrent.Callable)}), the test of a rule's condition ({@link ComputeHelpers#judge}),
- * the operand of a test on leeg and gevuld ({@link ComputeHelpers#emptyTestOverOpen}) and the value of a consequence
+ * ({@link Composite#read(java.util.concurrent.Callable)}), the test of a rule's condition ({@link ComputeHelpers#judge})
+ * and the value of a consequence
  * ({@link ComputeHelpers#valued}), where the writer leaves its target open ({@link LeftOpen}). A signal, not a diagnosis:
  * no stack trace.
  */

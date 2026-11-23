@@ -148,15 +148,13 @@ public enum Route {
     COMPOSITE(ComputeHelpers.class, "composite"),
     /** The verdict of a composite over no member ({@link Term.Compound}). */
     END_VERDICT(ComputeHelpers.class, "endVerdict"),
-    /** The test on leeg and gevuld of a value that can read an open value ({@link Term.ClosureOverOpen}). */
-    EMPTY_TEST_OVER_OPEN(ComputeHelpers.class, "emptyTestOverOpen"),
-    /** Whether a condition whose judgement can be undetermined holds for the form itself ({@link TestItem#open}). */
-    HOLDS_FOR_ITSELF(ComputeHelpers.class, "holdsForItself"),
+    /** Whether a condition whose judgement can be undetermined is established true ({@link TestItem#open}). */
+    ESTABLISHED_TRUE(ComputeHelpers.class, "establishedTrue"),
     /** The judgement of a condition that can be undetermined ({@link TestItem.Role#ACTS}, {@link Consequence.Input.Judged}). */
     JUDGE(ComputeHelpers.class, "judge"),
-    /** Whether a form acts on the judgement of its condition, which is not false for another ({@link TestItem.Role#ACTS}). */
+    /** Whether a form acts on the judgement of its condition, which is not established false ({@link TestItem.Role#ACTS}). */
     ACTS(ComputeHelpers.class, "acts"),
-    /** Whether a judgement is true for the form itself, so that a writer decides ({@link Consequence.Writer}). */
+    /** Whether a judgement is established true, so that a writer decides ({@link Consequence.Writer}). */
     DECIDES(ComputeHelpers.class, "decides"),
     /** Whether a condition whose judgement can be undetermined faults ({@link TestItem#open}). */
     FAULTED(ComputeHelpers.class, "faulted"),

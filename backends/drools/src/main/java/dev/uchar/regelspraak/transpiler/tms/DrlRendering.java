@@ -939,7 +939,7 @@ final class DrlRendering {
             String body = switch (t.role()) {
                 case CONDITION, WITHOUT_FAULT, VORM -> {
                     boolean withoutFault = t.role() == TestItem.Role.WITHOUT_FAULT;
-                    if (t.open()) yield "    return " + route(Route.HOLDS_FOR_ITSELF) + "(" + lambda(t.test(), c) + ", "
+                    if (t.open()) yield "    return " + route(Route.ESTABLISHED_TRUE) + "(" + lambda(t.test(), c) + ", "
                             + withoutFault + ");\n";
                     yield withoutFault ? tryCatch(returning(t.test(), c, "        "), caught + "        return false;\n")
                             : returning(t.test(), c, "    ");
@@ -1096,8 +1096,6 @@ final class DrlRendering {
                 case Term.Choice k -> new Expr("(" + bool(k.condition(), c) + " ? (Object) " + value(k.then(), c).text()
                         + " : (Object) " + value(k.otherwise(), c).text() + ")", Object.class);
                 case Term.Deferred x -> new Expr("() -> " + value(x.value(), c).text(), Callable.class);
-                case Term.ClosureOverOpen o -> routeCall(Route.EMPTY_TEST_OVER_OPEN, List.of(value(o.value(), c),
-                        constant(o.empty()), depositFlag(o.depositFlag(), c)));
                 case Term.Call a -> call(a.function(), a.arguments().stream().map(x -> value(x, c)).toList());
                 case Term.Restate h -> call(StaticFunction.RESTATE_EXACT,
                         List.of(value(h.term(), c), constant(h.counter()), constant(h.denominator())));
@@ -1511,7 +1509,7 @@ final class DrlRendering {
                         + x.subject() + ", " + route(Route.DEPOSIT_CODES) + "(" + DEPOSIT_FLAG + "))");
                 b.append(in).append("}\n");
             }
-            // a value that is leeg after a closure leaves the target open and deposits (RUNTIME-SEMANTICS ch. 1.5)
+            // a value with an open read leaves the target open, without what it deposited (RUNTIME-SEMANTICS ch. 1.5)
             if (opens != null && d != null) {
                 b.append(in).append("if (").append(route(Route.IS_OPEN)).append("(v)) {\n");
                 leaveOpen(opens, b, in + "    ");
@@ -2048,7 +2046,6 @@ final class DrlRendering {
                 }
                 case Term.WithoutFault z -> dayKinds(z.condition(), out);
                 case Term.Deferred x -> dayKinds(x.value(), out);
-                case Term.ClosureOverOpen o -> dayKinds(o.value(), out);
                 case Term.Const k -> { }
                 case Term.SlotValue l -> { }
                 case Term.Binder x -> { }

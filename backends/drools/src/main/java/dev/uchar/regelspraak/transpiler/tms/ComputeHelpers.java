@@ -478,23 +478,16 @@ public final class ComputeHelpers {
 
     /** The count {@code count} of the contributions to a fold over a set, as the fold stands by {@code open}, the list of
      *  its {@link FoldOpen} facts, read in their order (RUNTIME-SEMANTICS ch. 1.5): where a member is undetermined, the open
-     *  read of the first such breaks the evaluation off ({@link OpenRead}); where a closure decided one, the boundary of the
-     *  evaluation is told of the first ({@link Boundary}). */
+     *  read of the first such breaks the evaluation off ({@link OpenRead}). */
     public static Object standingCount(Object count, Object open) {
-        OpenMember closed = null;
-        for (FoldOpen f : FoldOpen.inOrder(open)) {
-            if (f.own() == null) throw new OpenRead(f.read());
-            if (closed == null) closed = f.read();
-        }
-        if (closed != null) Boundary.closes(closed);
+        for (FoldOpen f : FoldOpen.inOrder(open)) throw new OpenRead(f.read());
         return count;
     }
 
     /** What a member of the range of the fold {@code fold} on {@code subject} inserts for its fold, where {@code judgement}
      *  is that of the fold's filter for it ({@link #judge}) and {@code contribution} what it contributes where the filter
      *  holds, a {@link Contribution}, a {@link FoldOpen} or nothing (RUNTIME-SEMANTICS ch. 1.5): that, where the filter is
-     *  true; and where it does not stand for another form, a {@link FoldOpen} as well, or alone where the filter is not
-     *  true for the form itself. */
+     *  true; and a {@link FoldOpen} where the filter is undetermined. */
     public static List<Object> contributed(Object judgement, String fold, Object subject, Object member,
                                            Object contribution) {
         return contributedAt(judgement, fold, subject, member, contribution, null);
@@ -507,13 +500,13 @@ public final class ComputeHelpers {
         List<Object> out = new ArrayList<>(2);
         if (decides(judgement) && contribution != null) out.add(contribution);
         if (judgement instanceof Undetermined u)
-            out.add(new FoldOpen(fold, subject, member, u.own(), u.read(), FoldOpen.placed(FoldOpen.Part.FILTER, place)));
+            out.add(new FoldOpen(fold, subject, member, u.read(), FoldOpen.placed(FoldOpen.Part.FILTER, place)));
         return out;
     }
 
     /** What the matrix of a quantifier fold says of the member {@code member}, whose judgement is {@code judgement}
      *  ({@link #judge}), for the fold {@code fold} on {@code subject}: the {@link Contribution} of its verdict where it
-     *  stands for another form, and else a {@link FoldOpen}. */
+     *  is established, and else a {@link FoldOpen}. */
     public static Object judged(String fold, Object subject, Object member, Object judgement) {
         return judgedAt(fold, subject, member, judgement, null);
     }
@@ -522,7 +515,7 @@ public final class ComputeHelpers {
      *  ({@link #foldPlace}), null in a build without readings. */
     public static Object judgedAt(String fold, Object subject, Object member, Object judgement, List<Integer> place) {
         return judgement instanceof Undetermined u
-                ? new FoldOpen(fold, subject, member, u.own(), u.read(), FoldOpen.placed(FoldOpen.Part.FILTER, place))
+                ? new FoldOpen(fold, subject, member, u.read(), FoldOpen.placed(FoldOpen.Part.FILTER, place))
                 : new Contribution(fold, subject, member, verdict((Boolean) judgement));
     }
 
@@ -630,6 +623,13 @@ public final class ComputeHelpers {
         return ((OpenInput) openInput).incomplete(subject, member) ? new OpenMember(subject, member) : value;
     }
 
+    /** Whether the input of {@code member} of {@code subject} is not complete in the session's {@link OpenInput}
+     *  {@code openInput}: where the bean holds no value for it, the member is open, and an initialisation of it is not at
+     *  its turn (RUNTIME-SEMANTICS ch. 1.5, "An initialisation"). */
+    public static boolean incompleteInput(Object openInput, Object subject, ElementKey member) {
+        return ((OpenInput) openInput).incomplete(subject, member);
+    }
+
     /** The read of that input ({@link #input}): an open member breaks the evaluation off. */
     public static Object readInput(Object value, Object openInput, Object subject, ElementKey member) {
         return read(input(value, openInput, subject, member));
@@ -647,64 +647,22 @@ public final class ComputeHelpers {
         }
     }
 
-    /** The leeg test, where {@code empty}, or else the gevuld test, of the value {@code value} evaluates, which can read an
-     *  open value (RUNTIME-SEMANTICS ch. 1.5): where its evaluation reads one, a closure over that read, so that the value
-     *  is leeg for the form itself and the test undetermined for another ({@link Undetermined}), with what the evaluation
-     *  deposited dropped from {@code depositFlag}; where its evaluation applied a closure, the test is undetermined for
-     *  another as well; anything else it raises passes on. */
-    public static boolean emptyTestOverOpen(Callable<?> value, boolean empty, Object depositFlag) {
-        Object mark = DepositFlag.mark(depositFlag);
-        try (Boundary b = new Boundary()) {
-            return stands(emptyTest(call(value), empty), b);
-        } catch (OpenRead o) {
-            DepositFlag.restore(depositFlag, mark);
-            throw new Undetermined(empty, o.member());
-        }
-    }
-
-    /** The atomic condition {@code condition}, in whose evaluation a fold can apply a closure to an open value: where one
-     *  did, its truth stands for the form itself and not for another ({@link Undetermined}; RUNTIME-SEMANTICS ch. 1.5, "A
-     *  closure inside a value"); an open read and a fault pass on. */
-    public static boolean atom(Callable<?> condition) {
-        try (Boundary b = new Boundary()) {
-            return stands((Boolean) call(condition), b);
-        }
-    }
-
-    /** {@code holds}, the truth an evaluation within the boundary {@code b} gave, where no closure was applied there. */
-    private static boolean stands(boolean holds, Boundary b) {
-        if (b.closed() != null) throw new Undetermined(holds, b.closed());
-        return holds;
-    }
-
-    /** The negation of {@code condition}, whose judgement can be undetermined: "niet A" is none over A (ch. 1.5), so a
-     *  judgement that does not stand keeps its pair, its truth for the form itself negated; an open read and a fault pass
-     *  on. */
-    public static boolean negatedOverOpen(Callable<?> condition) {
-        try {
-            return !(Boolean) call(condition);
-        } catch (Undetermined u) {
-            throw new Undetermined(u.own() == null ? null : !u.own(), u.read());
-        }
-    }
-
-    /** Whether {@code condition}, whose judgement can be undetermined, holds for the form itself: established, or by a
-     *  closure over an open value; false for any other undetermined judgement, and where {@code withoutFault} for an
-     *  evaluation fault, which the rule of the fault takes; any other exception passes on. */
-    public static boolean holdsForItself(Callable<Boolean> condition, boolean withoutFault) {
+    /** Whether {@code condition}, whose judgement can be undetermined, is established true; false where it is undetermined,
+     *  and where {@code withoutFault} for an evaluation fault, which the rule of the fault takes; any other exception
+     *  passes on. */
+    public static boolean establishedTrue(Callable<Boolean> condition, boolean withoutFault) {
         return decides(judge(condition, withoutFault));
     }
 
-    /** The judgement of {@code condition}, which can be undetermined: its truth, a {@code Boolean}, where it is established
-     *  for another form; else the {@link Undetermined} that carries its truth for the form itself, an open read among
-     *  them; and where {@code withoutFault}, {@code FALSE} for an evaluation fault, which the rule of the fault takes; any
-     *  other exception passes on. */
+    /** The judgement of {@code condition}, which can be undetermined: its truth, a {@code Boolean}, where it is established;
+     *  else the {@link Undetermined} with the open read that left it so; and where {@code withoutFault}, {@code FALSE} for an
+     *  evaluation fault, which the rule of the fault takes; any other exception passes on. */
     public static Object judge(Callable<Boolean> condition, boolean withoutFault) {
         try {
             return call(condition);
         } catch (RuntimeException e) {
             if (e instanceof Undetermined) return e;
-            if (e instanceof OpenRead o) return new Undetermined(null, o.member());
+            if (e instanceof OpenRead o) return new Undetermined(o.member());
             if (withoutFault && ComputeFault.isEvaluationFault(e)) return Boolean.FALSE;
             throw e;
         }
@@ -716,9 +674,9 @@ public final class ComputeHelpers {
         return !Boolean.FALSE.equals(judgement);
     }
 
-    /** Whether the condition of {@code judgement} ({@link #judge}) is true for the form itself, so that a writer decides. */
+    /** Whether the condition of {@code judgement} ({@link #judge}) is established true, so that a writer decides. */
     public static boolean decides(Object judgement) {
-        return Boolean.TRUE.equals(judgement instanceof Undetermined u ? u.own() : judgement);
+        return Boolean.TRUE.equals(judgement);
     }
 
     /** Whether {@code condition}, whose judgement can be undetermined, faults: true for an evaluation fault, false for an
@@ -734,14 +692,14 @@ public final class ComputeHelpers {
         }
     }
 
-    /** What breaks off the evaluation of {@code condition}, whose judgement can be undetermined, before it stands for the form
-     *  itself: an evaluation fault, or the open read that left it undetermined; null where it does stand for it. */
+    /** What breaks off the evaluation of {@code condition}, whose judgement can be undetermined, before it is established: an
+     *  evaluation fault, or the open read that left it undetermined; null where it is established. */
     public static RuntimeException brokenOff(Callable<Boolean> condition) {
         try {
             call(condition);
             return null;
         } catch (RuntimeException e) {
-            if (e instanceof Undetermined u) return u.own() == null ? new OpenRead(u.read()) : null;
+            if (e instanceof Undetermined u) return new OpenRead(u.read());
             return e instanceof OpenRead ? e : caught(e);
         }
     }
@@ -765,12 +723,11 @@ public final class ComputeHelpers {
 
     /** The outcome of a value that can read an open value: the value {@code value} evaluates, the evaluation fault it
      *  raised, or the mark that it does not stand ({@link #isOpen}): it read an open value, and what it deposited is
-     *  dropped from {@code depositFlag}, the probe of the value or nothing; or it is leeg after a closure, which does not
-     *  stand for another form (RUNTIME-SEMANTICS ch. 1.5, "A closure inside a value"). Any other exception passes on. */
+     *  dropped from {@code depositFlag}, the probe of the value or nothing (RUNTIME-SEMANTICS ch. 1.5). Any other exception
+     *  passes on. */
     public static Object valued(Callable<?> value, Object depositFlag) {
-        try (Boundary b = new Boundary()) {
-            Object v = call(value);
-            return v == null && b.closed() != null ? OPEN : v;
+        try {
+            return call(value);
         } catch (OpenRead e) {
             DepositFlag.clear(depositFlag);
             return OPEN;
@@ -944,26 +901,16 @@ public final class ComputeHelpers {
 
     /** As {@link #quantifierVerdict}, where the matrix can be undetermined on a member: the contributors are those
      *  {@code countOf} counts, on which it stands, and the members of {@code open}, the list of the fold's
-     *  {@link FoldOpen} facts, and the verdict is Kleene's table over them (RUNTIME-SEMANTICS ch. 1.5, "A quantifier fold"),
-     *  {@link Undetermined} where it does not stand for another form. */
+     *  {@link FoldOpen} facts, each undetermined, and the verdict is Kleene's table over them (RUNTIME-SEMANTICS ch. 1.5, "A
+     *  quantifier fold"), {@link Undetermined} where it is not established. */
     public static boolean quantifierVerdictOverOpen(Object countOf, Object touch, Object open, Condition.Quantifier kw,
                                                     int threshold) {
         long standing = ((Number) countOf).longValue();
         long hits = standing == 0 ? 0 : ((BigDecimal) touch).longValueExact(), fails = standing - hits;
         List<FoldOpen> members = FoldOpen.members(open);
-        long n = standing + members.size(), ownHits = hits, ownFails = fails;
-        OpenMember first = null;
-        for (FoldOpen f : members) {
-            if (f.own() == null) first = first == null ? f.read() : first;
-            else if (f.own()) ownHits++;
-            else ownFails++;
-        }
-        Boolean own = Composite.truth(kw, threshold, n, ownHits, ownFails);
-        Boolean other = Composite.truth(kw, threshold, n, hits, fails);
-        if (own == null) throw new Undetermined(null, first);
-        // it stands for the form itself and not for another: the first member that does not stand closed
-        if (other == null) throw new Undetermined(own, members.get(0).read());
-        return own;
+        Boolean truth = Composite.truth(kw, threshold, standing + members.size(), hits, fails);
+        if (truth == null) throw new Undetermined(members.get(0).read());
+        return truth;
     }
 
     /**
@@ -1325,8 +1272,8 @@ public final class ComputeHelpers {
      *  {@code filled}, the contribution counts the member and carries no value; otherwise it carries the exact value,
      *  a decimal or a rational that does not terminate, which the exact folds add and compare
      *  ({@link ExactSumFunction}, {@link ExactMinimumFunction}, {@link ExactMaximumFunction}). An open value
-     *  ({@link OpenMember}) contributes nothing: the {@link FoldOpen} says that it makes the fold open, or where
-     *  {@code filled}, that the count takes it as leeg, a closure (ch. 1.5). */
+     *  ({@link OpenMember}) contributes nothing: the {@link FoldOpen} says that it makes the fold open, a filled-value
+     *  count as well (ch. 1.5, "A fold over a set"). */
     public static Object contribution(String fold, Object subject, Object member, Object value, String total,
                                     String fixed, boolean filled, boolean whole) {
         return contributionAt(fold, subject, member, value, total, fixed, filled, whole, null);
@@ -1337,8 +1284,7 @@ public final class ComputeHelpers {
     public static Object contributionAt(String fold, Object subject, Object member, Object value, String total,
                                       String fixed, boolean filled, boolean whole, List<Integer> place) {
         if (value instanceof OpenMember open)
-            return new FoldOpen(fold, subject, member, filled ? Boolean.FALSE : null, open,
-                    FoldOpen.placed(FoldOpen.Part.VALUE, place));
+            return new FoldOpen(fold, subject, member, open, FoldOpen.placed(FoldOpen.Part.VALUE, place));
         if ((total != null || whole) && value instanceof BucketScalar) return null;
         if (total != null && PeriodArithmetic.openNonZero(value)) return null;
         Object v = total == null ? value

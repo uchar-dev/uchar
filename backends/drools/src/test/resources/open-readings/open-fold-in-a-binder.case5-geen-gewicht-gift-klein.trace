@@ -1,7 +1,7 @@
-reading /rules/rules/0/versions/0 "J1" 0 Let empty
-reading /rules/rules/0/versions/0 "J1" 1 Aggregation empty
-reading /rules/rules/0/versions/0 "J1" 6 Binary empty
-reading /rules/rules/0/versions/0 "J1" 7 BinderRef empty
+reading /rules/rules/0/versions/0 "J1" 0 Let undetermined open "V1" "getuigen"
+reading /rules/rules/0/versions/0 "J1" 1 Aggregation undetermined open "V1" "getuigen"
+reading /rules/rules/0/versions/0 "J1" 6 Binary undetermined open "V1" "getuigen"
+reading /rules/rules/0/versions/0 "J1" 7 BinderRef undetermined open "V1" "getuigen"
 reading /rules/rules/0/versions/0 "J1" 8 Literal unreached
 reading /rules/rules/0/versions/0 "J1" OPEN
 reading /rules/rules/1/versions/0 "J1" 0 Let undetermined open "V1" "gewicht"
@@ -10,28 +10,28 @@ reading /rules/rules/1/versions/0 "J1" 3 Binary undetermined open "V1" "gewicht"
 reading /rules/rules/1/versions/0 "J1" 4 BinderRef undetermined open "V1" "gewicht"
 reading /rules/rules/1/versions/0 "J1" 5 BinderRef unreached
 reading /rules/rules/1/versions/0 "J1" OPEN
-reading /rules/rules/2/versions/0 "J1" 0 Let empty
-reading /rules/rules/2/versions/0 "J1" 1 Aggregation 0
-reading /rules/rules/2/versions/0 "J1" 3 Binary empty
+reading /rules/rules/2/versions/0 "J1" 0 Let undetermined open "V1" "gewicht"
+reading /rules/rules/2/versions/0 "J1" 1 Aggregation undetermined open "V1" "gewicht"
+reading /rules/rules/2/versions/0 "J1" 3 Binary undetermined open "V1" "gewicht"
 reading /rules/rules/2/versions/0 "J1" 4 AttributeReference 3
-reading /rules/rules/2/versions/0 "J1" 5 BinderRef 0
+reading /rules/rules/2/versions/0 "J1" 5 BinderRef undetermined open "V1" "gewicht"
 reading /rules/rules/2/versions/0 "J1" OPEN
-reading /rules/rules/3/versions/0 "J1" 0 Comparison false closure
-reading /rules/rules/3/versions/0 "J1" 1 Binary empty
+reading /rules/rules/3/versions/0 "J1" 0 Comparison undetermined open "V1" "gewicht"
+reading /rules/rules/3/versions/0 "J1" 1 Binary undetermined open "V1" "gewicht"
 reading /rules/rules/3/versions/0 "J1" 2 AttributeReference 3
-reading /rules/rules/3/versions/0 "J1" 3 Aggregation 0
-reading /rules/rules/3/versions/0 "J1" 5 Literal 5
+reading /rules/rules/3/versions/0 "J1" 3 Aggregation undetermined open "V1" "gewicht"
+reading /rules/rules/3/versions/0 "J1" 5 Literal unreached
 reading /rules/rules/3/versions/0 "J1" OPEN
-reading /rules/rules/4/versions/0 "J1" 0 Compound true closure
-reading /rules/rules/4/versions/0 "J1" 1 Comparison true closure
-reading /rules/rules/4/versions/0 "J1" 2 Aggregation 0
-reading /rules/rules/4/versions/0 "J1" 4 Literal 2
+reading /rules/rules/4/versions/0 "J1" 0 Compound undetermined open "V1" "gewicht"
+reading /rules/rules/4/versions/0 "J1" 1 Comparison undetermined open "V1" "gewicht"
+reading /rules/rules/4/versions/0 "J1" 2 Aggregation undetermined open "V1" "gewicht"
+reading /rules/rules/4/versions/0 "J1" 4 Literal unreached
 reading /rules/rules/4/versions/0 "J1" 5 Comparison true
 reading /rules/rules/4/versions/0 "J1" 6 AttributeReference 3
 reading /rules/rules/4/versions/0 "J1" 7 Literal 5
-reading /rules/rules/4/versions/0 "J1" HOLDS
-reading /rules/rules/5/versions/0 "J1" 0 CharacteristicCheck false
-reading /rules/rules/5/versions/0 "J1" FAILS
+reading /rules/rules/4/versions/0 "J1" OPEN
+reading /rules/rules/5/versions/0 "J1" 0 CharacteristicCheck undetermined open "J1" "karig"
+reading /rules/rules/5/versions/0 "J1" OPEN
 state attribute "J1" "dubbelgewicht" open
 state attribute "J1" "gift" 3
 state attribute "J1" "giftdeel" open
@@ -40,10 +40,9 @@ state attribute "V1" "getuigen" open
 state attribute "V1" "gewicht" open
 state attribute "V2" "getuigen" open
 state attribute "V2" "gewicht" open
-state channel "giftdeel" "J1" EF-005
-state channel "gul" "J1" EF-005
 state characteristic "J1" "gul" open
-state characteristic "J1" "karig"
+state characteristic "J1" "karig" open
+state characteristic "J1" "krap" open
 state link "vinding" "vinder" "J1" "vondst" "V1"
 state link "vinding" "vinder" "J1" "vondst" "V2"
 state object "J1" "Jutter"

@@ -48,26 +48,17 @@
       "characteristic": "gul"
     },
     {
-      "kind": "characteristicPresent",
+      "kind": "characteristicOpen",
       "label": "J1",
       "characteristic": "karig"
     },
     {
-      "kind": "characteristicAbsent",
+      "kind": "characteristicOpen",
       "label": "J1",
       "characteristic": "krap"
     },
     {
-      "kind": "inconsistent",
-      "rule": "giftdeel",
-      "label": "J1",
-      "code": "EF-005"
-    },
-    {
-      "kind": "inconsistent",
-      "rule": "gul",
-      "label": "J1",
-      "code": "EF-005"
+      "kind": "consistent"
     }
   ]
 }

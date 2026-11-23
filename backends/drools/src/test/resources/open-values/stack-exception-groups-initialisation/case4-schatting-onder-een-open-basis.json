@@ -23,12 +23,9 @@
   },
   "expected": [
     {
-      "kind": "attributeValue",
+      "kind": "attributeOpen",
       "label": "V1",
-      "attribute": "vindloon",
-      "value": {
-        "number": "4"
-      }
+      "attribute": "vindloon"
     },
     {
       "kind": "consistent"

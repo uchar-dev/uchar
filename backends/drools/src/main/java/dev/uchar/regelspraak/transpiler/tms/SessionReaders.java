@@ -135,7 +135,7 @@ final class SessionReaders {
      * <p>The simple form leaves one {@link Decides} per object, of the highest default that decided; the decision is the
      * default's own on a characteristic and the value the stack wrote on an attribute. The general form leaves an
      * {@link Outcome} per chain, of its highest settling default. An open one ({@link Decides#open},
-     * {@link Outcome.Kind#OPEN}) names no decision; the initialisation that closes over it leaves its own beside it. The
+     * {@link Outcome.Kind#OPEN}) names no decision, and no default below it decides. The
      * reading follows them from the root down to the
      * default whose own content decided: at a default with exception groups, into the members where one of them
      * settled, and else to the default itself, which fell back on its own decision (RUNTIME-SEMANTICS ch. 7.9). Members
@@ -556,12 +556,8 @@ final class SessionReaders {
             if (!(f instanceof Outcome o))
                 throw new IllegalStateException("the general form of " + name + " inserts only Uitkomst, and on "
                         + FactNames.object(subject) + " stands " + f);
-            // beside an open default of the chain its initialisation settles, which closes over it: its decision is the
-            // chain's, or it is open as well
-            Outcome other = perChain.get(o.chain());
-            if (other != null && o.kind() == Outcome.Kind.OPEN) continue;
-            perChain.put(o.chain(), o);
-            if (other != null && other.kind() != Outcome.Kind.OPEN)
+            Outcome other = perChain.put(o.chain(), o);
+            if (other != null)
                 throw new IllegalStateException("chain " + o.chain() + " of " + name + " leaves one outcome per object,"
                         + " that of its highest default, and on " + FactNames.object(subject) + " stand " + other
                         + " and " + o);
@@ -1146,7 +1142,7 @@ final class SessionReaders {
         // a form without a condition whose reading rule stood is at its turn, and holds there
         else if (r.condition() == null) status = ConditionReading.Status.HOLDS;
         else try {
-            status = status(r, ComputeHelpers.judge(() -> rec.test(r.condition(), w), false));
+            status = status(ComputeHelpers.judge(() -> rec.test(r.condition(), w), false));
         } catch (RuntimeException e) {
             if (!ComputeHelpers.isEvaluationFault(e)) throw e;
             status = ConditionReading.Status.FAULTS;
@@ -1173,8 +1169,8 @@ final class SessionReaders {
             OpenMember open = oc.undetermined() ? oc.judgement().read() : null;
             nodes.add(new ConditionReading.NodeReading(s.node(), s.kind(), true, RecordingRendering.given(oc.value()),
                     s.unit(), oc.fault(), !found ? null : s.navigates() ? w[s.objectSlot()] : own(s, o), contributors,
-                    oc.judgement() != null && open == null, open == null ? null : new Fixpoint.OpenValue(open.subject(),
-                            declaredName(open.member()), open.member().characteristic())));
+                    open == null ? null : new Fixpoint.OpenValue(open.subject(), declaredName(open.member()),
+                            open.member().characteristic())));
         }
         // a default of a stack on a timeline target is at its turn where the days of its turn hold one (ch. 7.11)
         if (r.turn() != null && ComputeHelpers.isEmpty(new RecordingRendering().value(r.turn(), w))) displaced = true;
@@ -1182,12 +1178,11 @@ final class SessionReaders {
     }
 
     /** The status of the form of {@code r}, whose condition has the judgement {@code judgement} ({@link ComputeHelpers#judge}),
-     *  before its value is read: what a writer does with its target, and how the assertion of a consistency came out for
-     *  itself (RUNTIME-SEMANTICS ch. 1.5, 5.12). */
-    private static ConditionReading.Status status(ReadingRule r, Object judgement) {
+     *  before its value is read: what a writer does with its target, and how the assertion of a consistency came out
+     *  (RUNTIME-SEMANTICS ch. 1.5, 5.12). */
+    private static ConditionReading.Status status(Object judgement) {
         if (ComputeHelpers.decides(judgement)) return ConditionReading.Status.HOLDS;
-        boolean fails = Boolean.FALSE.equals(r.assertion() && judgement instanceof Undetermined u ? u.own() : judgement);
-        return fails ? ConditionReading.Status.FAILS : ConditionReading.Status.OPEN;
+        return Boolean.FALSE.equals(judgement) ? ConditionReading.Status.FAILS : ConditionReading.Status.OPEN;
     }
 
     /** The object a reached node {@code s} without a path reads a member of, on the object {@code o} of its reading:
@@ -1255,7 +1250,7 @@ final class SessionReaders {
             for (Contribution b : contributions)
                 out.add(new ConditionReading.Contributor(b.element(), ((BigDecimal) b.value()).signum() > 0, null, null, false));
             for (FoldOpen o : FoldOpen.members(open))
-                out.add(new ConditionReading.Contributor(o.element(), o.own(), null, null, o.own() == null));
+                out.add(new ConditionReading.Contributor(o.element(), null, null, null, true));
             return out;
         }
         // the members read in their order as ComputeHelpers.quantifierRead reads them, each once; every one keeps the judgement
@@ -1278,7 +1273,7 @@ final class SessionReaders {
             }
             RuntimeException ended = m.fault();
             RuntimeException fault = ComputeHelpers.isEvaluationFault(ended) && !provisional ? ended : null;
-            Boolean verdict = ended instanceof Undetermined u ? u.own() : m.holds();
+            Boolean verdict = ended instanceof Undetermined ? null : m.holds();
             out.add(new ConditionReading.Contributor(elements.get(m), verdict, fault, reached, verdict == null && fault == null));
         }
         return out;
