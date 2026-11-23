@@ -4798,9 +4798,9 @@ re-emits and whose cases pin the reading of RUNTIME-SEMANTICS ch. 1.5.
 uchar DIALECT EXTENSION (decision of the maintainer, 2026-11-21). In a document with `Afleiden uit leeg: nee` an input
 member the case gives no value, or a characteristic it does not name, is open unless its input is declared complete
 (below): nothing stands about it, and what reads it does not stand either (RUNTIME-SEMANTICS ch. 1.5). For some members the author knows that the input is complete:
-where the case gives no value, there is none. That is the one way a document closes: over a member declared complete
-and given no value a test on leeg holds and the member counts as leeg, where over any other open member it is
-undetermined; a member that only an initialisation writes is input as well, and declared complete it is settled leeg
+where the case gives no value, there is none. That is the one way a document closes: an attribute declared complete
+and given no value is settled leeg, not open, and a test on leeg over it holds, where over an open member it is
+undetermined; a characteristic declared complete that the case does not name stands not to hold; a member that only an initialisation writes is input as well, and declared complete it is settled leeg
 there, where the initialisation gives its value. Official RegelSpraak v2.3.0 has no way to write that; this extension
 gives the dialect one marker on a member declaration, and the wire one field on the declaration, `complete: true`
 (IR-SPEC ch. 2.2). The frontend writes the field and gives it no meaning of its own: what it means for an evaluation is
