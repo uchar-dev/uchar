@@ -198,6 +198,56 @@ class ScenarioStrictTest {
                 warnings(b));
     }
 
+    /** A situation based on another replaces there the characteristic it inherits as holding, also where no scenario
+     *  uses it: the bullet counts in every scenario that will, and gives no warning. */
+    @Test void a_bullet_that_replaces_an_inherited_characteristic_in_an_unused_situation_gives_no_warning() {
+        String text = MODEL + """
+                Situatie drijfhout:
+                een Vondst V1
+                - is drijfhout
+
+                Situatie geen drijfhout gebaseerd op de situatie drijfhout:
+                een Vondst V1
+                - is niet drijfhout
+
+                Scenario alleen de basis
+                gebaseerd op de situatie drijfhout
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        ScenarioBundle b = ScenarioResolver.resolve(text);
+        assertTrue(b.isOk(), () -> b.model().errors().toString());
+        assertEquals(List.of(), warnings(b));
+    }
+
+    /** Two bullets on one line are two sentences: the one that replaces an inherited characteristic gives no warning,
+     *  the other does, and where neither replaces one each warns on that line. */
+    @Test void two_bullets_on_one_line_are_judged_each_on_its_own() {
+        String text = MODEL + """
+                Situatie drijfhout:
+                een Vondst V1
+                - is drijfhout
+
+                Scenario op een regel
+                gebaseerd op de situatie drijfhout
+                Gegeven is de volgende situatie:
+                een Vondst V1
+                - is niet drijfhout - heeft geen strandrecht
+                een Vondst V2
+                - heeft geen strandrecht - is niet drijfhout
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        ScenarioBundle b = ScenarioResolver.resolve(text);
+        assertTrue(b.isOk(), () -> b.model().errors().toString());
+        int v1 = ScenarioFixture.lineOf(text, "- is niet drijfhout - heeft geen strandrecht");
+        int v2 = ScenarioFixture.lineOf(text, "- heeft geen strandrecht - is niet drijfhout");
+        assertEquals(List.of(v1 + " RGS-469 {written=heeft geen strandrecht}",
+                        v2 + " RGS-469 {written=heeft geen strandrecht}",
+                        v2 + " RGS-469 {written=is niet drijfhout}"),
+                warnings(b));
+    }
+
     @Test void a_characteristic_that_holds_and_does_not_in_one_block_is_refused() {
         String sameOpener = NEE + MODEL + """
                 Scenario tegenspraak

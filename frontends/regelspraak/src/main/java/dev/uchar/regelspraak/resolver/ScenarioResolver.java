@@ -71,11 +71,13 @@ public final class ScenarioResolver {
 
     private final RegelSpraakModel model;
     private final TestDocumentContext test;
-    /** In a document without 'Afleiden uit leeg: nee': each bullet that gives a characteristic as not holding, by its
-     *  line, with what it writes after the bullet; and the lines of those that replace, in the merge of some scenario,
-     *  the characteristic as holding from a block merged before them. */
-    private final Map<Integer, String> absentBullets = new LinkedHashMap<>();
-    private final Set<Integer> replacesHolding = new java.util.HashSet<>();
+    /** In a document without 'Afleiden uit leeg: nee': each bullet that gives a characteristic as not holding, with
+     *  what it writes after the bullet; and those that replace, in the expansion of some situation or the merge of some
+     *  scenario, the characteristic as holding from a block merged before them. Keyed on the bullet itself, because
+     *  one line can carry two. */
+    private record AbsentBullet(CharacteristicValue value, String written) {}
+    private final List<AbsentBullet> absentBullets = new ArrayList<>();
+    private final Set<CharacteristicValue> replacesHolding = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
     private final List<Diagnostic> warnings = new ArrayList<>();
     /** Situation definitions by normalised name, the first declaration of a name. */
     private final Map<String, SituatieDefinitieContext> situations = new LinkedHashMap<>();
@@ -163,8 +165,9 @@ public final class ScenarioResolver {
             // validated used or not, so a defect in a set never hides behind disuse
             if (kind instanceof ParametersetDefinitieContext pd) registerParameterSet(pd);
         }
-        // every situation is expanded, used or not, so a cycle or an unknown basis never hides behind disuse
-        for (String name : situations.keySet()) foldOut(name, List.of());
+        // every situation is expanded, used or not, so a cycle or an unknown basis never hides behind disuse, nor a
+        // bullet that replaces an inherited characteristic in a situation no scenario uses
+        for (String name : situations.keySet()) noteReplacements(foldOut(name, List.of()));
         List<ResolvedScenario> result = new ArrayList<>();
         List<ScenarioContext> contexts = new ArrayList<>();
         for (ParseTree kind : children)
@@ -173,11 +176,10 @@ public final class ScenarioResolver {
         // there characteristicsAbsent changes no outcome (RUNTIME-SEMANTICS ch. 1.5, "The case"): a characteristic
         // the situation does not name does not hold, so the bullet counts only where it replaces one inherited as
         // holding
-        absentBullets.forEach((line, written) -> {
-            if (!replacesHolding.contains(line))
-                warnings.add(new Typing.Coded("RGS-469", params("written", written)).frame("scenario")
-                        .at(Severity.WARNING, line));
-        });
+        for (AbsentBullet b : absentBullets)
+            if (!replacesHolding.contains(b.value()))
+                warnings.add(new Typing.Coded("RGS-469", params("written", b.written())).frame("scenario")
+                        .at(Severity.WARNING, b.value().line()));
         return result;
     }
 
@@ -286,6 +288,7 @@ public final class ScenarioResolver {
             error(line,
                     "RGS-223", params("name", name));
 
+        noteReplacements(sources);
         Situation situation = merge(sources);
         checkRoleTargets(situation);
         if (set != null) situation = withParameterSet(situation, set, asOfDate, sc.scenarioPeildatum() != null, name, setLine);
@@ -896,12 +899,13 @@ public final class ScenarioResolver {
                 error(line, "RGS-466", params("characteristic", characteristic));
                 return;
             }
-            characteristics.add(new CharacteristicValue(characteristic, false, null, line));
+            CharacteristicValue absent = new CharacteristicValue(characteristic, false, null, line);
+            characteristics.add(absent);
             if (model.inferFromEmpty()) {
                 Token verb = (possessive ? k.HEEFT() : k.IS()).getSymbol();
-                absentBullets.put(line, k.getStart().getInputStream()
+                absentBullets.add(new AbsentBullet(absent, k.getStart().getInputStream()
                         .getText(org.antlr.v4.runtime.misc.Interval.of(verb.getStartIndex(), k.kaleNaam().getStop().getStopIndex()))
-                        .replaceAll("\\s+", " ").trim());
+                        .replaceAll("\\s+", " ").trim()));
             }
             return;
         }
@@ -1309,14 +1313,28 @@ public final class ScenarioResolver {
                 }
                 frag.attributes().forEach(builder::setAttribute);
                 frag.roles().forEach(builder::setRole);
-                for (CharacteristicValue k : frag.characteristics())
-                    if (builder.setCharacteristic(k)) replacesHolding.add(k.line());
+                frag.characteristics().forEach(builder::setCharacteristic);
             }
             for (ParameterValue pw : block.parameters()) parameters.put(norm(pw.parameter()), pw);
         }
         List<Instance> result = new ArrayList<>();
         for (InstanceBuilder b : instances.values()) result.add(b.build());
         return new Situation(result, new ArrayList<>(parameters.values()));
+    }
+
+    /** Notes each bullet of {@code sources} that gives as not holding a characteristic which a block before it gives
+     *  as holding on the same label: merged in this order, it replaces that characteristic. Keyed as {@link #merge}
+     *  keys an instance and a characteristic; unlike the merge it reports no defect, so it also runs on the expansion
+     *  of a situation no scenario uses without reporting that situation's defects twice. */
+    private void noteReplacements(List<BlockResult> sources) {
+        Map<String, Map<String, Boolean>> holds = new HashMap<>();
+        for (BlockResult block : sources)
+            for (InstanceFragment frag : block.instances())
+                for (CharacteristicValue k : frag.characteristics()) {
+                    Boolean earlier = holds.computeIfAbsent(frag.label(), x -> new HashMap<>())
+                            .put(norm(k.characteristic()), k.holds());
+                    if (!k.holds() && Boolean.TRUE.equals(earlier)) replacesHolding.add(k);
+                }
     }
 
     /** After the merge: every role target names a label of the merged situation whose type fills the role — a
@@ -1360,11 +1378,7 @@ public final class ScenarioResolver {
             attributes.put(norm(w.attribute()), new AttributeValue(earlier.attribute(), null, null, merged, earlier.line()));
         }
         void setRole(RoleAssignment t) { roles.put(norm(t.role()), t.value()); }
-        /** Whether {@code w} gives as not holding a characteristic that a block merged before it gives as holding. */
-        boolean setCharacteristic(CharacteristicValue w) {
-            CharacteristicValue earlier = characteristics.put(norm(w.characteristic()), w);
-            return !w.holds() && earlier != null && earlier.holds();
-        }
+        void setCharacteristic(CharacteristicValue w) { characteristics.put(norm(w.characteristic()), w); }
 
         Instance build() {
             return new Instance(label, objectType, new ArrayList<>(attributes.values()),
