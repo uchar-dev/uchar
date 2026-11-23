@@ -1654,7 +1654,9 @@ EXPECTED_CHANNEL=(
 # enumeration, the text and the boolean alone.
 # 384 with jutterswet-loonkopie: the bare copy of a number timeline, over all time and in the periods of a
 # characteristic (RUNTIME-SEMANTICS ch. 3.4, 3.11; PLAYED 3).
-EXPECTED_PLAYED=384
+# 385 with jutterswet-heffing-strikt: one choice in three forms in a strict document, a rule with an initialisation
+# below it, a stack and a helper attribute, each open over an open taxatie (RUNTIME-SEMANTICS ch. 1.5; PLAYED 3).
+EXPECTED_PLAYED=385
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
