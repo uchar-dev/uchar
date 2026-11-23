@@ -7,6 +7,7 @@ import dev.uchar.regelspraak.loader.IrLoader;
 import dev.uchar.regelspraak.refusal.DroolsCode;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -96,6 +97,48 @@ class SumTypeWitnessTest {
         }
         // the cases of the three documents that play, on two branches, counted 2026-11-23
         assertEquals(2 * 6, played);
+    }
+
+    /** A name a document writes that equals its declaration only under {@code norm} (IR-SPEC ch. 2.1, WF-001: ASCII
+     *  case folded and whitespace collapsed) names that declaration, as it does for the reference interpreter and the ASP
+     *  backend: three documents of {@code forms-not-carried}, with the sum-typed attribute declared as "definitief
+     *  besluit" and written as "Definitief  besluit" by the defaults group, the creation and the initialisation, and in
+     *  the defaults group the type "Gevonden voorwerp" written as its subject "gevonden  Voorwerp", are refused for the
+     *  same form as the documents themselves. The model's lookup by name ignores case only, so it misses every one of
+     *  these spellings. Measured 2026-11-23 on the three respelled documents: verifier PASS, ref REF-015 and clingo
+     *  CLINGO-052, each with that form. */
+    @Test void a_name_equal_only_under_norm_names_its_declaration(@TempDir Path dir) throws Exception {
+        Map<String, String[]> respelled = new LinkedHashMap<>();
+        respelled.put("defaults-group", new String[] {
+                "\"attribute\": \"besluit\"", "\"attribute\": \"Definitief  besluit\"",
+                "\"name\": \"Vondst\"", "\"name\": \"Gevonden voorwerp\"",
+                "\"subjectType\": \"Vondst\"", "\"subjectType\": \"Gevonden voorwerp\"",
+                "\"subject\": \"Vondst\"", "\"subject\": \"gevonden  Voorwerp\""});
+        respelled.put("creation", new String[] {"\"member\": \"besluit\"", "\"member\": \"Definitief  besluit\""});
+        respelled.put("initialisation", new String[] {
+                "\"attribute\": \"besluit\"", "\"attribute\": \"Definitief  besluit\""});
+        for (Map.Entry<String, String[]> d : respelled.entrySet()) {
+            String text = respell(Files.readString(DOCUMENTS.resolve("forms-not-carried/" + d.getKey() + "/ir.json")),
+                    d.getKey(), "\"name\": \"besluit\",", "\"name\": \"definitief besluit\",");
+            String[] pairs = d.getValue();
+            for (int i = 0; i < pairs.length; i += 2) text = respell(text, d.getKey(), pairs[i], pairs[i + 1]);
+            Path ir = dir.resolve(d.getKey() + ".json");
+            Files.writeString(ir, text);
+            String form = (String) DOCUMENT.get("forms-not-carried/" + d.getKey()).get(1);
+            for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+                String what = branch + " " + d.getKey();
+                CaseRunner.Excluded e = assertThrows(CaseRunner.Excluded.class,
+                        () -> CaseRunner.playCases(ir, List.of(), branch, false), what);
+                assertEquals(DroolsCode.SUM_TYPE_FORM_NOT_CARRIED, e.code(), what);
+                assertEquals(DroolsCode.SUM_TYPE_FORM_NOT_CARRIED.reason("form", form).text(), e.getMessage(), what);
+            }
+        }
+    }
+
+    /** {@code text} with {@code from}, which it must hold exactly once, written as {@code to}. */
+    private static String respell(String text, String document, String from, String to) {
+        assertEquals(1, text.split(java.util.regex.Pattern.quote(from), -1).length - 1, document + ": " + from);
+        return text.replace(from, to);
     }
 
     /** The list of {@code SumTypeForms} is the table "Forms not carried" of RUNTIME-SEMANTICS ch. 9.4, read from the

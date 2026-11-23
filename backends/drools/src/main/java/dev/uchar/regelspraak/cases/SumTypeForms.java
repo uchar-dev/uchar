@@ -48,20 +48,27 @@ final class SumTypeForms {
                     if (c.payload() != null && c.payload().unitOf() != null) found.add("payload-unit");
         for (PrioritizedDefaults p : defaults)
             if (!p.isCharacteristic()) {
-                RegelSpraakModel.ObjectType subject = model.objectTypeByName(p.subject());
+                RegelSpraakModel.ObjectType subject = CaseRunner.declaredObjectType(model, p.subject());
                 if (subject != null && sum(subject, p.target())) found.add("defaults-group");
             }
         // an initialisation is the lowest default of a defaults group on its target (ch. 7.3), with or without a
-        // condition or a validity
-        for (ResolvedRule r : model.resolvedRules)
-            if (r.kind() == ResolvedRule.Kind.INITIALISATIE && r.target() instanceof Expr.AttributeReference a
+        // condition or a validity; a cell target names its attribute
+        for (ResolvedRule r : model.resolvedRules) {
+            Expr target = r.target() instanceof Expr.DimensionCellRead c ? c.attribute() : r.target();
+            if (r.kind() == ResolvedRule.Kind.INITIALISATIE && target instanceof Expr.AttributeReference a
                     && a.objectType() != null && sum(a.objectType(), a.attribute()))
                 found.add("defaults-group");
+        }
         for (String slug : SLUGS) if (found.contains(slug)) return slug;
         return null;
     }
 
+    /** Whether {@code attribute}, a name as the document writes it, is a sum-typed attribute of {@code type} or of a
+     *  type above it. Names are compared under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm} (IR-SPEC
+     *  WF-001), as the reference interpreter and the ASP backend compare them, not with the model's case-insensitive
+     *  lookup, which does not collapse whitespace. */
     private static boolean sum(RegelSpraakModel.ObjectType type, String attribute) {
-        return attribute != null && type.attribute(attribute) instanceof Datatype.SumType;
+        String declared = attribute == null ? null : CaseRunner.declaredAttribute(type, attribute);
+        return declared != null && type.attributeMembers().get(declared) instanceof Datatype.SumType;
     }
 }
