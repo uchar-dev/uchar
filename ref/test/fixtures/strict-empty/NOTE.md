@@ -23,3 +23,8 @@ does not decide. The cases where that sets the outcome:
 `let-closure` is the document of `WV-1.5-filled-count-in-a-binder-*`: a binder computed as a filled-value count is
 open where a gewicht is, and so is every condition that reads it. `initialisation` has its initialisation "indien hij
 niet gemeld is", which does not decide where gemeld is open.
+
+`defaults-initialisation-only` has two stacks whose one default is their initialisation, "op 5" for the strandloon and
+"op 3" for the meldloon: such a stack makes no member derived (ch. 1.5, "The initialisation of a stack"), so both are
+input. Without a value the strandloon is open, and the meldloon, declared complete, is settled leeg above its
+initialisation, which gives 3; with the values 7 and 4 in the case they are 7 and 4.

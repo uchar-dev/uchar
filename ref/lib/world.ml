@@ -725,13 +725,18 @@ let close_evaluation w ~form ~at =
 let fault_evaluation w ~form ~at fault =
   set_outcome w ~form ~at ~deposits:[] ~fault:(Some fault) ~opened:[]
 
+(* whether the attribute [attr] of [label] is open input: then the input, the
+   writer above every initialisation of it, does not stand to fill nothing
+   (ch. 1.5) *)
+let open_input_attr w ~label ~attr = Member.mem (label, attribute attr) w.open_input
+
 (* whether the attribute [attr] of [label] is open beside the initialisation
    [form]: open input, or left open by the standing outcome of another form.
    Then it does not stand of every writer above the initialisation that it
    fills nothing, and the initialisation is not at its turn (ch. 1.5) *)
 let open_beside_initialisation w ~form ~label ~attr =
   let m = (label, attribute attr) in
-  Member.mem m w.open_input
+  open_input_attr w ~label ~attr
   || List.exists (fun o -> (not (String.equal o.form form && String.equal o.at label)) && List.mem m o.opened) w.outcomes
 
 (* the faults that stand, in an order the order of the rules does not move *)

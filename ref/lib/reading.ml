@@ -613,8 +613,8 @@ let default_pointers (doc : document) =
    consequence, which holds where the default is at its turn; a
    characteristic default without one has nothing to read. An
    initialisation's turn, a default's or a folded rule's, is that of an
-   initialisation: a target the input fills displaces it, without a reading,
-   also below a default that decided. *)
+   initialisation: a target the input fills, or leaves open as open input,
+   displaces it, without a reading, also below a default that decided. *)
 let defaults json env ~world0 ~world =
   let doc = env.Eval.doc in
   let pointers = default_pointers doc in
@@ -675,23 +675,25 @@ let defaults json env ~world0 ~world =
                       egs.egs_members
               in
               (* the initialisation default's turn: a target the input fills
-                 displaces it (ch. 7.3) *)
-              let input_filled (d : default) =
+                 displaces it (ch. 7.3), and so does a target that is open
+                 input (ch. 1.5) *)
+              let input_above (d : default) =
                 d.default_initialisation
                 &&
                 match (l.pd_attribute, SMap.find_opt self.label world0.World.instances) with
-                | Some a, Some (i0 : World.instance) -> World.attr i0 a <> Value.Empty
+                | Some a, Some (i0 : World.instance) ->
+                    World.attr i0 a <> Value.Empty || World.open_input_attr world ~label:self.label ~attr:a
                 | _ -> false
               in
               (* A default that was not at its turn is read all the same, on
                  the level that declared it (ch. 7.10), as the speculation of
                  ch. 7.1 would have read it: the status stays Displaced, and a
                  fault stays at its nodes. An initialisation default whose
-                 target the input fills has nothing to read. *)
+                 target the input fills or leaves open has nothing to read. *)
               let read_displaced env (d : default) =
                 match reading_of l d with
                 | None -> ()
-                | Some (form, _, _, _) when input_filled d -> emit (without ~form Displaced self)
+                | Some (form, _, _, _) when input_above d -> emit (without ~form Displaced self)
                 | Some (form, condition, value, numbered) ->
                     emit { (read_on ~form ~numbered env world self ~condition ~value) with status = Displaced }
               in
@@ -841,10 +843,10 @@ let defaults json env ~world0 ~world =
                      value, or its decision on a characteristic), it gives way,
                      or it is open (ch. 1.5) *)
                   let own env (d : default) =
-                    let input_filled = input_filled d in
+                    let input_above = input_above d in
                     let decision () = `Decides (Value.Bool (d.default_decision = Some true)) in
                     match reading_of l d with
-                    | Some (form, _, _, _) when input_filled ->
+                    | Some (form, _, _, _) when input_above ->
                         emit (without ~form Displaced self);
                         `Gives_way
                     | Some (form, condition, value, numbered) -> (
@@ -866,7 +868,7 @@ let defaults json env ~world0 ~world =
                     | None ->
                         (* no reading: the decision without one, as the session takes it *)
                         if
-                          (not input_filled)
+                          (not input_above)
                           && (match d.default_justification with
                              | Some c -> Eval.eval_cond env world self ~err:drop c
                              | None -> true)

@@ -59,11 +59,6 @@
       "characteristic": "ongeschat"
     },
     {
-      "kind": "characteristicAbsent",
-      "label": "V1",
-      "characteristic": "ongeschat"
-    },
-    {
       "kind": "attributeValue",
       "label": "V1",
       "attribute": "schattingstoeslag",

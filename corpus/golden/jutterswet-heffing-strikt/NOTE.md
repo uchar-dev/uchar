@@ -16,8 +16,8 @@ The taxatie is an input member, not declared complete. Where the case gives it a
 two-valued, and each form gives 0. Where the case gives it none, the taxatie is open and each test on it is
 undetermined: the rule `heffing` leaves the heffing open, and the initialisation below it is not at its turn, since it
 does not stand that the rule fills nothing; the exception of the stapelheffing is open, and so is the stack; the
-heffingscode is open, and so is the codeheffing that reads it. Whether a form chooses in a value, in a stack or through
-a helper attribute, it does not decide over a value the case may still give. The author closes at the edge: with the
+heffingscode is open, and so is the codeheffing that reads it. Whether a form chooses with a rule above an
+initialisation, in a stack or through a helper attribute, it does not decide over a value the case may still give. The author closes at the edge: with the
 taxatie declared complete (`(volledig gegeven)`), a missing taxatie is settled leeg and each form gives 25; the suite
 of the reference interpreter runs this document so (WV-1.5-three-forms).
 

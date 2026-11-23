@@ -493,13 +493,16 @@ Jutterswet, on a Vondst whose attributes are whole numbers.
 **The three states.** A member of an object is *filled* (an attribute has a
 value, a characteristic holds), *settled leeg* (it stands that the attribute
 has no value, or that the characteristic does not hold) or *open* (neither
-stands). An input member — an attribute or a characteristic that no rule but
-an initialisation and no defaults group writes on the object's type — is open
-where the case gives it no value or does not name it, unless its declaration
-says that its input is complete (below). An initialisation is the lowest
-writer of its target, below the input, and makes no member derived (below). A
-document without the property has no open member: a member without a value is
-settled leeg, and the rest of this section then reads as ch. 1.2–1.4. Example
+stands). An input member — an attribute or a characteristic that nothing but
+an initialisation writes on the object's type: no rule other than an
+initialisation, and no defaults group with a default other than its
+initialisation default — is open where the case gives it no value or does not
+name it, unless its declaration says that its input is complete (below). An
+initialisation — a rule, or the initialisation default of a stack — is the
+lowest writer of its target, below the input, and makes no member derived
+(below). A document without the property has no open member: a member without
+a value is settled leeg, and the rest of this section then reads as ch.
+1.2–1.4. Example
 (WV-1.5-open-input, WV-1.5-no-open-without-the-property): "de uitbetaling van
 een Vondst is zijn vindloon plus zijn bergloon", with bergloon 3 and no
 vindloon, which no rule writes: the vindloon is open; without the property it
@@ -565,11 +568,11 @@ open without a fact where the schade is open.
 
 **The judgement of a condition.** A condition is established true,
 established false, or undetermined. An atomic condition — a comparison, the
-exact-digit test, a characteristic check, a role check, an identity check —
-that reads an open value is undetermined; one that reads none is established,
-as ch. 1.2 and 5.8 decide it. A composite (ch. 5.10) over *n* members, *h* of
-them established true and *f* established false, follows Kleene's strong
-table:
+exact-digit test, a characteristic check, a role check, an identity check, the
+test on leeg and gevuld (below) — that reads an open value is undetermined; one
+that reads none is established, as ch. 1.2 and 5.8 decide it. A composite (ch.
+5.10) over *n* members, *h* of them established true and *f* established
+false, follows Kleene's strong table:
 
 | quantifier | established true when | established false when |
 |---|---|---|
@@ -672,8 +675,9 @@ van een Vondst moet geïnitialiseerd worden op 5" alone the strandloon is open
 where the case gives it no value, 7 where the case gives 7, and 5 where it is
 declared complete and the case gives it none.
 
-**A derived member** — one a rule other than an initialisation or a defaults
-group writes on the object's type — follows its writers, also where the case
+**A derived member** — one a rule other than an initialisation, or a defaults
+group with a default other than its initialisation default, writes on the
+object's type — follows its writers, also where the case
 gives it no value: it is filled where a writer decides with a value, settled
 leeg where it stands of every writer that it fills nothing or decides with a
 leeg value, and open otherwise; a characteristic holds, stands not to hold, or
@@ -815,7 +819,13 @@ dan 10" and, for a Wrakvondst, a Vondst, "… op 0 indien hij betwist is" above
 hold has a vindloon of 40 at gewicht 20, and of 5 at gewicht 5 and with the
 gewicht complete and not given; without a gewicht it is open, and where
 betwist is not named it is open whatever the gewicht, also with a vindloon of
-7 in the case.
+7 in the case. A stack whose one default is its initialisation makes no member
+derived: its member is input, and the initialisation default reads as **An
+initialisation** above. Example (WV-1.5-stack-initialisation-alone): with
+"het strandloon van een Vondst moet geïnitialiseerd worden op 5" as the one
+default of a stack, the strandloon is open where the case gives it no value,
+7 where the case gives 7, and 5 where it is declared complete and the case
+gives it none.
 
 **An opgave** — a stack whose highest default is the value the case may give
 for its target, "het bergloon (mag opgegeven worden)" — reads as any default
@@ -905,7 +915,7 @@ mark, and what it answers would depend on the order of the rounds
 (WV-1.5-creation-cycle-refused).
 
 **A read over a link.** A relation is complete, but where a creation could
-still lay a link in it (below): a read over a link that is
+still lay a link in it (above): a read over a link that is
 absent is settled leeg and is read as ch. 1.2 and 5.8 lay down, and a
 navigated check over an absent link is false and stands. Over a link that is
 present, an open attribute or characteristic of the object it reaches is an
@@ -1014,10 +1024,12 @@ say that its input is complete (`complete`, IR-SPEC ch. 2.2); a subtype
 inherits the member with it. On an object where the member is input, a
 complete member without a value is settled leeg, and a complete
 characteristic the case does not name stands not to hold. On an object where a
-rule other than an initialisation or a defaults group writes the member, it
-follows its writers and the field changes nothing; a member that only an
-initialisation writes is input, and declared complete it is settled leeg above
-the initialisation, which gives its value (WV-1.5-initialisation-input); in a
+rule other than an initialisation, or a defaults group with a default other
+than its initialisation default, writes the member, it follows its writers and
+the field changes nothing; a member that only an initialisation writes is
+input, and declared complete it is settled leeg above the initialisation,
+which gives its value (WV-1.5-initialisation-input,
+WV-1.5-stack-initialisation-alone); in a
 document without the property nothing is open, and the field changes no
 outcome. A session can treat every input member as complete, the measurement
 of preservation below. Example (WV-1.5-complete-*): the uitbetaling of the
@@ -1074,8 +1086,10 @@ Gate 5 holds both over the corpus: every golden whose forms the reference
 interpreter carries, with the property, plays its own cases with every input
 member complete; and per case and per input member it gives, the end state
 without that input (ch. 5.12a) keeps its every outcome in the end state with
-it, a run whose member left out is not open there (a member declared complete,
-or a derived member) counted apart.
+it. Whether the member left out is an open input member is read off the
+document: an open input member is open in the end state without its input, and
+a run that leaves out a member declared complete, or a derived member that is
+not open there, is counted apart.
 
 Broader examples, a document per form with cases whose expectations were
 computed by hand (`spec/proposals/STRICT-EMPTY.md` §5), are in the suite
@@ -7328,7 +7342,7 @@ allocation, a creation — has none: there is nothing to read.
 | `FAULTS` | the evaluation of the condition faults (ch. 5.7) | the nodes, the fault at those it reached |
 | `FAULTS` | the form has a dated validity and the session no evaluation date (ch. 8.1) | none |
 | `DISPLACED` | the form is a default that is not at its turn because a higher default of its chain decided or settled (ch. 7.1, 7.9): a default below the one that decides, at the root or in an exception group, and every default inside its exception groups; the content of a default whose exception groups settled; an ordinary rule that ch. 7.10 folds into a stack, below the default that decides; the initialisation default below the default that decides, where the input leaves its target empty; on a timeline target, a default at its turn on no day (ch. 7.11); below a default that is open, every default, the initialisation default among them, and the content of a default whose exception groups are open (**Open values**, below) | the nodes of the condition, and of the value where the condition holds, as at its turn (**A displaced default is read**, below) |
-| `DISPLACED` | the target of an initialisation — a rule's, a folded one's in a stack, or the initialisation default's — holds a value of the input or of another writer (ch. 5.4, 7.3), on a timeline target on every day; in a document with `inferFromEmpty: false`, the target of an initialisation rule is an open input member, or a writer above it leaves the target open (ch. 1.5); the subject of an object creation of the 1:1 shape is linked in the input (ch. 5.5) | none |
+| `DISPLACED` | the target of an initialisation — a rule's, a folded one's in a stack, or the initialisation default's — holds a value of the input or of another writer (ch. 5.4, 7.3), on a timeline target on every day; in a document with `inferFromEmpty: false`, the target of an initialisation rule is an open input member, or a writer above it leaves the target open, or the target of an initialisation default is an open input member (ch. 1.5); the subject of an object creation of the 1:1 shape is linked in the input (ch. 5.5) | none |
 | `OUTSIDE_VALIDITY` | the validity window of the form does not admit the evaluation date (ch. 8.2) | none |
 | `OPEN` | in a document with `inferFromEmpty: false`, the form leaves its target open, or a consistency's assertion is undetermined (ch. 1.5; **Open values**, below, which says where `HOLDS` and `FAILS` stand there) | the nodes of the condition, and of the value where the condition is true |
 
@@ -7556,7 +7570,8 @@ default is `DISPLACED` and read as at its turn, the initialisation default
 among them; so is the content of a default whose exception groups are open.
 An initialisation rule whose target is an open input member, or which a
 writer above it leaves open, is not at its turn and `DISPLACED` without
-nodes (ch. 1.5). A document without the property has no open value: every
+nodes (ch. 1.5), and so is an initialisation default whose target is an open
+input member. A document without the property has no open value: every
 judgement is established, no node is broken off, and no form is `OPEN`.
 
 Worked example (absolute; the golden `jutterswet-afleiden-uit-leeg` of
@@ -7620,7 +7635,12 @@ undetermined open "V2" "gewicht"`, without contributors. Example
 zijn berekende bergloon" and "… moet geïnitialiseerd worden op 25", without
 an opgave, the opgave reads `1 AttributeReference undetermined open "V1"
 "opgegeven bergloon"`, `OPEN`, and the computation and the initialisation
-default below it are `DISPLACED`, the latter reading `0 Literal 25`. Example
+default below it are `DISPLACED`, the latter reading `0 Literal 25`. With
+"het strandloon moet geïnitialiseerd worden op 5" and "het meldloon moet
+geïnitialiseerd worden op 3" each the one default of a stack, the meldloon
+declared complete and neither given, the initialisation default of the
+strandloon is `DISPLACED` without nodes, and that of the meldloon reads
+`0 Literal 3`, `HOLDS`. Example
 (`WV-5.12-open-creation`, `WV-5.12-open-path`): the creation of a
 proefvondst "indien hij niet ervaren is", for a Jutter without an ervaring,
 reads `0 CharacteristicCheck undetermined open "J1" "ervaren"`, `OPEN`, and a
@@ -7659,7 +7679,7 @@ its own records one of:
   in the value of a `Let` whose binder no read forces (ch. 10.6), in the
   value of a form whose condition does not hold, after a fault;
 - a condition's **verdict**, true or false, and in a document with
-  `inferFromEmpty: false` its judgement (**Open values**, below);
+  `inferFromEmpty: false` its judgement (**Open values**, above);
 - an expression's **value**, a number with its unit (ch. 2.6); leeg is a
   value. A read of a leeg binder that ends the evaluation at the node
   (ch. 10.6, clause 2) reaches it and leaves it leeg;
@@ -7829,9 +7849,8 @@ it. An object of the input is written as its case label, quoted; an object
 a creation made as `«"<creation>"»(<subject>)#<k>`, the name of its
 creation, the object it was made for and its number among the objects that
 creation made for it, which is 1, since a creation makes one object per
-subject (ch. 5.5). `<found>` is `unreached`; `true` or `false`, followed by
-`undetermined
-open <object> "<member>"` (**Open values**, below); `fault`
+subject (ch. 5.5). `<found>` is `unreached`; `true` or `false`; `undetermined
+open <object> "<member>"` (**Open values**, above); `fault`
 with the EF code, or `fault -` for a fault without one; or the value: a
 number as its exact decimal without trailing zeros where it terminates, and
 else as its numerator and denominator in lowest terms, `t/n`, the sign on the
@@ -9588,7 +9607,10 @@ lowest default), so the Drools lowering derives the guard instead of
 embodying it. In a document with `inferFromEmpty: false` the initialisation
 default is read as any default (ch. 1.5): it decides where it stands of every
 default above it that it gives way, and below a default that is open the
-target is open (WV-1.5-stack-initialisation).
+target is open (WV-1.5-stack-initialisation). A stack whose one default is the
+initialisation makes no member derived: the member is input, and where it is
+open the initialisation default is not at its turn, and the target is open
+(WV-1.5-stack-initialisation-alone).
 
 ### 7.4 What defeasibility is *not* — and what it must not break
 

@@ -15477,7 +15477,7 @@ let ov_rekenjaar_greater : Ir_v0.Ast.condition_expr =
 let ov_fault_of f = match f () with _ -> "none" | exception Value.Fault { code; _ } -> Option.value code ~default:"-"
 
 (* WV-1.5-past-undetermined-deposit: whether the ordinary reading reaches a
-   member read past one that is undetermined for another does not stand, so
+   member read past one that is undetermined does not stand, so
    what it deposits is dropped; its truth counts. "De vrijstelling van een
    Vondst is 1 indien alle van: zijn gewicht is groter dan 10, zijn taxatie
    gedeeld door zijn getuigen is groter dan 3", taxatie 50 and getuigen 0:
@@ -15505,8 +15505,8 @@ let () =
   row "past-undetermined-deposit-stops" [ ("gewicht", "5") ] false
 
 (* WV-1.5-past-undetermined-fault: a fault of a member read past one that is
-   undetermined for another leaves that member undetermined, for the form
-   itself and for another, and a member after it can still decide. "Een
+   undetermined leaves that member undetermined, and a member after it can
+   still decide. "Een
    Vondst is vrijgesteld indien alle van: zijn gewicht is groter dan 10, het
    Rekenjaar is groter dan 2025, zijn taxatie is groter dan 1000", no evaluation
    date: without a gewicht the second member faults and is undetermined;
@@ -15538,7 +15538,7 @@ let () =
     "EF-011"
 
 (* WV-1.5-past-undetermined-ordinary: in a document without the property every
-   member stands for another, so no member is read past an undetermined one:
+   member stands, so no member is read past an undetermined one:
    the documents of WV-1.5-past-undetermined-deposit and -fault without the
    property and without a gewicht stop at the first member, settled leeg
    without a fact and not vrijgesteld; at gewicht 20 the fact stands and the
@@ -15794,7 +15794,7 @@ let () =
   ov_expect "WV-1.5-quantifier-fold-closed-set (at least 1)" (ov_char w "J1" "een") "not"
 
 (* WV-1.5-past-undetermined-fold: a quantifier fold reads the matrix of a
-   member past one that is undetermined for another as a composite does (WV-
+   member past one that is undetermined as a composite does (WV-
    1.5-past-undetermined-deposit). "Een Jutter is gelijkmatig indien al zijn
    vondsten een gewicht gedeeld door hun deelnemers groter dan 2 hebben", over
    V1 with 2 deelnemers and V2 with gewicht 9 and 0 deelnemers: without the
@@ -15820,8 +15820,8 @@ let () =
   row "past-undetermined-fold-stops" [ ("gewicht", "2") ] false
 
 (* WV-1.5-past-undetermined-filter: the filters of a quantifier fold are read
-   before every matrix, so where one of them is undetermined for another every
-   matrix is read past it: its own filter may be false, and a later one may
+   before every matrix, so where one of them is undetermined every matrix is
+   read past it: its own filter may be false, and a later one may
    stop the read by being false. "Een Jutter is gelijkmatig indien al zijn
    vondsten die gemerkt zijn een gewicht gedeeld door hun deelnemers groter dan
    2 hebben", over V1 with gewicht 9 and 0 deelnemers: where the case does not
@@ -16119,6 +16119,29 @@ let () =
   row "with-a-value" ~complete:[ "betwist" ] ~init:(ov_ref "schatting") (ov_v1 [ ("gewicht", "5"); ("schatting", "4") ]) "4";
   row "below-the-input" (ov_v1 [ ("gewicht", "50"); ("vindloon", "7") ]) "open";
   row "below-the-input-given-way" ~complete:[ "betwist" ] (ov_v1 [ ("gewicht", "50"); ("vindloon", "7") ]) "100"
+
+(* WV-1.5-stack-initialisation-alone: a stack whose one default is its
+   initialisation makes no member derived: the member is input, and the
+   initialisation default is not at its turn where it is open. "Het
+   strandloon van een Vondst moet geïnitialiseerd worden op 5" as the one
+   default of a stack: the strandloon is open where the case gives it no
+   value, 7 where the case gives 7, and 5 where it is declared complete and
+   the case gives it none *)
+let () =
+  let doc =
+    ov_doc ~defaults:[ ov_stack ~attribute:"strandloon" [ ov_dflt ~init:true ~consequence:(ov_lit "5") () ] ]
+      [ ov_vondst [ "strandloon" ] [] ] []
+  in
+  let row name ?(complete = []) input want =
+    let id = "stack-initialisation-alone-" ^ name in
+    ov_row ("WV-1.5-" ^ id)
+      (fun () -> ov_run id (ov_complete complete doc) input)
+      (fun w -> ov_attr w "V1" "strandloon")
+      want
+  in
+  row "no-value" (ov_v1 []) "open";
+  row "a-value" (ov_v1 [ ("strandloon", "7") ]) "7";
+  row "complete" ~complete:[ "strandloon" ] (ov_v1 []) "5"
 
 (* WV-1.5-stack-two-initialisations: a stack with an inherited initialisation
    above its own (ch. 7.10): each decides where it stands of every default
@@ -17128,7 +17151,7 @@ let () =
   let witnesses =
     [ "absent-link"; "absent-link-path"; "arithmetic"; "characteristic"; "closed-input"; "comparison"; "composite-filled-test";
       "compound-all"; "compound-any"; "compound-counting"; "compound-none"; "consistency"; "defaults-characteristic";
-      "defaults-stack"; "defaults-subtype"; "empty-by-fault"; "exact-digits"; "fact-creation"; "filled-test";
+      "defaults-initialisation-only"; "defaults-stack"; "defaults-subtype"; "empty-by-fault"; "exact-digits"; "fact-creation"; "filled-test";
       "filled-test-not-closure"; "initialisation"; "input-above-computation"; "input-above-computation-open"; "let";
       "let-closure"; "listed-fold"; "navigated-read"; "object-creation"; "quantifier-fold"; "set-fold"; "settled-empty"; "settled-empty-date";
       "settled-empty-fold"; "settled-empty-stack" ]
@@ -17369,7 +17392,7 @@ let () =
     (lines [ (0, "true"); (5, "false"); (10, "false") ])
 
 (* WV-5.12-open-composite: a composite reads its members until its judgement
-   for another form stands; an undetermined member does not stop the read, and
+   stands; an undetermined member does not stop the read, and
    the members after the one that settles it are not reached. "Een Vondst is
    opvallend indien ten minste één van: zijn taxatie groter is dan 1000, zijn
    gewicht groter is dan 100, zijn lengte groter is dan 2", with no taxatie and
@@ -17424,8 +17447,8 @@ let () =
          "2 Literal unreached"; "OPEN" ])
 
 (* WV-5.12-open-past-undetermined: a member that a fault left undetermined, read
-   past one undetermined for another (ch. 1.5), is undetermined and names the
-   open read of the first member before it that does not stand for another;
+   past one undetermined (ch. 1.5), is undetermined and names the open read of
+   the first member before it that is undetermined;
    the node that faulted carries its fault, and the nodes after it within the
    member are not reached. The document of WV-1.5-past-undetermined-fault
    without a gewicht and at taxatie 50: the second member names the gewicht
@@ -17440,7 +17463,7 @@ let () =
          "7 Comparison false"; "8 AttributeReference 50"; "9 Literal 1000"; "FAILS" ])
 
 (* WV-5.12-open-quantifier-fold: a contributor carries the truth of the matrix
-   on it for the form itself, undetermined among them, and the fold the open
+   on it, undetermined among them, and the fold the open
    read of its first undetermined member — its filter's where its filter is
    undetermined. The fixture quantifier-fold: "alle vondsten zwaar" over V1
    and V2 of 20 and 30 and V3 without a gewicht; and "keurder", over gemerkte
@@ -17478,7 +17501,10 @@ let () =
    opgave is not declared complete, without an opgave: the opgave is open, and
    the computation and the initialisation default below it are displaced. The
    document of WV-1.5-stack-two-initialisations at gewicht 5, betwist not named:
-   below the open default both initialisations are displaced *)
+   below the open default both initialisations are displaced. The fixture
+   defaults-initialisation-only without values: the initialisation default of
+   the strandloon, open input, is displaced without nodes, and that of the
+   meldloon, declared complete, holds *)
 let () =
   let fixture = strict_fixture "defaults-stack" in
   let statuses lines = List.filter (fun l -> List.exists (fun s -> String.ends_with ~suffix:s l) [ " OPEN"; " DISPLACED"; " HOLDS"; " FAILS" ]) lines in
@@ -17494,7 +17520,12 @@ let () =
     @ on_object (default_form 2) "V1" [ "0 Literal 25"; "DISPLACED" ]);
   lines_equal "WV-5.12-open-stack (two initialisations below an open default)"
     (statuses (ov_readings ov_two_initialisations (ov_w1 [ ("gewicht", "5") ])))
-    [ default_form 0 ^ " \"W1\" OPEN"; default_form 1 ^ " \"W1\" DISPLACED"; rule_form 0 ^ " \"W1\" DISPLACED" ]
+    [ default_form 0 ^ " \"W1\" OPEN"; default_form 1 ^ " \"W1\" DISPLACED"; rule_form 0 ^ " \"W1\" DISPLACED" ];
+  let fixture = strict_fixture "defaults-initialisation-only" in
+  let meldloon = "/rules/prioritizedDefaults/1/defaults/0" in
+  lines_equal "WV-5.12-open-stack (an initialisation default over open input)"
+    (readings_named (fixture ^ "ir.json") (fixture ^ "case1-niets-gegeven.json") [ default_form 0; meldloon ])
+    (on_object (default_form 0) "V1" [ "DISPLACED" ] @ on_object meldloon "V1" [ "0 Literal 3"; "HOLDS" ])
 
 (* WV-5.12-open-creation: a creation whose condition is undetermined is open,
    and a read over the relation it leaves open names that relation by its role.
@@ -17609,7 +17640,8 @@ let () =
    neither is a value the case gives a member a rule writes on the object's
    type: that is no input member, and its value stands in place of settled
    leeg where every writer fills nothing (ch. 7.8). An initialisation is no
-   such writer: a member it alone writes is an input member. *)
+   such writer, a rule or the initialisation default of a stack: a member it
+   alone writes is an input member. *)
 let () =
   let written (doc : Ir_v0.Ast.document) (i : ov_input) ~characteristic member =
     let named m = Ir_v0.Checks.norm m = Ir_v0.Checks.norm member in
@@ -17627,7 +17659,8 @@ let () =
     || List.exists
          (fun (l : Ir_v0.Ast.prioritized_defaults) ->
            Option.fold ~none:false ~some:named (if characteristic then l.pd_characteristic else l.pd_attribute)
-           && Eval.isa (env_of doc) i.ov_type l.pd_subject)
+           && Eval.isa (env_of doc) i.ov_type l.pd_subject
+           && List.exists (fun (d : Ir_v0.Ast.default) -> not d.default_initialisation) l.defaults)
          doc.prioritized_defaults
   in
   let complete (doc : Ir_v0.Ast.document) (i : ov_input) ~characteristic member =

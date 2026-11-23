@@ -44,11 +44,6 @@
       "characteristic": "ongetaxeerd"
     },
     {
-      "kind": "characteristicAbsent",
-      "label": "V1",
-      "characteristic": "ongetaxeerd"
-    },
-    {
       "kind": "attributeValue",
       "label": "V1",
       "attribute": "taxatietoeslag",

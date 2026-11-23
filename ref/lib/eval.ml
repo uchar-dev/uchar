@@ -5293,8 +5293,8 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
    of a default chain — [Decided] (the highest deciding default), [Conflict] (a
    differing exception group, keyed by its default-index path, propagating to
    the root with no write), [Undecided] (nothing decided; fall-through), or
-   [Left_open] (a default that is neither, so nothing below it but the
-   initialisation decides; ch. 1.5). *)
+   [Left_open] (a default that is neither, so nothing below it decides, the
+   initialisation among them; ch. 1.5). *)
 type defaults_decision = Char_dec of bool | Attr_dec of Value.t
 type chain_result = Decided of defaults_decision | Conflict of string | Undecided | Left_open
 
@@ -5591,7 +5591,9 @@ let run_defaults_group ?only env world ~world0 ~owner
              the INPUT facts (ch. 7.3): read off the running world instead, the
              default's own earlier write switched it off, and the target kept a
              value its consequence had computed against a read that was not
-             final yet. An initialisation folded with its condition is
+             final yet. Where the target is open input, the input above it
+             does not stand to fill nothing, so it is not at its turn either
+             (ch. 1.5). An initialisation folded with its condition is
              justified only where that condition holds as well *)
           let justified env (r : default) err : judgement =
             if r.default_initialisation then (
@@ -5602,7 +5604,8 @@ let run_defaults_group ?only env world ~world0 ~owner
                     | Some (i0 : World.instance) -> World.attr i0 a = Value.Empty
                     | None -> true
                   in
-                  if not input_empty then established false
+                  if (not input_empty) || World.open_input_attr w ~label:self.label ~attr:a then
+                    established false
                   else (
                     match r.default_justification with
                     | Some c -> judge_cond env w self ~err c
@@ -6197,16 +6200,17 @@ let instance_depth env world0 (o : Ir_v0.Checks.instance_order) =
 (* The open members of the input world: in a document with inferFromEmpty
    false, every input member the case gives no value and whose declaration does
    not say that its input is complete (complete, IR-SPEC ch. 2.2;
-   RUNTIME-SEMANTICS ch. 1.5). A member is input on an object where no rule but
-   an initialisation and no defaults group writes it on the object's type: an
-   initialisation is its lowest writer, below the input, so a member it alone
-   writes is an input member with a default value. A member a rule or a
-   defaults group writes there follows its writers, also where the case gives
-   it no value, and its field changes nothing there. [closed_inputs] treats every input member as
-   complete (runner --closed-inputs, the measurement of preservation with
-   complete knowledge). The one place the property is read for the evaluation:
-   a document without it has no open member, and nothing in the evaluation
-   tells it from another. *)
+   RUNTIME-SEMANTICS ch. 1.5). A member is input on an object where nothing but
+   an initialisation writes it on the object's type: no rule other than an
+   initialisation, and no defaults group with a default other than its
+   initialisation default. An initialisation is its lowest writer, below the
+   input, so a member it alone writes is an input member with a default value.
+   A member another writer writes there follows its writers, also where the
+   case gives it no value, and its field changes nothing there. [closed_inputs]
+   treats every input member as complete (runner --closed-inputs, the
+   measurement of preservation with complete knowledge). The one place the
+   property is read for the evaluation: a document without it has no open
+   member, and nothing in the evaluation tells it from another. *)
 let open_inputs env ~closed_inputs (world : World.t) =
   if env.doc.infer_from_empty || closed_inputs then World.Member.empty
   else
@@ -6223,7 +6227,8 @@ let open_inputs env ~closed_inputs (world : World.t) =
            (fun (l : prioritized_defaults) ->
              (Option.map World.attribute l.pd_attribute = Some m
              || Option.map World.characteristic l.pd_characteristic = Some m)
-             && isa env otype l.pd_subject)
+             && isa env otype l.pd_subject
+             && List.exists (fun (d : default) -> not d.default_initialisation) l.defaults)
            env.doc.prioritized_defaults
     in
     SMap.fold

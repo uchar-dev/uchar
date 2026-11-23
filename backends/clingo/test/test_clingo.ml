@@ -22125,7 +22125,8 @@ let () =
   let plays =
     [ "absent-link"; "absent-link-path"; "characteristic"; "closed-input"; "comparison"; "composite-filled-test";
       "compound-all"; "compound-any"; "compound-counting"; "compound-none"; "consistency"; "defaults-characteristic";
-      "defaults-stack"; "defaults-subtype"; "filled-test"; "filled-test-not-closure"; "initialisation";
+      "defaults-initialisation-only"; "defaults-stack"; "defaults-subtype"; "filled-test"; "filled-test-not-closure";
+      "initialisation";
       "input-above-computation"; "input-above-computation-open"; "let"; "let-closure"; "navigated-read"; "settled-empty";
       "quantifier-fold"; "settled-empty-date"; "settled-empty-stack"; "empty-by-fault"; "listed-fold"; "set-fold";
       "settled-empty-fold"; "fact-creation"; "object-creation" ]
