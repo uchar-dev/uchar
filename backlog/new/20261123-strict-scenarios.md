@@ -17,20 +17,21 @@ heeft daarom alleen handgeschreven cases.
 ## Voorstel
 
 1. **Situatie**, in het blok van een instantie (`een Vondst V1`): "- is niet drijfhout" (bijvoeglijk, lidwoord zoals bij
-   "- is drijfhout") en "- heeft geen strandrecht" (bezittelijk) zetten het kenmerk in `characteristicsAbsent`. Hetzelfde
+   "- is drijfhout") en "- heeft geen strandrecht" (bezittelijk; met een bepaald lidwoord "- heeft niet het strandrecht") zetten het kenmerk in
+   `characteristicsAbsent`. Hetzelfde
    kenmerk als geldend en als niet geldend in één blok is een fout met een eigen RGS-code; een situatie `gebaseerd op` een
    andere overschrijft wat zij van die andere erft, zodat de case het kenmerk niet in beide lijsten krijgt (EF-047). Een
-   periode bij een niet geldend kenmerk wordt geweigerd. In een gewoon document verandert `characteristicsAbsent` geen
+   periode bij een niet geldend kenmerk wordt met een eigen RGS-code geweigerd. In een gewoon document verandert `characteristicsAbsent` geen
    uitkomst.
 2. **Verwachting**: "- de afhaaldatum van V1 staat niet vast" (ook met "het") wordt `attributeOpen`; "- of V1 afhaalbaar is,
-   staat niet vast" en "- of V1 strandrecht heeft, staat niet vast" worden `characteristicOpen`, de komma vrij. Dat zijn de
+   staat niet vast" en "- of V1 strandrecht heeft, staat niet vast" worden `characteristicOpen`, met dezelfde lidwoorden als een verwachting dat het kenmerk geldt, de komma vrij. Dat zijn de
    woorden die de uitleg van de toolchain al gebruikt. `of`, `staat`, `niet` en `vast` worden geen gereserveerde woorden. In een
    gewoon document weigert de frontend beide met een eigen RGS-code (daar is niets open).
 3. "- de afhaaldatum van V1 is leeg" blijft `attributeEmpty`, in een strikt document dus vaststaand leeg. Een attribuut als
    vaststaand leeg in de situatie hoort hier niet bij: dat vraagt `attributesEmpty` in het caseschema (kaart
    `settled-empty-input`, geparkeerd).
-4. Gate 16 regenereert; een golden met een `scenario.rgs` voor een strikt document (het strikte deel van de kenmerkgolden van
-   `one-empty`, of `jutterswet-afleiden-uit-leeg`).
+4. Gate 16 regenereert; `jutterswet-afleiden-uit-leeg` krijgt een `scenario.rgs`. De kenmerkgolden van `one-empty` deel 1
+   komt later en krijgt er meteen ook een.
 5. **Toolchain** (pin-bump): `ScenarioData`, `SituationToRequest` en de playground zetten `characteristicsAbsent` om in
    `{"state": "holdsNot"}` en lezen `attributeOpen` en `characteristicOpen` als verwachting.
 
