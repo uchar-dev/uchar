@@ -9,7 +9,7 @@ antwoord `{"state": "empty"}` dat als verzoek naar een volgende regelset gaat. W
 ## Aanleiding
 
 In een document met `inferFromEmpty: false` kan een casus van een kenmerk zeggen dat het niet geldt (`characteristicsAbsent`, ch. 1.5 "The case"), en van een attribuut niet dat er geen waarde is: een invoerattribuut zonder waarde is open, tenzij zijn declaratie `(volledig gegeven)` zegt. Een aanvrager die zeker weet dat er geen bergloon is, kan dat dus niet
-melden: laat hij het weg, dan blijft elke som over dat lid open en blijft de dienst ernaar vragen; vult hij 0 in, dan is het een gevulde waarde (`is leeg` is onwaar, een gemiddelde verandert); de marker `niet van toepassing` is ook een gevulde waarde. De auteur kan het lid `(volledig gegeven)` verklaren, maar dan is het bij een andere aanvrager,
+melden: laat hij het weg, dan blijft elke som over dat lid open en blijft de dienst ernaar vragen; vult hij 0 in, dan is het een gevulde waarde (`is leeg` is onwaar, een gemiddelde verandert). De auteur kan het lid `(volledig gegeven)` verklaren, maar dan is het bij een andere aanvrager,
 die het gewoon niet weet, ook vaststaand leeg. En een strikt antwoord `{"state": "empty"}` van de ene regelset kan niet als verzoek de volgende in.
 
 ## Voorstel
