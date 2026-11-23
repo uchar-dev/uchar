@@ -344,7 +344,7 @@ final class RuleChecker {
      * {@code WF-045.instance-read-outside} names the read: the author changes the read, not the forms.
      *
      * <p>Judged is the one document the model has: emitted here, once, when the model is finished — the opgave
-     * lowering and the marker sweep included — so what is judged is what {@code --ir} writes. The document, or null
+     * lowering included — so what is judged is what {@code --ir} writes. The document, or null
      * when the model carries an ERROR, this check's own included. A model the emitter refuses although no check before
      * refused it has no document to judge; its refusal is then the model's ERROR (RGS-394), in the emitter's sentence,
      * at the line of the node it refused or at the head of its form.

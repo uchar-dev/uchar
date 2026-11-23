@@ -938,7 +938,7 @@ stack (RUNTIME-SEMANTICS ch. 7.8): it decides every day on which no other writer
 over all time, open segments included. Its rule reads the `Value` facts of the other writers and the input on the bean,
 never its own write (`PeriodDefaults.initialisationDays`), reads its condition as a rule on a timeline target does,
 per period where it reads a timeline or holds a window, and decides, of the days left to it, those on which its value,
-the period arithmetic of ch. 3.4 and 3.5 or the constructor of a literal, reads a value (`PeriodDefaults.initialised`).
+the period arithmetic of ch. 3.4 and 3.5, reads a value (`PeriodDefaults.initialised`).
 Where no day is left its value is not evaluated, a `Let` whose binder ends the evaluation, and where it decides no day
 it inserts nothing and what its value deposited does not stand (`Consequence.Decision`). It is one writer of the target
 beside the rules, and the target stands as their union with its input. Over the asOfDate-bucket scalar of its target it
@@ -946,7 +946,7 @@ faults with EF-037, and a total of the timeline it writes meets its open segment
 without nodes where the writers and the input leave it no day, and else that of its condition and of its value, the root
 the filled segments of its value within the periods of its condition. The member value of an object creation on a
 time-dependent attribute is the input of the made object per day: the period arithmetic read on the creation's subject,
-a scalar on every day, or the constructor of a literal, set on the new bean as its segments (`ComputeHelpers.setTimeline`).
+a scalar on every day, set on the new bean as its segments (`ComputeHelpers.setTimeline`).
 A sum per period over the relation a creation makes reads the made objects through their links, and a made object has
 no input that could be the asOfDate-bucket scalar. Witness `TmsTimelineStackWitnessTest` (the documents of
 `ref/test/fixtures/writers-stack`), goldens `jutterswet-initialisatie-per-dag` and `jutterswet-creatie-per-dag`.
@@ -1131,8 +1131,8 @@ never as a silent fall:
   `DimensionCellWitnessTest` for the unbounded form and for labels that name no cell;
 - of timelines, each with no golden with cases unless one is named: a writer of a timeline target other than a
   computing rule or an initialisation beside another writer (DROOLS-103), which ch. 7.8 keeps fenced, and a value of
-  an initialisation or of a creation's member on one that is neither the period arithmetic of ch. 3.4 and 3.5 nor the
-  constructor of a literal (DROOLS-316, ch. 3.12 row 10); a characteristic on a
+  an initialisation or of a creation's member on one that is not the period arithmetic of ch. 3.4 and 3.5
+  (DROOLS-316, ch. 3.12 row 10); a characteristic on a
   timeline as the target of a rule without a period window (DROOLS-102) or of two rules (DROOLS-103), and read over a
   path where a rule writes it (DROOLS-268); a day count over another condition than one characteristic with day-kind
   tests (DROOLS-114); any value of a timeline target other than a pro-rata part, a day count or

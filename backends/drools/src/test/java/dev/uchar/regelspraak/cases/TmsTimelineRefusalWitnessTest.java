@@ -126,9 +126,9 @@ class TmsTimelineRefusalWitnessTest {
                                 "306"))))),
                 List.of("transpiler SKIP: regel: jaardeel init — de waarde van een initialisatie op het"
                         + " tijdsafhankelijke attribuut 'jaardeel' van Jutter is geen rekenen per periode van ch. 3.4 en"
-                        + " 3.5 en geen constructor van een literal ('het tijdsevenredig deel per year van zijn"
+                        + " 3.5 ('het tijdsevenredig deel per year van zijn"
                         + " jaartarief'): deze tak schrijft haar per dag alleen"
-                        + " als een van die twee (RUNTIME-SEMANTICS ch. 3.12 rij 10, 7.8)")));
+                        + " als dat rekenen (RUNTIME-SEMANTICS ch. 3.12 rij 10, 7.8)")));
         // a characteristic on a timeline as the target, without a period window
         out.add(new Row("kenmerk-als-doel", TmsTimelineDocuments.ir(MODEL_JAARDEEL, List.of(
                         TmsDocuments.characteristicRule("borgplicht", "Jutter", "borgplichtig",

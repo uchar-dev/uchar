@@ -30,6 +30,16 @@
           },
           {
             "node": "Attribute",
+            "name": "toeslag",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
             "name": "vinddatum",
             "datatype": {
               "node": "Date",
@@ -421,7 +431,140 @@
     "uniquenesses": [],
     "factCreations": [],
     "startPointDeterminations": [],
-    "ruleGroups": []
+    "ruleGroups": [],
+    "prioritizedDefaults": [
+      {
+        "node": "PrioritizedDefaults",
+        "name": "toeslag",
+        "subject": "Vondst",
+        "attribute": "toeslag",
+        "defaults": [
+          {
+            "node": "Default",
+            "name": "gewogen toeslag",
+            "justification": {
+              "node": "Predicate",
+              "kind": "filled",
+              "operand": {
+                "node": "AttributeReference",
+                "attribute": "toeslaggrond",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn toeslaggrond"
+                }
+              },
+              "negated": false,
+              "digits": 0,
+              "source": {
+                "snippet": "zijn toeslaggrond gevuld is"
+              }
+            },
+            "consequence": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "Rounding",
+                "base": {
+                  "node": "Binary",
+                  "op": "dividedBy",
+                  "left": {
+                    "node": "AttributeReference",
+                    "attribute": "toeslaggrond",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn toeslaggrond"
+                    }
+                  },
+                  "right": {
+                    "node": "AttributeReference",
+                    "attribute": "geschatte gewicht",
+                    "subjectType": "Vondst",
+                    "source": {
+                      "snippet": "zijn geschatte gewicht"
+                    }
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": false,
+                    "decimals": 2,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "zijn toeslaggrond gedeeld door zijn geschatte gewicht"
+                  }
+                },
+                "mode": "halfAwayFromZero",
+                "decimals": 2,
+                "type": {
+                  "node": "Number",
+                  "whole": false,
+                  "decimals": 2,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "zijn toeslaggrond gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "5.00"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "5,00"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "(zijn toeslaggrond gedeeld door zijn geschatte gewicht rekenkundig afgerond op 2 decimalen) plus 5,00"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "name": "toeslag",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "1.00"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "1,00"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      }
+    ]
   },
   "diagnostics": []
 }

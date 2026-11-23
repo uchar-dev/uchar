@@ -2443,7 +2443,7 @@ public final class TmsTranspiler {
      * no day, and else that of its condition and of its value where the periods of its condition hold a day left to it,
      * the root the filled segments of its value within those periods (ch. 5.12).
      *
-     * <p>Refused by name: a value that is neither of those producers ({@link DroolsCode#TIME_TARGET_PRODUCER_VALUE},
+     * <p>Refused by name: a value that is not that period arithmetic ({@link DroolsCode#TIME_TARGET_PRODUCER_VALUE},
      * ch. 3.12 row 10), and a second initialisation on the target (WF-079).
      */
     private List<RulePlan> timelineInitialisationRule(ResolvedRule r, Expr.AttributeReference target) {

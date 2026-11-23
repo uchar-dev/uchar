@@ -351,7 +351,7 @@ DROOLS-312	the period arithmetic of ch. 3.4 writes {value} on [{from}, {to}) int
 DROOLS-313	form not carried by the v0 Drools backend: Expr:{node} (unknown expression node)
 DROOLS-314	a payload access to the time-dependent attribute '{attribute}' is read per day (RUNTIME-SEMANTICS ch. 9.5), which this backend does not execute
 DROOLS-315	the allocation "{allocation}" names in its field {field} the time-dependent attribute '{attribute}' of {objectType}: an allocation distributes one amount at one moment, and the document is not well-formed (IR-SPEC WF-128)
-DROOLS-316	{form} on the time-dependent attribute '{attribute}' of {declarant} is neither the period arithmetic of ch. 3.4 and 3.5 nor the constructor of a literal ('{snippet}'): this branch writes it per day only as one of those (RUNTIME-SEMANTICS ch. 3.12 row 10, 7.8)
+DROOLS-316	{form} on the time-dependent attribute '{attribute}' of {declarant} is not the period arithmetic of ch. 3.4 and 3.5 ('{snippet}'): this branch writes it per day only as that arithmetic (RUNTIME-SEMANTICS ch. 3.12 row 10, 7.8)
 DROOLS-316.initialisation	the value of an initialisation
 DROOLS-316.member	the member value of an object creation
 DROOLS-317	the bean model does not carry the bean property {property} of {objectType}: its getter {getter} is a method of java.lang.Object, which no bean can declare again

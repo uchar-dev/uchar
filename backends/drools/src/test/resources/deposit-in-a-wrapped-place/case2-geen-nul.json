@@ -30,6 +30,14 @@
     {
       "kind": "attributeValue",
       "label": "V2",
+      "attribute": "toeslag",
+      "value": {
+        "number": "8.00"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
       "attribute": "vindloon",
       "value": {
         "number": "5.00"
