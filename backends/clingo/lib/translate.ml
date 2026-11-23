@@ -10546,8 +10546,6 @@ and sum_term ctx ~subject ~subject_ot (e : expr) : string list * string =
   | Attribute_reference
       { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ }
     when norm ot = norm subject_ot ->
-      if attr_temporal ctx ~otype:ot ~attr:a then
-        fault "temporal sum carriage is a recorded flank; no corpus case";
       open_read ctx ~holder:subject ~attribute:a [];
       let v = fresh ctx "V" in
       ([ Printf.sprintf "val(%s,%s,%s)" subject (str a) v ], v)
@@ -10662,8 +10660,6 @@ and scrutinee_pattern ctx ~subject ~subject_ot ~scrutinee ~pattern =
   | Attribute_reference
       { attribute_ref = Some a; object_type = Some ot; navigation_bindings = None; _ }
     when norm ot = norm subject_ot ->
-      if attr_temporal ctx ~otype:ot ~attr:a then
-        fault "temporal sum carriage is a recorded flank; no corpus case";
       [ Printf.sprintf "val(%s,%s,%s)" subject (str a) pattern ]
   | _ ->
       faultc "CLINGO-015"
@@ -16792,7 +16788,11 @@ let refuse_sum_type_forms (doc : document) =
     (fun (oc : resolved_object_creation) ->
       match oc.created_type with
       | Some otn ->
-          if List.exists (fun (t : assignment) -> match t.to_attribute with Some a -> sum_attribute otn a | None -> false)
+          (* an attribute and a characteristic may share a name (WF-002), and an assignment to a characteristic
+             names it in [to_attribute] too *)
+          if List.exists
+               (fun (t : assignment) ->
+                 match t.to_attribute with Some a -> (not t.to_characteristic) && sum_attribute otn a | None -> false)
                oc.assignments
           then refuse "creation"
       | None -> ())

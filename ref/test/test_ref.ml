@@ -4473,7 +4473,10 @@ let () =
    is [Eval.sum_type_forms]. A document per form under
    ref/test/fixtures/sum-types/forms-not-carried, verifier-clean, is refused
    with REF-015 and its slug before anything is evaluated, an initialisation
-   of a sum-typed attribute as the defaults group ch. 7.7 reads it as *)
+   of a sum-typed attribute as the defaults group ch. 7.7 reads it as; a
+   document with two forms, a creation and an initialisation, names the first
+   of the table; and a creation that gives a characteristic the name of a
+   sum-typed attribute (WF-002) is no form of the table and plays *)
 let () =
   let read file = In_channel.with_open_bin (corpus_file file) In_channel.input_all in
   let lines = String.split_on_char '\n' (read "spec/RUNTIME-SEMANTICS.md") in
@@ -4503,14 +4506,20 @@ let () =
             | exception Value.Fault _ -> false
             | _ -> false)))
     [ ("timeline", "timeline"); ("dimension", "dimension"); ("creation", "creation"); ("payload-unit", "payload-unit");
-      ("defaults-group", "defaults-group"); ("initialisation", "defaults-group") ];
-  (* a constructor name of several words is a name like another (WF-060) *)
+      ("defaults-group", "defaults-group"); ("initialisation", "defaults-group");
+      ("creation-and-initialisation", "creation") ];
   let dir = "ref/test/fixtures/sum-types/" in
+  plays ~ident:"WV-9.4-characteristic-in-a-creation" ~ir:(read (dir ^ "characteristic-in-a-creation/ir.json"))
+    ~case_data:(read (dir ^ "characteristic-in-a-creation/case.json")) (fun _ -> ());
+  (* a constructor name of several words is a name like another (WF-060) *)
   plays ~ident:"WV-9.1-constructor-of-several-words" ~ir:(read (dir ^ "constructor-of-several-words/ir.json"))
     ~case_data:(read (dir ^ "constructor-of-several-words/case.json")) (fun _ -> ());
   (* a Construct in a document that infers nothing from an empty value is a
      form without that reading (ch. 1.5), as a match is *)
-  match Eval.refuse_uncarried (Ir_v0.Loader.load_file (corpus_file (dir ^ "construct-in-a-strict-document/ir.json"))) with
+  let strict = corpus_file (dir ^ "construct-in-a-strict-document/ir.json") in
+  check "WV-1.5-uncarried-construct: verifier-clean"
+    (Ir_v0.Checks.all (Ir_v0.Loader.load_file ~reader:Ir_v0.Loader.Verifier strict) = []);
+  match Eval.refuse_uncarried (Ir_v0.Loader.load_file strict) with
   | () -> check "WV-1.5-uncarried-construct (not refused)" false
   | exception Value.Fault { code; params; _ } ->
       check "WV-1.5-uncarried-construct" (code = Some "REF-014" && params = [ ("form", "construct") ])

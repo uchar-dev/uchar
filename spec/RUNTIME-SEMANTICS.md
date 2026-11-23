@@ -10746,13 +10746,17 @@ holds several, it names the first of this list:
 |---|---|
 | `timeline` | a sum-typed attribute or parameter with a timeline (ch. 3): its input, its writers, its copy and its comparison per period |
 | `dimension` | a sum-typed dimensioned attribute (ch. 5.8c): its cells |
-| `creation` | an object creation that gives a sum-typed member a value (ch. 5.5) |
+| `creation` | an object creation that gives a sum-typed attribute a value (ch. 5.5); one that gives a value to a characteristic that shares its name with such an attribute (IR-SPEC WF-002) is not this form |
 | `payload-unit` | a sum type with a unary constructor whose payload declares a unit (ch. 2.10) |
-| `defaults-group` | a defaults group whose target is a sum-typed attribute (ch. 7), and an initialisation of one, which ch. 7.7 reads as such a group |
+| `defaults-group` | a defaults group whose target is a sum-typed attribute (ch. 7), and every initialisation of one (ch. 7.3), with or without a condition or a validity |
 
 The suite holds this table to the slugs the reference interpreter refuses
 with, in this order, and plays a document per form
-(`WV-9.4-forms-not-carried`, `ref/test/fixtures/sum-types/forms-not-carried`).
+(`WV-9.4-forms-not-carried`, `ref/test/fixtures/sum-types/forms-not-carried`),
+one with two forms, an object creation and an initialisation, refused for the
+creation, and one whose object creation gives a value to a characteristic that
+shares its name with a sum-typed attribute, which is evaluated
+(`WV-9.4-characteristic-in-a-creation`).
 
 ## 10. Folds and function values
 
@@ -11228,7 +11232,7 @@ Worked (the anchor's `dubbel` iff `dossier` = `{waarde: 120.50, telling:
   anchor exercises it, and the ASP case emission does not yet carry
   record-valued segments (it faults loudly). Until a case wants one,
   temporal record carriage is a recorded OPEN in the ASP inventory —
-  never a silent divergence, the ch. 9.4 flank pattern. Timeline
+  never a silent divergence. Timeline
   *arithmetic* and temporal totals stay numeric-only regardless
   (ch. 3.4–3.6), as for the text and enumeration members.
 

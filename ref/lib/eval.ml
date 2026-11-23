@@ -294,7 +294,11 @@ let refuse_sum_type_forms (doc : document) =
     (fun (oc : resolved_object_creation) ->
       match oc.created_type with
       | Some otn ->
-          if List.exists (fun (t : assignment) -> match t.to_attribute with Some a -> sum_attribute otn a | None -> false)
+          (* an attribute and a characteristic may share a name (WF-002), and an assignment to a characteristic
+             names it in [to_attribute] too *)
+          if List.exists
+               (fun (t : assignment) ->
+                 match t.to_attribute with Some a -> (not t.to_characteristic) && sum_attribute otn a | None -> false)
                oc.assignments
           then refuse "creation"
       | None -> ())

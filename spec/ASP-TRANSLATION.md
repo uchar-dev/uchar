@@ -3509,8 +3509,10 @@ number of them, an allocation and a creation's member value stand in the
 initialisation's stack (S3, S10); a target that is
 **neither a number nor a date** (`the initialisation of "a" writes a
 target that is neither a number nor a date, and only those are
-translated here (no corpus case)`) — text, enumeration, boolean, sum,
-struct and date-time targets, which ref replays. On a **temporal
+translated here (no corpus case)`) — text, enumeration, boolean, struct
+and date-time targets, which ref replays; an initialisation of a sum-typed
+target is a form of RS ch. 9.4, which ref and this translation both refuse
+before anything else (`CLINGO-052`, `defaults-group`). On a **temporal
 target** the initialisation is read per day (RS ch. 7.8), below.
 
 *Environment and input fences:* a **control character < 0x20** in a

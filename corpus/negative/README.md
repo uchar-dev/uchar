@@ -899,3 +899,27 @@ a well-formed list form.
 
 The six witnesses `wf124-*` are new; they are written in the target shape and
 broken from `corpus/golden/jutterswet-vergunningsduur`.
+
+### `one-empty` (2026-11-23)
+
+The card (`backlog/doing/20261123-one-empty.md`, part 1) drops the absence markers
+`onbekend` and `niet van toepassing` of the RegelSpraak dialect, and with them the
+node `PayloadAccess`, which served them alone, and its rule WF-127 (`spec/IR-SPEC.md`
+keeps the rule as removed). Gate 3 at `27ac4cf2a`, before the card, held each of the
+eleven documents to the arm of its row. Measured 2026-11-23: the verifier of the card
+refuses each at load (`unknown expr node "PayloadAccess"`), as the schema does, so no
+document of the rule has a form left to break.
+
+| directory | rule | card | stamp | arm | reason |
+| --- | --- | --- | --- | --- | --- |
+| `wf127-access-untyped` | WF-127 | part 1 | verwijderd-met-reden | `WF-127.access-untyped` | an access without a type; the node is gone |
+| `wf127-base-not-sum` | WF-127 | part 1 | verwijderd-met-reden | `WF-127.base-not-sum`, `type=number` | an access to a number, which has no constructor; the node is gone |
+| `wf127-base-untyped` | WF-127 | part 1 | verwijderd-met-reden | `WF-127.base-untyped` | an access to an attribute no declaration types; the node is gone, and WF-034 keeps its own witnesses of the undeclared attribute |
+| `wf127-cell-guarded-by-another-cell` | WF-127 | part 1 | verwijderd-met-reden | `WF-127.unguarded`, `constructor=waarde` | the read of a cell under the test of another cell of the attribute with markers; the markers and the test they demanded are gone |
+| `wf127-constructor-nullary` | WF-127 | part 1 | verwijderd-met-reden | `WF-127.constructor-nullary`, `constructor=onbekend`, `domain=taxatie van een Vondst` | an access to the marker `onbekend`, which carries no payload; the markers are gone |
+| `wf127-constructor-undeclared` | WF-127 | part 1 | verwijderd-met-reden | `WF-127.constructor-undeclared`, `constructor=bedrag`, `domain=taxatie van een Vondst` | an access to a constructor the domain does not declare; the node is gone, and WF-062 keeps the undeclared constructor of a `Construct` |
+| `wf127-domain-undeclared` | WF-127 | part 1 | verwijderd-met-reden | `WF-127.domain-undeclared`, `domain=taksatie van een Vondst` | an access over a sum type whose domain is undeclared; the node is gone, and WF-061 keeps the undeclared domain at the use site |
+| `wf127-fold-unguarded` | WF-127 | part 1 | verwijderd-met-reden | `WF-127.unguarded`, `constructor=waarde` | a sum over the payloads of members without the filter "die een waarde hebben"; the markers and the filter they demanded are gone |
+| `wf127-guard-after-read` | WF-127 | part 1 | verwijderd-met-reden | `WF-127.unguarded`, `constructor=waarde` | the payload read before its test in an `all`; the markers and the test they demanded are gone |
+| `wf127-type-differs` | WF-127 | part 1 | verwijderd-met-reden | `WF-127.type-differs` | an access typed otherwise than its payload; the node is gone |
+| `wf127-unguarded` | WF-127 | part 1 | verwijderd-met-reden | `WF-127.unguarded`, `constructor=waarde` | a rule that reads the payload without the test "indien zijn taxatie een waarde heeft"; the markers and the test they demanded are gone |

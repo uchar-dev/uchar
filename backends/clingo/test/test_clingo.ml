@@ -19020,8 +19020,10 @@ let () =
    rule-level Construct with a parameter payload is carried; a computed payload
    is leeg where ref's operator reads it leeg; a payload at another scale and a
    Match as payload are refused by name; every form of ch. 9.4 no executor
-   carries is refused with CLINGO-052 and its slug; and a Construct in a
-   document that infers nothing from an empty value with CLINGO-049 *)
+   carries is refused with CLINGO-052 and its slug, a document with two forms
+   for the first of the table; a creation that gives a characteristic the name
+   of a sum-typed attribute (WF-002) is no such form and plays; and a Construct
+   in a document that infers nothing from an empty value with CLINGO-049 *)
 let () =
   work @@ fun () ->
   let read f = In_channel.with_open_bin f In_channel.input_all in
@@ -19066,7 +19068,12 @@ let () =
       refused ~name:("sum types: a form no executor carries, " ^ d) ~code:"CLINGO-052" ~params:[ ("form", slug) ]
         (fixture ("forms-not-carried/" ^ d)))
     [ ("timeline", "timeline"); ("dimension", "dimension"); ("creation", "creation"); ("payload-unit", "payload-unit");
-      ("defaults-group", "defaults-group"); ("initialisation", "defaults-group") ];
+      ("defaults-group", "defaults-group"); ("initialisation", "defaults-group");
+      ("creation-and-initialisation", "creation") ];
+  let ir, case_text = fixture "characteristic-in-a-creation" in
+  verifier_clean ~name:"sum types: a characteristic in a creation" ~ir;
+  both_answer ~name:"sum types: a characteristic in a creation that shares its name with a sum-typed attribute" ~ir
+    ~case_text;
   refused ~name:"sum types: a Construct in a document that infers nothing from an empty value" ~code:"CLINGO-049"
     ~params:[ ("form", "construct") ] (fixture "construct-in-a-strict-document")
 
