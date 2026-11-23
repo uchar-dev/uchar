@@ -1,0 +1,33 @@
+Scenario drijfhout
+Gegeven is de volgende situatie:
+een Vondst V1
+- de claimdatum is 10-03-2026
+- is drijfhout
+Met als verwacht resultaat:
+- V1 is niet afhaalbaar
+- de afhaaldatum van V1 is leeg
+
+Scenario drijfhout open
+Gegeven is de volgende situatie:
+een Vondst V1
+- de claimdatum is 10-03-2026
+Met als verwacht resultaat:
+- of V1 afhaalbaar is, staat niet vast
+- de afhaaldatum van V1 staat niet vast
+
+Scenario geen drijfhout
+Gegeven is de volgende situatie:
+een Vondst V1
+- de claimdatum is 10-03-2026
+- is niet drijfhout
+Met als verwacht resultaat:
+- V1 is afhaalbaar
+- de afhaaldatum van V1 is 17-03-2026
+
+Scenario geen drijfhout zonder claimdatum
+Gegeven is de volgende situatie:
+een Vondst V1
+- is niet drijfhout
+Met als verwacht resultaat:
+- V1 is afhaalbaar
+- de afhaaldatum van V1 staat niet vast

@@ -1,0 +1,13 @@
+Objecttype de Vondst (mv: Vondsten)
+    de claimdatum Datum in dagen;
+    de afhaaldatum Datum in dagen;
+    is drijfhout kenmerk (bijvoeglijk);
+    is afhaalbaar kenmerk (bijvoeglijk);
+
+Regel afhaalbare vondst
+    geldig altijd
+        Een Vondst is afhaalbaar indien hij niet drijfhout is.
+
+Regel afhaaldatum
+    geldig altijd
+        De afhaaldatum van een Vondst moet berekend worden als zijn claimdatum plus 7 dagen indien hij afhaalbaar is.

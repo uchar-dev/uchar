@@ -1,0 +1,23 @@
+Scenario afhaalbare vondst
+Gegeven is de volgende situatie:
+een Vondst V1
+- de claimdatum is 10-03-2026
+Met als verwacht resultaat:
+- V1 is afhaalbaar
+- de afhaaldatum van V1 is 17-03-2026
+
+Scenario drijfhout
+Gegeven is de volgende situatie:
+een Vondst V1
+- de claimdatum is 10-03-2026
+- is drijfhout
+Met als verwacht resultaat:
+- V1 is niet afhaalbaar
+- de afhaaldatum van V1 is leeg
+
+Scenario zonder claimdatum
+Gegeven is de volgende situatie:
+een Vondst V1
+Met als verwacht resultaat:
+- V1 is afhaalbaar
+- de afhaaldatum van V1 is leeg

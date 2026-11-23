@@ -1,0 +1,80 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// hij niet drijfhout is
+function boolean toets_afhaalbareVondst(Object $drijfhout) {
+    return ComputeHelpers.characteristic($drijfhout, Boolean.FALSE);
+}
+
+rule "afhaalbare vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $drijfhout : (ComputeHelpers.holds(drijfhout)) )
+    eval( toets_afhaalbareVondst($drijfhout) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "afhaalbaar", true)));
+end
+
+// hij afhaalbaar is
+function boolean toets_afhaaldatum(Object $afhaalbaar) {
+    return ComputeHelpers.characteristic($afhaalbaar, Boolean.TRUE);
+}
+
+// zijn claimdatum plus 7 dagen
+function Object waarde_afhaaldatum(Object $claimdatum) {
+    try {
+        return ComputeHelpers.dateStep($claimdatum, new java.math.BigDecimal("7"), "DAYS", Boolean.TRUE);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "afhaaldatum"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $claimdatum : claimdatum )
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "afhaalbaar", true), subject == $onderwerp, $afhaalbaar : holds )
+    eval( toets_afhaaldatum($afhaalbaar) )
+then
+    Object v = waarde_afhaaldatum($claimdatum);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "afhaaldatum", ComputeHelpers.designate(v, "afhaaldatum")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "afhaaldatum", false), v, "afhaaldatum"));
+        }
+    }
+end
+
+rule "kenmerkstand Vondst.afhaalbaar: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(afhaalbaar) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "afhaalbaar", true), true));
+end
+
+rule "kenmerkstand Vondst.afhaalbaar: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "afhaalbaar", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "afhaalbaar", true), true));
+end
+
+rule "kenmerkstand Vondst.afhaalbaar: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(afhaalbaar) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "afhaalbaar", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "afhaalbaar", true), false));
+end
+

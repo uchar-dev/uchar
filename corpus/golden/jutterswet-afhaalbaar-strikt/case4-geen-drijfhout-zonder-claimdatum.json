@@ -1,0 +1,31 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicsAbsent": [
+          "drijfhout"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "afhaalbaar"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "afhaaldatum"
+    }
+  ]
+}

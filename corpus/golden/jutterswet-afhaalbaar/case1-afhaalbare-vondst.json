@@ -1,0 +1,35 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "claimdatum": {
+            "date": "2026-03-10"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "afhaalbaar"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "afhaaldatum",
+      "value": {
+        "date": "2026-03-17"
+      }
+    }
+  ]
+}

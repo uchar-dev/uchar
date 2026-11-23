@@ -1646,7 +1646,9 @@ EXPECTED_CHANNEL=(
 # with absence markers, whose markers are values, also over a role (RUNTIME-SEMANTICS ch. 1.2, 9.5; PLAYED 3).
 # 386 with jutterswet-afleiden-uit-leeg and jutterswet-volledig-gegeven: two documents with inferFromEmpty false, the
 # reading of RUNTIME-SEMANTICS ch. 1.5 in which a member can be open, each with a defaults group (PLAYED 6 and 6).
-EXPECTED_PLAYED=386
+# 388 with jutterswet-afhaalbaar and jutterswet-afhaalbaar-strikt: a status written as a characteristic, in an ordinary
+# and in a strict document (PLAYED 3 and 4).
+EXPECTED_PLAYED=388
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
