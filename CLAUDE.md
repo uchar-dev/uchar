@@ -208,18 +208,24 @@ Throughout: "stale-failing" means a list fails on an entry that no longer applie
    exact expectation match (the oracle guard of PLAN §8); goldens without a case file are listed. It also runs
    `ref/test/`, the executable form of the `RUNTIME-SEMANTICS.md` worked examples, demanding its count line. A
    preservation leg (RUNTIME-SEMANTICS ch. 1.5) holds that complete knowledge gives the ordinary outcome: every golden
-   whose document does not carry `inferFromEmpty`, copied with `inferFromEmpty: false` and replayed with
-   `runner --closed-inputs`, plays its own cases; a golden whose copy ref refuses (REF-014) is counted per form, any
-   other difference fails by name, and the copy of `PRESERVATION_MUTANT` without `--closed-inputs` must miss a case
-   (its red row). A monotonicity leg (the same section) holds that giving an input adds outcomes and changes none: per
-   golden the preservation leg carries or that carries the property, per case and per input the case gives,
-   `runner --end-state` of the case without that input against the case, every outcome of the first standing in the
-   second; a run in which a closure decided (a `closure` line, or a fault after one) and a run whose member left out
-   is not open without its value (a derived member, or a member declared complete) are counted apart, any other difference fails by name unless `MONOTONE_GAPS` lists it
-   (reason-carrying, stale-failing in both directions), the comparison passes rows of its own, and the run of
-   `MONOTONE_MUTANT`, compared all the same, must lose an outcome. Floors: `EXPECTED_MIN_CASES`,
-   `EXPECTED_MIN_EXAMPLES`, `EXPECTED_MIN_PRESERVED_GOLDENS`, `EXPECTED_MIN_PRESERVED_CASES`,
-   `EXPECTED_MIN_MONOTONE_RUNS`, `EXPECTED_MIN_MONOTONE_CLOSURES`.
+   whose document does not carry `inferFromEmpty`, copied with `inferFromEmpty: false` and replayed with `runner
+   --closed-inputs`, plays its own cases; a golden whose copy ref refuses (REF-014) is counted per form, any other
+   difference fails by name, and the copy of `PRESERVATION_MUTANT` without `--closed-inputs` must miss a case (its red
+   row). A monotonicity leg (the same section) holds that giving an open input member a value adds outcomes and changes
+   none, without exception: per golden the preservation leg carries or that carries the property, per case and per input
+   the case gives, `runner --end-state` of the case without that input against the case, every outcome of the first
+   standing in the second. Whether the member left out is an open input member is read off `ir.json`, never off ref's
+   end state: a member that a writer other than an initialisation writes on the object's type (a rule other than an
+   initialisation, or a defaults group with a default other than its initialisation default or with an exception group)
+   is derived, and an input member declared complete is settled leeg without its value. A run whose open input member
+   ref does not name open fails by name, and so does one whose complete member without a writer it names open; a run
+   without a derived member, or without a complete member that an initialisation writes, is compared where ref names
+   that member open and counted apart where it does not, and one without a complete member without a writer is counted
+   apart. Any other difference fails by name unless `MONOTONE_GAPS` lists it (reason-carrying, stale-failing in both
+   directions); the comparison, the reading of the document and the judgement of a run pass rows of their own, and the
+   run of `MONOTONE_MUTANT`, a run without a member declared complete compared all the same, must lose an outcome.
+   Floors: `EXPECTED_MIN_CASES`, `EXPECTED_MIN_EXAMPLES`, `EXPECTED_MIN_PRESERVED_GOLDENS`,
+   `EXPECTED_MIN_PRESERVED_CASES`, `EXPECTED_MIN_MONOTONE_RUNS`.
 
 6. `scripts/check-clingo.sh` — the differential: `backends/clingo` translates every golden case to ASP-Core-2 and
    clingo's stable model must match the absolute expectations gate 5 pins. Played is the default. A golden whose form
