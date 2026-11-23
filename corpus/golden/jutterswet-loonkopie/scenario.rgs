@@ -1,0 +1,28 @@
+Scenario stormwacht in het voorjaar
+Gegeven is de volgende situatie:
+een Jutter J1
+- het basisloon is 10 van 01-01-2025 tot 01-03-2025
+- het basisloon is 12 van 01-04-2025 tot 01-07-2025
+- is stormwacht van 01-02-2025 tot 01-05-2025
+Met als verwacht resultaat:
+- het kustloon van J1 is 10 van 01-01-2025 tot 01-03-2025
+- het kustloon van J1 is 12 van 01-04-2025 tot 01-07-2025
+- het stormloon van J1 is 10 van 01-02-2025 tot 01-03-2025
+- het stormloon van J1 is 12 van 01-04-2025 tot 01-05-2025
+
+Scenario zonder stormwacht
+Gegeven is de volgende situatie:
+een Jutter J1
+- het basisloon is 10 van 01-01-2025 tot 01-07-2025
+Met als verwacht resultaat:
+- het kustloon van J1 is 10 van 01-01-2025 tot 01-07-2025
+- het stormloon van J1 is altijd leeg
+
+Scenario stormwacht langer dan het basisloon
+Gegeven is de volgende situatie:
+een Jutter J1
+- het basisloon is 10 van 01-03-2025 tot 01-06-2025
+- is stormwacht van 01-01-2025 tot 01-12-2025
+Met als verwacht resultaat:
+- het kustloon van J1 is 10 van 01-03-2025 tot 01-06-2025
+- het stormloon van J1 is 10 van 01-03-2025 tot 01-06-2025

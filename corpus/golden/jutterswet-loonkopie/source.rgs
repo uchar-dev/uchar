@@ -1,0 +1,13 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is stormwacht kenmerk (bijvoeglijk) voor elke maand;
+    het basisloon Numeriek (geheel getal) voor elke maand;
+    het kustloon Numeriek (geheel getal) voor elke maand;
+    het stormloon Numeriek (geheel getal) voor elke maand;
+
+Regel kustloon
+    geldig altijd
+        Het kustloon van een Jutter moet berekend worden als zijn basisloon.
+
+Regel stormloon
+    geldig altijd
+        Het stormloon van een Jutter moet berekend worden als zijn basisloon gedurende de tijd dat hij stormwacht is.

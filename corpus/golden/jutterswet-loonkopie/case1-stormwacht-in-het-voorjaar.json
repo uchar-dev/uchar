@@ -1,0 +1,87 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "basisloon": {
+            "timeline": [
+              {
+                "from": "2025-01-01",
+                "to": "2025-03-01",
+                "value": {
+                  "number": "10"
+                }
+              },
+              {
+                "from": "2025-04-01",
+                "to": "2025-07-01",
+                "value": {
+                  "number": "12"
+                }
+              }
+            ]
+          }
+        },
+        "roles": {},
+        "characteristics": [],
+        "characteristicTimelines": {
+          "stormwacht": [
+            {
+              "from": "2025-02-01",
+              "to": "2025-05-01"
+            }
+          ]
+        }
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "kustloon",
+      "timeline": [
+        {
+          "from": "2025-01-01",
+          "to": "2025-03-01",
+          "value": {
+            "number": "10"
+          }
+        },
+        {
+          "from": "2025-04-01",
+          "to": "2025-07-01",
+          "value": {
+            "number": "12"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "stormloon",
+      "timeline": [
+        {
+          "from": "2025-02-01",
+          "to": "2025-03-01",
+          "value": {
+            "number": "10"
+          }
+        },
+        {
+          "from": "2025-04-01",
+          "to": "2025-05-01",
+          "value": {
+            "number": "12"
+          }
+        }
+      ]
+    }
+  ]
+}

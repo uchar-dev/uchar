@@ -6,28 +6,14 @@
       {
         "label": "J1",
         "objectType": "Jutter",
-        "attributes": {},
-        "roles": {
-          "vondst": [
-            "V1"
-          ]
-        },
-        "characteristics": []
-      },
-      {
-        "label": "V1",
-        "objectType": "Vondst",
         "attributes": {
-          "opslagkosten": {
+          "basisloon": {
             "timeline": [
               {
                 "from": "2025-01-01",
-                "to": "2026-01-01",
+                "to": "2025-07-01",
                 "value": {
-                  "constructor": "waarde",
-                  "payload": {
-                    "number": "10"
-                  }
+                  "number": "10"
                 }
               }
             ]
@@ -41,7 +27,24 @@
   },
   "expected": [
     {
-      "kind": "consistent"
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "kustloon",
+      "timeline": [
+        {
+          "from": "2025-01-01",
+          "to": "2025-07-01",
+          "value": {
+            "number": "10"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "attributeTimeline",
+      "label": "J1",
+      "attribute": "stormloon",
+      "timeline": []
     }
   ]
 }

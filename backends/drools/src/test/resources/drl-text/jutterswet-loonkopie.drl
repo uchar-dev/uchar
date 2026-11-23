@@ -1,0 +1,81 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.BucketInput;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.PeriodArithmetic;
+import dev.uchar.regelspraak.transpiler.tms.PeriodCondition;
+import dev.uchar.regelspraak.transpiler.tms.State;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn basisloon
+function Object waarde_kustloon(Object $tijdlijn_0, Object $onderwerp) {
+    try {
+        return PeriodArithmetic.written(ComputeHelpers.complete($tijdlijn_0, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"basisloon\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "basisloon", Boolean.TRUE), Integer.valueOf(0), "kustloon");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "kustloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $stand_0 : State( attribute == ElementKey.of("jutter", "basisloon", false), subject == $onderwerp, $tijdlijn_0 : value )
+then
+    Object v = waarde_kustloon($tijdlijn_0, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "kustloon", ComputeHelpers.designate(v, "kustloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "kustloon", false), v, "kustloon"));
+        }
+    }
+end
+
+// zijn basisloon
+function Object waarde_stormloon(Object $tijdlijn_0, Object $tijdlijn_1, Object $onderwerp) {
+    try {
+        return PeriodArithmetic.written(PeriodArithmetic.clipped(PeriodCondition.truePeriods($tijdlijn_0), ComputeHelpers.complete($tijdlijn_1, "the period arithmetic of ch. 3.4/3.5 reads the temporal attribute \"basisloon\" of ", $onderwerp, "; the case supplies only the asOfDate-bucket scalar, which carries no period", "basisloon", Boolean.TRUE)), Integer.valueOf(0), "stormloon");
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "stormloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $tijdlijn_0 : (ComputeHelpers.periods(stormwacht)) )
+    $stand_1 : State( attribute == ElementKey.of("jutter", "basisloon", false), subject == $onderwerp, $tijdlijn_1 : value )
+then
+    Object v = waarde_stormloon($tijdlijn_0, $tijdlijn_1, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "stormloon", ComputeHelpers.designate(v, "stormloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "stormloon", false), v, "stormloon"));
+        }
+    }
+end
+
+rule "stand Jutter.basisloon: uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(basisloon)) )
+    not( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "basisloon", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "basisloon", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "basisloon", false), $invoer));
+end
+
+rule "stand Jutter.basisloon: uit de invoer, een emmerscalair"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $invoer : (ComputeHelpers.periods(basisloon)) )
+    exists( $emmerinvoer : BucketInput( attribute == ElementKey.of("jutter", "basisloon", false), subject == $onderwerp ) )
+    not( $waarde : Value( attribute == ElementKey.of("jutter", "basisloon", false), subject == $onderwerp ) )
+then
+    insertLogical(new State($onderwerp, ElementKey.of("jutter", "basisloon", false), ComputeHelpers.bucketScalarOf($invoer)));
+end
+

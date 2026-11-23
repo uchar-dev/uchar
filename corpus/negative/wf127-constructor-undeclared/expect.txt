@@ -1,3 +1,0 @@
-WF-127.constructor-undeclared
-constructor=bedrag
-domain=taxatie van een Vondst

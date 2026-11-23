@@ -1652,7 +1652,9 @@ EXPECTED_CHANNEL=(
 # (jutterswet-afwezigheidsmarkers, -cel, -creatie, -initialisatie and -kopie); jutterswet-opgave-afwezigheidsmarkers is
 # jutterswet-opgave-teruggavetermijn without the markers (PLAYED 4), and jutterswet-gevuldtoets-soorten tests the
 # enumeration, the text and the boolean alone.
-EXPECTED_PLAYED=383
+# 384 with jutterswet-loonkopie: the bare copy of a number timeline, over all time and in the periods of a
+# characteristic (RUNTIME-SEMANTICS ch. 3.4, 3.11; PLAYED 3).
+EXPECTED_PLAYED=384
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

@@ -1,3 +1,0 @@
-WF-127.constructor-nullary
-constructor=onbekend
-domain=taxatie van een Vondst
