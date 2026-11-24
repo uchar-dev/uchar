@@ -18,6 +18,16 @@
               "decimals": 0,
               "sign": "unspecified"
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "werkloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
           }
         ],
         "characteristics": [
@@ -132,6 +142,98 @@
               },
               "source": {
                 "snippet": "2"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "werkloon",
+        "subject": "Vondst",
+        "attribute": "werkloon",
+        "defaults": [
+          {
+            "node": "Default",
+            "name": "betwist werkloon",
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "betwist",
+              "negated": false,
+              "source": {
+                "snippet": "hij betwist is"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "2"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "2"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "name": "werkloon",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Binary",
+              "op": "minus",
+              "left": {
+                "node": "ContextValue",
+                "name": "evaluationYear",
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "het Rekenjaar"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2023"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "2023"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "het Rekenjaar min 2023"
               }
             }
           }

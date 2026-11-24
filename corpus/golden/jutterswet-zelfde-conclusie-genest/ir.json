@@ -48,6 +48,16 @@
               "decimals": 0,
               "sign": "unspecified"
             }
+          },
+          {
+            "node": "Attribute",
+            "name": "havenloon",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
           }
         ],
         "characteristics": [
@@ -500,6 +510,275 @@
           {
             "node": "Default",
             "name": "bergloon",
+            "justification": {
+              "node": "Compound",
+              "quantifier": "all",
+              "threshold": 0,
+              "parts": [],
+              "source": {
+                "snippet": "altijd"
+              }
+            },
+            "consequence": {
+              "node": "Binary",
+              "op": "times",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "gewicht",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn gewicht"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "2"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "2"
+                }
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn gewicht maal 2"
+              }
+            }
+          }
+        ],
+        "validity": {
+          "node": "Validity"
+        }
+      },
+      {
+        "node": "PrioritizedDefaults",
+        "name": "havenloon",
+        "subject": "Vondst",
+        "attribute": "havenloon",
+        "defaults": [
+          {
+            "node": "Default",
+            "name": "havenloon bij betwisting",
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "betwist",
+              "negated": false,
+              "source": {
+                "snippet": "hij betwist is"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "0"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "0"
+              }
+            }
+          },
+          {
+            "node": "Default",
+            "name": "havenloon bij schade",
+            "justification": {
+              "node": "CharacteristicCheck",
+              "characteristic": "beschadigd",
+              "negated": false,
+              "source": {
+                "snippet": "hij beschadigd is"
+              }
+            },
+            "consequence": {
+              "node": "Literal",
+              "value": {
+                "number": "7"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "7"
+              }
+            },
+            "exceptions": {
+              "unordered": true,
+              "members": [
+                {
+                  "node": "ExceptionGroup",
+                  "defaults": [
+                    {
+                      "node": "Default",
+                      "name": "havenloon bij zware schade",
+                      "justification": {
+                        "node": "Compound",
+                        "quantifier": "all",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "CharacteristicCheck",
+                            "characteristic": "beschadigd",
+                            "negated": false,
+                            "source": {
+                              "snippet": "hij beschadigd is"
+                            }
+                          },
+                          {
+                            "node": "Comparison",
+                            "op": "greater",
+                            "left": {
+                              "node": "AttributeReference",
+                              "attribute": "gewicht",
+                              "subjectType": "Vondst",
+                              "source": {
+                                "snippet": "zijn gewicht"
+                              }
+                            },
+                            "right": {
+                              "node": "Literal",
+                              "value": {
+                                "number": "2"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "unspecified"
+                              },
+                              "source": {
+                                "snippet": "2"
+                              }
+                            },
+                            "source": {
+                              "snippet": "zijn gewicht groter is dan 2"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "hij beschadigd is en zijn gewicht groter is dan 2"
+                        }
+                      },
+                      "consequence": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "0"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "0"
+                        }
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "Uitzonderingen ongeordend op havenloon bij schade"
+                  }
+                },
+                {
+                  "node": "ExceptionGroup",
+                  "defaults": [
+                    {
+                      "node": "Default",
+                      "name": "havenloon bij zeer zware schade",
+                      "justification": {
+                        "node": "Compound",
+                        "quantifier": "all",
+                        "threshold": 0,
+                        "parts": [
+                          {
+                            "node": "CharacteristicCheck",
+                            "characteristic": "beschadigd",
+                            "negated": false,
+                            "source": {
+                              "snippet": "hij beschadigd is"
+                            }
+                          },
+                          {
+                            "node": "Comparison",
+                            "op": "greater",
+                            "left": {
+                              "node": "AttributeReference",
+                              "attribute": "gewicht",
+                              "subjectType": "Vondst",
+                              "source": {
+                                "snippet": "zijn gewicht"
+                              }
+                            },
+                            "right": {
+                              "node": "Literal",
+                              "value": {
+                                "number": "10"
+                              },
+                              "type": {
+                                "node": "Number",
+                                "whole": true,
+                                "decimals": 0,
+                                "sign": "unspecified"
+                              },
+                              "source": {
+                                "snippet": "10"
+                              }
+                            },
+                            "source": {
+                              "snippet": "zijn gewicht groter is dan 10"
+                            }
+                          }
+                        ],
+                        "source": {
+                          "snippet": "hij beschadigd is en zijn gewicht groter is dan 10"
+                        }
+                      },
+                      "consequence": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "5"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "5"
+                        }
+                      }
+                    }
+                  ],
+                  "source": {
+                    "snippet": "Uitzonderingen ongeordend op havenloon bij schade"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "node": "Default",
+            "name": "havenloon",
             "justification": {
               "node": "Compound",
               "quantifier": "all",

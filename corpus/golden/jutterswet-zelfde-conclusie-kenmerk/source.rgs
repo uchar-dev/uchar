@@ -8,6 +8,8 @@ Objecttype de Vondst (mv: Vondsten)
     is betwist kenmerk (bijvoeglijk);
     is drijfhout kenmerk (bijvoeglijk);
     is gemeld kenmerk (bijvoeglijk);
+    is bergbaar kenmerk (bijvoeglijk);
+    is keurbaar kenmerk (bijvoeglijk);
 
 Regel beloonbaarheid
     geldig altijd
@@ -32,3 +34,23 @@ Afwijking van vindbaarheid: gemeld vindbaar
 Regel wachtpremie
     geldig altijd
         De wachtpremie van een Vondst moet gesteld worden op 3 indien hij niet beloonbaar is.
+
+Regel bergbaarheid
+    geldig altijd
+        Een Vondst is bergbaar indien zijn gewicht groter is dan 2.
+
+Uitzonderingen ongeordend op bergbaarheid:
+Regel bergbaarheid bij betwisting
+    geldig altijd
+        Een Vondst is niet bergbaar indien hij betwist is.
+Regel bergbaarheid bij drijfhout
+    geldig altijd
+        Een Vondst is niet bergbaar indien hij drijfhout is.
+
+Uitzonderingen ongeordend:
+Regel keurbaarheid bij gewicht
+    geldig altijd
+        Een Vondst is keurbaar indien zijn gewicht groter is dan 2.
+Regel keurbaarheid bij betwisting
+    geldig altijd
+        Een Vondst is niet keurbaar indien hij betwist is.

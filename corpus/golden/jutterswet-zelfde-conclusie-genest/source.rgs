@@ -5,6 +5,7 @@ Objecttype de Vondst (mv: Vondsten)
     het vindloon Numeriek (geheel getal);
     het strandloon Numeriek (geheel getal);
     het bergloon Numeriek (geheel getal);
+    het havenloon Numeriek (geheel getal);
     is betwist kenmerk (bijvoeglijk);
     is beschadigd kenmerk (bijvoeglijk);
 
@@ -47,3 +48,23 @@ Regel bergloon bij schade
 Uitzondering op vast bergloon: bergloon bij betwisting
     geldig altijd
         Het bergloon van een Vondst moet gesteld worden op 0 indien hij betwist is.
+
+Regel havenloon
+    geldig altijd
+        Het havenloon van een Vondst moet berekend worden als zijn gewicht maal 2.
+
+Afwijking van havenloon: havenloon bij schade
+    geldig altijd
+        Het havenloon van een Vondst moet gesteld worden op 7 indien hij beschadigd is.
+
+Uitzonderingen ongeordend op havenloon bij schade:
+Regel havenloon bij zware schade
+    geldig altijd
+        Het havenloon van een Vondst moet gesteld worden op 0 indien zijn gewicht groter is dan 2.
+Regel havenloon bij zeer zware schade
+    geldig altijd
+        Het havenloon van een Vondst moet gesteld worden op 5 indien zijn gewicht groter is dan 10.
+
+Afwijking van havenloon: havenloon bij betwisting
+    geldig altijd
+        Het havenloon van een Vondst moet gesteld worden op 0 indien hij betwist is.

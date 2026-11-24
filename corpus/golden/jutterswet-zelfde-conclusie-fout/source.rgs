@@ -2,6 +2,7 @@ Afleiden uit leeg: nee
 
 Objecttype de Vondst (mv: Vondsten)
     het rekenloon Numeriek (geheel getal);
+    het werkloon Numeriek (geheel getal);
     is betwist kenmerk (bijvoeglijk);
 
 Regel rekenloon
@@ -11,3 +12,11 @@ Regel rekenloon
 Afwijking van rekenloon: betwist rekenloon
     geldig altijd
         Het rekenloon van een Vondst moet gesteld worden op 2 indien hij betwist is.
+
+Regel werkloon
+    geldig altijd
+        Het werkloon van een Vondst moet berekend worden als het Rekenjaar min 2023.
+
+Afwijking van werkloon: betwist werkloon
+    geldig altijd
+        Het werkloon van een Vondst moet gesteld worden op 2 indien hij betwist is.

@@ -20,6 +20,11 @@
       "attribute": "rekenloon"
     },
     {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "werkloon"
+    },
+    {
       "kind": "consistent"
     }
   ]

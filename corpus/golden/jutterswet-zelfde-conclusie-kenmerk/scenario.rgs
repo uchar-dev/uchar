@@ -7,6 +7,8 @@ Met als verwacht resultaat:
 - V1 is niet beloonbaar
 - de wachtpremie van V1 is 3
 - V1 is vindbaar
+- V1 is niet bergbaar
+- of V1 keurbaar is, staat niet vast
 - de gegevens zijn consistent
 
 Scenario betwist waar
@@ -19,7 +21,9 @@ Met als verwacht resultaat:
 - V1 is niet beloonbaar
 - de wachtpremie van V1 is 3
 - V1 is vindbaar
-- de gegevens zijn consistent
+- V1 is niet bergbaar
+- V1 is niet keurbaar
+- de gegevens zijn inconsistent volgens "Vondst.keurbaar" voor V1
 
 Scenario betwist niet
 Gegeven is de volgende situatie:
@@ -31,6 +35,8 @@ Met als verwacht resultaat:
 - V1 is niet beloonbaar
 - de wachtpremie van V1 is 3
 - V1 is vindbaar
+- V1 is niet bergbaar
+- V1 is keurbaar
 - de gegevens zijn consistent
 
 Scenario drijfhout niet betwist open
@@ -42,6 +48,8 @@ Met als verwacht resultaat:
 - of V1 beloonbaar is, staat niet vast
 - de wachtpremie van V1 staat niet vast
 - V1 is vindbaar
+- of V1 bergbaar is, staat niet vast
+- of V1 keurbaar is, staat niet vast
 - de gegevens zijn consistent
 
 Scenario wortel betwist open
@@ -53,6 +61,8 @@ Met als verwacht resultaat:
 - V1 is niet beloonbaar
 - de wachtpremie van V1 is 3
 - of V1 vindbaar is, staat niet vast
+- V1 is niet bergbaar
+- V1 is niet keurbaar
 - de gegevens zijn consistent
 
 Scenario wortel betwist waar
@@ -65,6 +75,8 @@ Met als verwacht resultaat:
 - V1 is niet beloonbaar
 - de wachtpremie van V1 is 3
 - of V1 vindbaar is, staat niet vast
+- V1 is niet bergbaar
+- V1 is niet keurbaar
 - de gegevens zijn consistent
 
 Scenario wortel betwist niet
@@ -77,6 +89,8 @@ Met als verwacht resultaat:
 - V1 is niet beloonbaar
 - de wachtpremie van V1 is 3
 - of V1 vindbaar is, staat niet vast
+- V1 is niet bergbaar
+- V1 is niet keurbaar
 - de gegevens zijn consistent
 
 Scenario gemeld waar
@@ -90,6 +104,8 @@ Met als verwacht resultaat:
 - V1 is niet beloonbaar
 - de wachtpremie van V1 is 3
 - V1 is vindbaar
+- V1 is niet bergbaar
+- V1 is niet keurbaar
 - de gegevens zijn consistent
 
 Scenario gemeld niet
@@ -103,4 +119,6 @@ Met als verwacht resultaat:
 - V1 is niet beloonbaar
 - de wachtpremie van V1 is 3
 - V1 is niet vindbaar
+- V1 is niet bergbaar
+- V1 is niet keurbaar
 - de gegevens zijn consistent

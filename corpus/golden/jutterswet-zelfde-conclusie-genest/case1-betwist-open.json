@@ -42,6 +42,11 @@
       "attribute": "bergloon"
     },
     {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "havenloon"
+    },
+    {
       "kind": "consistent"
     }
   ]

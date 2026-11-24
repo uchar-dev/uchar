@@ -7,6 +7,7 @@ Met als verwacht resultaat:
 - het vindloon van V1 is 0
 - het strandloon van V1 is 0
 - het bergloon van V1 staat niet vast
+- het havenloon van V1 staat niet vast
 - de gegevens zijn consistent
 
 Scenario betwist waar
@@ -19,6 +20,7 @@ Met als verwacht resultaat:
 - het vindloon van V1 is 0
 - het strandloon van V1 is 0
 - het bergloon van V1 is 0
+- het havenloon van V1 is 0
 - de gegevens zijn consistent
 
 Scenario betwist niet
@@ -31,7 +33,9 @@ Met als verwacht resultaat:
 - het vindloon van V1 is 0
 - het strandloon van V1 is 0
 - het bergloon van V1 is leeg
+- het havenloon van V1 is leeg
 - de gegevens zijn inconsistent volgens "Vondst.bergloon/0" voor V1
+- de gegevens zijn inconsistent volgens "Vondst.havenloon/1" voor V1
 
 Scenario beschadigd niet
 Gegeven is de volgende situatie:
@@ -42,6 +46,7 @@ Met als verwacht resultaat:
 - het vindloon van V1 staat niet vast
 - het strandloon van V1 is 100
 - het bergloon van V1 staat niet vast
+- het havenloon van V1 staat niet vast
 - de gegevens zijn consistent
 
 Scenario beschadigd niet betwist niet
@@ -54,4 +59,5 @@ Met als verwacht resultaat:
 - het vindloon van V1 is 100
 - het strandloon van V1 is 100
 - het bergloon van V1 is 5
+- het havenloon van V1 is 100
 - de gegevens zijn consistent

@@ -41,6 +41,16 @@
       "characteristic": "vindbaar"
     },
     {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "bergbaar"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "keurbaar"
+    },
+    {
       "kind": "consistent"
     }
   ]

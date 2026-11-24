@@ -45,8 +45,18 @@
       "attribute": "bergloon"
     },
     {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "havenloon"
+    },
+    {
       "kind": "inconsistent",
       "rule": "Vondst.bergloon/0",
+      "label": "V1"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "Vondst.havenloon/1",
       "label": "V1"
     }
   ]

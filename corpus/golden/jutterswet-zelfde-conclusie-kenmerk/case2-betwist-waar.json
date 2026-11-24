@@ -40,7 +40,19 @@
       "characteristic": "vindbaar"
     },
     {
-      "kind": "consistent"
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "bergbaar"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "keurbaar"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "Vondst.keurbaar",
+      "label": "V1"
     }
   ]
 }

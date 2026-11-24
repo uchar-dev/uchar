@@ -25,6 +25,14 @@
       }
     },
     {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "werkloon",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
       "kind": "consistent"
     }
   ]
