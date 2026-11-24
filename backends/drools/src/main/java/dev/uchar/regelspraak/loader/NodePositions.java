@@ -25,20 +25,38 @@ public final class NodePositions {
 
     private final Map<Object, Position> nodes = new IdentityHashMap<>();
     private final Map<Object, String> versions = new IdentityHashMap<>();
-    /** The nodes by their place in the pre-order of the document; made at the first {@link #subtree}. */
+    /** The nodes by their place in the pre-order of the document; made once, when the loader has read the whole
+     *  document ({@link #complete}), never at a read: threads that explain sessions side by side read one table, and
+     *  none may search the pre-order while another is still sorting it. */
     private List<Object> inOrder;
 
     NodePositions() {}
 
     void node(Object node, String pointer, int order, String kind) {
+        open(pointer);
         if (nodes.put(node, new Position(pointer, order, kind)) != null)
             throw new IllegalStateException("IrLoader: the node at " + pointer + " is read twice");
-        inOrder = null;
     }
 
     void version(Object form, String pointer) {
+        open(pointer);
         if (versions.put(form, pointer) != null)
             throw new IllegalStateException("IrLoader: the version at " + pointer + " is read twice");
+    }
+
+    /** Closes the table once the loader has read the whole document: its pre-order is made here, and no node or version
+     *  comes after. */
+    NodePositions complete() {
+        if (inOrder != null) throw new IllegalStateException("IrLoader: the positions are completed twice");
+        List<Object> sorted = new ArrayList<>(nodes.keySet());
+        sorted.sort(Comparator.comparingInt(n -> nodes.get(n).order()));
+        inOrder = List.copyOf(sorted);
+        return this;
+    }
+
+    private void open(String pointer) {
+        if (inOrder != null)
+            throw new IllegalStateException("IrLoader: " + pointer + " is read after the positions were completed");
     }
 
     /** The position of {@code node}, a record of the condition or the expression union this loader read; null for a
@@ -65,10 +83,7 @@ public final class NodePositions {
     public List<Object> subtree(Object root) {
         Position r = nodes.get(root);
         if (r == null) throw new IllegalArgumentException("no node of this document: " + root);
-        if (inOrder == null) {
-            inOrder = new ArrayList<>(nodes.keySet());
-            inOrder.sort(Comparator.comparingInt(n -> nodes.get(n).order()));
-        }
+        if (inOrder == null) throw new IllegalStateException("the positions are read before the loader completed them");
         int lo = 0, hi = inOrder.size() - 1;
         while (lo < hi) {
             int mid = (lo + hi) >>> 1;

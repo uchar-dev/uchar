@@ -318,9 +318,9 @@ public final class TmsTranspiler {
     /** The knots of every effective stack the branch lowered, by its name, which {@link #decisionsOf} lays the control
      *  facts of a session on. */
     private final Map<String, StackLayout> layouts = new LinkedHashMap<>();
-    /** The JSON pointer of every default the document declares, by identity ({@link #pointerOf}); made at the first
-     *  call. */
-    private Map<Default, String> pointers;
+    /** The JSON pointer of every default the document declares, by identity ({@link #pointerOf}); made with the
+     *  analysis, never at a read, since the readers of sessions that run side by side read it. */
+    private final Map<Default, String> pointers = new IdentityHashMap<>();
     /** The manifest names that name no declaration, with the element each comes from ({@link #generated}). */
     private final Map<String, RegelSpraakModel.GeneratedFrom> generated = new LinkedHashMap<>();
     /** Every effective stack with its type and its composition, by the stack's name ({@link #stacks}). */
@@ -431,6 +431,8 @@ public final class TmsTranspiler {
         this.model = model;
         this.beanLoader = beanLoader != null ? beanLoader : TmsTranspiler.class.getClassLoader();
         this.defaults = defaults;
+        for (int i = 0; i < defaults.size(); i++)
+            pointersOf(defaults.get(i).defaults(), "/rules/prioritizedDefaults/" + i);
         this.navigationBindings = navigationBindings;
         this.anchored = anchored;
         this.roleBindings = roleBindings;
@@ -1086,11 +1088,6 @@ public final class TmsTranspiler {
      *  the group-default of a replaced inherited base (ch. 7.10) that base's node, or for a default the fold of ch. 7.10
      *  made of an ordinary rule the version of that rule. */
     String pointerOf(Default d) {
-        if (pointers == null) {
-            pointers = new IdentityHashMap<>();
-            for (int i = 0; i < defaults.size(); i++)
-                pointersOf(defaults.get(i).defaults(), "/rules/prioritizedDefaults/" + i);
-        }
         String p = pointers.get(d);
         if (p != null) return p;
         Default replaced = stacks.replacedBase(d);

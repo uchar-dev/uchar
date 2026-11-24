@@ -341,7 +341,7 @@ public final class IrLoader {
         IrLoader l = new IrLoader();
         RegelSpraakModel model = l.model(root);
         return new Positioned(new Loaded(model, l.prioritizedDefaults, l.roleBindings, l.lets, l.sourcePaths,
-                l.navigationBindings, l.anchored), l.positions);
+                l.navigationBindings, l.anchored), l.positions.complete());
     }
 
     /** The IR-SPEC ch. 4.5 other-end narrowing of a loaded {@code RoleMembership}: the type the filler of the other
