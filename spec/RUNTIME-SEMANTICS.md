@@ -821,9 +821,16 @@ below) therefore has one of five outcomes: it *decides v*; it *conflicts*
 (ch. 7.2, 7.9); it *gives way*; it is *open with v* — open, and whatever the
 case adds it decides v or gives way, never another value and never a
 conflict; or it is *open*. An open default whose decision is the constant v
-is open with v, and every other open default is open. A chain is read from
-high to low, each default against the rest of the chain below it, which is
-read in the same way; a chain without defaults gives way:
+is open with v, and every other open default is open. Two decisions on an
+attribute are the same where the write step writes the same value (ch. 2.4,
+5.1): they are compared in the unit and with the decimals of the target; a
+value the write faults on is not the same as one it writes, and two it faults
+on are compared as computed, so that where they are equal the write faults. A
+`Literal` the write faults on, in a unit the target does not take or with
+more decimals than it holds, is no constant: its default, where it is open,
+is open. A chain is read from high to low, each default against the rest of
+the chain below it, which is read in the same way; a chain without defaults
+gives way:
 
 | the default | the rest below it | the chain |
 |---|---|---|
@@ -879,6 +886,15 @@ as the highest, a computed value, it is open there as well (`-computed`). With
 "… op 7 indien hij gemeld is" between the two defaults of 0, where beschadigd
 holds and betwist is not named, the vindloon is 0 where gemeld stands not to
 hold, and open where gemeld holds or is not named (`-between-*`). Example
+(WV-1.5-stack-same-conclusion-unit-*): with the vindloon in € with two
+decimals, "… op 1 indien hij betwist is", a `Literal` without a unit, which
+the write step writes as 1 €, above "… op 1 ct indien hij beschadigd is":
+where beschadigd holds and betwist is not named the vindloon is open, 1 or
+0,01. Above "… op 100 ct indien hij beschadigd is" it is 1 there, as where
+betwist holds or stands not to hold. "… op 1 kg indien hij betwist is", in a
+unit the vindloon does not take, above "… op 1 indien hij beschadigd is", and
+"… op 0,005 indien hij betwist is", which two decimals do not hold, above "…
+op 0,005 indien hij beschadigd is", leave it open there. Example
 (WV-1.5-stack-same-conclusion-provisional-*): "het meldloon van een Vondst is
 2 indien zijn gewicht gedeeld door zijn getuigen leeg is", with above it "… op
 2 indien hij betwist is", at gewicht 10 and getuigen 0: where betwist is not
@@ -7725,10 +7741,12 @@ default is `DISPLACED` and read as at its turn, the initialisation default
 among them; so is the content of a default whose exception groups are open.
 Below a default that is open with a value, and below exception groups open
 with a value, the chain is read on as ch. 1.5 reads it: each default is at
-its turn, read provisionally, with its own status — `HOLDS` where it decides,
-`FAILS` where it gives way, `OPEN` where it is open — down to the one whose
-row fixes the outcome of the chain, and every default below that one is
-`DISPLACED`. Where a lower default decides the value of the open one above
+its turn, read provisionally, with its own status by its justification and
+its value — `HOLDS` where its justification holds and its value is not open,
+a settled leeg value on which it gives way included; `FAILS` where its
+justification stands not to hold; `OPEN` where its justification is
+undetermined or its value open — down to the one whose row fixes the outcome
+of the chain, and every default below that one is `DISPLACED`. Where a lower default decides the value of the open one above
 it, it is the default that decides the target, `HOLDS` with its justification
 and its value, and the one above is `OPEN`. A default read so whose
 evaluation faults is open (ch. 1.5): `OPEN`, the fault at its nodes. An
@@ -7831,9 +7849,10 @@ The default of 0 for beschadigd decides the vindloon. Where beschadigd stands
 not to hold, it reads `0 CharacteristicCheck false`, `1 Literal unreached`,
 `FAILS`, and the computation reads `HOLDS` with its nodes as above: it decides
 100, another value than the open default's, so the chain is open and the
-vindloon with it. On "het meldloon is 2 indien het Rekenjaar groter is dan
-2025" below "… op 2 indien hij betwist is", in a session without an
-evaluation date and betwist not named, the lower default reads `0 Comparison
+vindloon with it. On "het rekenloon is 2 indien het Rekenjaar groter is dan
+2025" below "… op 2 indien hij betwist is" (the golden
+`jutterswet-zelfde-conclusie-fout`), in a session without an evaluation date
+and betwist not named, the lower default reads `0 Comparison
 fault EF-011`, `1 ContextValue fault EF-011`, `2 Literal unreached`, `3
 Literal unreached`, `OPEN` (`WV-5.12-same-conclusion-fault`). Example
 (`WV-5.12-open-creation`, `WV-5.12-open-path`): the creation of a

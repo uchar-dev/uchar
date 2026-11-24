@@ -844,15 +844,21 @@ let defaults json env ~world0 ~world =
                        ~reach:Timeline.all_time ~path:[] l.defaults)
               | Some true ->
                   let is_char = l.pd_characteristic <> None in
+                  (* the declaration the write step writes the target by (ch. 2.4) *)
+                  let decl = Option.bind l.pd_attribute (fun a -> Eval.attr_decl env ~otype:owner ~attr:a) in
+                  let same_value = Eval.same_as_written decl in
                   (* the decision of an open default that can decide nothing
                      else (ch. 1.5): on a characteristic its decision, on an
-                     attribute a Literal *)
+                     attribute a Literal the write step can write, as it
+                     writes it *)
                   let constant env (d : default) =
                     if is_char then Option.map (fun b -> Value.Bool b) d.default_decision
                     else
                       match d.default_consequence with
                       | Some (Literal _ as e) -> (
-                          match Eval.eval_expr env world self ~err:drop e with Value.Empty -> None | v -> Some v)
+                          match Eval.eval_expr env world self ~err:drop e with
+                          | Value.Empty -> None
+                          | v -> Eval.as_written decl v)
                       | _ -> None
                   in
                   (* what the default's own justification and consequence do,
@@ -924,13 +930,13 @@ let defaults json env ~world0 ~world =
                     if List.exists (function `Conflict -> true | _ -> false) results then `Conflict
                     else
                       match decided with
-                      | x :: rest when List.exists (fun y -> not (Arith.equal x y)) rest -> `Conflict
+                      | x :: rest when List.exists (fun y -> not (same_value x y)) rest -> `Conflict
                       | _ when List.exists (function `Open_any -> true | _ -> false) results -> `Open_any
-                      | x :: _ -> if List.for_all (Arith.equal x) open_only then `Decides x else `Open_any
+                      | x :: _ -> if List.for_all (same_value x) open_only then `Decides x else `Open_any
                       | [] -> (
                           match open_only with
                           | [] -> `Gives_way
-                          | x :: rest -> if List.for_all (Arith.equal x) rest then `Open_only x else `Open_any)
+                          | x :: rest -> if List.for_all (same_value x) rest then `Open_only x else `Open_any)
                   in
                   (* the outcome [res] of a default, or of its exception groups,
                      above the rest of its chain, which [below] reads where the
@@ -943,9 +949,9 @@ let defaults json env ~world0 ~world =
                     | None, ((`Decides _ | `Conflict | `Open_any) as r) -> stop r
                     | None, `Gives_way -> below None
                     | None, `Open_only x -> below (Some x)
-                    | Some x, `Decides y -> stop (if Arith.equal x y then res else `Open_any)
+                    | Some x, `Decides y -> stop (if same_value x y then res else `Open_any)
                     | Some x, `Gives_way -> below (Some x)
-                    | Some x, `Open_only y -> if Arith.equal x y then below (Some x) else stop `Open_any
+                    | Some x, `Open_only y -> if same_value x y then below (Some x) else stop `Open_any
                     | Some _, (`Conflict | `Open_any) -> stop `Open_any
                   in
                   (* what the chain [ds] does. Below the default whose row fixes

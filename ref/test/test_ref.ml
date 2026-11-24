@@ -16432,6 +16432,55 @@ let () =
   row "between-decides-betwist-holds" ~doc:between [ "beschadigd"; "gemeld"; "betwist" ] "0";
   row "between-decides-betwist-stands-not" ~doc:between ~complete:[ "betwist" ] [ "beschadigd"; "gemeld" ] "7"
 
+(* WV-1.5-stack-same-conclusion-unit-*: two decisions are the same where the
+   write step writes the same value, in the unit and with the decimals of the
+   target (ch. 1.5, 2.4), and a constant the write step cannot write is no
+   constant. "Het vindloon van een Vondst", in € with two decimals, "… op 1
+   indien hij betwist is" (a literal without a unit, which takes the €) above
+   "… op 1 ct indien hij beschadigd is": where beschadigd holds and betwist is
+   not named the vindloon is open, 1 or 0,01. Above "… op 100 ct indien hij
+   beschadigd is" it is 1. "… op 1 kg indien hij betwist is", in a unit the
+   vindloon does not take, above "… op 1 indien hij beschadigd is", and "… op
+   0,005 indien hij betwist is", which two decimals do not hold, above "… op
+   0,005 indien hij beschadigd is", are open there *)
+let () =
+  let in_unit ?(decimals = 2) u : Ir_v0.Ast.datatype =
+    Number { whole_part = false; decimal_places = decimals; sign_char = None; measure_unit = u }
+  in
+  let doc higher lower =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"vindloon"
+            [ ov_dflt ~justification:(ov_check "betwist") ~consequence:higher ();
+              ov_dflt ~justification:(ov_check "beschadigd") ~consequence:lower () ] ]
+      [ ot "Vondst" [ ("vindloon", Some (in_unit (Some eur))) ] [ "betwist"; "beschadigd" ] ] []
+  in
+  let id name = "WV-1.5-stack-same-conclusion-unit-" ^ name in
+  let row name ?(complete = []) doc chars want =
+    ov_row (id name)
+      (fun () -> ov_run (id name) (ov_complete complete doc) (ov_v1 ~chars []))
+      (fun w -> ov_attr w "V1" "vindloon")
+      want
+  in
+  let cent_below = doc (ov_lit "1") (litv "1" (in_unit (Some cent))) in
+  row "cent" cent_below [ "beschadigd" ] "open";
+  row "cent-betwist-holds" cent_below [ "beschadigd"; "betwist" ] "1";
+  row "cent-betwist-stands-not" ~complete:[ "betwist" ] cent_below [ "beschadigd" ] "0.01";
+  let hundred_cent_below = doc (ov_lit "1") (litv "100" (in_unit (Some cent))) in
+  row "hundred-cent" hundred_cent_below [ "beschadigd" ] "1";
+  row "hundred-cent-betwist-holds" hundred_cent_below [ "beschadigd"; "betwist" ] "1";
+  row "hundred-cent-betwist-stands-not" ~complete:[ "betwist" ] hundred_cent_below [ "beschadigd" ] "1";
+  let kg_above = doc (litv "1" (in_unit (Some kg))) (ov_lit "1") in
+  row "another-unit" kg_above [ "beschadigd" ] "open";
+  row "another-unit-betwist-stands-not" ~complete:[ "betwist" ] kg_above [ "beschadigd" ] "1";
+  (* not registered: with every input member complete betwist stands not to
+     hold, and the write of 0,005 faults (EF-006) *)
+  let thousandths = litv "0.005" (in_unit ~decimals:3 None) in
+  ov_row (id "write-boundary")
+    (fun () -> ov_eval (doc thousandths thousandths) (ov_v1 ~chars:[ "beschadigd" ] []))
+    (fun w -> ov_attr w "V1" "vindloon")
+    "open"
+
 (* WV-1.5-stack-same-conclusion-provisional-*: below a default open with a
    constant a default is read provisionally: what it deposits is dropped, and a
    fault leaves it open. "Het meldloon van een Vondst is 2 indien zijn gewicht

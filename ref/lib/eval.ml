@@ -5311,6 +5311,23 @@ type chain_result =
   | Open_only of defaults_decision
   | Open_any
 
+(* [v] as the write step writes it on a target declared [decl] (ch. 2.4): in
+   the target's unit and with its decimals, or None where that write faults.
+   The fault itself is the write's to raise, so its text is not kept here *)
+let as_written decl v = match World.collapse ~at:"" decl v with v -> Some v | exception Value.Fault _ -> None
+
+(* two values decided on one target are the same where the write step writes
+   the same value (ch. 1.5, 5.1): on a target in € 1 and 1 ct differ, 1 and
+   100 ct do not, and a value the write faults on is not the same as one it
+   writes. Two values it faults on both are compared as computed: equal ones
+   decide and fault at the write, differing ones conflict before it, as in a
+   document where nothing is open *)
+let same_as_written decl x y =
+  match (as_written decl x, as_written decl y) with
+  | Some x, Some y -> Arith.equal x y
+  | Some _, None | None, Some _ -> false
+  | None, None -> Arith.equal x y
+
 (* --- a defaults group on a timeline target, read per day (RUNTIME-SEMANTICS ch. 7.11) --- *)
 
 (* What a chain or a group of defaults decides per day: the segments of the days
@@ -5548,6 +5565,8 @@ let run_defaults_group ?only env world ~world0 ~owner
   | Some a when Ir_v0.Checks.attr_temporal (object_type env owner) a ->
       run_defaults_timeline ?only env world ~world0 ~owner ~form ~target_form members
   | _ ->
+  (* the declaration the write step writes the target by (ch. 2.4) *)
+  let decl = Option.bind l0.pd_attribute (fun a -> attr_decl env ~otype:owner ~attr:a) in
   over_subjects ~exact:true ?only env world ~form ~otype:owner ~rule:target_form (fun w self cond_err ->
       let speculate f =
         let buf = ref [] in
@@ -5557,7 +5576,7 @@ let run_defaults_group ?only env world ~world0 ~owner
       let equal_dec a b =
         match (a, b) with
         | Char_dec x, Char_dec y -> x = y
-        | Attr_dec x, Attr_dec y -> Arith.equal x y
+        | Attr_dec x, Attr_dec y -> same_as_written decl x y
         | _ -> false
       in
       (* the §9.5 conflict key (ch. 7.2/7.9): the bare target form for a
@@ -5648,13 +5667,17 @@ let run_defaults_group ?only env world ~world0 ~owner
           in
           (* the decision of an open default that can decide nothing else (ch.
              1.5): on a characteristic its decision, on an attribute a Literal,
-             which reads nothing *)
+             which reads nothing, as the write step writes it. A Literal the
+             write faults on, in a unit the target does not take or with more
+             decimals than it holds, is no such decision *)
           let constant env (r : default) =
             if is_char then Option.map (fun b -> Char_dec b) r.default_decision
             else
               match r.default_consequence with
               | Some (Literal _ as e) -> (
-                  match eval_expr env w self ~err:ignore e with Value.Empty -> None | v -> Some (Attr_dec v))
+                  match eval_expr env w self ~err:ignore e with
+                  | Value.Empty -> None
+                  | v -> Option.map (fun v -> Attr_dec v) (as_written decl v))
               | _ -> None
           in
           (* the default's OWN outcome, exception groups aside (a plain default,
