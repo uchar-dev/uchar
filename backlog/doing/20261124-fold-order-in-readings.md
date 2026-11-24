@@ -1,7 +1,7 @@
 # fold-order-in-readings: de lezing haalt de volgorde van een vouw uit eigen feiten
 
 *Besluit van de eigenaar, 2026-11-24: weg (c) uit open punt 5 van `contributor-filter-verdict`, op advies van een extern
-model (xhigh); vóór de bouw door hetzelfde model gelezen, de punten onderaan verwerkt. Nog niet begonnen.*
+model (xhigh); vóór de bouw door hetzelfde model gelezen, de punten onderaan verwerkt. In uitvoering sinds 2026-11-24.*
 
 Goal: in de Drools-backend verandert een build met lezingen (`DroolsBackend.build(…, readings)`) de productieregels en
 -feiten niet meer, ook niet voor een vouw in een document met `inferFromEmpty: false`; de volgorde van de leden die de
