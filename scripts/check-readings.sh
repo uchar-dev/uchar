@@ -387,8 +387,12 @@ def scan_value(s, i):
         j += 1
     return j
 
+FILTER_UNDETERMINED = ' filter undetermined'
+
 def split(line):
-    """the line without its contributors, and the contributors by member: {member: (value, reached)}"""
+    """the line without its contributors, and the contributors by member: {member: (value, position, filter)}, the
+    position `reached`, `unreached` or `unordered`, and filter True where `filter undetermined` follows it (a
+    contributor of a quantifier fold whose filter is undetermined, RUNTIME-SEMANTICS ch. 5.12)"""
     k = line.find(' contributors [')
     if k < 0:
         return line, None
@@ -404,7 +408,13 @@ def split(line):
         r = len(body) if r < 0 else r
         if member in out:
             raise ValueError('the member %s twice in %r' % (member, line))
-        out[member] = (body[j + 1:v], body[v + 1:r])
+        position, filtered = body[v + 1:r], False
+        if position.endswith(FILTER_UNDETERMINED):
+            position, filtered = position[:-len(FILTER_UNDETERMINED)], True
+        if position not in ('reached', 'unreached', 'unordered'):
+            raise ValueError('the contributor %s without a position, or with a tail the canonical text does not write, '
+                             'in %r' % (member, line))
+        out[member] = (body[j + 1:v], position, filtered)
         i = r + 2
     return line[:k], out
 
@@ -439,13 +449,13 @@ def displaced_nodes(lines):
     return len(read), len(set(read))
 
 def contributors_agree(ref, drools):
-    """the members, and per member its verdict, value or fault verbatim and its position where both write
-    one (the backend writes `unordered` where its session keeps no order)"""
+    """the members, and per member its verdict, value or fault and whether its filter is undetermined verbatim,
+    and its position where both write one (the backend writes `unordered` where its session keeps no order)"""
     if set(ref) != set(drools):
         return False
-    for m, (dv, dr) in drools.items():
-        rv, rr = ref[m]
-        if rv != dv:
+    for m, (dv, dr, df) in drools.items():
+        rv, rr, rf = ref[m]
+        if rv != dv or rf != df:
             return False
         if dr != 'unordered' and rr != dr:
             return False
@@ -477,12 +487,12 @@ def unordered_faults(ref_lines, drools_lines):
     unordered = set()
     for l in drools_lines:
         h, c = split(l)
-        if c is not None and any(r == 'unordered' for _, r in c.values()):
+        if c is not None and any(r == 'unordered' for _, r, _ in c.values()):
             unordered.add(h)
     out = []
     for l in ref_lines:
         h, c = split(l)
-        if h in unordered and any(v.startswith('fault ') for v, _ in c.values()):
+        if h in unordered and any(v.startswith('fault ') for v, _, _ in c.values()):
             out.append(l)
     return out
 
@@ -534,7 +544,52 @@ rows = [
      True),
     ('an object against none differs', [P + '2 AttributeReference empty on none'],
      [P + '2 AttributeReference empty on "P3"'], False),
+    ('an undetermined filter against one that holds differs',
+     [P + '0 QuantifierFold undetermined open "V2" "gemerkt" contributors ["V1" true reached; "V2" false reached filter undetermined]'],
+     [P + '0 QuantifierFold undetermined open "V2" "gemerkt" contributors ["V1" true reached; "V2" false reached]'], False),
+    ('a filter that holds against an undetermined one differs',
+     [P + '0 QuantifierFold true contributors ["V1" true reached]'],
+     [P + '0 QuantifierFold true contributors ["V1" true reached filter undetermined]'], False),
+    ('equal undetermined filters agree, filter and matrix undetermined among them',
+     [P + '0 QuantifierFold undetermined open "V1" "gemerkt" contributors ["V1" undetermined reached filter undetermined; "V2" true unreached filter undetermined]'],
+     [P + '0 QuantifierFold undetermined open "V1" "gemerkt" contributors ["V1" undetermined reached filter undetermined; "V2" true unreached filter undetermined]'],
+     True),
+    ('unordered beside an undetermined filter agrees',
+     [P + '0 QuantifierFold false contributors ["V1" false reached; "V2" true unreached filter undetermined]'],
+     [P + '0 QuantifierFold false contributors ["V1" false unordered; "V2" true unordered filter undetermined]'], True),
+    ('unordered without the undetermined filter differs',
+     [P + '0 QuantifierFold false contributors ["V1" false reached; "V2" true unreached filter undetermined]'],
+     [P + '0 QuantifierFold false contributors ["V1" false unordered; "V2" true unordered]'], False),
+    ('unreached against reached beside an undetermined filter differs',
+     [P + '0 QuantifierFold false contributors ["V1" false reached; "V2" true unreached filter undetermined]'],
+     [P + '0 QuantifierFold false contributors ["V1" false reached; "V2" true reached filter undetermined]'], False),
 ]
+for name, line, expected in [
+        ('a position', P + '0 QuantifierFold false contributors ["W1" false reached; "W2" true unreached]',
+         {'"W1"': ('false', 'reached', False), '"W2"': ('true', 'unreached', False)}),
+        ('an undetermined filter after the position',
+         P + '0 QuantifierFold undetermined open "V2" "gemerkt" contributors ["V1" true reached; "V2" false reached filter undetermined]',
+         {'"V1"': ('true', 'reached', False), '"V2"': ('false', 'reached', True)}),
+        ('a fault not reached with an undetermined filter',
+         P + '0 QuantifierFold false contributors ["W1" false reached; "W2" fault EF-019 unreached filter undetermined]',
+         {'"W1"': ('false', 'reached', False), '"W2"': ('fault EF-019', 'unreached', True)}),
+        ('unordered with an undetermined filter, the matrix undetermined',
+         P + '0 QuantifierFold undetermined open "W2" "keurpunten" contributors ["W1" true unordered; "W2" undetermined unordered filter undetermined]',
+         {'"W1"': ('true', 'unordered', False), '"W2"': ('undetermined', 'unordered', True)}),
+        ('a text that spells the indication is a value',
+         P + '1 Aggregation "kom" contributors ["V1" "kom filter undetermined" reached]',
+         {'"V1"': ('"kom filter undetermined"', 'reached', False)})]:
+    got = split(line)[1]
+    if got != expected:
+        problems.append('the contributor reader fails its row "%s": it reads %r' % (name, got))
+for name, line in [('a tail the text does not write', P + '0 QuantifierFold false contributors ["W1" false reached filter open]'),
+                   ('no position', P + '0 QuantifierFold false contributors ["W1" false]'),
+                   ('the indication without a position', P + '0 QuantifierFold false contributors ["W1" false filter undetermined]')]:
+    try:
+        got = split(line)[1]
+        problems.append('the contributor reader fails its row "%s": it reads %r instead of refusing it' % (name, got))
+    except ValueError:
+        pass
 for name, line, tail in [('a label', P + '2 AttributeReference 12 on "P1"', '"P1"'),
                          ('none', P + '0 CharacteristicCheck false on none', 'none'),
                          ('a made object', P + '2 AttributeReference 5 on «"maak"»("J1")#1', '«"maak"»("J1")#1'),
@@ -569,6 +624,9 @@ tripwire_rows = [
     ('a fault of ref where the backend keeps the order does not trip',
      [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" fault EF-019 unreached]'],
      [P + '0 QuantifierFold false contributors ["W1" false reached; "W2" fault EF-019 unreached]'], False),
+    ('a fault of ref under unordered trips beside an undetermined filter',
+     [P + '0 QuantifierFold false contributors ["W2" fault EF-019 unreached filter undetermined]'],
+     [P + '0 QuantifierFold false contributors ["W2" fault EF-019 unordered filter undetermined]'], True),
 ]
 for name, ref, drools, trips in tripwire_rows:
     if bool(unordered_faults(ref, drools)) != trips:
@@ -677,6 +735,9 @@ unlinked = 0  # the node lines with `on none`, reported beside the floor of the 
 displaced_read = 0  # the displaced readings with a node line, reported beside the floor of their node lines
 excluded, seen_errors, seen_deviations, seen_state_deviations, manifest_names = {}, set(), set(), set(), set()
 links = channel_facts = 0  # the end-state lines of the links and the §9.5 facts, reported beside the floors
+# the contributors of ref whose filter is undetermined, reported without a floor: no golden with inferFromEmpty: false
+# has a quantifier fold (2026-11-24), so the count is 0, and the text is held in the rows above
+filter_undetermined = 0
 for row in open(os.path.join(work, 'manifest'), encoding='utf-8'):
     name, file, status = row.rstrip('\n').split('\t')
     manifest_names.add(name)
@@ -745,7 +806,8 @@ for row in open(os.path.join(work, 'manifest'), encoding='utf-8'):
                 for l in ref[case]:
                     _, c = split(l)
                     if c is not None:
-                        counts['unreached_contributors'] += sum(1 for _, r in c.values() if r == 'unreached')
+                        counts['unreached_contributors'] += sum(1 for _, r, _ in c.values() if r == 'unreached')
+                        filter_undetermined += sum(1 for _, _, f in c.values() if f)
                 for l in drools[case]:
                     head, c = split(l)
                     parts = head.split(' ')
@@ -791,10 +853,11 @@ for k, floor in floors.items():
 
 print('  counted: ref traced %d golden case files; compared per branch: %d goldens, %d case files, %d readings, '
       '%d node lines, %d unreached, %d with contributors, %d with a timeline, %d with the object of a read (%d of them '
-      'on none), %d of a displaced reading (%d such readings), %d undetermined; %d contributors of ref not reached' % (
+      'on none), %d of a displaced reading (%d such readings), %d undetermined; %d contributors of ref not reached, '
+      '%d with an undetermined filter' % (
           n_traced, counts['goldens'], counts['cases'], counts['readings'], counts['nodes'], counts['unreached'],
           counts['contributors'], counts['timelines'], counts['objects'], unlinked, counts['displaced_nodes'],
-          displaced_read, counts['undetermined'], counts['unreached_contributors']))
+          displaced_read, counts['undetermined'], counts['unreached_contributors'], filter_undetermined))
 print('  end state, compared per branch: %d objects (%d made by a creation), %d members, %d links, %d channel facts, %d open members' % (
           counts['state_objects'], counts['state_made'], counts['state_members'], links, channel_facts, counts['state_open']))
 for k in sorted(excluded):
