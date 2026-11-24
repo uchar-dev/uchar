@@ -201,7 +201,8 @@ final class SessionReaders {
                         settled == null ? null : atRest(settled.decider()),
                         settled == null || settled.conflict() == null ? null : new DefaultsDecision.Conflict(
                                 settled.conflict().pointer(), settled.conflict().key(),
-                                settled.conflict().deciders().stream().map(SessionReaders::atRest).toList())));
+                                settled.conflict().deciders().stream().map(SessionReaders::atRest).toList()),
+                        settled == null ? List.of() : settled.open()));
             }
         perStack.forEach((name, rest) -> {
             if (!rest.isEmpty())
@@ -518,8 +519,13 @@ final class SessionReaders {
         return a.pointer().equals(b.pointer()) && Period.sameValue(a.decision(), b.decision());
     }
 
-    /** How a chain or a reconciliation came out: a default that decided, or a conflict. */
-    private record Settling(DefaultsDecision.Decider decider, DefaultsDecision.Conflict conflict) {}
+    /** How a chain or a reconciliation came out: a default that decided, a conflict, or the open defaults keeping it
+     *  open. */
+    private record Settling(DefaultsDecision.Decider decider, DefaultsDecision.Conflict conflict, List<String> open) {
+        Settling(DefaultsDecision.Decider decider, DefaultsDecision.Conflict conflict) {
+            this(decider, conflict, List.of());
+        }
+    }
 
     /** {@code d} with its decision as the write-back puts a number on a bean ({@link ComputeHelpers#collapse}), the
      *  form {@link Fixpoint.DerivedValue} gives it; null for none. */
@@ -532,7 +538,15 @@ final class SessionReaders {
     private Settling settledInSimpleForm(String name, StackLayout s, Object subject, List<ControlFact> all,
                                          Map<Object, List<Value>> written, Map<Object, WriteBoundaryFault> misfits) {
         List<ControlFact> facts = all.stream().filter(f -> !(f instanceof Decides d && d.open())).toList();
-        if (facts.isEmpty()) return null;
+        if (facts.isEmpty()) {
+            List<Decides> opened = all.stream().filter(f -> f instanceof Decides d && d.open()).map(f -> (Decides) f).toList();
+            if (opened.isEmpty()) return null;
+            if (opened.size() != 1)
+                throw new IllegalStateException("the simple form of " + name + " leaves one open Beslist per object, and"
+                        + " on " + FactNames.object(subject) + " stand " + opened);
+            Node k = knot(s.roots().get(0), opened.get(0).index(), name);
+            return new Settling(null, null, List.of(analysis.pointerOf(k.d())));
+        }
         if (facts.size() != 1 || !(facts.get(0) instanceof Decides d))
             throw new IllegalStateException("the simple form of " + name + " leaves one Beslist per object, and"
                     + " on " + FactNames.object(subject) + " stand " + facts);
@@ -555,6 +569,7 @@ final class SessionReaders {
 
     /** The {@link Outcome}s of the general form, reconciled at the root as the root reconciliation reads them. */
     private Settling settledInGeneralForm(String name, StackLayout s, Object subject, List<ControlFact> facts) {
+        if (s.fiveValued()) return settledInFiveValuedForm(name, s, subject, facts);
         Map<Integer, Outcome> perChain = new HashMap<>();
         for (ControlFact f : facts) {
             if (!(f instanceof Outcome o))
@@ -571,37 +586,45 @@ final class SessionReaders {
 
     /** The reconciliation of the member chains {@code chains}, numbered from {@code first}, as ch. 7.2 reads their
      *  outcomes: the first conflict passes on, deciding members that differ conflict under {@code key} at the default
-     *  {@code at} (null at the root), and agreeing ones decide as the first of them, where no member is open. Null where
-     *  no member settled, or one is open. */
+     *  {@code at} (null at the root), and agreeing ones decide as the first of them, where no member is open. Where a
+     *  member is open and no conflict stands, the open defaults of the open members in member order. */
     private Settling reconciled(String name, List<List<Node>> chains, int first, Map<Integer, Outcome> perChain,
                                 String at, String key) {
         List<Outcome> decided = new ArrayList<>();
         List<DefaultsDecision.Decider> deciders = new ArrayList<>();
-        boolean open = false;
+        List<String> open = new ArrayList<>();
         for (int m = 0; m < chains.size(); m++) {
             Outcome o = perChain.get(first + m);
-            open |= o != null && o.kind() == Outcome.Kind.OPEN;
-            if (o == null || o.kind() == Outcome.Kind.OPEN) continue;
+            if (o == null) continue;
+            if (o.kind() == Outcome.Kind.OPEN) {
+                Settling sub = descended(name, chains.get(m), o, perChain);
+                if (sub != null) open.addAll(sub.open());
+                continue;
+            }
             Settling settled = descended(name, chains.get(m), o, perChain);
             if (o.conflict()) return settled;
             decided.add(o);
             deciders.add(settled.decider());
         }
-        if (decided.isEmpty()) return null;
+        if (decided.isEmpty()) return open.isEmpty() ? null : new Settling(null, null, open);
         for (Outcome o : decided)
             if (!Outcome.equal(o.value(), decided.get(0).value()))
                 return new Settling(null, new DefaultsDecision.Conflict(at, key, deciders));
-        return open ? null : new Settling(deciders.get(0), null);
+        return !open.isEmpty() ? new Settling(null, null, open) : new Settling(deciders.get(0), null);
     }
 
     /** The default of {@code chain} that settled as {@code o} says, followed down to the default whose own content
-     *  decided, or to the conflict among the exception groups of a default. */
+     *  decided, to the conflict among the exception groups of a default, or to the open defaults that left it open. */
     private Settling descended(String name, List<Node> chain, Outcome o, Map<Integer, Outcome> perChain) {
         Node k = knot(chain, o.position(), name);
         if (k.chain() != o.chain())
             throw new IllegalStateException(o + " does not lie on chain " + k.chain() + " of " + name);
         Settling settled = k.hasMembers()
                 ? reconciled(name, k.members(), k.firstMember(), perChain, analysis.pointerOf(k.d()), k.key()) : null;
+        if (o.kind() == Outcome.Kind.OPEN) {
+            if (settled != null && !settled.open().isEmpty()) return settled;
+            return new Settling(null, null, List.of(analysis.pointerOf(k.d())));
+        }
         if (settled == null) {
             // no member settled, or none to settle: the default's own decision, its fall-back where it has members
             if (o.conflict())
@@ -616,6 +639,173 @@ final class SessionReaders {
             throw new IllegalStateException(o + " in the session, and the members of default " + k.label() + " of " + name
                     + " give " + settled);
         return settled;
+    }
+
+    /** Outcome of a chain or group in the five-valued lowering (ch. 1.5), with the open default pointers in stack order. */
+    private record Five(Outcome.Kind kind, DefaultsDecision.Decider decider, DefaultsDecision.Conflict conflict,
+                        Object openOnlyValue, List<String> open) {}
+
+    /** Reads a five-valued strict stack's step outcomes ({@code position >= 0}) and verifies them against its chain
+     *  summary outcomes ({@code position == -1}); applies characteristic root closing so {@code OPEN_ONLY(false)} at
+     *  the root leaves {@code open} empty. */
+    private Settling settledInFiveValuedForm(String name, StackLayout s, Object subject, List<ControlFact> facts) {
+        Map<Integer, Outcome> summaries = new HashMap<>();
+        Map<Integer, Map<Integer, Outcome>> byChainStep = new HashMap<>();
+        for (ControlFact f : facts) {
+            if (!(f instanceof Outcome o))
+                throw new IllegalStateException("the five-valued form of " + name + " inserts only Uitkomst, and on "
+                        + FactNames.object(subject) + " stands " + f);
+            if (o.position() == -1) {
+                Outcome other = summaries.put(o.chain(), o);
+                if (other != null)
+                    throw new IllegalStateException("chain " + o.chain() + " of " + name + " leaves one summary outcome,"
+                            + " and on " + FactNames.object(subject) + " stand " + other + " and " + o);
+            } else {
+                Outcome other = byChainStep.computeIfAbsent(o.chain(), k -> new HashMap<>()).put(o.position(), o);
+                if (other != null)
+                    throw new IllegalStateException("step " + o.position() + " of chain " + o.chain() + " of " + name
+                            + " leaves one outcome, and on " + FactNames.object(subject) + " stand " + other + " and " + o);
+            }
+        }
+        Five root = evalFiveGroup(name, s.member().characteristic(), s.roots(), 0, byChainStep, summaries, null,
+                s.targetForm());
+        if (root == null) return null;
+        return switch (root.kind()) {
+            case DECIDED -> new Settling(root.decider(), null, List.of());
+            case CONFLICT -> new Settling(null, root.conflict(), List.of());
+            case OPEN_ONLY -> s.member().characteristic() && Boolean.FALSE.equals(root.openOnlyValue())
+                    ? new Settling(null, null, List.of())
+                    : new Settling(null, null, root.open());
+            case OPEN -> new Settling(null, null, root.open());
+        };
+    }
+
+    /** Reconciles member chains {@code chains} numbered from {@code first} in the five-valued lowering. */
+    private Five evalFiveGroup(String name, boolean characteristic, List<List<Node>> chains, int first,
+                               Map<Integer, Map<Integer, Outcome>> byChainStep, Map<Integer, Outcome> summaries,
+                               String at, String key) {
+        List<Five> decided = new ArrayList<>();
+        List<DefaultsDecision.Decider> deciders = new ArrayList<>();
+        List<Five> openOnly = new ArrayList<>();
+        List<Five> openAny = new ArrayList<>();
+        List<Five> allOpen = new ArrayList<>();
+        for (int m = 0; m < chains.size(); m++) {
+            Five f = evalFiveChain(name, characteristic, chains.get(m), first + m, byChainStep, summaries);
+            if (f == null) continue;
+            switch (f.kind()) {
+                case CONFLICT -> { return f; }
+                case DECIDED -> { decided.add(f); deciders.add(f.decider()); }
+                case OPEN_ONLY -> { openOnly.add(f); allOpen.add(f); }
+                case OPEN -> { openAny.add(f); allOpen.add(f); }
+            }
+        }
+        if (!decided.isEmpty()) {
+            Object v0 = decided.get(0).decider().decision();
+            for (Five f : decided)
+                if (!Outcome.equal(f.decider().decision(), v0))
+                    return new Five(Outcome.Kind.CONFLICT, null, new DefaultsDecision.Conflict(at, key, deciders),
+                            null, List.of());
+            // beside a deciding member v0, only OPEN members and OPEN_ONLY members with another value keep the group open
+            boolean blocked = !openAny.isEmpty();
+            List<String> blockingOpen = new ArrayList<>();
+            for (Five f : allOpen) {
+                if (f.kind() == Outcome.Kind.OPEN) {
+                    blocked = true;
+                    blockingOpen.addAll(f.open());
+                } else if (!Outcome.equal(f.openOnlyValue(), v0)) {
+                    blocked = true;
+                    blockingOpen.addAll(f.open());
+                }
+            }
+            if (blocked) return new Five(Outcome.Kind.OPEN, null, null, null, blockingOpen);
+            return new Five(Outcome.Kind.DECIDED, deciders.get(0), null, null, List.of());
+        }
+        if (allOpen.isEmpty()) return null;
+        List<String> openPtrs = new ArrayList<>();
+        for (Five f : allOpen) openPtrs.addAll(f.open());
+        if (!openAny.isEmpty()) return new Five(Outcome.Kind.OPEN, null, null, null, openPtrs);
+        Object v0 = openOnly.get(0).openOnlyValue();
+        for (Five f : openOnly)
+            if (!Outcome.equal(f.openOnlyValue(), v0))
+                return new Five(Outcome.Kind.OPEN, null, null, null, openPtrs);
+        return new Five(Outcome.Kind.OPEN_ONLY, null, null, v0, openPtrs);
+    }
+
+    /** Evaluates chain {@code chainId} in step order from its step outcomes and cross-checks its chain summary outcome. */
+    private Five evalFiveChain(String name, boolean characteristic, List<Node> chain, int chainId,
+                               Map<Integer, Map<Integer, Outcome>> byChainStep, Map<Integer, Outcome> summaries) {
+        Map<Integer, Outcome> stepMap = byChainStep.getOrDefault(chainId, Map.of());
+        List<TmsTranspiler.Step> steps = TmsTranspiler.steps(characteristic, chain);
+        Object aboveVal = null;
+        List<String> abovePtrs = new ArrayList<>();
+        Five result = null;
+        for (TmsTranspiler.Step st : steps) {
+            Outcome o = stepMap.get(st.index());
+            if (o == null) continue;
+            Node k = st.node();
+            Five step;
+            if (st.exceptions()) {
+                step = evalFiveGroup(name, characteristic, k.members(), k.firstMember(), byChainStep, summaries,
+                        analysis.pointerOf(k.d()), k.key());
+                if (step == null || !agreesWithOutcome(step, o))
+                    throw new IllegalStateException(o + " in the session, and the members of default " + k.label()
+                            + " of " + name + " give " + step);
+            } else {
+                String ptr = analysis.pointerOf(k.d());
+                step = switch (o.kind()) {
+                    case DECIDED -> new Five(Outcome.Kind.DECIDED, new DefaultsDecision.Decider(ptr, o.value()),
+                            null, null, List.of());
+                    case CONFLICT -> throw new IllegalStateException("own step " + o + " cannot conflict");
+                    case OPEN_ONLY -> new Five(Outcome.Kind.OPEN_ONLY, null, null, o.value(), List.of(ptr));
+                    case OPEN -> new Five(Outcome.Kind.OPEN, null, null, null,
+                            o.provisionalFault() ? List.of() : List.of(ptr));
+                };
+            }
+            if (aboveVal == null) {
+                switch (step.kind()) {
+                    case DECIDED, CONFLICT, OPEN -> { result = step; break; }
+                    case OPEN_ONLY -> { aboveVal = step.openOnlyValue(); abovePtrs.addAll(step.open()); }
+                }
+            } else {
+                switch (step.kind()) {
+                    case DECIDED -> result = Outcome.equal(aboveVal, step.decider().decision())
+                            ? step
+                            : new Five(Outcome.Kind.OPEN, null, null, null, List.copyOf(abovePtrs));
+                    case CONFLICT -> result = new Five(Outcome.Kind.OPEN, null, null, null, List.copyOf(abovePtrs));
+                    case OPEN -> {
+                        List<String> combined = new ArrayList<>(abovePtrs);
+                        combined.addAll(step.open());
+                        result = new Five(Outcome.Kind.OPEN, null, null, null, combined);
+                    }
+                    case OPEN_ONLY -> {
+                        if (Outcome.equal(aboveVal, step.openOnlyValue())) abovePtrs.addAll(step.open());
+                        else {
+                            List<String> combined = new ArrayList<>(abovePtrs);
+                            combined.addAll(step.open());
+                            result = new Five(Outcome.Kind.OPEN, null, null, null, combined);
+                        }
+                    }
+                }
+            }
+            if (result != null) break;
+        }
+        if (result == null && aboveVal != null)
+            result = new Five(Outcome.Kind.OPEN_ONLY, null, null, aboveVal, List.copyOf(abovePtrs));
+        Outcome summary = summaries.get(chainId);
+        if (result == null ? summary != null : summary == null || !agreesWithOutcome(result, summary))
+            throw new IllegalStateException("chain " + chainId + " of " + name + " has summary " + summary
+                    + ", and its steps give " + result);
+        return result;
+    }
+
+    private static boolean agreesWithOutcome(Five f, Outcome o) {
+        if (f.kind() != o.kind()) return false;
+        return switch (f.kind()) {
+            case DECIDED -> f.decider() != null && Outcome.equal(f.decider().decision(), o.value());
+            case CONFLICT -> f.conflict() != null && f.conflict().key().equals(o.key());
+            case OPEN_ONLY -> Outcome.equal(f.openOnlyValue(), o.value());
+            case OPEN -> true;
+        };
     }
 
     /** The knot at {@code position} of {@code chain}. */
@@ -1036,6 +1226,16 @@ final class SessionReaders {
         for (Object f : session.getObjects(new ClassObjectFilter(EvaluationDate.class))) date = ((EvaluationDate) f).date();
         Watch watch = Watch.of(session);
         FoldFacts folds = null;
+        Map<String, Map<Object, List<Outcome>>> openOnlySteps = null;
+        if (readingRules.stream().anyMatch(r -> r.provisionalAbove() != null)) {
+            openOnlySteps = new HashMap<>();
+            for (Object f : session.getObjects(new ClassObjectFilter(Outcome.class))) {
+                Outcome oc = (Outcome) f;
+                if (oc.kind() == Outcome.Kind.OPEN_ONLY && oc.position() >= 0)
+                    openOnlySteps.computeIfAbsent(oc.stack(), k -> new IdentityHashMap<>())
+                            .computeIfAbsent(oc.subject(), k -> new ArrayList<>()).add(oc);
+            }
+        }
         List<ConditionReading> out = new ArrayList<>();
         for (ReadingRule r : readingRules) {
             Map<Object, Reading> ofForm = facts.get(Reading.Kind.TURN).getOrDefault(r.pointer(), Map.of());
@@ -1058,7 +1258,8 @@ final class SessionReaders {
                 // rules name a fold (named)
                 if (folds == null && (!foldOrders.isEmpty() || r.sites().stream().anyMatch(x -> x.fold() != null)))
                     folds = foldFacts(session);
-                out.add(reading(session, r, o, read, reading == null, folds, watch));
+                boolean provisional = reading != null && isProvisional(r, o, openOnlySteps);
+                out.add(reading(session, r, o, read, reading == null, provisional, folds, watch));
             }
         }
         facts.forEach((kind, ofKind) -> ofKind.forEach((form, rest) -> {
@@ -1114,11 +1315,26 @@ final class SessionReaders {
         return out;
     }
 
+    /** Whether default {@code r} on object {@code o} is read provisionally below a higher {@code OPEN_ONLY} outcome in
+     *  an enclosing chain scope (RUNTIME-SEMANTICS ch. 1.5, 5.12). */
+    private static boolean isProvisional(ReadingRule r, Object o,
+                                         Map<String, Map<Object, List<Outcome>>> openOnlySteps) {
+        if (r.provisionalAbove() == null || openOnlySteps == null) return false;
+        List<Outcome> list = openOnlySteps.getOrDefault(r.stack(), Map.of()).get(o);
+        if (list == null) return false;
+        for (int[] scope : r.provisionalAbove())
+            for (Outcome oc : list)
+                if (oc.chain() == scope[0] && oc.position() < scope[1]) return true;
+        return false;
+    }
+
     /** The reading of {@code r} on {@code o} over the values of {@code reading}; where {@code displaced}, a reading of
      *  the speculative reading rule, of a default that was not at its turn: evaluated as at its turn, its status
-     *  {@link ConditionReading.Status#DISPLACED}, a fault of its condition at its nodes. */
+     *  {@link ConditionReading.Status#DISPLACED}, a fault of its condition at its nodes. Where {@code provisional}, a
+     *  default read below an {@code OPEN_ONLY} default: an evaluation fault of its condition or value gives
+     *  {@link ConditionReading.Status#OPEN} with the fault kept at its nodes. */
     private ConditionReading reading(KieSession session, ReadingRule r, Object o, Reading reading, boolean displaced,
-                                     FoldFacts folds, Watch watch) {
+                                     boolean provisional, FoldFacts folds, Watch watch) {
         Object[] w = reading.values().toArray();
         List<dev.uchar.regelspraak.transpiler.tms.plan.Read> slots = r.plan().readings().slots();
         if (w.length != slots.size())
@@ -1155,13 +1371,16 @@ final class SessionReaders {
             status = status(ComputeHelpers.judge(() -> rec.test(r.condition(), w), false));
         } catch (RuntimeException e) {
             if (!ComputeHelpers.isEvaluationFault(e)) throw e;
-            status = ConditionReading.Status.FAULTS;
+            status = !displaced && provisional ? ConditionReading.Status.OPEN : ConditionReading.Status.FAULTS;
         }
         // where the value faults, the form's consequence inserts that fault in place of it, and the node carries it; where
-        // it does not stand, the form leaves its target open (RUNTIME-SEMANTICS ch. 1.5)
-        if (status == ConditionReading.Status.HOLDS && r.value() != null
-                && ComputeHelpers.isOpen(ComputeHelpers.valued(() -> rec.value(r.value(), w), null)))
-            status = ConditionReading.Status.OPEN;
+        // it does not stand (or faults provisionally), the form leaves its target open (RUNTIME-SEMANTICS ch. 1.5, 5.12)
+        if (status == ConditionReading.Status.HOLDS && r.value() != null) {
+            Object evaluated = ComputeHelpers.valued(() -> rec.value(r.value(), w), null);
+            if (ComputeHelpers.isOpen(evaluated)
+                    || !displaced && provisional && ComputeHelpers.isEvaluationFault(evaluated))
+                status = ConditionReading.Status.OPEN;
+        }
         List<ConditionReading.NodeReading> nodes = new ArrayList<>();
         for (Site s : r.sites()) {
             if (s.derived() != null) {

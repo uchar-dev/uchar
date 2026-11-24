@@ -982,7 +982,11 @@ final class DrlRendering {
                 return;
             }
             if (x.decides() instanceof Consequence.Decision d && !computesNothing(d.value())) {
-                decisionOf(d, outcome, x.slots(), x.opens(), b);
+                decisionOf(d, outcome, x.slots(), x.opens(), null, null, b);
+                return;
+            }
+            if (x.decides() instanceof Consequence.ProvisionalDecision p && !computesNothing(p.decision().value())) {
+                decisionOf(p.decision(), outcome, x.slots(), x.opens(), p.provisionalSlots(), p.onFault(), b);
                 return;
             }
             if (outcome == null) throw new IllegalStateException("the writer of " + plan.name() + " cannot be open");
@@ -1420,7 +1424,9 @@ final class DrlRendering {
                         + "))");
                 case Consequence.InsertChannelState x -> insert(b, "    ", x.insertion(), "new " + typeName(ChannelState.class)
                         + "(" + str(x.producer()) + ", " + x.inconsistent() + ")");
-                case Consequence.Decision x -> decisionOf(x, null, x.slots(), null, b);
+                case Consequence.Decision x -> decisionOf(x, null, x.slots(), null, null, null, b);
+                case Consequence.ProvisionalDecision x -> decisionOf(x.decision(), null, x.decision().slots(), null,
+                        x.provisionalSlots(), x.onFault(), b);
                 case Consequence.Conflict x -> conflict(x, b);
                 case Consequence.Creation x -> creation(x, b);
                 case Consequence.RelationLink x -> insert(b, "    ", x.insertion(), "new " + typeName(RelationLink.class) + "("
@@ -1728,7 +1734,7 @@ final class DrlRendering {
          *  {@code outcome} is not null, the call of the function of the writer's outcome, the function of the value, over
          *  the bound values at {@code slots}, calls it as that of a {@link Consequence.Value} does. */
         private void decisionOf(Consequence.Decision x, String outcome, List<Integer> slots, Consequence.LeavesOpen opens,
-                                StringBuilder b) {
+                                List<Integer> provisionalSlots, Consequence.LeavesOpen onFault, StringBuilder b) {
             Consequence.Deposit d = x.deposit();
             if (d != null && computesNothing(x.value()))
                 throw new IllegalStateException("a decision that computes nothing does not deposit");
@@ -1742,6 +1748,11 @@ final class DrlRendering {
                 b.append("    }\n");
                 return;
             }
+            if (provisionalSlots != null) {
+                List<String> checks = new ArrayList<>();
+                for (int slot : provisionalSlots) checks.add("((Number) " + variable(slot) + ").intValue() > 0");
+                b.append("    boolean voorlopig = ").append(String.join(" || ", checks)).append(";\n");
+            }
             if (d != null) b.append("    Object ").append(DEPOSIT_FLAG).append(" = ").append(route(Route.FRESH_DEPOSIT_FLAG)).append("();\n");
             int place = reserveer();
             String name = name("afloop", place);
@@ -1751,13 +1762,24 @@ final class DrlRendering {
             fill(place, x.value().source(), "Object " + name + "(" + c.declaration() + ")",
                     outcome != null ? "    return " + route(Route.DECIDED) + "(" + outcome + ", () -> " + v + ", null);\n"
                     : opens != null ? "    return " + route(Route.VALUED) + "(() -> " + v + ", null);\n"
-                    : x.fault() == null ? "    return " + v + ";\n"
+                    : x.fault() == null && onFault == null ? "    return " + v + ";\n"
                     : tryCatch("        return " + v + ";\n", "        return " + route(Route.CAUGHT) + "(e);\n"));
             b.append("    Object v = ").append(name).append("(").append(c.arguments()).append(");\n");
-            if (x.fault() != null) {
+            if (x.fault() != null || onFault != null) {
                 b.append("    if (").append(route(Route.IS_EVALUATION_FAULT)).append("(v)) {\n");
-                insert(b, "        ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
-                        + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().rule()) + "))");
+                if (provisionalSlots != null) {
+                    b.append("        if (voorlopig) {\n");
+                    leaveOpen(onFault, b, "            ");
+                    if (x.fault() != null) {
+                        b.append("        } else {\n");
+                        insert(b, "            ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
+                                + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().rule()) + "))");
+                    }
+                    b.append("        }\n");
+                } else {
+                    insert(b, "        ", x.insertion(), "new " + typeName(Fault.class) + "(" + x.subject() + ", "
+                            + str(x.fault().form()) + ", " + route(Route.DESIGNATE) + "(v, " + str(x.fault().rule()) + "))");
+                }
                 if (opens != null) {
                     b.append("    } else if (").append(route(Route.IS_OPEN)).append("(v)) {\n");
                     leaveOpen(opens, b, "        ");
@@ -1769,7 +1791,8 @@ final class DrlRendering {
             String in = write == null ? "        " : "            ";
             if (write != null) misfit(x, write, b, "        ");
             if (d != null) {
-                b.append(in).append("if (").append(route(Route.REPORTED)).append("(").append(DEPOSIT_FLAG).append(")) {\n");
+                b.append(in).append("if (").append(provisionalSlots != null ? "!voorlopig && " : "")
+                        .append(route(Route.REPORTED)).append("(").append(DEPOSIT_FLAG).append(")) {\n");
                 insert(b, in + "    ", x.insertion(), route(Route.INCONSISTENCY) + "(" + str(d.form()) + ", "
                         + x.subject() + ", " + route(Route.DEPOSIT_CODES) + "(" + DEPOSIT_FLAG + "))");
                 b.append(in).append("}\n");
@@ -1828,7 +1851,15 @@ final class DrlRendering {
                             case DECIDED -> "v, null";
                             case CONFLICT -> "null, (String) v";
                             case OPEN -> "null, null";
+                            case OPEN_ONLY -> throw new IllegalStateException("OPEN_ONLY uses StackFact.OpenOnly");
                         } + ")";
+                case Consequence.StackFact.OpenOnly x -> "new " + typeName(Outcome.class) + "(" + subject + ", "
+                        + str(x.stack()) + ", " + x.chain() + ", " + x.position() + ", "
+                        + enumlabel(Outcome.Kind.OPEN_ONLY) + ", "
+                        + (x.value() != null ? consequenceConstant(x.value()).text() : "v") + ", null)";
+                case Consequence.StackFact.ProvisionalFault x -> "new " + typeName(Outcome.class) + "(" + subject + ", "
+                        + str(x.stack()) + ", " + x.chain() + ", " + x.position() + ", "
+                        + enumlabel(Outcome.Kind.OPEN) + ", null, null, true)";
                 case Consequence.StackFact.Inconsistency x -> route(Route.INCONSISTENCY) + "((String) v, " + subject + ", "
                         + list(texts(Consequence.StackFact.Inconsistency.CODES)) + ")";
             };

@@ -424,6 +424,9 @@ public enum StaticFunction {
      *  its chain: the constraint of a reconciliation of a defaults stack that keeps to the first member in member order
      *  (RUNTIME-SEMANTICS ch. 7.2; {@link BetaTest}). */
     EARLIER_MEMBER(ComputeHelpers.class, "earlierMember", false),
+    /** Whether an {@code Outcome} is of an earlier step in its chain than the one another pattern binds, by its
+     *  position ({@link BetaTest}). */
+    EARLIER_POSITION(ComputeHelpers.class, "earlierPosition", false),
     /** Whether an {@code Outcome} decides otherwise than the one another pattern binds, numbers by value
      *  (RUNTIME-SEMANTICS ch. 7.2): the constraint of a reconciliation of a defaults stack that finds a member which
      *  decides differently ({@link BetaTest}). */

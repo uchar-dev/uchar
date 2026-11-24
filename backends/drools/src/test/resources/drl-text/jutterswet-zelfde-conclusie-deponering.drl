@@ -1,0 +1,240 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.LeftOpen;
+import dev.uchar.regelspraak.transpiler.tms.OpenInput;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global OpenInput open_invoer;
+
+// hij betwist is
+function Object oordeel_defaultsAVondstMeldloonDefault0(Object $betwist, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($betwist, open_invoer, $onderwerp, ElementKey.of("vondst", "betwist", true)), Boolean.TRUE), false);
+}
+
+rule "defaults A:Vondst.meldloon: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $betwist : (ComputeHelpers.holds(betwist)) )
+    eval( ComputeHelpers.acts(oordeel_defaultsAVondstMeldloonDefault0($betwist, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsAVondstMeldloonDefault0($betwist, open_invoer, $onderwerp))) {
+        // 2
+        Object v = new java.math.BigDecimal("2");
+        if (v != null) {
+            insertLogical(new Outcome($onderwerp, "defaults A:Vondst.meldloon", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+        }
+    } else {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.meldloon", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, new java.math.BigDecimal("2"), null));
+    }
+end
+
+// zijn gewicht gedeeld door zijn aantal getuigen leeg is
+function Object oordeel_defaultsAVondstMeldloonDefault1(Object $gewicht, Object open_invoer, Object $onderwerp, Object $aantalGetuigen) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.emptyTest(ComputeHelpers.dividedLazily(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), () -> ComputeHelpers.readInput($aantalGetuigen, open_invoer, $onderwerp, ElementKey.of("vondst", "aantal getuigen", false)), null), Boolean.TRUE), true);
+}
+
+rule "defaults A:Vondst.meldloon: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $gewicht : gewicht, $aantalGetuigen : aantalGetuigen )
+    not( $hoger_3 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && position < 1 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp ) )
+    eval( ComputeHelpers.acts(oordeel_defaultsAVondstMeldloonDefault1($gewicht, open_invoer, $onderwerp, $aantalGetuigen)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsAVondstMeldloonDefault1($gewicht, open_invoer, $onderwerp, $aantalGetuigen))) {
+        // 2
+        Object v = new java.math.BigDecimal("2");
+        if (v != null) {
+            insertLogical(new Outcome($onderwerp, "defaults A:Vondst.meldloon", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+        }
+    } else {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.meldloon", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, new java.math.BigDecimal("2"), null));
+    }
+end
+
+// zijn gewicht gedeeld door zijn aantal getuigen leeg is
+function boolean toets_defaultsAVondstMeldloonDefault1FoutInDeVoorwaarde(Object $gewicht, Object open_invoer, Object $onderwerp, Object $aantalGetuigen) {
+    return ComputeHelpers.faulted(() -> ComputeHelpers.emptyTest(ComputeHelpers.dividedLazily(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), () -> ComputeHelpers.readInput($aantalGetuigen, open_invoer, $onderwerp, ElementKey.of("vondst", "aantal getuigen", false)), null), Boolean.TRUE));
+}
+
+// zijn gewicht gedeeld door zijn aantal getuigen leeg is
+function Object fout_defaultsAVondstMeldloonDefault1FoutInDeVoorwaarde(Object $gewicht, Object open_invoer, Object $onderwerp, Object $aantalGetuigen) {
+    try {
+        boolean uitkomst = ComputeHelpers.emptyTest(ComputeHelpers.dividedLazily(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), () -> ComputeHelpers.readInput($aantalGetuigen, open_invoer, $onderwerp, ElementKey.of("vondst", "aantal getuigen", false)), null), Boolean.TRUE);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Vondst.meldloon: default 1: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $gewicht : gewicht, $aantalGetuigen : aantalGetuigen )
+    eval( toets_defaultsAVondstMeldloonDefault1FoutInDeVoorwaarde($gewicht, open_invoer, $onderwerp, $aantalGetuigen) )
+    not( $hoger_8 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && position < 1, subject == $onderwerp ) )
+then
+    Object f = fout_defaultsAVondstMeldloonDefault1FoutInDeVoorwaarde($gewicht, open_invoer, $onderwerp, $aantalGetuigen);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"defaults A:Vondst.meldloon\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "defaults A:Vondst.meldloon", ComputeHelpers.designate(f, "defaults A:Vondst.meldloon")));
+end
+
+// zijn gewicht gedeeld door zijn aantal getuigen leeg is
+function boolean toets_defaultsAVondstMeldloonDefault1VoorlopigFoutInDeVoorwaarde(Object $gewicht, Object open_invoer, Object $onderwerp, Object $aantalGetuigen) {
+    return ComputeHelpers.faulted(() -> ComputeHelpers.emptyTest(ComputeHelpers.dividedLazily(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), () -> ComputeHelpers.readInput($aantalGetuigen, open_invoer, $onderwerp, ElementKey.of("vondst", "aantal getuigen", false)), null), Boolean.TRUE));
+}
+
+rule "defaults A:Vondst.meldloon: default 1 voorlopig: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $gewicht : gewicht, $aantalGetuigen : aantalGetuigen )
+    eval( toets_defaultsAVondstMeldloonDefault1VoorlopigFoutInDeVoorwaarde($gewicht, open_invoer, $onderwerp, $aantalGetuigen) )
+    not( $hoger_12 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && position < 1 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp ) )
+    exists( $hoger_14 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && position < 1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults A:Vondst.meldloon", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null, true));
+end
+
+// zijn gewicht gedeeld door zijn aantal getuigen leeg is
+function boolean toets_defaultsAVondstMeldloonDefault1DeponeringInDeVoorwaarde(Object $gewicht, Object open_invoer, Object $onderwerp, Object $aantalGetuigen, Object sonde) {
+    return ComputeHelpers.deposited(() -> ComputeHelpers.emptyTest(ComputeHelpers.dividedLazily(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), () -> ComputeHelpers.readInput($aantalGetuigen, open_invoer, $onderwerp, ElementKey.of("vondst", "aantal getuigen", false)), sonde), Boolean.TRUE), sonde);
+}
+
+// zijn gewicht gedeeld door zijn aantal getuigen leeg is
+function java.util.List deponering_defaultsAVondstMeldloonDefault1DeponeringInDeVoorwaarde(Object $gewicht, Object open_invoer, Object $onderwerp, Object $aantalGetuigen, Object sonde) {
+    if (!ComputeHelpers.deposited(() -> ComputeHelpers.emptyTest(ComputeHelpers.dividedLazily(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), () -> ComputeHelpers.readInput($aantalGetuigen, open_invoer, $onderwerp, ElementKey.of("vondst", "aantal getuigen", false)), sonde), Boolean.TRUE), sonde)) {
+        ComputeHelpers.contractBreach("the condition of \"Vondst.meldloon\" deposited in the test and not in the consequence, over the same bound values");
+    }
+    return ComputeHelpers.depositCodes(sonde);
+}
+
+rule "defaults A:Vondst.meldloon: default 1: deponering in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $gewicht : gewicht, $aantalGetuigen : aantalGetuigen )
+    eval( toets_defaultsAVondstMeldloonDefault1DeponeringInDeVoorwaarde($gewicht, open_invoer, $onderwerp, $aantalGetuigen, ComputeHelpers.depositFlag()) )
+    not( $hoger_18 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && position < 1, subject == $onderwerp ) )
+    exists( $uitkomst_20 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position == 1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject == $onderwerp ) )
+then
+    insertLogical(ComputeHelpers.inconsistency("Vondst.meldloon", $onderwerp, deponering_defaultsAVondstMeldloonDefault1DeponeringInDeVoorwaarde($gewicht, open_invoer, $onderwerp, $aantalGetuigen, ComputeHelpers.depositFlag())));
+end
+
+function boolean beta_defaultsAVondstMeldloonEensKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Vondst.meldloon: eens keten 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, $onderwerp : subject, $waarde : value )
+    not( $stap_23 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta_defaultsAVondstMeldloonEensKeten0(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.meldloon", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta1_defaultsAVondstMeldloonOpenMetKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierPosition(eigen, ander);
+}
+
+function boolean beta2_defaultsAVondstMeldloonOpenMetKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Vondst.meldloon: open met keten 0"
+    dialect "mvel"
+when
+    $open_26 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject, $waarde : value )
+    not( $stap_27 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsAVondstMeldloonOpenMetKeten0(this, $open_26) ) )
+    not( $stap_30 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp ) )
+    not( $stap_32 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta2_defaultsAVondstMeldloonOpenMetKeten0(this, $open_26) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.meldloon", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, v, null));
+    }
+end
+
+rule "defaults A:Vondst.meldloon: open keten 0"
+    dialect "mvel"
+when
+    $open_35 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, $onderwerp : subject )
+then
+    insertLogical(new Outcome($onderwerp, "defaults A:Vondst.meldloon", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+function boolean beta1_defaultsAVondstMeldloonOpenVerschilKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierPosition(eigen, ander);
+}
+
+function boolean beta2_defaultsAVondstMeldloonOpenVerschilKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Vondst.meldloon: open verschil keten 0"
+    dialect "mvel"
+when
+    $open_36 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    not( $stap_37 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsAVondstMeldloonOpenVerschilKeten0(this, $open_36) ) )
+    exists( $stap_40 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsAVondstMeldloonOpenVerschilKeten0(this, $open_36) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults A:Vondst.meldloon", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+function boolean beta1_defaultsAVondstMeldloonOpenTweeKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierPosition(eigen, ander);
+}
+
+function boolean beta2_defaultsAVondstMeldloonOpenTweeKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Vondst.meldloon: open twee keten 0"
+    dialect "mvel"
+when
+    $open_43 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    not( $stap_44 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsAVondstMeldloonOpenTweeKeten0(this, $open_43) ) )
+    exists( $stap_47 : Outcome( stack == "defaults A:Vondst.meldloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta2_defaultsAVondstMeldloonOpenTweeKeten0(this, $open_43) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults A:Vondst.meldloon", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+rule "defaults A:Vondst.meldloon: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.meldloon" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "meldloon");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.meldloon", ComputeHelpers.designate(passend, "defaults A:Vondst.meldloon")));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "meldloon", false), passend, "defaults A:Vondst.meldloon"));
+        }
+    }
+end
+
+rule "defaults A:Vondst.meldloon: open met wortel"
+    dialect "mvel"
+when
+    $open_51 : Outcome( stack == "defaults A:Vondst.meldloon" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "meldloon", false), "defaults A:Vondst.meldloon"));
+end
+
+rule "defaults A:Vondst.meldloon: open wortel"
+    dialect "mvel"
+when
+    $open_52 : Outcome( stack == "defaults A:Vondst.meldloon" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "meldloon", false), "defaults A:Vondst.meldloon"));
+end
+

@@ -1,0 +1,342 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.EvaluationDate;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.LeftOpen;
+import dev.uchar.regelspraak.transpiler.tms.OpenInput;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global java.time.LocalDate rekendatum;
+global OpenInput open_invoer;
+
+// hij betwist is
+function Object oordeel_defaultsAVondstRekenloonDefault0(Object $betwist, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($betwist, open_invoer, $onderwerp, ElementKey.of("vondst", "betwist", true)), Boolean.TRUE), false);
+}
+
+rule "defaults A:Vondst.rekenloon: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $betwist : (ComputeHelpers.holds(betwist)) )
+    eval( ComputeHelpers.acts(oordeel_defaultsAVondstRekenloonDefault0($betwist, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsAVondstRekenloonDefault0($betwist, open_invoer, $onderwerp))) {
+        // 2
+        Object v = new java.math.BigDecimal("2");
+        if (v != null) {
+            insertLogical(new Outcome($onderwerp, "defaults A:Vondst.rekenloon", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+        }
+    } else {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.rekenloon", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, new java.math.BigDecimal("2"), null));
+    }
+end
+
+// het Rekenjaar groter is dan 2025
+function boolean toets_defaultsAVondstRekenloonDefault1(Object $rekendatumwaarde_0) {
+    try {
+        return RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_0, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), new java.math.BigDecimal("2025"), ">");
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return false;
+    }
+}
+
+rule "defaults A:Vondst.rekenloon: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    $rekendatum_0 : EvaluationDate( $rekendatumwaarde_0 : date )
+    not( $hoger_3 : Outcome( stack == "defaults A:Vondst.rekenloon" && chain == 0 && position >= 0 && position < 1 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp ) )
+    eval( toets_defaultsAVondstRekenloonDefault1($rekendatumwaarde_0) )
+then
+    // 2
+    Object v = new java.math.BigDecimal("2");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.rekenloon", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+// het Rekenjaar groter is dan 2025
+function boolean toets_defaultsAVondstRekenloonDefault1FoutInDeVoorwaarde(Object $rekendatumwaarde_0) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_0, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), new java.math.BigDecimal("2025"), ">");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+// het Rekenjaar groter is dan 2025
+function Object fout_defaultsAVondstRekenloonDefault1FoutInDeVoorwaarde(Object $rekendatumwaarde_0) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_0, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), new java.math.BigDecimal("2025"), ">");
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Vondst.rekenloon: default 1: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    $rekendatum_0 : EvaluationDate( $rekendatumwaarde_0 : date )
+    eval( toets_defaultsAVondstRekenloonDefault1FoutInDeVoorwaarde($rekendatumwaarde_0) )
+    not( $hoger_8 : Outcome( stack == "defaults A:Vondst.rekenloon" && chain == 0 && position >= 0 && position < 1, subject == $onderwerp ) )
+then
+    Object f = fout_defaultsAVondstRekenloonDefault1FoutInDeVoorwaarde($rekendatumwaarde_0);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"defaults A:Vondst.rekenloon\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "defaults A:Vondst.rekenloon", ComputeHelpers.designate(f, "defaults A:Vondst.rekenloon")));
+end
+
+// het Rekenjaar groter is dan 2025
+function boolean toets_defaultsAVondstRekenloonDefault1VoorlopigFoutInDeVoorwaarde(Object $rekendatumwaarde_0) {
+    try {
+        boolean uitkomst = RegelSpraakRuntime.rsAggVergelijk(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_0, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), new java.math.BigDecimal("2025"), ">");
+        return false;
+    } catch (RuntimeException e) {
+        ComputeHelpers.caught(e);
+        return true;
+    }
+}
+
+rule "defaults A:Vondst.rekenloon: default 1 voorlopig: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    $rekendatum_0 : EvaluationDate( $rekendatumwaarde_0 : date )
+    eval( toets_defaultsAVondstRekenloonDefault1VoorlopigFoutInDeVoorwaarde($rekendatumwaarde_0) )
+    not( $hoger_12 : Outcome( stack == "defaults A:Vondst.rekenloon" && chain == 0 && position >= 0 && position < 1 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp ) )
+    exists( $hoger_14 : Outcome( stack == "defaults A:Vondst.rekenloon" && chain == 0 && position >= 0 && position < 1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults A:Vondst.rekenloon", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null, true));
+end
+
+function boolean beta_defaultsAVondstRekenloonEensKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Vondst.rekenloon: eens keten 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.rekenloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, $onderwerp : subject, $waarde : value )
+    not( $stap_17 : Outcome( stack == "defaults A:Vondst.rekenloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta_defaultsAVondstRekenloonEensKeten0(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.rekenloon", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Vondst.rekenloon: open met keten 0"
+    dialect "mvel"
+when
+    $open_20 : Outcome( stack == "defaults A:Vondst.rekenloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject, $waarde : value )
+    not( $stap_21 : Outcome( stack == "defaults A:Vondst.rekenloon" && chain == 0 && position >= 0 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.rekenloon", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, v, null));
+    }
+end
+
+rule "defaults A:Vondst.rekenloon: open keten 0"
+    dialect "mvel"
+when
+    $open_23 : Outcome( stack == "defaults A:Vondst.rekenloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, $onderwerp : subject )
+then
+    insertLogical(new Outcome($onderwerp, "defaults A:Vondst.rekenloon", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+function boolean beta_defaultsAVondstRekenloonOpenVerschilKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Vondst.rekenloon: open verschil keten 0"
+    dialect "mvel"
+when
+    $open_24 : Outcome( stack == "defaults A:Vondst.rekenloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    exists( $stap_25 : Outcome( stack == "defaults A:Vondst.rekenloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta_defaultsAVondstRekenloonOpenVerschilKeten0(this, $open_24) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults A:Vondst.rekenloon", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+rule "defaults A:Vondst.rekenloon: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.rekenloon" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "rekenloon");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.rekenloon", ComputeHelpers.designate(passend, "defaults A:Vondst.rekenloon")));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "rekenloon", false), passend, "defaults A:Vondst.rekenloon"));
+        }
+    }
+end
+
+rule "defaults A:Vondst.rekenloon: open met wortel"
+    dialect "mvel"
+when
+    $open_29 : Outcome( stack == "defaults A:Vondst.rekenloon" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "rekenloon", false), "defaults A:Vondst.rekenloon"));
+end
+
+rule "defaults A:Vondst.rekenloon: open wortel"
+    dialect "mvel"
+when
+    $open_30 : Outcome( stack == "defaults A:Vondst.rekenloon" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "rekenloon", false), "defaults A:Vondst.rekenloon"));
+end
+
+// hij betwist is
+function Object oordeel_defaultsAVondstWerkloonDefault0(Object $betwist, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($betwist, open_invoer, $onderwerp, ElementKey.of("vondst", "betwist", true)), Boolean.TRUE), false);
+}
+
+rule "defaults A:Vondst.werkloon: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $betwist : (ComputeHelpers.holds(betwist)) )
+    eval( ComputeHelpers.acts(oordeel_defaultsAVondstWerkloonDefault0($betwist, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsAVondstWerkloonDefault0($betwist, open_invoer, $onderwerp))) {
+        // 2
+        Object v = new java.math.BigDecimal("2");
+        if (v != null) {
+            insertLogical(new Outcome($onderwerp, "defaults A:Vondst.werkloon", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+        }
+    } else {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.werkloon", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, new java.math.BigDecimal("2"), null));
+    }
+end
+
+// het Rekenjaar min 2023
+function Object afloop_defaultsAVondstWerkloonDefault1(Object $rekendatumwaarde_0) {
+    try {
+        return RegelSpraakRuntime.rsMin(RegelSpraakRuntime.rsRekenjaar(((java.time.LocalDate) ComputeHelpers.required($rekendatumwaarde_0, "the evaluationYear context value needs an evaluation date; the case carries asOfDate null"))), new java.math.BigDecimal("2023"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "defaults A:Vondst.werkloon: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    $rekendatum_0 : EvaluationDate( $rekendatumwaarde_0 : date )
+    accumulate( $uitkomst_voorlopig_34 : Outcome( stack == "defaults A:Vondst.werkloon" && chain == 0 && position >= 0 && position < 1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp ); $voorlopig_voorlopig_35 : count() )
+    not( $hoger_38 : Outcome( stack == "defaults A:Vondst.werkloon" && chain == 0 && position >= 0 && position < 1 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp ) )
+then
+    boolean voorlopig = ((Number) $voorlopig_voorlopig_35).intValue() > 0;
+    Object v = afloop_defaultsAVondstWerkloonDefault1($rekendatumwaarde_0);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        if (voorlopig) {
+            insertLogical(new Outcome($onderwerp, "defaults A:Vondst.werkloon", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null, true));
+        } else {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.werkloon", ComputeHelpers.designate(v, "defaults A:Vondst.werkloon")));
+        }
+    } else if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.werkloon", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta_defaultsAVondstWerkloonEensKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Vondst.werkloon: eens keten 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.werkloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, $onderwerp : subject, $waarde : value )
+    not( $stap_42 : Outcome( stack == "defaults A:Vondst.werkloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta_defaultsAVondstWerkloonEensKeten0(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.werkloon", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Vondst.werkloon: open met keten 0"
+    dialect "mvel"
+when
+    $open_45 : Outcome( stack == "defaults A:Vondst.werkloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject, $waarde : value )
+    not( $stap_46 : Outcome( stack == "defaults A:Vondst.werkloon" && chain == 0 && position >= 0 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.werkloon", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, v, null));
+    }
+end
+
+rule "defaults A:Vondst.werkloon: open keten 0"
+    dialect "mvel"
+when
+    $open_48 : Outcome( stack == "defaults A:Vondst.werkloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, $onderwerp : subject )
+then
+    insertLogical(new Outcome($onderwerp, "defaults A:Vondst.werkloon", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+function boolean beta_defaultsAVondstWerkloonOpenVerschilKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Vondst.werkloon: open verschil keten 0"
+    dialect "mvel"
+when
+    $open_49 : Outcome( stack == "defaults A:Vondst.werkloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    exists( $stap_50 : Outcome( stack == "defaults A:Vondst.werkloon" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta_defaultsAVondstWerkloonOpenVerschilKeten0(this, $open_49) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults A:Vondst.werkloon", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+rule "defaults A:Vondst.werkloon: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.werkloon" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "werkloon");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.werkloon", ComputeHelpers.designate(passend, "defaults A:Vondst.werkloon")));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "werkloon", false), passend, "defaults A:Vondst.werkloon"));
+        }
+    }
+end
+
+rule "defaults A:Vondst.werkloon: open met wortel"
+    dialect "mvel"
+when
+    $open_54 : Outcome( stack == "defaults A:Vondst.werkloon" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "werkloon", false), "defaults A:Vondst.werkloon"));
+end
+
+rule "defaults A:Vondst.werkloon: open wortel"
+    dialect "mvel"
+when
+    $open_55 : Outcome( stack == "defaults A:Vondst.werkloon" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "werkloon", false), "defaults A:Vondst.werkloon"));
+end
+
+rule "rekendatumstand"
+    dialect "mvel"
+when
+then
+    insertLogical(new EvaluationDate(rekendatum));
+end
+

@@ -1628,6 +1628,11 @@ public final class ComputeHelpers {
         return ((Outcome) x).chain() < ((Outcome) y).chain();
     }
 
+    /** Whether the outcome {@code x}, an {@link Outcome}, is of an earlier step in its chain than the outcome {@code y}. */
+    public static boolean earlierPosition(Object x, Object y) {
+        return ((Outcome) x).position() < ((Outcome) y).position();
+    }
+
     /** Whether the outcome {@code x}, an {@link Outcome}, decides otherwise than the outcome {@code y}, as the
      *  reconciliation compares two decisions ({@link Outcome#equal}). */
     public static boolean anotherDecision(Object x, Object y) {

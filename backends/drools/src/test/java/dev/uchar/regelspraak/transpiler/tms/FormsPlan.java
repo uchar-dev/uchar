@@ -485,6 +485,22 @@ final class FormsPlan {
                 new Alpha("lid-open", List.of(new Alpha.FieldTest("kind", Alpha.Comparator.GELIJK, Outcome.Kind.OPEN)))),
                 List.of(), List.of(Binding.of(O, Outcome.class, "subject")))), new Consequence.LeavesOpen(O, List.of(
                 new Consequence.StackFact.Outcome("proefstapel", 0, 1, Outcome.Kind.OPEN)), Consequence.Insertion.LOGICAL)));
+        Accumulation provisional = new Accumulation(new FactPattern(Outcome.class, "$uitkomst_voorlopig_1",
+                List.of(new Alpha("voorlopig", List.of(
+                        new Alpha.FieldTest("kind", Alpha.Comparator.GELIJK, Outcome.Kind.OPEN_ONLY)))),
+                List.of(new Join("voorlopig-onderwerp", "subject", O)), List.of()),
+                List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, "$voorlopig_1")));
+        rules.add(new RulePlan("default 7", "proefstapel", null, table(
+                new Read(0, ReadKind.INPUT, "uitkijkbonus", "$uitkijkbonus"),
+                new Read(1, ReadKind.OUTCOMES, "voorlopig", "$voorlopig_1")),
+                List.of(withBonus, provisional),
+                new Consequence.ProvisionalDecision(new Consequence.Decision(O, new Term.Call(StaticFunction.FALLBACK,
+                        List.of(read, number("0")), "zijn uitkijkbonus of 0"), List.of(0), 2, false, fault, null,
+                        List.of(new Consequence.StackFact.Outcome("proefstapel", 0, 7, Outcome.Kind.DECIDED)),
+                        Consequence.Insertion.LOGICAL), List.of(1),
+                        new Consequence.LeavesOpen(O, List.of(new Consequence.StackFact.ProvisionalFault("proefstapel", 0, 7),
+                                new Consequence.StackFact.OpenOnly("proefstapel", 0, 7, java.math.BigDecimal.ZERO)),
+                                Consequence.Insertion.LOGICAL))));
         return rules;
     }
 

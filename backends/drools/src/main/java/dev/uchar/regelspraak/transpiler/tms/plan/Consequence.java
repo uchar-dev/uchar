@@ -82,7 +82,7 @@ public sealed interface Consequence {
                   LeavesOpen opens) implements Consequence {
         public Writer {
             slots = List.copyOf(slots);
-            if (!(decides instanceof Value) && !(decides instanceof Decision)
+            if (!(decides instanceof Value) && !(decides instanceof Decision) && !(decides instanceof ProvisionalDecision)
                     && (!(decides instanceof Characteristic) || condition == null))
                 throw new IllegalArgumentException("a writer decides a value, or a characteristic under a condition that"
                         + " can be undetermined, not " + decides);
@@ -92,13 +92,16 @@ public sealed interface Consequence {
     /** What a writer inserts on the object {@code subject} binds where it leaves its target open (ch. 1.5): a rule the
      *  {@link StackFact.LeftOpen} of its target, a default of a stack in its simple form that fact and its
      *  {@link StackFact.OpenDefault}, and a default or a reconciliation of a stack in its general form its open
-     *  {@link StackFact.Outcome}, at the root the {@code LeftOpen} of the target. */
+     *  {@link StackFact.Outcome}, {@link StackFact.OpenOnly} (with a constant) or {@link StackFact.ProvisionalFault},
+     *  at the root the {@code LeftOpen} of the target. */
     record LeavesOpen(String subject, List<StackFact> facts, Insertion insertion) implements Consequence {
         public LeavesOpen {
             facts = List.copyOf(facts);
             for (StackFact f : facts)
                 if (!(f instanceof StackFact.LeftOpen || f instanceof StackFact.OpenDefault
-                        || f instanceof StackFact.Outcome u && u.kind() == Kind.OPEN))
+                        || f instanceof StackFact.Outcome u && u.kind() == Kind.OPEN
+                        || f instanceof StackFact.OpenOnly o && o.value() != null
+                        || f instanceof StackFact.ProvisionalFault))
                     throw new IllegalArgumentException("a writer that leaves its target open decides nothing: " + f);
         }
     }
@@ -703,7 +706,9 @@ public sealed interface Consequence {
                 if (f instanceof StackFact.Inconsistency || f instanceof StackFact.Outcome u && u.kind() == Kind.CONFLICT)
                     throw new IllegalArgumentException("a decision inserts no conflict: " + f);
                 else if (f instanceof StackFact.LeftOpen || f instanceof StackFact.OpenDefault
-                        || f instanceof StackFact.Outcome u && u.kind() == Kind.OPEN)
+                        || f instanceof StackFact.ProvisionalFault
+                        || f instanceof StackFact.Outcome u && (u.kind() == Kind.OPEN || u.kind() == Kind.OPEN_ONLY)
+                        || f instanceof StackFact.OpenOnly o && o.value() != null)
                     throw new IllegalArgumentException("a decision leaves nothing open: " + f);
         }
 
@@ -711,6 +716,22 @@ public sealed interface Consequence {
         public Decision(String subject, Term value, List<Integer> slots, int size, boolean collapse, FaultName fault,
                         List<StackFact> facts, Insertion insertion) {
             this(subject, value, slots, size, collapse, fault, null, facts, insertion);
+        }
+    }
+
+    /**
+     * A decision of a default that may be read provisionally below an open default with a constant (RUNTIME-SEMANTICS
+     * ch. 1.5): when any count in {@code provisionalSlots} is positive, deposits of {@code decision} are suppressed and
+     * an evaluation fault of its consequence inserts {@code onFault} in place of a {@code Fault}; when all counts are
+     * zero, {@code decision} runs as usual.
+     */
+    record ProvisionalDecision(Decision decision, List<Integer> provisionalSlots, LeavesOpen onFault) implements Consequence {
+        public ProvisionalDecision {
+            java.util.Objects.requireNonNull(decision, "decision");
+            provisionalSlots = List.copyOf(provisionalSlots);
+            java.util.Objects.requireNonNull(onFault, "onFault");
+            if (provisionalSlots.isEmpty())
+                throw new IllegalArgumentException("a provisional decision names at least one provisional count slot");
         }
     }
 
@@ -787,6 +808,16 @@ public sealed interface Consequence {
          *  {@code stack} settled as {@code kind} says, {@code DECIDED} with the decision as its value,
          *  {@code CONFLICT} with the key of the conflict, or {@code OPEN}: an {@code Outcome}. */
         record Outcome(String stack, int chain, int position, Kind kind) implements StackFact {}
+
+        /** The control fact of a five-valued strict stack: the default or chain settled {@code OPEN_ONLY} with
+         *  {@code value} (a compile-time constant in {@link LeavesOpen}, or null in {@link Decision} to carry the
+         *  bound decision value). */
+        record OpenOnly(String stack, int chain, int position, Object value) implements StackFact {}
+
+        /** The control fact of a provisionally read default whose evaluation faulted (ch. 1.5): an {@code Outcome}
+         *  of kind {@code OPEN} marked as a provisional fault, so {@code DefaultsDecision.open} does not count it as
+         *  having an open read of its own. */
+        record ProvisionalFault(String stack, int chain, int position) implements StackFact {}
 
         /** The §9.5 inconsistency of the stack's conflict at its root, under the key of the conflict, through the
          *  route {@link Route#INCONSISTENCY}, with {@link #CODES}. */

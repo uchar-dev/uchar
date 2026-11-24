@@ -3,7 +3,7 @@ reading /rules/prioritizedDefaults/0/defaults/0 "V1" 1 Literal unreached
 reading /rules/prioritizedDefaults/0/defaults/0 "V1" OPEN
 reading /rules/prioritizedDefaults/0/defaults/1 "V1" 0 Compound true
 reading /rules/prioritizedDefaults/0/defaults/1 "V1" 1 Literal 10
-reading /rules/prioritizedDefaults/0/defaults/1 "V1" DISPLACED
+reading /rules/prioritizedDefaults/0/defaults/1 "V1" HOLDS
 reading /rules/rules/0/versions/0 "V1" 0 Comparison false
 reading /rules/rules/0/versions/0 "V1" 1 AttributeReference 50
 reading /rules/rules/0/versions/0 "V1" 2 Literal 1000

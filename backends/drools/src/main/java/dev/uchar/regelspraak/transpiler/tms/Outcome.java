@@ -1,5 +1,7 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import dev.uchar.regelspraak.runtime.Breuk;
+
 import java.math.BigDecimal;
 import java.util.Objects;
 
@@ -36,37 +38,48 @@ import java.util.Objects;
  * decision is {@code value} as a Boolean.
  */
 public record Outcome(Object subject, String stack, int chain, int position, Kind kind, Object value,
-                       String key) implements ControlFact {
+                       String key, boolean provisionalFault) implements ControlFact {
 
-    /** How a default settled. */
-    public enum Kind { DECIDED, CONFLICT, OPEN }
+    /** How a default or a chain settled. */
+    public enum Kind { DECIDED, CONFLICT, OPEN, OPEN_ONLY }
+
+    /** An outcome that is not a provisional evaluation fault. */
+    public Outcome(Object subject, String stack, int chain, int position, Kind kind, Object value, String key) {
+        this(subject, stack, chain, position, kind, value, key, false);
+    }
 
     public Outcome {
         Objects.requireNonNull(subject, "subject");
         Objects.requireNonNull(stack, "stack");
         Objects.requireNonNull(kind, "kind");
-        if ((kind == Kind.DECIDED) != (value != null) || (kind == Kind.CONFLICT) != (key != null))
-            throw new IllegalArgumentException("a decision carries a value, a conflict a key, an open outcome neither: "
+        if ((kind == Kind.DECIDED || kind == Kind.OPEN_ONLY) != (value != null) || (kind == Kind.CONFLICT) != (key != null))
+            throw new IllegalArgumentException("a decision or open-with-constant carries a value, a conflict a key, an open outcome neither: "
                     + kind + " with value " + value + " and key " + key);
+        if (provisionalFault && kind != Kind.OPEN)
+            throw new IllegalArgumentException("a provisional fault is an open outcome, not " + kind);
     }
 
     public boolean conflict() { return kind == Kind.CONFLICT; }
 
-    /** Two decisions as RUNTIME-SEMANTICS ch. 7.2 compares them: numbers by value, everything else by equality. */
+    /** Two decisions as RUNTIME-SEMANTICS ch. 7.2 and ch. 1.5 compare them: numbers by exact value, everything else by
+     *  equality. */
     static boolean equal(Object a, Object b) {
         if (a instanceof BigDecimal x && b instanceof BigDecimal y) return x.compareTo(y) == 0;
+        if ((a instanceof BigDecimal || a instanceof Breuk) && (b instanceof BigDecimal || b instanceof Breuk))
+            return Breuk.van(a).compareTo(Breuk.van(b)) == 0;
         return Objects.equals(a, b);
     }
 
     @Override public boolean equals(Object o) {
         return o instanceof Outcome u && u.subject == subject && u.stack.equals(stack) && u.chain == chain
                 && u.position == position && u.kind == kind && equal(u.value, value)
-                && Objects.equals(u.key, key);
+                && Objects.equals(u.key, key) && u.provisionalFault == provisionalFault;
     }
 
     @Override public int hashCode() {
-        Object w = value instanceof BigDecimal b ? b.stripTrailingZeros() : value;
-        return Objects.hash(System.identityHashCode(subject), stack, chain, position, kind, w, key);
+        Object w = value instanceof BigDecimal b ? b.stripTrailingZeros()
+                : value instanceof Breuk br && br.isTerminerend() ? br.naarDecimal().stripTrailingZeros() : value;
+        return Objects.hash(System.identityHashCode(subject), stack, chain, position, kind, w, key, provisionalFault);
     }
 
     @Override public String toString() {
@@ -74,7 +87,8 @@ public record Outcome(Object subject, String stack, int chain, int position, Kin
                 + ", " + switch (kind) {
                     case DECIDED -> "decided " + value;
                     case CONFLICT -> "conflict " + key;
-                    case OPEN -> "open";
+                    case OPEN -> provisionalFault ? "open (provisional fault)" : "open";
+                    case OPEN_ONLY -> "open with " + value;
                 } + ")";
     }
 }

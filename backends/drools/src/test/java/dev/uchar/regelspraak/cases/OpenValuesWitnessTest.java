@@ -255,8 +255,9 @@ class OpenValuesWitnessTest {
     }
 
     /** WV-1.5-stack-exception-groups: the exception groups of a default, reconciled: beside an open member the group is
-     *  open, unless two other members decide differently; nested below an exception, whose own decision is the fall-back
-     *  where no member settles. */
+     *  open unless every open member can only decide the same value (ch. 1.5, "An open default with a constant") or two
+     *  other members decide differently; nested below an exception, whose own decision is the fall-back where no member
+     *  settles. */
     @Test void wv_1_5_stack_exception_groups() throws Exception {
         assertEquals(5, play("stack-exception-groups", "case"));
         assertEquals(7, play("stack-exception-groups-nested", "case"));

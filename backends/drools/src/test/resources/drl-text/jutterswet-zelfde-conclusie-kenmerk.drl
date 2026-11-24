@@ -1,0 +1,1086 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.LeftOpen;
+import dev.uchar.regelspraak.transpiler.tms.OpenInput;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global OpenInput open_invoer;
+
+// hij niet beloonbaar is
+function Object oordeel_wachtpremie(Object $beloonbaar) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.characteristic(ComputeHelpers.read($beloonbaar), Boolean.FALSE), false);
+}
+
+// 3
+function Object waarde_wachtpremie(Object $beloonbaar) {
+    return ComputeHelpers.decided(oordeel_wachtpremie($beloonbaar), () -> ComputeHelpers.fitTarget(new java.math.BigDecimal("3"), Integer.valueOf(0), "wachtpremie", null), null);
+}
+
+rule "wachtpremie"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $stand_0 : CharacteristicState( characteristic == ElementKey.of("vondst", "beloonbaar", true), subject == $onderwerp, $beloonbaar : holds )
+    eval( ComputeHelpers.acts(oordeel_wachtpremie($beloonbaar)) )
+then
+    Object v = waarde_wachtpremie($beloonbaar);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "wachtpremie", ComputeHelpers.designate(v, "wachtpremie")));
+    } else if (ComputeHelpers.isOpen(v)) {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "wachtpremie", false), "wachtpremie"));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "wachtpremie", false), v, "wachtpremie"));
+        }
+    }
+end
+
+// hij betwist is
+function Object oordeel_defaultsKVondstBeloonbaarDefault0(Object $betwist, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($betwist, open_invoer, $onderwerp, ElementKey.of("vondst", "betwist", true)), Boolean.TRUE), false);
+}
+
+rule "defaults K:Vondst.beloonbaar: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $betwist : (ComputeHelpers.holds(betwist)) )
+    eval( ComputeHelpers.acts(oordeel_defaultsKVondstBeloonbaarDefault0($betwist, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsKVondstBeloonbaarDefault0($betwist, open_invoer, $onderwerp))) {
+        Object v = Boolean.FALSE;
+        if (v != null) {
+            insertLogical(new Outcome($onderwerp, "defaults K:Vondst.beloonbaar", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+        }
+    } else {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.beloonbaar", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, Boolean.FALSE, null));
+    }
+end
+
+// hij drijfhout is
+function Object oordeel_defaultsKVondstBeloonbaarDefault1(Object $drijfhout, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($drijfhout, open_invoer, $onderwerp, ElementKey.of("vondst", "drijfhout", true)), Boolean.TRUE), false);
+}
+
+rule "defaults K:Vondst.beloonbaar: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $drijfhout : (ComputeHelpers.holds(drijfhout)) )
+    not( $hoger_6 : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && position < 1 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp ) )
+    eval( ComputeHelpers.acts(oordeel_defaultsKVondstBeloonbaarDefault1($drijfhout, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsKVondstBeloonbaarDefault1($drijfhout, open_invoer, $onderwerp))) {
+        Object v = Boolean.FALSE;
+        if (v != null) {
+            insertLogical(new Outcome($onderwerp, "defaults K:Vondst.beloonbaar", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+        }
+    } else {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.beloonbaar", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, Boolean.FALSE, null));
+    }
+end
+
+function boolean beta_defaultsKVondstBeloonbaarDefault2(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+// zijn gewicht groter is dan 2
+function Object oordeel_defaultsKVondstBeloonbaarDefault2(Object $gewicht, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), new java.math.BigDecimal("2"), ">"), false);
+}
+
+rule "defaults K:Vondst.beloonbaar: default 2"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $gewicht : gewicht )
+    not( $hoger_10 : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && position < 2 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp ) )
+    not( $hoger_12 : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && position < 2 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp ) and $hoger_14 : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && position < 2 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp, beta_defaultsKVondstBeloonbaarDefault2(this, $hoger_12) ) )
+    eval( ComputeHelpers.acts(oordeel_defaultsKVondstBeloonbaarDefault2($gewicht, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsKVondstBeloonbaarDefault2($gewicht, open_invoer, $onderwerp))) {
+        Object v = Boolean.TRUE;
+        if (v != null) {
+            insertLogical(new Outcome($onderwerp, "defaults K:Vondst.beloonbaar", 0, 2, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+        }
+    } else {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.beloonbaar", 0, 2, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, Boolean.TRUE, null));
+    }
+end
+
+function boolean beta_defaultsKVondstBeloonbaarEensKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.beloonbaar: eens keten 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, $onderwerp : subject, $waarde : value )
+    not( $stap_19 : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta_defaultsKVondstBeloonbaarEensKeten0(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.beloonbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta1_defaultsKVondstBeloonbaarOpenMetKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierPosition(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstBeloonbaarOpenMetKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.beloonbaar: open met keten 0"
+    dialect "mvel"
+when
+    $open_22 : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject, $waarde : value )
+    not( $stap_23 : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsKVondstBeloonbaarOpenMetKeten0(this, $open_22) ) )
+    not( $stap_26 : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp ) )
+    not( $stap_28 : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta2_defaultsKVondstBeloonbaarOpenMetKeten0(this, $open_22) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.beloonbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, v, null));
+    }
+end
+
+function boolean beta1_defaultsKVondstBeloonbaarOpenVerschilKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierPosition(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstBeloonbaarOpenVerschilKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.beloonbaar: open verschil keten 0"
+    dialect "mvel"
+when
+    $open_31 : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    not( $stap_32 : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsKVondstBeloonbaarOpenVerschilKeten0(this, $open_31) ) )
+    exists( $stap_35 : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsKVondstBeloonbaarOpenVerschilKeten0(this, $open_31) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.beloonbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+function boolean beta1_defaultsKVondstBeloonbaarOpenTweeKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierPosition(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstBeloonbaarOpenTweeKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.beloonbaar: open twee keten 0"
+    dialect "mvel"
+when
+    $open_38 : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    not( $stap_39 : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsKVondstBeloonbaarOpenTweeKeten0(this, $open_38) ) )
+    exists( $stap_42 : Outcome( stack == "defaults K:Vondst.beloonbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta2_defaultsKVondstBeloonbaarOpenTweeKeten0(this, $open_38) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.beloonbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+rule "defaults K:Vondst.beloonbaar: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.beloonbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1 && position == -1 && value == true, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "beloonbaar", true)));
+    }
+end
+
+rule "defaults K:Vondst.beloonbaar: open met wortel"
+    dialect "mvel"
+when
+    $open_46 : Outcome( stack == "defaults K:Vondst.beloonbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY && chain >= 0 && chain < 1 && position == -1 && value == true, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "beloonbaar", true), "defaults K:Vondst.beloonbaar"));
+end
+
+rule "defaults K:Vondst.beloonbaar: open wortel"
+    dialect "mvel"
+when
+    $open_47 : Outcome( stack == "defaults K:Vondst.beloonbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "beloonbaar", true), "defaults K:Vondst.beloonbaar"));
+end
+
+// hij gemeld is
+function Object oordeel_defaultsKVondstVindbaarDefault0(Object $gemeld, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($gemeld, open_invoer, $onderwerp, ElementKey.of("vondst", "gemeld", true)), Boolean.TRUE), false);
+}
+
+rule "defaults K:Vondst.vindbaar: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $gemeld : (ComputeHelpers.holds(gemeld)) )
+    eval( ComputeHelpers.acts(oordeel_defaultsKVondstVindbaarDefault0($gemeld, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsKVondstVindbaarDefault0($gemeld, open_invoer, $onderwerp))) {
+        Object v = Boolean.TRUE;
+        if (v != null) {
+            insertLogical(new Outcome($onderwerp, "defaults K:Vondst.vindbaar", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+        }
+    } else {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.vindbaar", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, Boolean.TRUE, null));
+    }
+end
+
+// zijn gewicht groter is dan 2
+function Object oordeel_defaultsKVondstVindbaarDefault1(Object $gewicht, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), new java.math.BigDecimal("2"), ">"), false);
+}
+
+rule "defaults K:Vondst.vindbaar: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $gewicht : gewicht )
+    not( $hoger_51 : Outcome( stack == "defaults K:Vondst.vindbaar" && chain == 0 && position >= 0 && position < 1 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp ) )
+    eval( ComputeHelpers.acts(oordeel_defaultsKVondstVindbaarDefault1($gewicht, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsKVondstVindbaarDefault1($gewicht, open_invoer, $onderwerp))) {
+        Object v = Boolean.TRUE;
+        if (v != null) {
+            insertLogical(new Outcome($onderwerp, "defaults K:Vondst.vindbaar", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+        }
+    } else {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.vindbaar", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, Boolean.TRUE, null));
+    }
+end
+
+function boolean beta_defaultsKVondstVindbaarEensKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.vindbaar: eens keten 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.vindbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, $onderwerp : subject, $waarde : value )
+    not( $stap_55 : Outcome( stack == "defaults K:Vondst.vindbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta_defaultsKVondstVindbaarEensKeten0(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.vindbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta1_defaultsKVondstVindbaarOpenMetKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierPosition(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstVindbaarOpenMetKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.vindbaar: open met keten 0"
+    dialect "mvel"
+when
+    $open_58 : Outcome( stack == "defaults K:Vondst.vindbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject, $waarde : value )
+    not( $stap_59 : Outcome( stack == "defaults K:Vondst.vindbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsKVondstVindbaarOpenMetKeten0(this, $open_58) ) )
+    not( $stap_62 : Outcome( stack == "defaults K:Vondst.vindbaar" && chain == 0 && position >= 0 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp ) )
+    not( $stap_64 : Outcome( stack == "defaults K:Vondst.vindbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta2_defaultsKVondstVindbaarOpenMetKeten0(this, $open_58) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.vindbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, v, null));
+    }
+end
+
+function boolean beta1_defaultsKVondstVindbaarOpenVerschilKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierPosition(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstVindbaarOpenVerschilKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.vindbaar: open verschil keten 0"
+    dialect "mvel"
+when
+    $open_67 : Outcome( stack == "defaults K:Vondst.vindbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    not( $stap_68 : Outcome( stack == "defaults K:Vondst.vindbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsKVondstVindbaarOpenVerschilKeten0(this, $open_67) ) )
+    exists( $stap_71 : Outcome( stack == "defaults K:Vondst.vindbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsKVondstVindbaarOpenVerschilKeten0(this, $open_67) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.vindbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+function boolean beta1_defaultsKVondstVindbaarOpenTweeKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierPosition(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstVindbaarOpenTweeKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.vindbaar: open twee keten 0"
+    dialect "mvel"
+when
+    $open_74 : Outcome( stack == "defaults K:Vondst.vindbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    not( $stap_75 : Outcome( stack == "defaults K:Vondst.vindbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsKVondstVindbaarOpenTweeKeten0(this, $open_74) ) )
+    exists( $stap_78 : Outcome( stack == "defaults K:Vondst.vindbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta2_defaultsKVondstVindbaarOpenTweeKeten0(this, $open_74) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.vindbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+rule "defaults K:Vondst.vindbaar: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.vindbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1 && position == -1 && value == true, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "vindbaar", true)));
+    }
+end
+
+rule "defaults K:Vondst.vindbaar: open met wortel"
+    dialect "mvel"
+when
+    $open_82 : Outcome( stack == "defaults K:Vondst.vindbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY && chain >= 0 && chain < 1 && position == -1 && value == true, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "vindbaar", true), "defaults K:Vondst.vindbaar"));
+end
+
+rule "defaults K:Vondst.vindbaar: open wortel"
+    dialect "mvel"
+when
+    $open_83 : Outcome( stack == "defaults K:Vondst.vindbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "vindbaar", true), "defaults K:Vondst.vindbaar"));
+end
+
+// zijn gewicht groter is dan 2 en hij betwist is
+function Object oordeel_defaultsKVondstBergbaarDefault000(Object $gewicht, Object open_invoer, Object $onderwerp, Object $betwist) {
+    return ComputeHelpers.judge(() -> {
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
+        }
+        lezing.read(() -> RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), new java.math.BigDecimal("2"), ">"));
+        if (lezing.stands()) {
+            return lezing.verdict();
+        }
+        lezing.read(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($betwist, open_invoer, $onderwerp, ElementKey.of("vondst", "betwist", true)), Boolean.TRUE));
+        return lezing.verdict();
+    }, false);
+}
+
+rule "defaults K:Vondst.bergbaar: default 0.0.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $gewicht : gewicht, $betwist : (ComputeHelpers.holds(betwist)) )
+    eval( ComputeHelpers.acts(oordeel_defaultsKVondstBergbaarDefault000($gewicht, open_invoer, $onderwerp, $betwist)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsKVondstBergbaarDefault000($gewicht, open_invoer, $onderwerp, $betwist))) {
+        Object v = Boolean.FALSE;
+        if (v != null) {
+            insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+        }
+    } else {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, Boolean.FALSE, null));
+    }
+end
+
+function boolean beta_defaultsKVondstBergbaarEensKeten1(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.bergbaar: eens keten 1"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 1 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, $onderwerp : subject, $waarde : value )
+    not( $stap_87 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 1 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta_defaultsKVondstBergbaarEensKeten1(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 1, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults K:Vondst.bergbaar: open met keten 1"
+    dialect "mvel"
+when
+    $open_90 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 1 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject, $waarde : value )
+    not( $stap_91 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 1 && position >= 0 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 1, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, v, null));
+    }
+end
+
+function boolean beta_defaultsKVondstBergbaarOpenVerschilKeten1(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.bergbaar: open verschil keten 1"
+    dialect "mvel"
+when
+    $open_93 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 1 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    exists( $stap_94 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 1 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta_defaultsKVondstBergbaarOpenVerschilKeten1(this, $open_93) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 1, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+// zijn gewicht groter is dan 2 en hij drijfhout is
+function Object oordeel_defaultsKVondstBergbaarDefault010(Object $gewicht, Object open_invoer, Object $onderwerp, Object $drijfhout) {
+    return ComputeHelpers.judge(() -> {
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
+        }
+        lezing.read(() -> RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), new java.math.BigDecimal("2"), ">"));
+        if (lezing.stands()) {
+            return lezing.verdict();
+        }
+        lezing.read(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($drijfhout, open_invoer, $onderwerp, ElementKey.of("vondst", "drijfhout", true)), Boolean.TRUE));
+        return lezing.verdict();
+    }, false);
+}
+
+rule "defaults K:Vondst.bergbaar: default 0.1.0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $gewicht : gewicht, $drijfhout : (ComputeHelpers.holds(drijfhout)) )
+    eval( ComputeHelpers.acts(oordeel_defaultsKVondstBergbaarDefault010($gewicht, open_invoer, $onderwerp, $drijfhout)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsKVondstBergbaarDefault010($gewicht, open_invoer, $onderwerp, $drijfhout))) {
+        Object v = Boolean.FALSE;
+        if (v != null) {
+            insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 2, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+        }
+    } else {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 2, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, Boolean.FALSE, null));
+    }
+end
+
+function boolean beta_defaultsKVondstBergbaarEensKeten2(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.bergbaar: eens keten 2"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 2 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, $onderwerp : subject, $waarde : value )
+    not( $stap_100 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 2 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta_defaultsKVondstBergbaarEensKeten2(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 2, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults K:Vondst.bergbaar: open met keten 2"
+    dialect "mvel"
+when
+    $open_103 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 2 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject, $waarde : value )
+    not( $stap_104 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 2 && position >= 0 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 2, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, v, null));
+    }
+end
+
+function boolean beta_defaultsKVondstBergbaarOpenVerschilKeten2(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.bergbaar: open verschil keten 2"
+    dialect "mvel"
+when
+    $open_106 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 2 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    exists( $stap_107 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 2 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta_defaultsKVondstBergbaarOpenVerschilKeten2(this, $open_106) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 2, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+function boolean beta1_defaultsKVondstBergbaarVerschil0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstBergbaarVerschil0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+function Object conflict_defaultsKVondstBergbaarVerschil0() {
+    return "Vondst.bergbaar/0";
+}
+
+rule "defaults K:Vondst.bergbaar: verschil 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.bergbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 3 && position == -1, $onderwerp : subject )
+    not( $uitkomst_111 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsKVondstBergbaarVerschil0(this, $besluit) ) )
+    exists( $uitkomst_114 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsKVondstBergbaarVerschil0(this, $besluit) ) )
+then
+    Object v = conflict_defaultsKVondstBergbaarVerschil0();
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, null, (String) v));
+end
+
+function boolean beta1_defaultsKVondstBergbaarEens0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstBergbaarEens0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+function boolean beta3_defaultsKVondstBergbaarEens0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.bergbaar: eens 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.bergbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 3 && position == -1, $onderwerp : subject, $waarde : value )
+    not( $uitkomst_118 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsKVondstBergbaarEens0(this, $besluit) ) )
+    not( $uitkomst_121 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsKVondstBergbaarEens0(this, $besluit) ) )
+    not( $uitkomst_124 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, subject != null, subject == $onderwerp ) )
+    not( $uitkomst_126 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta3_defaultsKVondstBergbaarEens0(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta1_defaultsKVondstBergbaarOpenMet0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstBergbaarOpenMet0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.bergbaar: open met 0"
+    dialect "mvel"
+when
+    $open_129 : Outcome( stack == "defaults K:Vondst.bergbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY && chain >= 1 && chain < 3 && position == -1, $onderwerp : subject, $waarde : value )
+    not( $uitkomst_130 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsKVondstBergbaarOpenMet0(this, $open_129) ) )
+    not( $uitkomst_133 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp ) )
+    not( $uitkomst_135 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, subject != null, subject == $onderwerp ) )
+    not( $uitkomst_137 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta2_defaultsKVondstBergbaarOpenMet0(this, $open_129) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, v, null));
+    }
+end
+
+rule "defaults K:Vondst.bergbaar: open 0"
+    dialect "mvel"
+when
+    $open_140 : Outcome( stack == "defaults K:Vondst.bergbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN && chain >= 1 && chain < 3 && position == -1, $onderwerp : subject )
+then
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+function boolean beta1_defaultsKVondstBergbaarOpenVerschil0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstBergbaarOpenVerschil0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+function boolean beta3_defaultsKVondstBergbaarOpenVerschil0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.bergbaar: open verschil 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.bergbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 1 && chain < 3 && position == -1, $onderwerp : subject )
+    not( $uitkomst_142 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsKVondstBergbaarOpenVerschil0(this, $besluit) ) )
+    not( $uitkomst_145 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsKVondstBergbaarOpenVerschil0(this, $besluit) ) )
+    not( $uitkomst_148 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, subject != null, subject == $onderwerp ) )
+    exists( $uitkomst_150 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta3_defaultsKVondstBergbaarOpenVerschil0(this, $besluit) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+function boolean beta1_defaultsKVondstBergbaarOpenTwee0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstBergbaarOpenTwee0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.bergbaar: open twee 0"
+    dialect "mvel"
+when
+    $open_153 : Outcome( stack == "defaults K:Vondst.bergbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY && chain >= 1 && chain < 3 && position == -1, $onderwerp : subject )
+    not( $uitkomst_154 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsKVondstBergbaarOpenTwee0(this, $open_153) ) )
+    not( $uitkomst_157 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp ) )
+    not( $uitkomst_159 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, subject != null, subject == $onderwerp ) )
+    exists( $uitkomst_161 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 1 && chain < 3 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta2_defaultsKVondstBergbaarOpenTwee0(this, $open_153) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+// zijn gewicht groter is dan 2
+function Object oordeel_defaultsKVondstBergbaarDefault1(Object $gewicht, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), new java.math.BigDecimal("2"), ">"), false);
+}
+
+rule "defaults K:Vondst.bergbaar: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $gewicht : gewicht )
+    not( $hoger_165 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && position < 1 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp ) )
+    eval( ComputeHelpers.acts(oordeel_defaultsKVondstBergbaarDefault1($gewicht, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsKVondstBergbaarDefault1($gewicht, open_invoer, $onderwerp))) {
+        Object v = Boolean.TRUE;
+        if (v != null) {
+            insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+        }
+    } else {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, Boolean.TRUE, null));
+    }
+end
+
+function Object conflict_defaultsKVondstBergbaarDoorgevenKeten0(Object $sleutel) {
+    return $sleutel;
+}
+
+rule "defaults K:Vondst.bergbaar: doorgeven keten 0"
+    dialect "mvel"
+when
+    $conflict : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, $onderwerp : subject, $sleutel : key )
+    not( $stap_169 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp ) )
+then
+    Object v = conflict_defaultsKVondstBergbaarDoorgevenKeten0($sleutel);
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, null, (String) v));
+end
+
+function boolean beta_defaultsKVondstBergbaarEensKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.bergbaar: eens keten 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, $onderwerp : subject, $waarde : value )
+    not( $stap_172 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta_defaultsKVondstBergbaarEensKeten0(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta1_defaultsKVondstBergbaarOpenMetKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierPosition(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstBergbaarOpenMetKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.bergbaar: open met keten 0"
+    dialect "mvel"
+when
+    $open_175 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject, $waarde : value )
+    not( $stap_176 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsKVondstBergbaarOpenMetKeten0(this, $open_175) ) )
+    not( $stap_179 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp ) )
+    not( $stap_181 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta2_defaultsKVondstBergbaarOpenMetKeten0(this, $open_175) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, v, null));
+    }
+end
+
+rule "defaults K:Vondst.bergbaar: open keten 0"
+    dialect "mvel"
+when
+    $open_184 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, $onderwerp : subject )
+then
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+function boolean beta1_defaultsKVondstBergbaarOpenVerschilKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierPosition(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstBergbaarOpenVerschilKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.bergbaar: open verschil keten 0"
+    dialect "mvel"
+when
+    $open_185 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    not( $stap_186 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsKVondstBergbaarOpenVerschilKeten0(this, $open_185) ) )
+    exists( $stap_189 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsKVondstBergbaarOpenVerschilKeten0(this, $open_185) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+function boolean beta_defaultsKVondstBergbaarOpenConflictKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierPosition(eigen, ander);
+}
+
+rule "defaults K:Vondst.bergbaar: open conflict keten 0"
+    dialect "mvel"
+when
+    $open_192 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    not( $stap_193 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta_defaultsKVondstBergbaarOpenConflictKeten0(this, $open_192) ) )
+    exists( $stap_196 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, subject != null, subject == $onderwerp ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+function boolean beta1_defaultsKVondstBergbaarOpenTweeKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.earlierPosition(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstBergbaarOpenTweeKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.bergbaar: open twee keten 0"
+    dialect "mvel"
+when
+    $open_198 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    not( $stap_199 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsKVondstBergbaarOpenTweeKeten0(this, $open_198) ) )
+    exists( $stap_202 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta2_defaultsKVondstBergbaarOpenTweeKeten0(this, $open_198) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.bergbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+function Object conflict_defaultsKVondstBergbaarDoorgevenWortel(Object $sleutel) {
+    return $sleutel;
+}
+
+rule "defaults K:Vondst.bergbaar: doorgeven wortel"
+    dialect "mvel"
+when
+    $conflict : Outcome( stack == "defaults K:Vondst.bergbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject, $sleutel : key )
+then
+    Object v = conflict_defaultsKVondstBergbaarDoorgevenWortel($sleutel);
+    insertLogical(ComputeHelpers.inconsistency((String) v, $onderwerp, ComputeHelpers.list1("EF-027")));
+end
+
+rule "defaults K:Vondst.bergbaar: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.bergbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1 && position == -1 && value == true, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "bergbaar", true)));
+    }
+end
+
+rule "defaults K:Vondst.bergbaar: open met wortel"
+    dialect "mvel"
+when
+    $open_207 : Outcome( stack == "defaults K:Vondst.bergbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY && chain >= 0 && chain < 1 && position == -1 && value == true, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "bergbaar", true), "defaults K:Vondst.bergbaar"));
+end
+
+rule "defaults K:Vondst.bergbaar: open wortel"
+    dialect "mvel"
+when
+    $open_208 : Outcome( stack == "defaults K:Vondst.bergbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject )
+    not( $uitkomst_209 : Outcome( stack == "defaults K:Vondst.bergbaar" && chain >= 0 && chain < 1 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.CONFLICT, subject != null, subject == $onderwerp ) )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "bergbaar", true), "defaults K:Vondst.bergbaar"));
+end
+
+// zijn gewicht groter is dan 2
+function Object oordeel_defaultsKVondstKeurbaarDefault00(Object $gewicht, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), new java.math.BigDecimal("2"), ">"), false);
+}
+
+rule "defaults K:Vondst.keurbaar: default 0:0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $gewicht : gewicht )
+    eval( ComputeHelpers.acts(oordeel_defaultsKVondstKeurbaarDefault00($gewicht, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsKVondstKeurbaarDefault00($gewicht, open_invoer, $onderwerp))) {
+        Object v = Boolean.TRUE;
+        if (v != null) {
+            insertLogical(new Outcome($onderwerp, "defaults K:Vondst.keurbaar", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+        }
+    } else {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.keurbaar", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, Boolean.TRUE, null));
+    }
+end
+
+function boolean beta_defaultsKVondstKeurbaarEensKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.keurbaar: eens keten 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.keurbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, $onderwerp : subject, $waarde : value )
+    not( $stap_214 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta_defaultsKVondstKeurbaarEensKeten0(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.keurbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults K:Vondst.keurbaar: open met keten 0"
+    dialect "mvel"
+when
+    $open_217 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject, $waarde : value )
+    not( $stap_218 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain == 0 && position >= 0 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.keurbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, v, null));
+    }
+end
+
+function boolean beta_defaultsKVondstKeurbaarOpenVerschilKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.keurbaar: open verschil keten 0"
+    dialect "mvel"
+when
+    $open_220 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    exists( $stap_221 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta_defaultsKVondstKeurbaarOpenVerschilKeten0(this, $open_220) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.keurbaar", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+// hij betwist is
+function Object oordeel_defaultsKVondstKeurbaarDefault10(Object $betwist, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($betwist, open_invoer, $onderwerp, ElementKey.of("vondst", "betwist", true)), Boolean.TRUE), false);
+}
+
+rule "defaults K:Vondst.keurbaar: default 1:0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $betwist : (ComputeHelpers.holds(betwist)) )
+    eval( ComputeHelpers.acts(oordeel_defaultsKVondstKeurbaarDefault10($betwist, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_defaultsKVondstKeurbaarDefault10($betwist, open_invoer, $onderwerp))) {
+        Object v = Boolean.FALSE;
+        if (v != null) {
+            insertLogical(new Outcome($onderwerp, "defaults K:Vondst.keurbaar", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+        }
+    } else {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.keurbaar", 1, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, Boolean.FALSE, null));
+    }
+end
+
+function boolean beta_defaultsKVondstKeurbaarEensKeten1(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.keurbaar: eens keten 1"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.keurbaar" && chain == 1 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, $onderwerp : subject, $waarde : value )
+    not( $stap_227 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain == 1 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta_defaultsKVondstKeurbaarEensKeten1(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.keurbaar", 1, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults K:Vondst.keurbaar: open met keten 1"
+    dialect "mvel"
+when
+    $open_230 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain == 1 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject, $waarde : value )
+    not( $stap_231 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain == 1 && position >= 0 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults K:Vondst.keurbaar", 1, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, v, null));
+    }
+end
+
+function boolean beta_defaultsKVondstKeurbaarOpenVerschilKeten1(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.keurbaar: open verschil keten 1"
+    dialect "mvel"
+when
+    $open_233 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain == 1 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    exists( $stap_234 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain == 1 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta_defaultsKVondstKeurbaarOpenVerschilKeten1(this, $open_233) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults K:Vondst.keurbaar", 1, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+function boolean beta1_defaultsKVondstKeurbaarVerschilWortel(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstKeurbaarVerschilWortel(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+function Object conflict_defaultsKVondstKeurbaarVerschilWortel() {
+    return "Vondst.keurbaar";
+}
+
+rule "defaults K:Vondst.keurbaar: verschil wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.keurbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 2 && position == -1, $onderwerp : subject )
+    not( $uitkomst_238 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsKVondstKeurbaarVerschilWortel(this, $besluit) ) )
+    exists( $uitkomst_241 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsKVondstKeurbaarVerschilWortel(this, $besluit) ) )
+then
+    Object v = conflict_defaultsKVondstKeurbaarVerschilWortel();
+    insertLogical(ComputeHelpers.inconsistency((String) v, $onderwerp, ComputeHelpers.list1("EF-027")));
+end
+
+function boolean beta1_defaultsKVondstKeurbaarEensWortel(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstKeurbaarEensWortel(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+function boolean beta3_defaultsKVondstKeurbaarEensWortel(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.keurbaar: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.keurbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 2 && position == -1 && value == true, $onderwerp : subject, $waarde : value )
+    not( $uitkomst_245 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsKVondstKeurbaarEensWortel(this, $besluit) ) )
+    not( $uitkomst_248 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsKVondstKeurbaarEensWortel(this, $besluit) ) )
+    not( $uitkomst_251 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, subject != null, subject == $onderwerp ) )
+    not( $uitkomst_253 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta3_defaultsKVondstKeurbaarEensWortel(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "keurbaar", true)));
+    }
+end
+
+function boolean beta1_defaultsKVondstKeurbaarOpenMetWortel(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstKeurbaarOpenMetWortel(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.keurbaar: open met wortel"
+    dialect "mvel"
+when
+    $open_256 : Outcome( stack == "defaults K:Vondst.keurbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY && chain >= 0 && chain < 2 && position == -1 && value == true, $onderwerp : subject )
+    not( $uitkomst_257 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsKVondstKeurbaarOpenMetWortel(this, $open_256) ) )
+    not( $uitkomst_260 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp ) )
+    not( $uitkomst_262 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, subject != null, subject == $onderwerp ) )
+    not( $uitkomst_264 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta2_defaultsKVondstKeurbaarOpenMetWortel(this, $open_256) ) )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "keurbaar", true), "defaults K:Vondst.keurbaar"));
+end
+
+rule "defaults K:Vondst.keurbaar: open wortel"
+    dialect "mvel"
+when
+    $open_267 : Outcome( stack == "defaults K:Vondst.keurbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN && chain >= 0 && chain < 2 && position == -1, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "keurbaar", true), "defaults K:Vondst.keurbaar"));
+end
+
+function boolean beta1_defaultsKVondstKeurbaarOpenVerschilWortel(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstKeurbaarOpenVerschilWortel(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+function boolean beta3_defaultsKVondstKeurbaarOpenVerschilWortel(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.keurbaar: open verschil wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults K:Vondst.keurbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 2 && position == -1, $onderwerp : subject )
+    not( $uitkomst_269 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta1_defaultsKVondstKeurbaarOpenVerschilWortel(this, $besluit) ) )
+    not( $uitkomst_272 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta2_defaultsKVondstKeurbaarOpenVerschilWortel(this, $besluit) ) )
+    not( $uitkomst_275 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, subject != null, subject == $onderwerp ) )
+    exists( $uitkomst_277 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta3_defaultsKVondstKeurbaarOpenVerschilWortel(this, $besluit) ) )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "keurbaar", true), "defaults K:Vondst.keurbaar"));
+end
+
+function boolean beta1_defaultsKVondstKeurbaarOpenTweeWortel(Object eigen, Object ander) {
+    return ComputeHelpers.earlierMember(eigen, ander);
+}
+
+function boolean beta2_defaultsKVondstKeurbaarOpenTweeWortel(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults K:Vondst.keurbaar: open twee wortel"
+    dialect "mvel"
+when
+    $open_280 : Outcome( stack == "defaults K:Vondst.keurbaar" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY && chain >= 0 && chain < 2 && position == -1, $onderwerp : subject )
+    not( $uitkomst_281 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta1_defaultsKVondstKeurbaarOpenTweeWortel(this, $open_280) ) )
+    not( $uitkomst_284 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp ) )
+    not( $uitkomst_286 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, subject != null, subject == $onderwerp ) )
+    exists( $uitkomst_288 : Outcome( stack == "defaults K:Vondst.keurbaar" && chain >= 0 && chain < 2 && position == -1 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta2_defaultsKVondstKeurbaarOpenTweeWortel(this, $open_280) ) )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "keurbaar", true), "defaults K:Vondst.keurbaar"));
+end
+
+rule "kenmerkstand Vondst.beloonbaar: waar uit de invoer"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(beloonbaar) == true )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "beloonbaar", true), true));
+end
+
+rule "kenmerkstand Vondst.beloonbaar: waar uit een afleiding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst()
+    $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "beloonbaar", true), subject == $onderwerp )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "beloonbaar", true), true));
+end
+
+rule "kenmerkstand Vondst.beloonbaar: open door een schrijver"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(beloonbaar) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "beloonbaar", true), subject == $onderwerp ) )
+    exists( $opengelaten : LeftOpen( member == ElementKey.of("vondst", "beloonbaar", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "beloonbaar", true), ComputeHelpers.open($onderwerp, ElementKey.of("vondst", "beloonbaar", true))));
+end
+
+rule "kenmerkstand Vondst.beloonbaar: onwaar"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.holds(beloonbaar) == false )
+    not( $afgeleid : HasCharacteristic( characteristic == ElementKey.of("vondst", "beloonbaar", true), subject == $onderwerp ) )
+    not( $opengelaten : LeftOpen( member == ElementKey.of("vondst", "beloonbaar", true), subject == $onderwerp ) )
+then
+    insertLogical(new CharacteristicState($onderwerp, ElementKey.of("vondst", "beloonbaar", true), false));
+end
+

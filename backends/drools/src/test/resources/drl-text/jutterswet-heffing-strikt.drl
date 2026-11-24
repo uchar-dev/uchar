@@ -3,10 +3,10 @@ package dev.uchar.regelspraak.tms;
 import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
-import dev.uchar.regelspraak.transpiler.tms.Decides;
 import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.LeftOpen;
 import dev.uchar.regelspraak.transpiler.tms.OpenInput;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
 import dev.uchar.regelspraak.transpiler.tms.State;
 import dev.uchar.regelspraak.transpiler.tms.Value;
 
@@ -132,18 +132,10 @@ then
         // 0
         Object v = new java.math.BigDecimal("0");
         if (v != null) {
-            Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "stapelheffing");
-            if (ComputeHelpers.isEvaluationFault(passend)) {
-                insertLogical(new Fault($onderwerp, "defaults A:Vondst.stapelheffing", ComputeHelpers.designate(passend, "defaults A:Vondst.stapelheffing")));
-                insertLogical(new Decides($onderwerp, "defaults A:Vondst.stapelheffing", 0));
-            } else {
-                insertLogical(new Value($onderwerp, ElementKey.of("vondst", "stapelheffing", false), passend, "defaults A:Vondst.stapelheffing"));
-                insertLogical(new Decides($onderwerp, "defaults A:Vondst.stapelheffing", 0));
-            }
+            insertLogical(new Outcome($onderwerp, "defaults A:Vondst.stapelheffing", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
         }
     } else {
-        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "stapelheffing", false), "defaults A:Vondst.stapelheffing: default 0"));
-        insertLogical(new Decides($onderwerp, "defaults A:Vondst.stapelheffing", 0, true));
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.stapelheffing", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, new java.math.BigDecimal("0"), null));
     }
 end
 
@@ -151,20 +143,86 @@ rule "defaults A:Vondst.stapelheffing: default 1"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
-    not( $hoger_12 : Decides( stack == "defaults A:Vondst.stapelheffing" && index < 1, subject == $onderwerp ) )
+    not( $hoger_12 : Outcome( stack == "defaults A:Vondst.stapelheffing" && chain == 0 && position >= 0 && position < 1 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp ) )
 then
     // 25
     Object v = new java.math.BigDecimal("25");
     if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.stapelheffing", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta_defaultsAVondstStapelheffingEensKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Vondst.stapelheffing: eens keten 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.stapelheffing" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, $onderwerp : subject, $waarde : value )
+    not( $stap_16 : Outcome( stack == "defaults A:Vondst.stapelheffing" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta_defaultsAVondstStapelheffingEensKeten0(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.stapelheffing", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Vondst.stapelheffing: open met keten 0"
+    dialect "mvel"
+when
+    $open_19 : Outcome( stack == "defaults A:Vondst.stapelheffing" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject, $waarde : value )
+    not( $stap_20 : Outcome( stack == "defaults A:Vondst.stapelheffing" && chain == 0 && position >= 0 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.stapelheffing", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, v, null));
+    }
+end
+
+function boolean beta_defaultsAVondstStapelheffingOpenVerschilKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Vondst.stapelheffing: open verschil keten 0"
+    dialect "mvel"
+when
+    $open_22 : Outcome( stack == "defaults A:Vondst.stapelheffing" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    exists( $stap_23 : Outcome( stack == "defaults A:Vondst.stapelheffing" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta_defaultsAVondstStapelheffingOpenVerschilKeten0(this, $open_22) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults A:Vondst.stapelheffing", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+rule "defaults A:Vondst.stapelheffing: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.stapelheffing" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
         Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "stapelheffing");
         if (ComputeHelpers.isEvaluationFault(passend)) {
             insertLogical(new Fault($onderwerp, "defaults A:Vondst.stapelheffing", ComputeHelpers.designate(passend, "defaults A:Vondst.stapelheffing")));
-            insertLogical(new Decides($onderwerp, "defaults A:Vondst.stapelheffing", 1));
         } else {
             insertLogical(new Value($onderwerp, ElementKey.of("vondst", "stapelheffing", false), passend, "defaults A:Vondst.stapelheffing"));
-            insertLogical(new Decides($onderwerp, "defaults A:Vondst.stapelheffing", 1));
         }
     }
+end
+
+rule "defaults A:Vondst.stapelheffing: open met wortel"
+    dialect "mvel"
+when
+    $open_27 : Outcome( stack == "defaults A:Vondst.stapelheffing" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "stapelheffing", false), "defaults A:Vondst.stapelheffing"));
+end
+
+rule "defaults A:Vondst.stapelheffing: open wortel"
+    dialect "mvel"
+when
+    $open_28 : Outcome( stack == "defaults A:Vondst.stapelheffing" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "stapelheffing", false), "defaults A:Vondst.stapelheffing"));
 end
 
 rule "stand Vondst.heffingscode: uit een afleiding"

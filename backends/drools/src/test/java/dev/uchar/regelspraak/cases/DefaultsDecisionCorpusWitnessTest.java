@@ -260,6 +260,7 @@ class DefaultsDecisionCorpusWitnessTest {
             if (d.conflict().pointer() != null) pointers.add(d.conflict().pointer());
             for (DefaultsDecision.Decider x : d.conflict().deciders()) pointers.add(x.pointer());
         }
+        pointers.addAll(d.open());
         for (String p : pointers) {
             JsonNode node = ir.at(p);
             Matcher group = GROUP.matcher(p);
@@ -285,6 +286,7 @@ class DefaultsDecisionCorpusWitnessTest {
         List<String> deciders = new ArrayList<>();
         if (d.decider() != null) deciders.add(d.decider().pointer());
         if (d.conflict() != null) d.conflict().deciders().forEach(x -> deciders.add(x.pointer()));
+        deciders.addAll(d.open());
         for (String p : deciders)
             if (roots.stream().noneMatch(r -> p.equals(r) || p.startsWith(r + "/")))
                 differences.add(where + ": beslisser " + p + " ligt op of onder geen default van " + d.rootChains());

@@ -339,7 +339,7 @@ class ReadingsCorpusWitnessTest {
                 if (r != null && r.status() != ConditionReading.Status.HOLDS)
                     differences.add(at + ": de beslisser " + d.decider().pointer() + " is " + r.status());
             }
-            if (d.decider() == null && d.conflict() == null)
+            if (d.decider() == null && d.conflict() == null && d.open().isEmpty())
                 for (ConditionReading r : readings) {
                     if (r.object() != d.object() || r.status() != ConditionReading.Status.HOLDS) continue;
                     if (!inStack(d, r.form())) continue;

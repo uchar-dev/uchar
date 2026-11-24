@@ -175,16 +175,21 @@ final class PatternDslRendering {
         return switch (g) {
             case Consequence.Value x -> consequenceItem(x.subject(), x.slots(), x.size(), value(x, null));
             case Consequence.Writer x -> {
+                List<Integer> slots = x.slots();
                 ConsequenceFunction decides = switch (x.decides()) {
                     case Consequence.Value v -> value(v, x.opens());
-                    case Consequence.Decision d -> decisionOf(d, x.opens());
+                    case Consequence.Decision d -> decisionOf(d, x.opens(), null, null);
+                    case Consequence.ProvisionalDecision p -> {
+                        slots = union(slots, p.provisionalSlots());
+                        yield decisionOf(p.decision(), x.opens(), p.provisionalSlots(), p.onFault());
+                    }
                     case Consequence.Characteristic k -> (drools, subject, w) -> insert(drools, k.insertion(),
                             new HasCharacteristic(subject, k.characteristic()));
                     default -> throw new IllegalStateException("a writer decides " + x.decides());
                 };
-                if (x.condition() == null) yield consequenceItem(x.opens().subject(), x.slots(), x.size(), decides);
+                if (x.condition() == null) yield consequenceItem(x.opens().subject(), slots, x.size(), decides);
                 Predicate<Object[]> condition = ClosureRendering.test(x.condition());
-                yield consequenceItem(x.opens().subject(), x.slots(), x.size(), (drools, subject, w) -> {
+                yield consequenceItem(x.opens().subject(), slots, x.size(), (drools, subject, w) -> {
                     if (ComputeHelpers.establishedTrue(() -> condition.test(w), x.withoutFault()))
                         decides.run(drools, subject, w);
                     else leaveOpen(drools, x.opens(), subject);
@@ -306,7 +311,10 @@ final class PatternDslRendering {
                                     new RelationLink(x.relation(), a[0], a[1], (Integer) a[2])));
             case Consequence.SecondFilling x -> new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                     insert(drools, x.insertion(), new Fault(a[0], x.relation(), new SecondFillingFault(x.role(), a[0]))));
-            case Consequence.Decision x -> consequenceItem(x.subject(), x.slots(), x.size(), decisionOf(x, null));
+            case Consequence.Decision x -> consequenceItem(x.subject(), x.slots(), x.size(), decisionOf(x, null, null, null));
+            case Consequence.ProvisionalDecision x -> consequenceItem(x.decision().subject(),
+                    union(x.decision().slots(), x.provisionalSlots()), x.decision().size(),
+                    decisionOf(x.decision(), null, x.provisionalSlots(), x.onFault()));
             case Consequence.Conflict x -> {
                 ValueFunction key = ClosureRendering.valueFunction(x.key());
                 yield consequenceItem(x.subject(), x.slots(), x.size(), (drools, subject, w) ->
@@ -593,16 +601,28 @@ final class PatternDslRendering {
         });
     }
 
+    private static List<Integer> union(List<Integer> a, List<Integer> b) {
+        List<Integer> out = new ArrayList<>(a);
+        for (Integer s : b) if (!out.contains(s)) out.add(s);
+        return out;
+    }
+
     /** The decision of {@link Consequence.Decision}: its value from the bound values, with its fault where the plan names
      *  one; nothing where the value is null; where the write of the decision does not fit its target
      *  ({@link Consequence.StackFact.Value}), the fault of the write boundary and the control facts of the decision;
      *  else its deposit where the probe heard one, and the facts of the decision, in order. Where the value reads an open
-     *  one, {@code opens}, what the plan inserts for that (null where it reads none). */
-    private static ConsequenceFunction decisionOf(Consequence.Decision g, Consequence.LeavesOpen opens) {
+     *  one, {@code opens}, what the plan inserts for that (null where it reads none). Where {@code provisionalSlots} is
+     *  not null and any slot holds a positive count, deposits are suppressed and evaluation faults insert {@code onFault}. */
+    private static ConsequenceFunction decisionOf(Consequence.Decision g, Consequence.LeavesOpen opens,
+                                                  List<Integer> provisionalSlots, Consequence.LeavesOpen onFault) {
         ValueFunction value = ClosureRendering.valueFunction(g.value());
         Consequence.Deposit deposit = g.deposit();
         Consequence.StackFact.Value write = fittedWrite(g);
         return (drools, subject, w) -> {
+            boolean provisional = false;
+            if (provisionalSlots != null)
+                for (int slot : provisionalSlots)
+                    if (((Number) w[slot]).intValue() > 0) { provisional = true; break; }
             Object s = deposit == null ? null : ComputeHelpers.depositFlag();
             if (s != null) w[deposit.depositFlag()] = s;
             Object v = outcome(value, g.collapse(), opens != null, null, w);
@@ -611,6 +631,10 @@ final class PatternDslRendering {
                 return;
             }
             if (ComputeHelpers.isEvaluationFault(v)) {
+                if (provisional) {
+                    leaveOpen(drools, onFault, subject);
+                    return;
+                }
                 if (g.fault() == null) throw (RuntimeException) v;
                 insert(drools, g.insertion(),
                         new Fault(subject, g.fault().form(), ComputeHelpers.designate(v, g.fault().rule())));
@@ -624,7 +648,7 @@ final class PatternDslRendering {
                     if (!(f instanceof Consequence.StackFact.Value)) insert(drools, g.insertion(), stackFact(f, subject, v));
                 return;
             }
-            if (ComputeHelpers.reported(s))
+            if (!provisional && ComputeHelpers.reported(s))
                 insert(drools, g.insertion(), ComputeHelpers.inconsistency(deposit.form(), subject,
                         ComputeHelpers.depositCodes(s)));
             for (Consequence.StackFact f : g.facts())
@@ -655,6 +679,10 @@ final class PatternDslRendering {
             case Consequence.StackFact.LeftOpen x -> new LeftOpen(subject, x.member(), x.writer());
             case Consequence.StackFact.Outcome x -> new Outcome(subject, x.stack(), x.chain(), x.position(), x.kind(),
                     x.kind() == Outcome.Kind.DECIDED ? v : null, x.kind() == Outcome.Kind.CONFLICT ? (String) v : null);
+            case Consequence.StackFact.OpenOnly x -> new Outcome(subject, x.stack(), x.chain(), x.position(),
+                    Outcome.Kind.OPEN_ONLY, x.value() != null ? x.value() : v, null);
+            case Consequence.StackFact.ProvisionalFault x -> new Outcome(subject, x.stack(), x.chain(), x.position(),
+                    Outcome.Kind.OPEN, null, null, true);
             case Consequence.StackFact.Inconsistency x -> ComputeHelpers.inconsistency((String) v, subject,
                     Consequence.StackFact.Inconsistency.CODES);
         };
@@ -1034,6 +1062,7 @@ final class PatternDslRendering {
         field(Outcome.class, "kind", Outcome::kind);
         field(Outcome.class, "value", Outcome::value);
         field(Outcome.class, "key", Outcome::key);
+        field(Outcome.class, "provisionalFault", Outcome::provisionalFault);
     }
 
     @SuppressWarnings("unchecked")

@@ -35,17 +35,30 @@ import java.util.Objects;
  * @param rootChains     the pointers of the defaults at the root of the effective stack, per group, highest first
  * @param decider        the default that decided, or null where a conflict stood or no default decided
  * @param conflict       the conflict that stood, or null where a default decided or no default decided
+ * @param open           the pointers of the open defaults of this stack that keep its outcome open, in stack order;
+ *                       empty where a default decided, a conflict stood, every default gave way, or a characteristic
+ *                       stack closed at the root (RUNTIME-SEMANTICS ch. 1.5); a default whose provisional reading
+ *                       faulted without an open read of its own is not in this list
  */
 public record DefaultsDecision(Object object, String member, boolean characteristic, List<List<String>> rootChains,
-                               Decider decider, Conflict conflict) {
+                               Decider decider, Conflict conflict, List<String> open) {
 
     public DefaultsDecision {
         Objects.requireNonNull(object, "object");
         Objects.requireNonNull(member, "member");
         rootChains = rootChains.stream().map(List::copyOf).toList();
+        open = List.copyOf(open);
         if (decider != null && conflict != null)
             throw new IllegalArgumentException("a decision of a stack names at most one of decider and"
                     + " conflict, not both");
+        if ((decider != null || conflict != null) && !open.isEmpty())
+            throw new IllegalArgumentException("a settled stack keeps no open defaults: " + open);
+    }
+
+    /** A decision of a stack without open defaults. */
+    public DefaultsDecision(Object object, String member, boolean characteristic, List<List<String>> rootChains,
+                            Decider decider, Conflict conflict) {
+        this(object, member, characteristic, rootChains, decider, conflict, List.of());
     }
 
     /**

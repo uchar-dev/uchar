@@ -4,11 +4,11 @@ import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
 import dev.uchar.regelspraak.transpiler.tms.CharacteristicState;
 import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
-import dev.uchar.regelspraak.transpiler.tms.Decides;
 import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
 import dev.uchar.regelspraak.transpiler.tms.LeftOpen;
 import dev.uchar.regelspraak.transpiler.tms.OpenInput;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
 import dev.uchar.regelspraak.transpiler.tms.Value;
 
 global OpenInput open_invoer;
@@ -143,18 +143,10 @@ then
         // 0
         Object v = new java.math.BigDecimal("0");
         if (v != null) {
-            Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "premie");
-            if (ComputeHelpers.isEvaluationFault(passend)) {
-                insertLogical(new Fault($onderwerp, "defaults A:Vondst.premie", ComputeHelpers.designate(passend, "defaults A:Vondst.premie")));
-                insertLogical(new Decides($onderwerp, "defaults A:Vondst.premie", 0));
-            } else {
-                insertLogical(new Value($onderwerp, ElementKey.of("vondst", "premie", false), passend, "defaults A:Vondst.premie"));
-                insertLogical(new Decides($onderwerp, "defaults A:Vondst.premie", 0));
-            }
+            insertLogical(new Outcome($onderwerp, "defaults A:Vondst.premie", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
         }
     } else {
-        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "premie", false), "defaults A:Vondst.premie: default 0"));
-        insertLogical(new Decides($onderwerp, "defaults A:Vondst.premie", 0, true));
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.premie", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, new java.math.BigDecimal("0"), null));
     }
 end
 
@@ -162,20 +154,86 @@ rule "defaults A:Vondst.premie: default 1"
     dialect "mvel"
 when
     $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
-    not( $hoger_9 : Decides( stack == "defaults A:Vondst.premie" && index < 1, subject == $onderwerp ) )
+    not( $hoger_9 : Outcome( stack == "defaults A:Vondst.premie" && chain == 0 && position >= 0 && position < 1 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject == $onderwerp ) )
 then
     // 10
     Object v = new java.math.BigDecimal("10");
     if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.premie", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+function boolean beta_defaultsAVondstPremieEensKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Vondst.premie: eens keten 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.premie" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, $onderwerp : subject, $waarde : value )
+    not( $stap_13 : Outcome( stack == "defaults A:Vondst.premie" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp, beta_defaultsAVondstPremieEensKeten0(this, $besluit) ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.premie", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Vondst.premie: open met keten 0"
+    dialect "mvel"
+when
+    $open_16 : Outcome( stack == "defaults A:Vondst.premie" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject, $waarde : value )
+    not( $stap_17 : Outcome( stack == "defaults A:Vondst.premie" && chain == 0 && position >= 0 && kind != dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, subject != null, subject == $onderwerp ) )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.premie", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, v, null));
+    }
+end
+
+function boolean beta_defaultsAVondstPremieOpenVerschilKeten0(Object eigen, Object ander) {
+    return ComputeHelpers.anotherDecision(eigen, ander);
+}
+
+rule "defaults A:Vondst.premie: open verschil keten 0"
+    dialect "mvel"
+when
+    $open_19 : Outcome( stack == "defaults A:Vondst.premie" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY, $onderwerp : subject )
+    exists( $stap_20 : Outcome( stack == "defaults A:Vondst.premie" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, subject != null, subject == $onderwerp, beta_defaultsAVondstPremieOpenVerschilKeten0(this, $open_19) ) )
+then
+    insertLogical(new Outcome($onderwerp, "defaults A:Vondst.premie", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+rule "defaults A:Vondst.premie: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.premie" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
         Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "premie");
         if (ComputeHelpers.isEvaluationFault(passend)) {
             insertLogical(new Fault($onderwerp, "defaults A:Vondst.premie", ComputeHelpers.designate(passend, "defaults A:Vondst.premie")));
-            insertLogical(new Decides($onderwerp, "defaults A:Vondst.premie", 1));
         } else {
             insertLogical(new Value($onderwerp, ElementKey.of("vondst", "premie", false), passend, "defaults A:Vondst.premie"));
-            insertLogical(new Decides($onderwerp, "defaults A:Vondst.premie", 1));
         }
     }
+end
+
+rule "defaults A:Vondst.premie: open met wortel"
+    dialect "mvel"
+when
+    $open_24 : Outcome( stack == "defaults A:Vondst.premie" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN_ONLY && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "premie", false), "defaults A:Vondst.premie"));
+end
+
+rule "defaults A:Vondst.premie: open wortel"
+    dialect "mvel"
+when
+    $open_25 : Outcome( stack == "defaults A:Vondst.premie" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "premie", false), "defaults A:Vondst.premie"));
 end
 
 rule "kenmerkstand Vondst.kostbaar: waar uit de invoer"

@@ -297,6 +297,7 @@ class RuleOriginCorpusWitnessTest {
             if (label.startsWith("doorgeven ")) return RuleOrigin.Role.RECONCILE_PASS_ON;
             if (label.startsWith("verschil ")) return RuleOrigin.Role.RECONCILE_DIFFERENCE;
             if (label.startsWith("eens ")) return RuleOrigin.Role.RECONCILE_AGREEMENT;
+            if (label.startsWith("open ")) return RuleOrigin.Role.RECONCILE_OPEN;
             if (label.startsWith("terugval ")) return RuleOrigin.Role.FALLBACK;
             if (label.startsWith("default ")) return RuleOrigin.Role.OWN;
             return null;

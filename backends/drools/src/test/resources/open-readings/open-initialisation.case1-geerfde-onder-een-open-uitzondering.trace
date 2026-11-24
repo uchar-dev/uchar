@@ -9,7 +9,7 @@ reading /rules/rules/0/versions/0 "W1" 2 Literal 10
 reading /rules/rules/0/versions/0 "W1" 3 Binary 40
 reading /rules/rules/0/versions/0 "W1" 4 Literal 2
 reading /rules/rules/0/versions/0 "W1" 5 AttributeReference 20
-reading /rules/rules/0/versions/0 "W1" DISPLACED
+reading /rules/rules/0/versions/0 "W1" HOLDS
 state attribute "W1" "bergloon" open
 state attribute "W1" "gewicht" 20
 state characteristic "W1" "betwist" open

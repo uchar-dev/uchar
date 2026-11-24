@@ -487,6 +487,7 @@ final class ClosureRendering {
             case NOT_IN_PHASE -> x -> ComputeHelpers.notInPhase(x[0], x[1]);
             case OTHER_FILLING -> x -> ComputeHelpers.otherFilling(x[0], x[1], (String) x[2]);
             case EARLIER_MEMBER -> x -> ComputeHelpers.earlierMember(x[0], x[1]);
+            case EARLIER_POSITION -> x -> ComputeHelpers.earlierPosition(x[0], x[1]);
             case OTHER_DECISION -> x -> ComputeHelpers.anotherDecision(x[0], x[1]);
         };
     }

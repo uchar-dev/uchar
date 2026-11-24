@@ -8,7 +8,7 @@ reading /rules/prioritizedDefaults/0/defaults/1 "V1" 0 Compound true
 reading /rules/prioritizedDefaults/0/defaults/1 "V1" 1 Binary 100
 reading /rules/prioritizedDefaults/0/defaults/1 "V1" 2 AttributeReference 50
 reading /rules/prioritizedDefaults/0/defaults/1 "V1" 3 Literal 2
-reading /rules/prioritizedDefaults/0/defaults/1 "V1" DISPLACED
+reading /rules/prioritizedDefaults/0/defaults/1 "V1" HOLDS
 state attribute "V1" "gewicht" 50
 state attribute "V1" "vindloon" open
 state characteristic "V1" "betwist" open

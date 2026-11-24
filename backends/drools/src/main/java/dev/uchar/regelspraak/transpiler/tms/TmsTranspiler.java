@@ -1079,10 +1079,27 @@ public final class TmsTranspiler {
 
     /** The lowered form of one effective stack: its target, its bare conflict key (the target on the type that declares
      *  it), whether it took the general form, the knots of its chains at the root, the bean class of its owner, the
-     *  type it runs on ({@link StackBuild#javaClass}), and whether it decides per day, on a timeline target
-     *  ({@link #dayStackRules}). */
+     *  type it runs on ({@link StackBuild#javaClass}), whether it decides per day, on a timeline target
+     *  ({@link #dayStackRules}), and whether it lowered with the five-valued algebra of ch. 1.5
+     *  ({@link #fiveValuedForm}). */
     record StackLayout(Member member, String targetForm, boolean general, List<List<Node>> roots,
-                       Class<?> javaClass, boolean perDay) {}
+                       Class<?> javaClass, boolean perDay, boolean fiveValued) {}
+
+    /** One step of a chain in the five-valued lowering: either the reconciliation of {@code node}'s exception groups
+     *  ({@code exceptions == true}) or {@code node}'s own / fall-back decision ({@code exceptions == false}), numbered
+     *  from 0 in evaluation order within its chain. */
+    record Step(Node node, boolean exceptions, int index) {}
+
+    /** The steps of {@code chain} in evaluation order, shared between {@link #fiveValuedChainRules} and
+     *  {@link SessionReaders}. */
+    static List<Step> steps(boolean characteristic, List<Node> chain) {
+        List<Step> out = new ArrayList<>();
+        for (Node k : chain) {
+            if (k.hasMembers()) out.add(new Step(k, true, out.size()));
+            if (decidesSelf(characteristic, k.d())) out.add(new Step(k, false, out.size()));
+        }
+        return out;
+    }
 
     /** The JSON pointer of default {@code d} into the document ({@link DefaultsDecision}): the {@code Default} node, for
      *  the group-default of a replaced inherited base (ch. 7.10) that base's node, or for a default the fold of ch. 7.10
@@ -3925,6 +3942,10 @@ public final class TmsTranspiler {
         /** The chains in which a default lowered so far can be open (RUNTIME-SEMANTICS ch. 1.5), by their numbers, the one
          *  chain of the simple form among them. */
         final Set<Integer> openChains = new HashSet<>();
+        /** In the five-valued lowering: the chains that can settle {@code OPEN} (any value), and those that can settle
+         *  {@code OPEN_ONLY} (with a constant). */
+        final Set<Integer> openAnyChains = new HashSet<>();
+        final Set<Integer> openOnlyChains = new HashSet<>();
         int nextChain;
 
         StackBuild(String name, Member member, boolean characteristic, ObjectType owner, Class<?> javaClass,
@@ -3975,8 +3996,11 @@ public final class TmsTranspiler {
         for (int m = 0; m < st.members().size(); m++)
             squareRoot.add(chain(b, st.members().get(m).defaults(), m, null, owner, List.of(),
                     st.members().size() == 1 ? "" : m + ":", st.members().get(m).validity()));
-        boolean general = squareRoot.size() > 1 || squareRoot.stream().flatMap(List::stream).anyMatch(Node::hasMembers);
+        boolean fiveValued = !perDay && !openable.isEmpty() && anyConstant(b, squareRoot);
+        boolean general = fiveValued || squareRoot.size() > 1
+                || squareRoot.stream().flatMap(List::stream).anyMatch(Node::hasMembers);
         List<RulePlan> rules = new ArrayList<>(perDay ? dayStackRules(b, squareRoot)
+                : fiveValued ? fiveValuedForm(b, squareRoot)
                 : general ? generalForm(b, squareRoot) : simpleForm(b, squareRoot.get(0)));
         if (st.members().stream().anyMatch(l -> l.validity() != null && !l.validity().always()))
             rules.add(stackValidityFault(b));
@@ -4003,7 +4027,8 @@ public final class TmsTranspiler {
         if (perDay) dayStackTargets.add(member.key());
         defaultsGroups.add(new DefaultsGroup(b.name, general || perDay, rules.size(), List.copyOf(b.controlFacts),
                 perDay));
-        layouts.put(b.name, new StackLayout(member, b.targetForm, general || perDay, squareRoot, b.javaClass, perDay));
+        layouts.put(b.name, new StackLayout(member, b.targetForm, general || perDay, squareRoot, b.javaClass, perDay,
+                fiveValued));
         return rules;
     }
 
@@ -4116,7 +4141,12 @@ public final class TmsTranspiler {
 
     /** Whether {@code d} decides anything itself: a decision on a characteristic, a consequence on an attribute. */
     private static boolean decidesSelf(StackBuild b, Default d) {
-        return b.characteristic ? d.decision() != null : d.consequence() != null;
+        return decidesSelf(b.characteristic, d);
+    }
+
+    /** Whether {@code d} decides anything itself on a characteristic ({@code characteristic}) or an attribute. */
+    static boolean decidesSelf(boolean characteristic, Default d) {
+        return characteristic ? d.decision() != null : d.consequence() != null;
     }
 
     /**
@@ -4390,6 +4420,710 @@ public final class TmsTranspiler {
         Alpha higher = new Alpha(id("hoger-beslist"), tests);
         return new Not(new FactPattern(Decides.class, variable, List.of(higher),
                 List.of(new Join(id("hoger-beslist-onderwerp"), "subject", SUBJECT)), List.of()));
+    }
+
+    // ---------------- the five-valued lowering of a strict stack (ch. 1.5) ----------------
+
+    /** One enclosing chain scope above a step: chain {@code chain}, positions {@code [0, position)}, of which
+     *  {@code openOnlyBefore} can settle {@code OPEN_ONLY}. */
+    private record Scope(int chain, int position, int openOnlyBefore) {}
+
+    /** Which outcome kinds a lowered step can insert. */
+    private record StepKinds(boolean decided, boolean conflict, boolean openOnly, boolean openAny) {}
+
+    /** Whether any default in {@code chains}, at any depth, decides a constant (a characteristic decision, or a Literal
+     *  on an attribute): only such a stack in a strict document needs the five-valued lowering. */
+    private static boolean anyConstant(StackBuild b, List<List<Node>> chains) {
+        for (List<Node> chain : chains)
+            for (Node k : chain) {
+                if (decidesSelf(b, k.d()) && (b.characteristic || k.d().consequence() instanceof Expr.Literal))
+                    return true;
+                if (k.hasMembers() && anyConstant(b, k.members())) return true;
+            }
+        return false;
+    }
+
+    /** The value {@code d} can decide when it is open (ch. 1.5, "An open default with a constant"): a characteristic's
+     *  decision, or on an attribute a {@code Literal} restated into the target's unit and passing its write boundary;
+     *  null for any other default, which then settles {@code OPEN} rather than {@code OPEN_ONLY}. */
+    private Object constantValue(StackBuild b, Default d) {
+        if (b.characteristic) return d.decision();
+        if (!(d.consequence() instanceof Expr.Literal l)) return null;
+        Object v = ((Term.Const) literal(l)).value();
+        Unit from = eff.unitOf(l), to = b.member.datatype().unitOf();
+        if (from != null && to != null) {
+            if (!from.convertibleTo(to)) return null;
+            if (from.requiredConversion(to)) {
+                Unit.Fraction f = from.exactRestateFactors(to);
+                v = ComputeHelpers.restateExact(v, new BigDecimal(f.num()), new BigDecimal(f.den()));
+            }
+        }
+        Integer decimals = ceiling(b.member.datatype());
+        if (decimals != null) {
+            if (WriteBoundaryFault.misfit(null, null, b.member.name(), v, decimals) != null) return null;
+            if (v instanceof Breuk br) v = br.naarDecimal();
+        }
+        return v;
+    }
+
+    /** Whether evaluating {@code t} can raise an evaluation fault. */
+    private static boolean termCanFail(Term t) {
+        if (t == null) return false;
+        return switch (t) {
+            case Term.Fail f -> true;
+            case Term.Required r -> true;
+            case Term.Division d -> true;
+            case Term.SquareRoot s -> s.function().canFail() || termCanFail(s.radicand());
+            case Term.Call a -> a.function().canFail() || a.arguments().stream().anyMatch(TmsTranspiler::termCanFail);
+            case Term.Restate h -> termCanFail(h.term());
+            case Term.Deferred x -> termCanFail(x.value());
+            case Term.Let l -> termCanFail(l.value()) || termCanFail(l.body());
+            case Term.Choice c -> termCanFail(c.condition()) || termCanFail(c.then()) || termCanFail(c.otherwise());
+            case Term.TextComposition s -> s.parts().stream().anyMatch(TmsTranspiler::termCanFail);
+            case Term.ListedFold g -> g.operands().stream().anyMatch(TmsTranspiler::termCanFail);
+            case Term.FoldRead f -> f.filterFault() >= 0 || f.memberFault() >= 0 || termCanFail(f.outcome());
+            case Term.Compound s -> s.members().stream().anyMatch(TmsTranspiler::termCanFail);
+            case Term.QuantifierRead q -> q.function().canFail() || termCanFail(q.count()) || termCanFail(q.contributions());
+            case Term.WithoutFault w -> false;
+            case Term.Const c -> false;
+            case Term.SlotValue s -> false;
+            case Term.Input i -> termCanFail(i.object());
+            case Term.Binder b -> false;
+            case Term.DayKind d -> false;
+        };
+    }
+
+    /**
+     * The five-valued lowering of a strict stack that carries a constant default (RUNTIME-SEMANTICS ch. 1.5, "An open
+     * default with a constant"): step outcomes at {@code position >= 0} per chain, summarised into one chain outcome at
+     * {@code position == -1} ({@link #chainSummaryRules}), and reconciled across member chains at every exception group
+     * and at the root ({@link #fiveValuedReconciliation}). At the root of a characteristic stack, {@code OPEN_ONLY(false)}
+     * closes without inserting {@link LeftOpen}.
+     */
+    private List<RulePlan> fiveValuedForm(StackBuild b, List<List<Node>> squareRoot) {
+        List<RulePlan> out = new ArrayList<>();
+        for (int m = 0; m < squareRoot.size(); m++) fiveValuedChainRules(b, squareRoot.get(m), m, List.of(), null, out);
+        ElementKey key = b.member.key();
+        Consequence.StackFact target = b.characteristic ? new Consequence.StackFact.Characteristic(key)
+                : new Consequence.StackFact.Value(key, b.name, ceiling(b.member.datatype()));
+        int root = out.size();
+        fiveValuedReconciliation(b, 0, squareRoot.size(), squareRoot.stream().anyMatch(TmsTranspiler::canConflict),
+                b.targetForm, "wortel", List::of, new Consequence.StackFact.Inconsistency(), target,
+                new Consequence.StackFact.LeftOpen(key, b.name), -1, -1, b.characteristic, false, out);
+        for (RulePlan r : out.subList(root, out.size())) stackOwnRules.add(r.name());
+        return out;
+    }
+
+    /** Lowers every step of {@code chain} (chain {@code chainId}) and its chain summary rules at {@code position == -1}. */
+    private void fiveValuedChainRules(StackBuild b, List<Node> chain, int chainId, List<Scope> ancestors,
+                                      Default ownerDefault, List<RulePlan> out) {
+        int openOnlyCount = 0;
+        boolean anyOpenAny = false, anyConflict = false, anyDecided = false;
+        for (Step st : steps(b.characteristic, chain)) {
+            Node k = st.node();
+            int s = st.index();
+            List<Scope> scopes = new ArrayList<>(ancestors);
+            if (s > 0) scopes.add(new Scope(chainId, s, openOnlyCount));
+            if (st.exceptions()) {
+                for (int m = 0; m < k.members().size(); m++)
+                    fiveValuedChainRules(b, k.members().get(m), k.firstMember() + m, scopes, k.d(), out);
+                int reconciling = out.size();
+                StepKinds sk = fiveValuedReconciliation(b, k.firstMember(), k.members().size(),
+                        k.members().stream().anyMatch(TmsTranspiler::canConflict), k.key(), k.label(),
+                        () -> atItsTurn(b.name, scopes),
+                        new Consequence.StackFact.Outcome(b.name, chainId, s, Outcome.Kind.CONFLICT),
+                        new Consequence.StackFact.Outcome(b.name, chainId, s, Outcome.Kind.DECIDED),
+                        new Consequence.StackFact.Outcome(b.name, chainId, s, Outcome.Kind.OPEN),
+                        chainId, s, false, true, out);
+                for (RulePlan r : out.subList(reconciling, out.size())) defaultOfRule.put(r.name(), k.d());
+                anyDecided |= sk.decided();
+                anyConflict |= sk.conflict();
+                anyOpenAny |= sk.openAny();
+                if (sk.openOnly()) openOnlyCount++;
+            } else {
+                RuleOrigin.Role role = k.hasMembers() ? RuleOrigin.Role.FALLBACK : RuleOrigin.Role.OWN;
+                String ruleName = b.name + (k.hasMembers() ? ": terugval " : ": default ") + k.label();
+                StepKinds sk = fiveValuedOwnRule(b, k, chainId, s, role, ruleName, scopes, out);
+                anyDecided |= sk.decided();
+                anyOpenAny |= sk.openAny();
+                if (sk.openOnly()) openOnlyCount++;
+            }
+        }
+        int summary = out.size();
+        chainSummaryRules(b, chainId, anyDecided, anyConflict, openOnlyCount, anyOpenAny, out);
+        for (RulePlan r : out.subList(summary, out.size()))
+            if (ownerDefault == null) stackOwnRules.add(r.name());
+            else defaultOfRule.put(r.name(), ownerDefault);
+        if (openOnlyCount > 0) {
+            b.openOnlyChains.add(chainId);
+            b.openChains.add(chainId);
+        }
+        if (anyOpenAny || openOnlyCount > 0 && (anyDecided || anyConflict || openOnlyCount > 1)) {
+            b.openAnyChains.add(chainId);
+            b.openChains.add(chainId);
+        }
+    }
+
+    /** Summarises the step outcomes ({@code position >= 0}) of chain {@code chainId} into one chain outcome at
+     *  {@code position == -1}, following the five-row chain table of ch. 1.5. */
+    private void chainSummaryRules(StackBuild b, int chainId, boolean anyDecided, boolean anyConflict,
+                                   int openOnlyCount, boolean anyOpenAny, List<RulePlan> out) {
+        String name = b.name;
+        Binding ofSubject = Binding.of(SUBJECT, Outcome.class, "subject");
+        if (anyConflict) {
+            List<LhsItem> items = new ArrayList<>();
+            items.add(new FactPattern(Outcome.class, "$conflict",
+                    List.of(stepAlpha("keten-conflict", name, chainId, Outcome.Kind.CONFLICT)), List.of(),
+                    List.of(ofSubject, Binding.of("$sleutel", Outcome.class, "key"))));
+            if (openOnlyCount > 0) items.add(new Not(anyStepOutcome(name, chainId, Outcome.Kind.OPEN_ONLY, null, null, null)));
+            out.add(as(RuleOrigin.Role.RECONCILE_PASS_ON, new RulePlan(name + ": doorgeven keten " + chainId, form, null,
+                    new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0,
+                            ReadKind.CONFLICT_KEY, "conflictsleutel", "$sleutel"))), items,
+                    new Consequence.Conflict(SUBJECT, new Term.SlotValue(0, null), List.of(0), 1,
+                            new Consequence.StackFact.Outcome(name, chainId, -1, Outcome.Kind.CONFLICT),
+                            Consequence.Insertion.LOGICAL))));
+            b.controlFacts.add("Uitkomst " + Outcome.Kind.CONFLICT);
+        }
+        if (anyDecided) {
+            List<LhsItem> items = new ArrayList<>();
+            items.add(new FactPattern(Outcome.class, "$besluit",
+                    List.of(stepAlpha("keten-besluit", name, chainId, Outcome.Kind.DECIDED)), List.of(),
+                    List.of(ofSubject, Binding.of("$waarde", Outcome.class, "value"))));
+            if (openOnlyCount > 0)
+                items.add(new Not(anyStepOutcome(name, chainId, Outcome.Kind.OPEN_ONLY, "ander-besluit",
+                        StaticFunction.OTHER_DECISION, "$besluit")));
+            out.add(as(RuleOrigin.Role.RECONCILE_AGREEMENT, new RulePlan(name + ": eens keten " + chainId, form, null,
+                    new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0, ReadKind.DECISION,
+                            "besluit", "$waarde"))), items,
+                    new Consequence.Decision(SUBJECT, new Term.SlotValue(0, null), List.of(0), 1, false, null,
+                            List.of(new Consequence.StackFact.Outcome(name, chainId, -1, Outcome.Kind.DECIDED)),
+                            Consequence.Insertion.LOGICAL))));
+            b.controlFacts.add("Uitkomst " + Outcome.Kind.DECIDED);
+        }
+        if (openOnlyCount > 0) {
+            List<LhsItem> items = new ArrayList<>();
+            String openVar = "$open_" + idSeq;
+            items.add(new FactPattern(Outcome.class, openVar,
+                    List.of(stepAlpha("keten-open-met", name, chainId, Outcome.Kind.OPEN_ONLY)), List.of(),
+                    List.of(ofSubject, Binding.of("$waarde", Outcome.class, "value"))));
+            if (openOnlyCount > 1)
+                items.add(new Not(anyStepOutcome(name, chainId, Outcome.Kind.OPEN_ONLY, "eerdere-stap",
+                        StaticFunction.EARLIER_POSITION, openVar)));
+            items.add(new Not(anyNonOpenOnlyStepOutcome(name, chainId)));
+            if (openOnlyCount > 1)
+                items.add(new Not(anyStepOutcome(name, chainId, Outcome.Kind.OPEN_ONLY, "ander-besluit",
+                        StaticFunction.OTHER_DECISION, openVar)));
+            out.add(as(RuleOrigin.Role.RECONCILE_OPEN, new RulePlan(name + ": open met keten " + chainId, form, null,
+                    new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0, ReadKind.DECISION,
+                            "besluit", "$waarde"))), items,
+                    new Consequence.Decision(SUBJECT, new Term.SlotValue(0, null), List.of(0), 1, false, null,
+                            List.of(new Consequence.StackFact.OpenOnly(name, chainId, -1, null)),
+                            Consequence.Insertion.LOGICAL))));
+            b.controlFacts.add("Uitkomst " + Outcome.Kind.OPEN_ONLY);
+        }
+        Consequence.LeavesOpen chainOpen = leavesOpen(new Consequence.StackFact.Outcome(name, chainId, -1, Outcome.Kind.OPEN));
+        if (anyOpenAny) {
+            List<LhsItem> items = List.of(new FactPattern(Outcome.class, "$open_" + idSeq,
+                    List.of(stepAlpha("keten-open", name, chainId, Outcome.Kind.OPEN)), List.of(), List.of(ofSubject)));
+            out.add(as(RuleOrigin.Role.RECONCILE_OPEN, new RulePlan(name + ": open keten " + chainId, form, null,
+                    new ReadTable(List.of()), items, chainOpen)));
+            b.controlFacts.add("Uitkomst " + Outcome.Kind.OPEN);
+        }
+        if (openOnlyCount > 0 && anyDecided) {
+            List<LhsItem> items = new ArrayList<>();
+            String openVar = "$open_" + idSeq;
+            items.add(new FactPattern(Outcome.class, openVar,
+                    List.of(stepAlpha("keten-open-verschil", name, chainId, Outcome.Kind.OPEN_ONLY)), List.of(),
+                    List.of(ofSubject)));
+            if (openOnlyCount > 1)
+                items.add(new Not(anyStepOutcome(name, chainId, Outcome.Kind.OPEN_ONLY, "eerdere-stap",
+                        StaticFunction.EARLIER_POSITION, openVar)));
+            FactPattern diff = anyStepOutcome(name, chainId, Outcome.Kind.DECIDED, "ander-besluit",
+                    StaticFunction.OTHER_DECISION, openVar);
+            items.add(new Exists(List.of(diff), Exists.declared(List.of(diff)), Exists.read(List.of(diff))));
+            out.add(as(RuleOrigin.Role.RECONCILE_OPEN, new RulePlan(name + ": open verschil keten " + chainId, form, null,
+                    new ReadTable(List.of()), items, chainOpen)));
+            b.controlFacts.add("Uitkomst " + Outcome.Kind.OPEN);
+        }
+        if (openOnlyCount > 0 && anyConflict) {
+            List<LhsItem> items = new ArrayList<>();
+            String openVar = "$open_" + idSeq;
+            items.add(new FactPattern(Outcome.class, openVar,
+                    List.of(stepAlpha("keten-open-conflict", name, chainId, Outcome.Kind.OPEN_ONLY)), List.of(),
+                    List.of(ofSubject)));
+            if (openOnlyCount > 1)
+                items.add(new Not(anyStepOutcome(name, chainId, Outcome.Kind.OPEN_ONLY, "eerdere-stap",
+                        StaticFunction.EARLIER_POSITION, openVar)));
+            FactPattern cfl = anyStepOutcome(name, chainId, Outcome.Kind.CONFLICT, null, null, null);
+            items.add(new Exists(List.of(cfl), Exists.declared(List.of(cfl)), Exists.read(List.of(cfl))));
+            out.add(as(RuleOrigin.Role.RECONCILE_OPEN, new RulePlan(name + ": open conflict keten " + chainId, form, null,
+                    new ReadTable(List.of()), items, chainOpen)));
+            b.controlFacts.add("Uitkomst " + Outcome.Kind.OPEN);
+        }
+        if (openOnlyCount > 1) {
+            List<LhsItem> items = new ArrayList<>();
+            String openVar = "$open_" + idSeq;
+            items.add(new FactPattern(Outcome.class, openVar,
+                    List.of(stepAlpha("keten-open-twee", name, chainId, Outcome.Kind.OPEN_ONLY)), List.of(),
+                    List.of(ofSubject)));
+            items.add(new Not(anyStepOutcome(name, chainId, Outcome.Kind.OPEN_ONLY, "eerdere-stap",
+                    StaticFunction.EARLIER_POSITION, openVar)));
+            FactPattern diff = anyStepOutcome(name, chainId, Outcome.Kind.OPEN_ONLY, "ander-besluit",
+                    StaticFunction.OTHER_DECISION, openVar);
+            items.add(new Exists(List.of(diff), Exists.declared(List.of(diff)), Exists.read(List.of(diff))));
+            out.add(as(RuleOrigin.Role.RECONCILE_OPEN, new RulePlan(name + ": open twee keten " + chainId, form, null,
+                    new ReadTable(List.of()), items, chainOpen)));
+            b.controlFacts.add("Uitkomst " + Outcome.Kind.OPEN);
+        }
+    }
+
+    /** Reconciles the chain-summary outcomes ({@code position == -1}) of chains {@code [earliest, earliest + itemCount)}
+     *  under the five-valued rules of ch. 1.5; at the root of a characteristic stack, {@code OPEN_ONLY(false)} closes. */
+    private StepKinds fiveValuedReconciliation(StackBuild b, int earliest, int itemCount, boolean membersConflict,
+                                               String key, String label, Supplier<List<LhsItem>> guard,
+                                               Consequence.StackFact atConflict, Consequence.StackFact atDecision,
+                                               Consequence.StackFact atOpen, int parentChain, int parentStep,
+                                               boolean onlyTrue, boolean between, List<RulePlan> out) {
+        String name = b.name;
+        int to = earliest + itemCount;
+        boolean openAny = b.openAnyChains.stream().anyMatch(c -> c >= earliest && c < to);
+        boolean openOnly = b.openOnlyChains.stream().anyMatch(c -> c >= earliest && c < to);
+        Binding ofSubject = Binding.of(SUBJECT, Outcome.class, "subject");
+        if (membersConflict) {
+            List<LhsItem> items = new ArrayList<>();
+            items.add(new FactPattern(Outcome.class, "$conflict",
+                    List.of(chainOutcomeOfMember("lid-conflict", name, Outcome.Kind.CONFLICT, earliest, to, false)),
+                    List.of(), List.of(ofSubject, Binding.of("$sleutel", Outcome.class, "key"))));
+            if (itemCount > 1) items.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.CONFLICT,
+                    "eerder-lid", StaticFunction.EARLIER_MEMBER, "$conflict")));
+            items.addAll(guard.get());
+            out.add(as(RuleOrigin.Role.RECONCILE_PASS_ON, new RulePlan(name + ": doorgeven " + label, form, null,
+                    new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0,
+                            ReadKind.CONFLICT_KEY, "conflictsleutel", "$sleutel"))), items,
+                    new Consequence.Conflict(SUBJECT, new Term.SlotValue(0, null), List.of(0), 1, atConflict,
+                            Consequence.Insertion.LOGICAL))));
+            if (between) b.controlFacts.add("Uitkomst " + Outcome.Kind.CONFLICT);
+        }
+        if (itemCount > 1) {
+            List<LhsItem> items = new ArrayList<>();
+            items.add(new FactPattern(Outcome.class, "$besluit",
+                    List.of(chainOutcomeOfMember("lid-besluit", name, Outcome.Kind.DECIDED, earliest, to, false)),
+                    List.of(), List.of(ofSubject)));
+            items.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.DECIDED, "eerder-lid",
+                    StaticFunction.EARLIER_MEMBER, "$besluit")));
+            if (membersConflict) items.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.CONFLICT)));
+            FactPattern another = chainOutcomes(name, earliest, to, Outcome.Kind.DECIDED, "ander-besluit",
+                    StaticFunction.OTHER_DECISION, "$besluit");
+            items.add(new Exists(List.of(another), Exists.declared(List.of(another)), Exists.read(List.of(another))));
+            items.addAll(guard.get());
+            out.add(as(RuleOrigin.Role.RECONCILE_DIFFERENCE, new RulePlan(name + ": verschil " + label, form, null,
+                    new ReadTable(List.of()), items,
+                    new Consequence.Conflict(SUBJECT, constant(key), List.of(), 0, atConflict,
+                            Consequence.Insertion.LOGICAL))));
+            if (between) b.controlFacts.add("Uitkomst " + Outcome.Kind.CONFLICT);
+        }
+        List<LhsItem> items = new ArrayList<>();
+        items.add(new FactPattern(Outcome.class, "$besluit",
+                List.of(chainOutcomeOfMember("lid-besluit", name, Outcome.Kind.DECIDED, earliest, to, onlyTrue)),
+                List.of(), List.of(ofSubject, Binding.of("$waarde", Outcome.class, "value"))));
+        if (itemCount > 1) {
+            items.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.DECIDED, "eerder-lid",
+                    StaticFunction.EARLIER_MEMBER, "$besluit")));
+            if (membersConflict) items.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.CONFLICT)));
+            items.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.DECIDED, "ander-besluit",
+                    StaticFunction.OTHER_DECISION, "$besluit")));
+            if (openAny) items.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.OPEN)));
+            if (openOnly) items.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.OPEN_ONLY, "ander-besluit",
+                    StaticFunction.OTHER_DECISION, "$besluit")));
+        }
+        items.addAll(guard.get());
+        out.add(as(RuleOrigin.Role.RECONCILE_AGREEMENT, new RulePlan(name + ": eens " + label, form, null,
+                new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0, ReadKind.DECISION,
+                        "besluit", "$waarde"))), items,
+                new Consequence.Decision(SUBJECT, new Term.SlotValue(0, null), List.of(0), 1, false, null,
+                        List.of(atDecision), Consequence.Insertion.LOGICAL))));
+        if (between) b.controlFacts.add("Uitkomst " + Outcome.Kind.DECIDED);
+        boolean emitsOpenOnly = false;
+        boolean emitsOpenAny = false;
+        if (openOnly) {
+            // at the root of a characteristic stack, OPEN_ONLY(false) closes and inserts no LeftOpen
+            boolean rootCharOnlyTrue = !between && b.characteristic;
+            List<LhsItem> oo = new ArrayList<>();
+            List<Binding> ooBinds = between
+                    ? List.of(ofSubject, Binding.of("$waarde", Outcome.class, "value")) : List.of(ofSubject);
+            String openVar = "$open_" + idSeq;
+            oo.add(new FactPattern(Outcome.class, openVar,
+                    List.of(chainOutcomeOfMember("lid-open-met", name, Outcome.Kind.OPEN_ONLY, earliest, to,
+                            rootCharOnlyTrue)), List.of(), ooBinds));
+            if (itemCount > 1) {
+                oo.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.OPEN_ONLY, "eerder-lid",
+                        StaticFunction.EARLIER_MEMBER, openVar)));
+                if (membersConflict) oo.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.CONFLICT)));
+                oo.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.DECIDED)));
+                if (openAny) oo.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.OPEN)));
+                oo.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.OPEN_ONLY, "ander-besluit",
+                        StaticFunction.OTHER_DECISION, openVar)));
+            }
+            oo.addAll(guard.get());
+            if (between) {
+                out.add(as(RuleOrigin.Role.RECONCILE_OPEN, new RulePlan(name + ": open met " + label, form, null,
+                        new ReadTable(List.of(new dev.uchar.regelspraak.transpiler.tms.plan.Read(0, ReadKind.DECISION,
+                                "besluit", "$waarde"))), oo,
+                        new Consequence.Decision(SUBJECT, new Term.SlotValue(0, null), List.of(0), 1, false, null,
+                                List.of(new Consequence.StackFact.OpenOnly(name, parentChain, parentStep, null)),
+                                Consequence.Insertion.LOGICAL))));
+                b.controlFacts.add("Uitkomst " + Outcome.Kind.OPEN_ONLY);
+                emitsOpenOnly = true;
+            } else {
+                out.add(as(RuleOrigin.Role.RECONCILE_OPEN, new RulePlan(name + ": open met " + label, form, null,
+                        new ReadTable(List.of()), oo, leavesOpen(atOpen))));
+            }
+        }
+        if (openAny) {
+            List<LhsItem> opens = new ArrayList<>();
+            opens.add(new FactPattern(Outcome.class, "$open_" + idSeq,
+                    List.of(chainOutcomeOfMember("lid-open", name, Outcome.Kind.OPEN, earliest, to, false)),
+                    List.of(), List.of(ofSubject)));
+            if (membersConflict) opens.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.CONFLICT)));
+            if (itemCount > 2) {
+                FactPattern one = chainOutcomes(name, earliest, to, Outcome.Kind.DECIDED);
+                List<FactPattern> differ = List.of(one, chainOutcomes(name, earliest, to, Outcome.Kind.DECIDED,
+                        "ander-besluit", StaticFunction.OTHER_DECISION, one.name()));
+                opens.add(new Not(differ, Exists.declared(differ), Exists.read(differ)));
+            }
+            opens.addAll(guard.get());
+            out.add(as(RuleOrigin.Role.RECONCILE_OPEN, new RulePlan(name + ": open " + label, form, null,
+                    new ReadTable(List.of()), opens, leavesOpen(atOpen))));
+            if (between) b.controlFacts.add("Uitkomst " + Outcome.Kind.OPEN);
+            emitsOpenAny = true;
+        }
+        if (itemCount > 1 && openOnly) {
+            List<LhsItem> diffDec = new ArrayList<>();
+            diffDec.add(new FactPattern(Outcome.class, "$besluit",
+                    List.of(chainOutcomeOfMember("lid-besluit", name, Outcome.Kind.DECIDED, earliest, to, false)),
+                    List.of(), List.of(ofSubject)));
+            diffDec.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.DECIDED, "eerder-lid",
+                    StaticFunction.EARLIER_MEMBER, "$besluit")));
+            if (membersConflict) diffDec.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.CONFLICT)));
+            diffDec.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.DECIDED, "ander-besluit",
+                    StaticFunction.OTHER_DECISION, "$besluit")));
+            if (openAny) diffDec.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.OPEN)));
+            FactPattern ooOther = chainOutcomes(name, earliest, to, Outcome.Kind.OPEN_ONLY, "ander-besluit",
+                    StaticFunction.OTHER_DECISION, "$besluit");
+            diffDec.add(new Exists(List.of(ooOther), Exists.declared(List.of(ooOther)), Exists.read(List.of(ooOther))));
+            diffDec.addAll(guard.get());
+            out.add(as(RuleOrigin.Role.RECONCILE_OPEN, new RulePlan(name + ": open verschil " + label, form, null,
+                    new ReadTable(List.of()), diffDec, leavesOpen(atOpen))));
+
+            List<LhsItem> twoOo = new ArrayList<>();
+            String openVar = "$open_" + idSeq;
+            twoOo.add(new FactPattern(Outcome.class, openVar,
+                    List.of(chainOutcomeOfMember("lid-open-met", name, Outcome.Kind.OPEN_ONLY, earliest, to, false)),
+                    List.of(), List.of(ofSubject)));
+            twoOo.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.OPEN_ONLY, "eerder-lid",
+                    StaticFunction.EARLIER_MEMBER, openVar)));
+            if (membersConflict) twoOo.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.CONFLICT)));
+            twoOo.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.DECIDED)));
+            if (openAny) twoOo.add(new Not(chainOutcomes(name, earliest, to, Outcome.Kind.OPEN)));
+            FactPattern otherOo = chainOutcomes(name, earliest, to, Outcome.Kind.OPEN_ONLY, "ander-besluit",
+                    StaticFunction.OTHER_DECISION, openVar);
+            twoOo.add(new Exists(List.of(otherOo), Exists.declared(List.of(otherOo)), Exists.read(List.of(otherOo))));
+            twoOo.addAll(guard.get());
+            out.add(as(RuleOrigin.Role.RECONCILE_OPEN, new RulePlan(name + ": open twee " + label, form, null,
+                    new ReadTable(List.of()), twoOo, leavesOpen(atOpen))));
+            if (between) b.controlFacts.add("Uitkomst " + Outcome.Kind.OPEN);
+            emitsOpenAny = true;
+        }
+        return new StepKinds(true, membersConflict || itemCount > 1, emitsOpenOnly, emitsOpenAny);
+    }
+
+    /** Lowers a default's own (or fall-back) step in the five-valued lowering, with provisional reading where an
+     *  enclosing scope can hold {@code OPEN_ONLY}. */
+    private StepKinds fiveValuedOwnRule(StackBuild b, Node k, int chainId, int stepIndex, RuleOrigin.Role role,
+                                        String ruleName, List<Scope> scopes, List<RulePlan> out) {
+        lowering = k.d();
+        try {
+            int start = out.size();
+            StepKinds sk = lowerFiveValuedOwnRule(b, k, chainId, stepIndex, role, ruleName, scopes, out);
+            for (RulePlan r : out.subList(start, out.size())) defaultOfRule.put(r.name(), k.d());
+            return sk;
+        } finally {
+            lowering = null;
+        }
+    }
+
+    private StepKinds lowerFiveValuedOwnRule(StackBuild b, Node k, int chainId, int stepIndex, RuleOrigin.Role role,
+                                             String ruleName, List<Scope> scopes, List<RulePlan> out) {
+        Default d = k.d();
+        String name = b.name;
+        Supplier<Reads> fresh = () -> {
+            Reads l = new Reads(k.levelOf());
+            l.addSubjectAlpha(concreteType(b.javaClass));
+            if (d.initialisation())
+                l.addSubjectAlpha(new Alpha(id("doel-leeg-in-de-invoer"), List.of(new Alpha.FieldTest(List.of(),
+                        b.member.name(), Binding.ReadForm.VALUE, Alpha.Comparator.LEEG, null, b.member.javaClass()))));
+            return l.valid(k.validity());
+        };
+        Object constant = constantValue(b, d);
+        Reads reads = fresh.get();
+        Set<Integer> read = reads.follow();
+        beginReading();
+        Term testTerm = d.condition() == null ? null : conditionTerm(d.condition(), reads);
+        Ends ends = reads.ends();
+        reads.stop();
+        List<Scope> openScopes = scopes.stream().filter(sc -> sc.openOnlyBefore() > 0).toList();
+        boolean canBeProvisional = !openScopes.isEmpty();
+        Consequence.StackFact decides = new Consequence.StackFact.Outcome(name, chainId, stepIndex, Outcome.Kind.DECIDED);
+        b.controlFacts.add("Uitkomst " + Outcome.Kind.DECIDED);
+        Term value = null;
+        Noted noted;
+        Set<Integer> use = Set.of();
+        boolean openValue = false;
+        boolean valNeedsProvisional = false;
+        Consequence decision;
+        if (b.characteristic) {
+            noted = endReading();
+            decision = new Consequence.Decision(SUBJECT, constant(d.decision()), List.of(), reads.size(), false, null,
+                    List.of(decides), Consequence.Insertion.LOGICAL);
+        } else {
+            use = reads.follow();
+            value = restated(value(d.consequence(), reads), eff.unitOf(d.consequence()),
+                    b.member.datatype().unitOf(), DroolsCode.UNIT_CONFLICT.part("write-boundary-target"));
+            Ends valueEnds = reads.ends();
+            openValue = valueEnds.open();
+            valNeedsProvisional = valueEnds.fault() || termCanFail(value) || deposits(d.consequence());
+            reads.stop();
+            noted = endReading();
+            decision = new Consequence.Decision(SUBJECT, value, List.copyOf(use), reads.size(), false,
+                    new Consequence.FaultName(name, name),
+                    deposits(d.consequence()) ? new Consequence.Deposit(reads.depositFlagSlot(), b.targetForm) : null,
+                    List.of(decides), Consequence.Insertion.LOGICAL);
+        }
+        boolean open = ends.open() || openValue;
+        boolean isOpenOnly = open && !openValue && constant != null;
+        Consequence.LeavesOpen opens = isOpenOnly
+                ? leavesOpen(new Consequence.StackFact.OpenOnly(name, chainId, stepIndex, constant))
+                : leavesOpen(new Consequence.StackFact.Outcome(name, chainId, stepIndex, Outcome.Kind.OPEN));
+        if (isOpenOnly) b.controlFacts.add("Uitkomst " + Outcome.Kind.OPEN_ONLY);
+        else if (open) b.controlFacts.add("Uitkomst " + Outcome.Kind.OPEN);
+        boolean provisionalVal = canBeProvisional && valNeedsProvisional;
+        List<Integer> provSlots = List.of();
+        if (provisionalVal) {
+            List<Integer> ps = new ArrayList<>();
+            for (Scope sc : openScopes) ps.add(reads.openOnlyCount(name, sc.chain(), sc.position()));
+            provSlots = List.copyOf(ps);
+            Consequence.Decision base = (Consequence.Decision) decision;
+            Consequence.Decision resized = new Consequence.Decision(base.subject(), base.value(), base.slots(),
+                    reads.size(), base.collapse(), base.fault(), base.deposit(), base.facts(), base.insertion());
+            decision = new Consequence.ProvisionalDecision(resized, provSlots,
+                    leavesOpen(new Consequence.StackFact.ProvisionalFault(name, chainId, stepIndex)));
+            b.controlFacts.add("Uitkomst " + Outcome.Kind.OPEN);
+        }
+        List<LhsItem> ownControl = atItsTurn(name, scopes);
+        List<LhsItem> items = reads.plan(Asked.ACTS, ends, testTerm, read, ownControl);
+        List<LhsItem> notOpen = d.initialisation() ? notOpenInput(reads, b.member) : List.of();
+        items.addAll(notOpen);
+        b.readings.add(reads);
+        b.defaultOf.put(reads, d);
+        Set<Integer> writerUse = provSlots.isEmpty() ? use : new java.util.LinkedHashSet<>(use);
+        if (!provSlots.isEmpty()) writerUse.addAll(provSlots);
+        out.add(as(role, reads.rulePlan(ruleName, items, writer(ends, testTerm, read, openValue, writerUse, reads,
+                decision, opens))));
+        ResolvedRule madeFrom = stacks.ruleOf(d);
+        boolean unconditional = testTerm == null || (madeFrom != null && madeFrom.condition() == null);
+        if (noted != null && !(unconditional && b.characteristic)) {
+            List<int[]> provAbove = openScopes.isEmpty() ? null
+                    : openScopes.stream().map(sc -> new int[]{sc.chain(), sc.position()}).toList();
+            readingRule(ruleName, pointerOf(d), reads, reads.readingPlan(concat(ownControl, notOpen), false),
+                    ownControl.isEmpty() ? null : reads.readingPlan(notOpen, false),
+                    unconditional ? null : testTerm, null, value, unconditional ? null : d.condition(),
+                    b.characteristic ? null : d.consequence(), noted, k.validity(),
+                    !ownControl.isEmpty() || d.initialisation(), null, null,
+                    provAbove == null ? null : name, provAbove);
+        }
+        if (ends.fault()) {
+            out.add(conditionFaultRule(name, ruleName, fresh, d.condition(),
+                    l -> concat(notProvisional(name, scopes), d.initialisation() ? notOpenInput(l, b.member) : List.of())));
+            if (canBeProvisional) {
+                for (int m = 0; m < openScopes.size(); m++) {
+                    String pName = openScopes.size() == 1 ? ruleName + " voorlopig" : ruleName + " voorlopig " + m;
+                    out.add(provisionalConditionFaultRule(b, pName, fresh, d, chainId, stepIndex, scopes, openScopes, m));
+                }
+                b.controlFacts.add("Uitkomst " + Outcome.Kind.OPEN);
+            }
+        }
+        RulePlan deposit = depositRule(b.targetForm, ruleName, fresh, d.condition(), l -> {
+            List<LhsItem> decided = new ArrayList<>(notProvisional(name, scopes));
+            decided.add(decidedBy(List.of(decides), open));
+            return decided;
+        });
+        if (deposit != null) out.add(deposit);
+        boolean canBeOpenAny = (open && !isOpenOnly) || (canBeProvisional && (ends.fault() || valNeedsProvisional));
+        return new StepKinds(true, false, isOpenOnly, canBeOpenAny);
+    }
+
+    /** Provisional condition fault rule for arm {@code arm} of {@code openScopes}: turns a justification fault into
+     *  a provisional-fault {@code Outcome(OPEN)} instead of inserting a {@link Fault}. */
+    private RulePlan provisionalConditionFaultRule(StackBuild b, String ruleName, Supplier<Reads> fresh, Default d,
+                                                   int chainId, int stepIndex, List<Scope> scopes,
+                                                   List<Scope> openScopes, int arm) {
+        Reads reads = fresh.get();
+        Set<Integer> read = reads.follow();
+        Term testTerm = conditionTerm(d.condition(), reads);
+        Ends ends = reads.ends();
+        reads.stop();
+        List<LhsItem> items = reads.plan(Asked.FAULTS, ends, testTerm, read);
+        items.addAll(provisionalArm(b.name, scopes, openScopes, arm));
+        if (d.initialisation()) items.addAll(notOpenInput(reads, b.member));
+        reads.recorder();
+        return as(RuleOrigin.Role.CONDITION_FAULT, reads.rulePlan(ruleName + ": fout in de voorwaarde", items,
+                leavesOpen(new Consequence.StackFact.ProvisionalFault(b.name, chainId, stepIndex))));
+    }
+
+    /** Control-fact guard that step {@code scopes} is at its turn (no higher fixed outcome and no two differing higher
+     *  {@code OPEN_ONLY} outcomes in any enclosing scope). */
+    private List<LhsItem> atItsTurn(String name, List<Scope> scopes) {
+        List<LhsItem> guard = new ArrayList<>();
+        for (Scope sc : scopes) {
+            guard.add(sc.openOnlyBefore() > 0
+                    ? noFixedStepOutcome(name, sc.chain(), sc.position())
+                    : noStepOutcome(name, sc.chain(), sc.position()));
+            if (sc.openOnlyBefore() >= 2) {
+                FactPattern one = stepOutcomesBefore(name, sc.chain(), sc.position(), Outcome.Kind.OPEN_ONLY,
+                        null, null, null);
+                List<FactPattern> differ = List.of(one, stepOutcomesBefore(name, sc.chain(), sc.position(),
+                        Outcome.Kind.OPEN_ONLY, "ander-besluit", StaticFunction.OTHER_DECISION, one.name()));
+                guard.add(new Not(differ, Exists.declared(differ), Exists.read(differ)));
+            }
+        }
+        return guard;
+    }
+
+    /** Control-fact guard that step {@code scopes} is at its turn AND not provisional (no higher step outcome of any kind). */
+    private List<LhsItem> notProvisional(String name, List<Scope> scopes) {
+        List<LhsItem> guard = new ArrayList<>();
+        for (Scope sc : scopes) guard.add(noStepOutcome(name, sc.chain(), sc.position()));
+        return guard;
+    }
+
+    /** Disjoint provisional arm {@code arm}: at its turn, no {@code OPEN_ONLY} in {@code openScopes[0..arm-1]}, and
+     *  at least one {@code OPEN_ONLY} in {@code openScopes[arm]}. */
+    private List<LhsItem> provisionalArm(String name, List<Scope> scopes, List<Scope> openScopes, int arm) {
+        List<LhsItem> guard = atItsTurn(name, scopes);
+        for (int j = 0; j < arm; j++) {
+            Scope sc = openScopes.get(j);
+            guard.add(new Not(stepOutcomesBefore(name, sc.chain(), sc.position(), Outcome.Kind.OPEN_ONLY,
+                    null, null, null)));
+        }
+        Scope active = openScopes.get(arm);
+        FactPattern oo = stepOutcomesBefore(name, active.chain(), active.position(), Outcome.Kind.OPEN_ONLY,
+                null, null, null);
+        guard.add(new Exists(List.of(oo), Exists.declared(List.of(oo)), Exists.read(List.of(oo))));
+        return guard;
+    }
+
+    /** {@code not Outcome(chain, position in [0, pos), kind != OPEN_ONLY)} for the subject. */
+    private LhsItem noFixedStepOutcome(String name, int chain, int position) {
+        String variable = "$hoger_" + idSeq;
+        Alpha higher = new Alpha(id("hoger-vast"), List.of(
+                new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, name),
+                new Alpha.FieldTest("chain", Alpha.Comparator.GELIJK, chain),
+                new Alpha.FieldTest("position", Alpha.Comparator.AT_LEAST, 0),
+                new Alpha.FieldTest("position", Alpha.Comparator.UNDER, position),
+                new Alpha.FieldTest("kind", Alpha.Comparator.NOT_EQUAL, Outcome.Kind.OPEN_ONLY)));
+        return new Not(new FactPattern(Outcome.class, variable, List.of(higher),
+                List.of(new Join(id("hoger-vast-onderwerp"), "subject", SUBJECT)), List.of()));
+    }
+
+    /** {@code not Outcome(chain, position in [0, pos))} for the subject. */
+    private LhsItem noStepOutcome(String name, int chain, int position) {
+        String variable = "$hoger_" + idSeq;
+        Alpha higher = new Alpha(id("hoger-uitkomst"), List.of(
+                new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, name),
+                new Alpha.FieldTest("chain", Alpha.Comparator.GELIJK, chain),
+                new Alpha.FieldTest("position", Alpha.Comparator.AT_LEAST, 0),
+                new Alpha.FieldTest("position", Alpha.Comparator.UNDER, position)));
+        return new Not(new FactPattern(Outcome.class, variable, List.of(higher),
+                List.of(new Join(id("hoger-uitkomst-onderwerp"), "subject", SUBJECT)), List.of()));
+    }
+
+    /** A pattern matching a step outcome of {@code chain} at {@code position in [0, pos)} of {@code kind}. */
+    private FactPattern stepOutcomesBefore(String name, int chain, int position, Outcome.Kind kind, String betaKind,
+                                           StaticFunction function, String target) {
+        String variable = "$hoger_" + idSeq;
+        Alpha alpha = new Alpha(id("hoger-stap"), List.of(
+                new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, name),
+                new Alpha.FieldTest("chain", Alpha.Comparator.GELIJK, chain),
+                new Alpha.FieldTest("position", Alpha.Comparator.AT_LEAST, 0),
+                new Alpha.FieldTest("position", Alpha.Comparator.UNDER, position),
+                new Alpha.FieldTest("kind", Alpha.Comparator.GELIJK, kind)));
+        Join onSubject = new Join(id("hoger-stap-onderwerp"), "subject", SUBJECT);
+        List<BetaTest> beta = betaKind == null ? List.of() : List.of(new BetaTest(id(betaKind), function, target));
+        return new FactPattern(Outcome.class, variable, List.of(alpha), List.of(onSubject), beta, List.of());
+    }
+
+    /** Alpha for any step outcome ({@code position >= 0}) of {@code chain} with {@code kind}. */
+    private Alpha stepAlpha(String category, String name, int chain, Outcome.Kind kind) {
+        return new Alpha(id(category), List.of(
+                new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, name),
+                new Alpha.FieldTest("chain", Alpha.Comparator.GELIJK, chain),
+                new Alpha.FieldTest("position", Alpha.Comparator.AT_LEAST, 0),
+                new Alpha.FieldTest("kind", Alpha.Comparator.GELIJK, kind)));
+    }
+
+    /** Pattern for any step outcome ({@code position >= 0}) of {@code chain} with {@code kind} on the subject. */
+    private FactPattern anyStepOutcome(String name, int chain, Outcome.Kind kind, String betaKind,
+                                       StaticFunction function, String target) {
+        String variable = "$stap_" + idSeq;
+        Alpha alpha = stepAlpha("stap-uitkomst", name, chain, kind);
+        Join onSubject = new Join(id("stap-uitkomst-onderwerp"), "subject", SUBJECT);
+        List<BetaTest> beta = betaKind == null ? List.of() : List.of(new BetaTest(id(betaKind), function, target));
+        return new FactPattern(Outcome.class, variable, List.of(alpha), List.of(onSubject), beta, List.of());
+    }
+
+    /** Pattern for any step outcome ({@code position >= 0}) of {@code chain} whose kind is not {@code OPEN_ONLY}. */
+    private FactPattern anyNonOpenOnlyStepOutcome(String name, int chain) {
+        String variable = "$stap_" + idSeq;
+        Alpha alpha = new Alpha(id("stap-niet-oo"), List.of(
+                new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, name),
+                new Alpha.FieldTest("chain", Alpha.Comparator.GELIJK, chain),
+                new Alpha.FieldTest("position", Alpha.Comparator.AT_LEAST, 0),
+                new Alpha.FieldTest("kind", Alpha.Comparator.NOT_EQUAL, Outcome.Kind.OPEN_ONLY)));
+        return new FactPattern(Outcome.class, variable, List.of(alpha),
+                List.of(new Join(id("stap-niet-oo-onderwerp"), "subject", SUBJECT)), List.of());
+    }
+
+    /** Alpha for a chain-summary outcome ({@code position == -1}) of a member chain in {@code [earliest, to)}. */
+    private Alpha chainOutcomeOfMember(String category, String name, Outcome.Kind outcome, int earliest, int to,
+                                       boolean onlyTrue) {
+        List<Alpha.FieldTest> tests = new ArrayList<>(List.of(
+                new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, name),
+                new Alpha.FieldTest("kind", Alpha.Comparator.GELIJK, outcome),
+                new Alpha.FieldTest("chain", Alpha.Comparator.AT_LEAST, earliest),
+                new Alpha.FieldTest("chain", Alpha.Comparator.UNDER, to),
+                new Alpha.FieldTest("position", Alpha.Comparator.GELIJK, -1)));
+        if (onlyTrue) tests.add(new Alpha.FieldTest("value", Alpha.Comparator.GELIJK, Boolean.TRUE));
+        return new Alpha(id(category), tests);
+    }
+
+    /** Pattern for chain-summary outcomes ({@code position == -1}) of member chains in {@code [van, tot)}. */
+    private FactPattern chainOutcomes(String name, int van, int to, Outcome.Kind category) {
+        return chainOutcomes(name, van, to, category, null, null, null);
+    }
+
+    private FactPattern chainOutcomes(String name, int van, int to, Outcome.Kind category, String betaKind,
+                                      StaticFunction function, String target) {
+        String variable = "$uitkomst_" + idSeq;
+        List<Alpha.FieldTest> tests = new ArrayList<>(List.of(
+                new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, name),
+                new Alpha.FieldTest("chain", Alpha.Comparator.AT_LEAST, van),
+                new Alpha.FieldTest("chain", Alpha.Comparator.UNDER, to),
+                new Alpha.FieldTest("position", Alpha.Comparator.GELIJK, -1)));
+        if (category != null) tests.add(new Alpha.FieldTest("kind", Alpha.Comparator.GELIJK, category));
+        Alpha alpha = new Alpha(id("uitkomst"), tests);
+        Join onSubject = new Join(id("uitkomst-onderwerp"), "subject", SUBJECT);
+        List<BetaTest> beta = betaKind == null ? List.of() : List.of(new BetaTest(id(betaKind), function, target));
+        return new FactPattern(Outcome.class, variable, List.of(alpha), List.of(onSubject), beta, List.of());
     }
 
     /**
@@ -4863,7 +5597,14 @@ public final class TmsTranspiler {
      */
     record ReadingRule(RulePlan plan, RulePlan speculative, String ownRule, String pointer, Validity validity,
                        boolean guarded, Term condition, Term periods, Term value, List<Site> sites, Term turn,
-                       Term inputDays) {
+                       Term inputDays, String stack, List<int[]> provisionalAbove) {
+
+        ReadingRule(RulePlan plan, RulePlan speculative, String ownRule, String pointer, Validity validity,
+                    boolean guarded, Term condition, Term periods, Term value, List<Site> sites, Term turn,
+                    Term inputDays) {
+            this(plan, speculative, ownRule, pointer, validity, guarded, condition, periods, value, sites, turn,
+                    inputDays, null, null);
+        }
 
         /** The subject pattern of the reading rule. */
         Subject subject() {
@@ -4911,6 +5652,14 @@ public final class TmsTranspiler {
                              List<LhsItem> speculativeItems, Term condition, Term periods, Term value,
                              Condition irCondition, Expr irValue, Noted noted, Validity validity, boolean guarded,
                              Term turn, Term inputDays) {
+        readingRule(ruleName, pointer, reads, items, speculativeItems, condition, periods, value, irCondition, irValue,
+                noted, validity, guarded, turn, inputDays, null, null);
+    }
+
+    private void readingRule(String ruleName, String pointer, Reads reads, List<LhsItem> items,
+                             List<LhsItem> speculativeItems, Term condition, Term periods, Term value,
+                             Condition irCondition, Expr irValue, Noted noted, Validity validity, boolean guarded,
+                             Term turn, Term inputDays, String stack, List<int[]> provisionalAbove) {
         if (pointer == null)
             throw new IllegalStateException("the form of the rule " + ruleName + " is not in the document the loader"
                     + " read: a reading names its form by its place");
@@ -4953,7 +5702,7 @@ public final class TmsTranspiler {
                     n instanceof Condition.QuantifierFold q ? q : null, derived, object == null ? -1 : reads.objectOf(object)));
         }
         readingRules.add(new ReadingRule(plan, speculative, ruleName, pointer, validity, guarded, condition, periods, value,
-                sites, turn, inputDays));
+                sites, turn, inputDays, stack, provisionalAbove));
     }
 
     /** The reading rule ({@link #readingRule}) of a form whose reading is its condition alone: {@code condition} the
@@ -8482,6 +9231,26 @@ public final class TmsTranspiler {
             return allocateSlot(ReadKind.OUTCOMES, key, list);
         }
 
+        /** The count of {@code OPEN_ONLY} step outcomes above {@code below} in {@code chain} of {@code stack} on this
+         *  rule's subject, bound off an accumulate (0 when none): positive iff this default is read provisionally. */
+        int openOnlyCount(String stack, int chain, int below) {
+            String key = "voorlopig " + stack + " " + chain + " " + below;
+            int known = existing(key);
+            if (known >= 0) return known;
+            String o = "$uitkomst_" + id("voorlopig");
+            String count = "$voorlopig_" + id("voorlopig");
+            List<Alpha.FieldTest> tests = List.of(
+                    new Alpha.FieldTest("stack", Alpha.Comparator.GELIJK, stack),
+                    new Alpha.FieldTest("chain", Alpha.Comparator.GELIJK, chain),
+                    new Alpha.FieldTest("position", Alpha.Comparator.AT_LEAST, 0),
+                    new Alpha.FieldTest("position", Alpha.Comparator.UNDER, below),
+                    new Alpha.FieldTest("kind", Alpha.Comparator.GELIJK, Outcome.Kind.OPEN_ONLY));
+            states(new Accumulation(new FactPattern(Outcome.class, o, List.of(new Alpha(id("voorlopig"), tests)),
+                    List.of(onSubjectHere(id("voorlopig-onderwerp"))), List.of()),
+                    List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, count))));
+            return allocateSlot(ReadKind.OUTCOMES, key, count);
+        }
+
         /** The input on the bean of this rule's subject of {@code member}, an attribute on a timeline that a stack
          *  writes, as its segments ({@link Period#list}), null where it has none: the bean holds the case input while the
          *  session fires, and no form reads it through the target's standing, which the stack writes itself. */
@@ -9006,6 +9775,10 @@ public final class TmsTranspiler {
                 Term z = withoutDepositFlag(a.value());
                 return z == a.value() ? a : new Consequence.Decision(a.subject(), z, a.slots(), a.size(), a.collapse(),
                         a.fault(), a.facts(), a.insertion());
+            }
+            case Consequence.ProvisionalDecision p -> {
+                Consequence.Decision d = (Consequence.Decision) withoutUnfilledDepositFlag(p.decision());
+                return d == p.decision() ? p : new Consequence.ProvisionalDecision(d, p.provisionalSlots(), p.onFault());
             }
             case Consequence.Conflict c -> {
                 Term z = withoutDepositFlag(c.key());

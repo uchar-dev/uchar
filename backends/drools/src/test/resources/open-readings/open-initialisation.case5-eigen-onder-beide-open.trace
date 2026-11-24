@@ -9,7 +9,7 @@ reading /rules/rules/0/versions/0 "W1" 2 Literal unreached
 reading /rules/rules/0/versions/0 "W1" 3 Binary unreached
 reading /rules/rules/0/versions/0 "W1" 4 Literal unreached
 reading /rules/rules/0/versions/0 "W1" 5 AttributeReference unreached
-reading /rules/rules/0/versions/0 "W1" DISPLACED
+reading /rules/rules/0/versions/0 "W1" OPEN
 state attribute "W1" "bergloon" open
 state attribute "W1" "gewicht" open
 state characteristic "W1" "betwist" open

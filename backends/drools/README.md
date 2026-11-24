@@ -478,19 +478,27 @@ where it leaves its target open, and not where it fills nothing. The rule of a c
 deposits stand beside it as for any form. A consistency tests the negation of its assertion, which keeps the judgement
 where that can be undetermined.
 
-A default of a defaults stack is a writer with the same three outcomes. Where it is open it inserts, in the simple form,
-the `LeftOpen` of the target and its `Decides` with `open`, and in the general form an `Outcome` of the kind `OPEN`. The
-lower defaults of its chain, and their exception groups, stand under the `not` of either as under that of a decision, so
-their left-hand sides are those of any stack, and a default that gives way inserts nothing, as any default; below a
-default that is open no default decides, the initialisation default among them. An initialisation is the lowest writer
-of its target (ch. 1.5, "An initialisation"): the initialisation default and an initialisation rule are not at their
-turn where the target is open input, which the session's `OpenInput` names (`ComputeHelpers.incompleteInput`), and an
-initialisation rule neither where another writer leaves the target open (`LeftOpen`). A member that only an
-initialisation writes is input with a default value: open where the case gives it no value, and where it is declared
-complete the initialisation gives its value. A reconciliation over a member that is `OPEN` decides nothing:
-the rule of the agreement stands under a `not` over an `OPEN` member, and one rule more (`reconcile-open`) settles the
-default `OPEN`, or at the root inserts the `LeftOpen` of the target, unless a member conflicts or two decide
-differently. A stack of which no default can be open is lowered as any stack.
+A default of a defaults stack is a writer with the same three outcomes. Where a strict stack carries no default whose
+decision is a constant, an open default inserts, in the simple form, the `LeftOpen` of the target and its `Decides` with
+`open`, and in the general form an `Outcome` of the kind `OPEN`; lower defaults stand under `not` over it and do not
+decide. Where a strict stack carries any default whose decision is a constant (a characteristic decision, or on an
+attribute a `Literal` restated into the target's unit and passing its write boundary), it takes the five-valued lowering
+(ch. 1.5, "An open default with a constant"): step outcomes at `position >= 0`, summarised into one chain outcome at
+`position == -1` and reconciled across member chains. An open constant default settles `OPEN_ONLY` with that value, and
+does not displace lower steps in its chain: a lower step is read provisionally — deposits suppressed (both condition and
+consequence deposits, fold filter deposits, and nested conflict EF-027) and evaluation faults turned into a
+provisional-fault `OPEN` outcome without inserting `Fault` — and if it decides the same value the chain decides that
+value, otherwise `OPEN`. In a group, `OPEN_ONLY` members with the same value as deciding members allow the group to
+decide; at the root of a characteristic stack, `OPEN_ONLY(false)` closes without inserting `LeftOpen` (not in a nested
+exception group or an attribute stack). `DefaultsDecision.open()` lists, in stack order, the JSON pointers of the `OPEN`
+defaults of the stack that keep its outcome open: empty when the stack decides, conflicts, gives way or closes as a
+characteristic root, excluding provisionally faulted defaults and harmless `OPEN_ONLY(v)` members beside a `DECIDED(v)`
+member in an unordered group. An initialisation is the lowest writer of its target (ch. 1.5, "An initialisation"): the
+initialisation default and an initialisation rule are not at their turn where the target is open input, which the
+session's `OpenInput` names (`ComputeHelpers.incompleteInput`), and an initialisation rule neither where another writer
+leaves the target open (`LeftOpen`). A member that only an initialisation writes is input with a default value: open
+where the case gives it no value, and where it is declared complete the initialisation gives its value. A stack of which
+no default can be open is lowered as any stack.
 
 A fold over a set whose members can be open keeps the contributions and the accumulate of any fold; the rule of a
 member's contribution says beside or in place of it, with a `FoldOpen(fold, subject, element, read, place)`, that what the
@@ -555,8 +563,10 @@ whose members have no place in an order here, so that which of them the reading 
 
 Witnesses `OpenableMembersWitnessTest`, `OpenValuesWitnessTest` (the examples of ch. 1.5), `OpenValuesRefWitnessTest` (the
 witnesses of the reference interpreter), `OpenReadingsWitnessTest` (the readings and the end state),
-`CompleteInputPreservationWitnessTest` (complete input gives the outcome of the document without the property, on every
-golden that is carried) and `InferFromEmptyRefusalWitnessTest` (what is refused, each beside a document that is carried).
+`SameConclusionWitnessTest` (an open default with a constant, unit restatement, provisional fold deposits and faults, and
+`DefaultsDecision.open()`), `CompleteInputPreservationWitnessTest` (complete input gives the outcome of the document without
+the property, on every golden that is carried) and `InferFromEmptyRefusalWitnessTest` (what is refused, each beside a
+document that is carried).
 
 **Initialisations, consistencies, defaults.** An initialisation fires where the target is empty in the input on the
 bean and no other writer holds a `Value` on it; its guard excludes its own write, since a guard that counted its own

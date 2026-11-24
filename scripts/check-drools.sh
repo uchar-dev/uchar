@@ -1664,7 +1664,11 @@ EXPECTED_CHANNEL=(
 # 389 with jutterswet-keurder-strikt: three quantifier folds with a compound filter in a strict document whose matrix can
 # neither fault nor deposit, read without the order of their members; the readings name it (RUNTIME-SEMANTICS ch. 1.5,
 # 5.12; PLAYED 3).
-EXPECTED_PLAYED=389
+# 396 with the seven jutterswet-zelfde-conclusie-* goldens (card same-conclusion-open-variant, 2026-11-24): an open
+# default with a constant in a strict document (RUNTIME-SEMANTICS ch. 1.5, "An open default with a constant", ch. 5.12):
+# waarde (PLAYED 6), kenmerk (PLAYED 9), ongeordend (PLAYED 6), genest (PLAYED 5), deponering (PLAYED 3), fout (PLAYED 2)
+# and initialisatie (PLAYED 9).
+EXPECTED_PLAYED=396
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---
