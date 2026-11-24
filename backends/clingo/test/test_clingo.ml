@@ -22196,7 +22196,8 @@ let () =
   let dir = "ref/test/fixtures/strict-empty/" in
   let plays =
     [ "absent-link"; "absent-link-path"; "characteristic"; "closed-input"; "comparison"; "composite-filled-test";
-      "compound-all"; "compound-any"; "compound-counting"; "compound-none"; "consistency"; "defaults-characteristic";
+      "compound-all"; "compound-any"; "compound-counting"; "compound-none"; "consistency"; "contributor-filter";
+      "defaults-characteristic";
       "defaults-initialisation-exception"; "defaults-initialisation-only"; "defaults-stack"; "defaults-subtype"; "filled-test";
       "filled-test-not-closure";
       "initialisation";
