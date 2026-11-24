@@ -2,6 +2,7 @@ package dev.uchar.regelspraak.transpiler.tms;
 
 import dev.uchar.regelspraak.runtime.Breuk;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
@@ -28,7 +29,9 @@ import java.util.Objects;
  *
  * <p>Compared as {@link Contribution} is, with the place beside it: the fold's key by value, the subject and the member by
  * identity, the fault by its kind and its sentence, and the place by value. One member reached along two routes is
- * therefore one fact per route, each with that route's place, so the least of them stays the member's first reach.
+ * therefore one fact per route, each with that route's place, so the least of them stays the member's first reach. An
+ * {@link OpenRead} has no sentence here: its sentence names its object by its identity, which differs between two
+ * runs, and it is compared by the open read it carries ({@link OpenMember}), which a dump writes with its object's name.
  */
 public final class FilterFault implements Comparable<FilterFault> {
 
@@ -47,7 +50,7 @@ public final class FilterFault implements Comparable<FilterFault> {
         this.place = List.copyOf(place);
         if (this.place.isEmpty()) throw new IllegalArgumentException("a place in the fold order begins with the selection");
         // the fault named after the fold: a division's sentence carries the dividend, which the exception does not expose
-        this.sentence = (fault instanceof OpenRead ? fault : ComputeFault.designate(fault, fold)).getMessage();
+        this.sentence = fault instanceof OpenRead ? null : ComputeFault.designate(fault, fold).getMessage();
     }
 
     public String fold() { return fold; }
@@ -68,14 +71,15 @@ public final class FilterFault implements Comparable<FilterFault> {
             if (c != 0) return c;
         }
         // two routes of one selection have equally many to-many steps, so a tie here is one member along one route,
-        // whose filter gives one fault; the sentence only keeps the order total
+        // whose filter gives one fault; the sentence only keeps the order total, an open read first
         int c = Integer.compare(place.size(), o.place.size());
-        return c != 0 ? c : sentence.compareTo(o.sentence);
+        return c != 0 ? c : Comparator.nullsFirst(Comparator.<String>naturalOrder()).compare(sentence, o.sentence);
     }
 
     @Override public boolean equals(Object o) {
         return o instanceof FilterFault f && f.subject == subject && f.element == element && f.fold.equals(fold)
-                && f.fault.getClass() == fault.getClass() && f.sentence.equals(sentence) && f.place.equals(place);
+                && f.fault.getClass() == fault.getClass() && Objects.equals(f.sentence, sentence) && f.place.equals(place)
+                && (!(fault instanceof OpenRead r) || r.member().equals(((OpenRead) f.fault).member()));
     }
 
     @Override public int hashCode() {
@@ -85,6 +89,6 @@ public final class FilterFault implements Comparable<FilterFault> {
 
     @Override public String toString() {
         return "FilterFault(" + FactNames.object(subject) + ", " + FactNames.object(element) + ", " + place + ", "
-                + sentence + ")";
+                + (sentence == null ? fault.getMessage() : sentence) + ")";
     }
 }

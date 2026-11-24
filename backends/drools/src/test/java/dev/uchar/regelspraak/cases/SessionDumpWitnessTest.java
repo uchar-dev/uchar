@@ -102,6 +102,26 @@ class SessionDumpWitnessTest {
                 e.getMessage());
     }
 
+    /** The filter of a fold over a set that can fault and be undetermined breaks the fold off at the first of both in fold
+     *  order, and a member whose filter is undetermined has a {@code FilterFault} whose fault is the open read
+     *  ({@code TmsTranspiler.filterFaultRule}). Its sentence names the object by its identity; the dump writes the open read
+     *  with the object's name and no sentence, alike on both branches. <b>Red</b> on {@code 62c393c94}: the dump wrote
+     *  {@code sentence=String("read of open Vondst@5837b801 vondst.gewicht")}, another identity on the other branch. */
+    @Test void a_filter_fault_of_an_open_read_writes_no_identity() throws Exception {
+        Path document = Path.of("src", "test", "resources", "open-values", "fold-over-a-parameter");
+        JsonNode c = TmsDocuments.JSON.readTree(document.resolve("case2-v1-open.json").toFile());
+        List<String> lines = new java.util.ArrayList<>();
+        for (DroolsBackend.Branch branch : TmsDocuments.BRANCHES) {
+            String d = dump(CaseRunner.forMeasurement(document.resolve("ir.json"), branch), c);
+            List<String> faults = d.lines().filter(l -> l.startsWith("fact FilterFault(")).toList();
+            assertTrue(faults.stream().anyMatch(l -> l.contains("fault=OpenRead(OpenMember(subject=\"V1\", member="
+                    + "\"vondst\".\"gewicht\"") && l.endsWith("sentence=empty)")), () -> branch + ": " + faults);
+            assertTrue(faults.stream().noneMatch(l -> l.contains("@")), () -> branch + ": " + faults);
+            lines.add(String.join("\n", faults));
+        }
+        assertEquals(lines.get(0), lines.get(1), "de filterfouten van de twee takken");
+    }
+
     /** An attribute and a characteristic whose names WF-057 admits and that hold the characters of the structure of a
      *  line: a space, "=", ".", "(" and ")". The dump quotes both, so the line of a derived value and that of a derived
      *  characteristic keep one reading. */
