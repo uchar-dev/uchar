@@ -88,3 +88,100 @@ Gemeten door de bouwer van `contributor-filter-verdict` en nagekeken door het ex
   tie-breaker gebruikt).
 - **De golden.** Komen de drie regels bij `jutterswet-zwaarkeurder-strikt`, dan verandert de verwachting van casus 2 en
   vervalt zijn regel in `scripts/check-noop.sh`; een nieuwe golden zet `EXPECTED_PLAYED` 386 → 387. Kies en noem het.
+
+## Result
+
+**Bouwer, 2026-11-24** (met mandaat van de eigenaar voor `scripts/` en de proza in `spec/RUNTIME-SEMANTICS.md`; niet
+gemerged, de kaart blijft in `doing/`). Ontwerp, meting en de lezing van het externe model ervoor:
+`werk/fold-order-in-readings/ONTWERP.md` (§5: wat overgenomen is en wat niet, met de reden),
+`werk/neon-review/antwoorden/xhigh-ii-fold-order-design.md`.
+
+Commits:
+
+- `1f7420cfb` `FilterFault`: een `OpenRead` bewaart geen zin meer (die noemde het object bij zijn JVM-identiteit en de
+  dump schreef haar als tekst); `equals` vergelijkt haar open lid, `compareTo` zet een ontbrekende zin vóór. Test
+  `SessionDumpWitnessTest.a_filter_fault_of_an_open_read_writes_no_identity` (beide takken, rood op `62c393c94`).
+- `78baf8abb` de kern. Productie bindt geen lijstplaats meer voor een open lid (`contributionRules`: `placed` weg;
+  `quantifierContributions`: `placed = ordered`); een `FoldOpen` draagt in elke build `[deel, selectie]`. Een vouw die
+  de regels zonder volgorde lezen, noemt bij een onbepaald oordeel de vouw op haar onderwerp: `OpenMember` kreeg een
+  component `fold` (`OpenMember.ofFold`), gegooid door `standingCount`, `quantifierVerdictOverOpen` en de nieuwe
+  `QUANTIFIER_READ_UNORDERED` (`tested && !ordered`; de `MemberTest` van zo'n vouw draagt vouw en onderwerp,
+  `ComputeHelpers.filtered`). Zo hangt het open lid dat een binnenste vouw omhoog geeft niet meer van de agenda af
+  (gemeten: `reading-nested/case3` verschilde zonder lezingen tussen de takken, `K5`/`K6`, `facts 434`/`435`). De
+  lezing lost een vouwoorzaak op uit de feiten van die vouw, recursief (`SessionReaders.named`), in vouwvolgorde: deel,
+  selectie, dan de plaats in het bereik dat `Watch.range` loopt over de lijsten die `DroolsBackend.insert` de watch geeft
+  (`TmsTranspiler.readingListFields`, `noteFoldOrder`/`FoldOrder` met kwantor en drempel); de bijdragers van zo'n
+  kwantorvouw in die volgorde. Geen `ListPlace` meer in de invoer van een build met lezingen. `DROOLS-318` met lezingen
+  blijft (de wandeling van een veel-op-veel-bereik weigert zoals `perRoute`). `DROOLS-372` → `RETIRED`; de routes
+  `CONTRIBUTED` en `JUDGED` vervielen (een open lid heeft altijd zijn selectie). `SessionDump` sorteert een lijst
+  `MemberTest`s bij gelijke plaats op tekst. Nieuwe witness `OpenFixturesFixpointWitnessTest`; test
+  `OpenReadingsWitnessTest.a_strict_quantifier_fold_over_a_many_to_many_relation_plays_without_readings`
+  (`jutterswet-ketenkwantor` strikt speelt zijn vier casussen op beide takken, met lezingen `DROOLS-318`).
+  Bijgewerkte tests (de taak verandert wat ze toetsen): `FormsPlan` (de open regels met hun selectie, de varianten "met
+  plaats" van de oude build met lezingen weg, `contributedAt`/`judgedAt`/`contributionAt`), `RouteWitnessTest` (routes
+  `CONTRIBUTED`, `JUDGED` weg, `FILTERED` met vouw en onderwerp), DRL-pin `jutterswet-zwaarkeurder-strikt` (één regel:
+  `filtered(…, "zwaarkeurder: vouw 0", $vouwonderwerp, …)`). `backends/drools/README.md` beschrijft de huidige stand.
+- `096a57797` `Reads.navigated`: de binding van het bereikte object én zijn slot staan alleen in de leesregel
+  (`readingOnly`, `readingSlots`), zodat de regel van de vorm ook in slotnummers die zonder lezingen is. Nieuwe witness
+  `ReadingRulesPlanWitnessTest`: de DRL-tekst van de regels zonder leesregels is met en zonder lezingen gelijk (vóór
+  deze stap 8 documenten verschillend, na 0).
+- `6dfdaf810` golden `jutterswet-keurder-strikt`: regels 0–2 van de fixture (keurder, nauwgezet, grenskeurder) met
+  casussen 1–3 uit `scenario.rgs`, handberekening en lezingen in `NOTE.md` (nagerekend met `runner --trace`), DRL-pin;
+  `EXPECTED_PLAYED` 388 → 389 (main stond al op 388); proza in `spec/RUNTIME-SEMANTICS.md` (het voorbeeld en "The
+  artifacts"), `ref/test/fixtures/strict-empty/NOTE.md`, het commentaar in `check-readings.sh`. `jutterswet-zwaarkeurder-strikt`
+  en `check-noop.sh` ongewijzigd.
+- `25d8668f2` fixture `open-readings/reading-shared-field` met pins van ref: vondsten en klachten onder één veld
+  `vinder`, lijsten in een andere volgorde dan de objecten; beide takken noemen `"V2"`/`"K2"` zoals ref (in
+  objectvolgorde zou het `V1`/`K1` zijn).
+
+Goal en acceptatie: productiefeiten en -invoer met en zonder lezingen gelijk (`ReadingRulesFixpointWitnessTest`
+ongewijzigd groen, nu ook op de nieuwe golden; `OpenFixturesFixpointWitnessTest` op 95 fixtures), de productieregels
+ook (`ReadingRulesPlanWitnessTest`); geen nieuwe weigering in productie; gate 17 vergelijkt de drie regels op beide
+takken.
+
+Getallen (oud → nieuw): `EXPECTED_PLAYED` 388 → 389; JUnit gate 12 2066 (main, afgeleid: 2070 op `6dfdaf810` min de vier nieuwe tests daar) → 2071; nieuwe vloeren
+`OpenFixturesFixpointWitnessTest` 95 documenten, 417 casussen, 2451 lezingen per tak, `ReadingRulesPlanWitnessTest`
+487 documenten; `ReadingRulesFixpointWitnessTest` vergelijkt 389 goldens, 1073 casussen, 8399 lezingen per tak (vloeren
+261/706/3635 ongewijzigd); gate 17: 390 goldens en 1075 casusbestanden per tak, 150 bijdragers van ref niet bereikt
+(was 148), 11 met een onbepaald filter (was 4). Geen vloer verlaagd.
+
+Gates (elk apart, na elkaar; logs in `werk/fold-order-in-readings/gates/`):
+
+- 1 `check-self-contained: PASS`
+- 2 `check-ir-schema: PASS (… 513 file(s) validate and round-trip, floor 192; 65659 object(s) in 1159 document(s) in the
+  schema's key order, 2 in no subschema)` (1–8 en 10 op `6dfdaf810`, 13–17 op `25d8668f2`)
+- 3 `check-verifier: PASS (… 513 golden clean; 646 negative rejected for their declared rule, floor 568; …)`
+- 4 `check-case-schema: PASS (schema valid; 146 self-test row(s); 1302 case file(s) validate)`
+- 5 `check-oracle: PASS (ref suite 4232 worked examples, floor 489; 1201 cases replayed exactly, floor 427; preservation
+  …: 281 goldens and 787 cases play, …; 7 carrying the property already, … jutterswet-keurder-strikt …; monotonicity:
+  816 cases, 2697 runs without one input compared, floor 2652, …)`
+- 6 `check-clingo: PASS (backend suite 4879 checks, floor 4797, its 272 units each once in 32 shards; 1171 cases replay
+  exactly through clingo …; 10 golden(s) in the refusal channel …)`
+- 7 `check-noop: PASS (1156 cases refute a do-nothing executor; 45 pinned survivors pin defeasible standing)`
+- 8 `check-red: PASS (101 red cases fault observably in ref and clingo, floor 44; …)`, Drools leg PASS
+- 10 `check-regelspraak: PASS — JUnit suite green (1716 tests, floor 173); 227 rgs golden(s) re-emit byte-identically
+  (floor 80)`
+- 12 (op `25d8668f2`) `check-drools: PASS`, `played 389`, `DRL-text branch played 389`, `JUnit 2071 tests, floor 1573`;
+  `check-drools-codes: PASS — 373 codes, numbered 001..373, every one raised in the sources but the 41 retired, …`
+- 13 `check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens, floor 38; 242 executor replays
+  reproduce the untouched outcome, 40 of them PLAYED by the DRL-text branch, …; 0 pinned survivors)`
+- 15 `check-graph: PASS` (route leg: 227 goldens with a source.rgs, 86 unit tests)
+- 16 `check-scenario: PASS — 54 scenario golden(s) (floor 7) regenerate 178 case file(s) (floor 31) and their ir.json
+  byte-identically`
+- 17 `check-readings: PASS (ref traced 1201 golden case files, …; on both branches 390 goldens and 1075 case files
+  compared, 8091 readings, 25857 node lines of which 4143 unreached, 1019 with contributors, …, 150 contributors of ref
+  not reached; …; deviations 0, end-state deviations 0; …)`
+- Niet gedraaid: 9 (catala), 11 (toka), 14 (flogic): deze kaart raakt hun bronnen niet. `make gates` draait de
+  hoofdsessie.
+
+Open punten:
+
+1. Geen fixture met een geneste kwantorvouw die de regels zonder volgorde lezen (een kwantorvouw in het filter van een
+   andere vouw); de oplossing in `SessionReaders.named` (de tests opnieuw gelezen met `quantifierRead`) loopt nu alleen op
+   het hoogste niveau (`reading-quantifier-filter`, de nieuwe golden), de recursie alleen over vouwen over een set
+   (`fold-in-a-filter`, `reading-nested`).
+2. De dump schrijft elke `OpenMember` nu met `fold=empty` (een component meer); geen pin bevat er een.
+3. Toolchain: `ConditionReading` en de publieke API veranderden niet; `OpenMember` kreeg een component, `Watch.op` een
+   argument (de lijsten). De toolchain gebruikt `DroolsBackend.insert`, dus haar lezingen krijgen de lijsten; of zij
+   `OpenMember` of `Watch.op` zelf aanroept, is bij de pin-bump na te gaan.
+4. Geen rij voor `spec/CONSTRUCTS.md` of `spec/PLAN.md`: geen wire en geen semantiek veranderde.
