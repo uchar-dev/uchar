@@ -1,0 +1,22 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation undetermined open "V2" "gewicht"
+reading /rules/rules/0/versions/0 "J1" OPEN
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation undetermined open "K2" "gewicht"
+reading /rules/rules/1/versions/0 "J1" OPEN
+state attribute "J1" "klachttal" open
+state attribute "J1" "zwaartal" open
+state attribute "K1" "gewicht" open
+state attribute "K2" "gewicht" open
+state attribute "V1" "gewicht" open
+state attribute "V2" "gewicht" open
+state attribute "V3" "gewicht" 5
+state link "indiening" "vinder" "J1" "klacht" "K1"
+state link "indiening" "vinder" "J1" "klacht" "K2"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state link "vinding" "vinder" "J1" "vondst" "V3"
+state object "J1" "Jutter"
+state object "K1" "Klacht"
+state object "K2" "Klacht"
+state object "V1" "Vondst"
+state object "V2" "Vondst"
+state object "V3" "Vondst"

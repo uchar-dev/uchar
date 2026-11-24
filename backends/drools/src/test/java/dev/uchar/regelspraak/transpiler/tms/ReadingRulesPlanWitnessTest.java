@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class ReadingRulesPlanWitnessTest {
 
-    static final int EXPECTED_MIN_DOCUMENTS = 486;
+    static final int EXPECTED_MIN_DOCUMENTS = 487;
 
     @Test void a_build_with_readings_plans_the_rules_of_the_forms_as_the_build_without() throws Exception {
         List<Path> documents = new ArrayList<>();

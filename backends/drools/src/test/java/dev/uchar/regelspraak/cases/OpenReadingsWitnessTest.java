@@ -128,6 +128,15 @@ class OpenReadingsWitnessTest {
         documents("reading-diamond");
     }
 
+    /** WV-5.12-open-fold-over-a-set over the lists of the input (RUNTIME-SEMANTICS ch. 5.7a): two relations whose members
+     *  hold their link to the Jutter under one field, {@code vinder}, the vondsten and the klachten, each in a list the
+     *  case writes in another order than that of its objects. A fold the rules read without the order of its members
+     *  names the first open member of its own relation in the written list; a reading that took the order of the objects,
+     *  or the list of the other relation, names another. */
+    @Test void the_first_open_member_in_the_written_list_of_its_relation() throws Exception {
+        documents("reading-shared-field");
+    }
+
     /** WV-5.12-open-stack: below an open default every default displaced and read, the initialisation among them, the lower
      *  of two as well; the content of a default whose exception groups are open. */
     @Test void wv_5_12_open_stack() throws Exception {
