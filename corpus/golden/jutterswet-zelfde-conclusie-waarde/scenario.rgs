@@ -1,0 +1,100 @@
+Scenario betwist open
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 50
+- is beschadigd
+- is niet gemeld
+Met als verwacht resultaat:
+- het vindloon van V1 is 0
+- het strandloon van V1 staat niet vast
+- het wrakloon van V1 staat niet vast
+- het kustloon van V1 is 0
+- de gegevens zijn consistent
+
+Scenario betwist waar
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 50
+- is beschadigd
+- is niet gemeld
+- is betwist
+Met als verwacht resultaat:
+- het vindloon van V1 is 0
+- het strandloon van V1 is 0
+- het wrakloon van V1 is 0
+- het kustloon van V1 is 0
+- de gegevens zijn consistent
+
+Scenario betwist niet
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 50
+- is beschadigd
+- is niet gemeld
+- is niet betwist
+Met als verwacht resultaat:
+- het vindloon van V1 is 0
+- het strandloon van V1 is 5
+- het wrakloon van V1 is 0
+- het kustloon van V1 is 0
+- de gegevens zijn consistent
+
+Scenario beschadigd niet
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 50
+- is niet beschadigd
+- is niet gemeld
+Met als verwacht resultaat:
+- het vindloon van V1 staat niet vast
+- het strandloon van V1 staat niet vast
+- het wrakloon van V1 staat niet vast
+- het kustloon van V1 staat niet vast
+- de gegevens zijn consistent
+
+Scenario beschadigd niet betwist niet
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 50
+- is niet beschadigd
+- is niet gemeld
+- is niet betwist
+Met als verwacht resultaat:
+- het vindloon van V1 is 100
+- het strandloon van V1 is 100
+- het wrakloon van V1 is 100
+- het kustloon van V1 is 100
+- de gegevens zijn consistent
+
+Scenario gemeld open
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 50
+- is beschadigd
+Met als verwacht resultaat:
+- het vindloon van V1 is 0
+- het kustloon van V1 staat niet vast
+- de gegevens zijn consistent
+
+Scenario gemeld waar
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 50
+- is beschadigd
+- is gemeld
+Met als verwacht resultaat:
+- het vindloon van V1 is 0
+- het kustloon van V1 staat niet vast
+- de gegevens zijn consistent
+
+Scenario gemeld waar betwist niet
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 50
+- is beschadigd
+- is gemeld
+- is niet betwist
+Met als verwacht resultaat:
+- het vindloon van V1 is 0
+- het kustloon van V1 is 7
+- de gegevens zijn consistent

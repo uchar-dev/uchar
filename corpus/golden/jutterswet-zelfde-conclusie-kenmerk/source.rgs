@@ -1,0 +1,34 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    de wachtpremie Numeriek (geheel getal);
+    is beloonbaar kenmerk (bijvoeglijk);
+    is vindbaar kenmerk (bijvoeglijk);
+    is betwist kenmerk (bijvoeglijk);
+    is drijfhout kenmerk (bijvoeglijk);
+    is gemeld kenmerk (bijvoeglijk);
+
+Regel beloonbaarheid
+    geldig altijd
+        Een Vondst is beloonbaar indien zijn gewicht groter is dan 2.
+
+Afwijking van beloonbaarheid: drijfhout niet beloonbaar
+    geldig altijd
+        Een Vondst is niet beloonbaar indien hij drijfhout is.
+
+Afwijking van beloonbaarheid: betwist niet beloonbaar
+    geldig altijd
+        Een Vondst is niet beloonbaar indien hij betwist is.
+
+Regel vindbaarheid
+    geldig altijd
+        Een Vondst is vindbaar indien zijn gewicht groter is dan 2.
+
+Afwijking van vindbaarheid: gemeld vindbaar
+    geldig altijd
+        Een Vondst is vindbaar indien hij gemeld is.
+
+Regel wachtpremie
+    geldig altijd
+        De wachtpremie van een Vondst moet gesteld worden op 3 indien hij niet beloonbaar is.

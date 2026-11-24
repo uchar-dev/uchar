@@ -1,0 +1,49 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    het vindloon Numeriek (geheel getal);
+    het strandloon Numeriek (geheel getal);
+    het bergloon Numeriek (geheel getal);
+    is betwist kenmerk (bijvoeglijk);
+    is beschadigd kenmerk (bijvoeglijk);
+
+Regel vindloon
+    geldig altijd
+        Het vindloon van een Vondst moet berekend worden als zijn gewicht maal 2.
+
+Regel strandloon
+    geldig altijd
+        Het strandloon van een Vondst moet berekend worden als zijn gewicht maal 2.
+
+Regel bergloon
+    geldig altijd
+        Het bergloon van een Vondst moet berekend worden als zijn gewicht maal 2.
+
+Uitzonderingen ongeordend op vindloon:
+Regel vindloon bij betwisting
+    geldig altijd
+        Het vindloon van een Vondst moet gesteld worden op 0 indien hij betwist is.
+Regel vindloon bij schade
+    geldig altijd
+        Het vindloon van een Vondst moet gesteld worden op 0 indien hij beschadigd is.
+
+Afwijking van strandloon: strandloon bij schade
+    geldig altijd
+        Het strandloon van een Vondst moet gesteld worden op 0 indien hij beschadigd is.
+
+Uitzondering op strandloon bij schade: strandloon bij betwisting
+    geldig altijd
+        Het strandloon van een Vondst moet gesteld worden op 0 indien hij betwist is.
+
+Uitzonderingen ongeordend op bergloon:
+Regel vast bergloon
+    geldig altijd
+        Het bergloon van een Vondst moet gesteld worden op 5.
+Regel bergloon bij schade
+    geldig altijd
+        Het bergloon van een Vondst moet gesteld worden op 0 indien hij beschadigd is.
+
+Uitzondering op vast bergloon: bergloon bij betwisting
+    geldig altijd
+        Het bergloon van een Vondst moet gesteld worden op 0 indien hij betwist is.

@@ -1,0 +1,64 @@
+Scenario betwist open
+Gegeven is de volgende situatie:
+een Vondst V1
+- is beschadigd
+- is niet gemeld
+Met als verwacht resultaat:
+- het bergloon van V1 is 0
+- het meldloon van V1 staat niet vast
+- het havenloon van V1 is 0
+- de gegevens zijn consistent
+
+Scenario betwist waar
+Gegeven is de volgende situatie:
+een Vondst V1
+- is beschadigd
+- is niet gemeld
+- is betwist
+Met als verwacht resultaat:
+- het bergloon van V1 is 0
+- het meldloon van V1 is leeg
+- het havenloon van V1 is 0
+- de gegevens zijn inconsistent volgens "Vondst.meldloon" voor V1
+
+Scenario betwist niet
+Gegeven is de volgende situatie:
+een Vondst V1
+- is beschadigd
+- is niet gemeld
+- is niet betwist
+Met als verwacht resultaat:
+- het bergloon van V1 is 0
+- het meldloon van V1 is 5
+- het havenloon van V1 is 0
+- de gegevens zijn consistent
+
+Scenario beschadigd niet
+Gegeven is de volgende situatie:
+een Vondst V1
+- is niet beschadigd
+- is niet gemeld
+Met als verwacht resultaat:
+- het bergloon van V1 staat niet vast
+- het meldloon van V1 staat niet vast
+- het havenloon van V1 staat niet vast
+- de gegevens zijn consistent
+
+Scenario gemeld open
+Gegeven is de volgende situatie:
+een Vondst V1
+- is beschadigd
+Met als verwacht resultaat:
+- het bergloon van V1 is 0
+- het havenloon van V1 staat niet vast
+- de gegevens zijn consistent
+
+Scenario gemeld waar
+Gegeven is de volgende situatie:
+een Vondst V1
+- is beschadigd
+- is gemeld
+Met als verwacht resultaat:
+- het bergloon van V1 is 0
+- het havenloon van V1 is leeg
+- de gegevens zijn inconsistent volgens "Vondst.havenloon" voor V1

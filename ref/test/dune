@@ -152,6 +152,12 @@
   (glob_files_rec fixtures/strict-empty/*.json)
   ; one choice in three forms, each open over an open value (ch. 1.5)
   ../../corpus/golden/jutterswet-heffing-strikt/ir.json
+  ; the readings of a stack below a default open with a constant (ch. 5.12)
+  ../../corpus/golden/jutterswet-zelfde-conclusie-waarde/ir.json
+  ../../corpus/golden/jutterswet-zelfde-conclusie-waarde/case1-betwist-open.json
+  ../../corpus/golden/jutterswet-zelfde-conclusie-waarde/case4-beschadigd-niet.json
+  ../../corpus/golden/jutterswet-zelfde-conclusie-fout/ir.json
+  ../../corpus/golden/jutterswet-zelfde-conclusie-fout/case1-betwist-open.json
   ; the sum types: the forms of RUNTIME-SEMANTICS ch. 9.4 no executor carries, and the documents of the suite of
   ; the ASP backend
   (glob_files_rec fixtures/sum-types/*.json)

@@ -669,7 +669,7 @@ named the strandloon is 8; where the case does not name gemeld the rule leaves
 it open, and it is open; with gemeld declared complete and not named it is 5.
 With "… op 5 indien zijn vangst groter is dan 1" and gemeld complete it is 5
 at vangst 4 and open without a vangst. Beside a rule the initialisation is
-read so, not as the lowest default of a stack (ch. 7.7): a rule that leaves
+read so, also where ch. 7.7 would read the pair as a stack: a rule that leaves
 the target open keeps it from its turn also where the rule can decide only
 the value of the initialisation, which in a stack decides the target
 (**An open default with a constant**, below). Example

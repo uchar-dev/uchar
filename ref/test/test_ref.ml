@@ -17899,6 +17899,35 @@ let () =
     (readings_named (fixture ^ "ir.json") (fixture ^ "case1-niets-gegeven.json") [ default_form 0; meldloon ])
     (on_object (default_form 0) "V1" [ "DISPLACED" ] @ on_object meldloon "V1" [ "0 Literal 3"; "HOLDS" ])
 
+(* WV-5.12-same-conclusion: below a default open with a constant the
+   defaults are read at their turn, provisionally, down to the one that fixes
+   the outcome of the chain. The golden jutterswet-zelfde-conclusie-waarde,
+   the vindloon: where beschadigd holds and betwist is not named the default
+   for beschadigd decides 0, the value of the open default above it, and holds,
+   and the base below it is displaced; where beschadigd stands not to hold it
+   fails and the base holds with 100, another value, which leaves the vindloon
+   open. The golden jutterswet-zelfde-conclusie-fout, betwist not named and no
+   evaluation date: the base, read provisionally, faults, and is open with the
+   fault at its nodes (WV-5.12-same-conclusion-fault) *)
+let () =
+  let golden = "corpus/golden/jutterswet-zelfde-conclusie-waarde/" in
+  let read case = readings_named (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ case)) (List.map default_form [ 0; 1; 2 ]) in
+  let base status =
+    on_object (default_form 2) "V1"
+      [ "0 Compound true"; "1 Binary 100"; "2 AttributeReference 50"; "3 Literal 2"; status ]
+  in
+  let highest = on_object (default_form 0) "V1" [ "0 CharacteristicCheck undetermined open \"V1\" \"betwist\""; "1 Literal unreached"; "OPEN" ] in
+  lines_equal "WV-5.12-same-conclusion (the lower default decides the value)" (read "case1-betwist-open.json")
+    (highest @ on_object (default_form 1) "V1" [ "0 CharacteristicCheck true"; "1 Literal 0"; "HOLDS" ] @ base "DISPLACED");
+  lines_equal "WV-5.12-same-conclusion (another value below)" (read "case4-beschadigd-niet.json")
+    (highest @ on_object (default_form 1) "V1" [ "0 CharacteristicCheck false"; "1 Literal unreached"; "FAILS" ] @ base "HOLDS");
+  let golden = "corpus/golden/jutterswet-zelfde-conclusie-fout/" in
+  lines_equal "WV-5.12-same-conclusion-fault"
+    (readings_named (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ "case1-betwist-open.json")) [ default_form 0; default_form 1 ])
+    (on_object (default_form 0) "V1" [ "0 CharacteristicCheck undetermined open \"V1\" \"betwist\""; "1 Literal unreached"; "OPEN" ]
+    @ on_object (default_form 1) "V1"
+        [ "0 Comparison fault EF-011"; "1 ContextValue fault EF-011"; "2 Literal unreached"; "3 Literal unreached"; "OPEN" ])
+
 (* WV-5.12-open-creation: a creation whose condition is undetermined is open,
    and a read over the relation it leaves open names that relation by its role.
    The fixture object-creation, a Jutter without an ervaring *)

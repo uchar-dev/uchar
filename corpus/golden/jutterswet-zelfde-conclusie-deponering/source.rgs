@@ -1,0 +1,15 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    het aantal getuigen Numeriek (geheel getal);
+    het meldloon Numeriek (geheel getal);
+    is betwist kenmerk (bijvoeglijk);
+
+Regel meldloon
+    geldig altijd
+        Het meldloon van een Vondst moet gesteld worden op 2 indien zijn gewicht gedeeld door zijn aantal getuigen leeg is.
+
+Afwijking van meldloon: betwist meldloon
+    geldig altijd
+        Het meldloon van een Vondst moet gesteld worden op 2 indien hij betwist is.

@@ -1,0 +1,23 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicsAbsent": [
+          "betwist"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-011",
+    "params": {}
+  }
+}

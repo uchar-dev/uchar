@@ -1,0 +1,53 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "50"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "beschadigd"
+        ],
+        "characteristicsAbsent": [
+          "betwist"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vindloon",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "strandloon",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "bergloon"
+    },
+    {
+      "kind": "inconsistent",
+      "rule": "Vondst.bergloon/0",
+      "label": "V1"
+    }
+  ]
+}

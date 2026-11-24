@@ -1,0 +1,63 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    het vindloon Numeriek (geheel getal);
+    het strandloon Numeriek (geheel getal);
+    het wrakloon Numeriek (geheel getal);
+    het kustloon Numeriek (geheel getal);
+    is betwist kenmerk (bijvoeglijk);
+    is beschadigd kenmerk (bijvoeglijk);
+    is gemeld kenmerk (bijvoeglijk);
+
+Regel vindloon
+    geldig altijd
+        Het vindloon van een Vondst moet berekend worden als zijn gewicht maal 2.
+
+Afwijking van vindloon: beschadigd vindloon
+    geldig altijd
+        Het vindloon van een Vondst moet gesteld worden op 0 indien hij beschadigd is.
+
+Afwijking van vindloon: betwist vindloon
+    geldig altijd
+        Het vindloon van een Vondst moet gesteld worden op 0 indien hij betwist is.
+
+Regel strandloon
+    geldig altijd
+        Het strandloon van een Vondst moet berekend worden als zijn gewicht maal 2.
+
+Afwijking van strandloon: beschadigd strandloon
+    geldig altijd
+        Het strandloon van een Vondst moet gesteld worden op 5 indien hij beschadigd is.
+
+Afwijking van strandloon: betwist strandloon
+    geldig altijd
+        Het strandloon van een Vondst moet gesteld worden op 0 indien hij betwist is.
+
+Regel wrakloon
+    geldig altijd
+        Het wrakloon van een Vondst moet berekend worden als zijn gewicht maal 2.
+
+Afwijking van wrakloon: beschadigd wrakloon
+    geldig altijd
+        Het wrakloon van een Vondst moet gesteld worden op 0 indien hij beschadigd is.
+
+Afwijking van wrakloon: betwist wrakloon
+    geldig altijd
+        Het wrakloon van een Vondst moet berekend worden als zijn gewicht maal 0 indien hij betwist is.
+
+Regel kustloon
+    geldig altijd
+        Het kustloon van een Vondst moet berekend worden als zijn gewicht maal 2.
+
+Afwijking van kustloon: beschadigd kustloon
+    geldig altijd
+        Het kustloon van een Vondst moet gesteld worden op 0 indien hij beschadigd is.
+
+Afwijking van kustloon: gemeld kustloon
+    geldig altijd
+        Het kustloon van een Vondst moet gesteld worden op 7 indien hij gemeld is.
+
+Afwijking van kustloon: betwist kustloon
+    geldig altijd
+        Het kustloon van een Vondst moet gesteld worden op 0 indien hij betwist is.

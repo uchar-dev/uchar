@@ -1,0 +1,106 @@
+Scenario betwist open
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 5
+- is drijfhout
+Met als verwacht resultaat:
+- V1 is niet beloonbaar
+- de wachtpremie van V1 is 3
+- V1 is vindbaar
+- de gegevens zijn consistent
+
+Scenario betwist waar
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 5
+- is drijfhout
+- is betwist
+Met als verwacht resultaat:
+- V1 is niet beloonbaar
+- de wachtpremie van V1 is 3
+- V1 is vindbaar
+- de gegevens zijn consistent
+
+Scenario betwist niet
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 5
+- is drijfhout
+- is niet betwist
+Met als verwacht resultaat:
+- V1 is niet beloonbaar
+- de wachtpremie van V1 is 3
+- V1 is vindbaar
+- de gegevens zijn consistent
+
+Scenario drijfhout niet betwist open
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 5
+- is niet drijfhout
+Met als verwacht resultaat:
+- of V1 beloonbaar is, staat niet vast
+- de wachtpremie van V1 staat niet vast
+- V1 is vindbaar
+- de gegevens zijn consistent
+
+Scenario wortel betwist open
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 1
+- is niet drijfhout
+Met als verwacht resultaat:
+- V1 is niet beloonbaar
+- de wachtpremie van V1 is 3
+- of V1 vindbaar is, staat niet vast
+- de gegevens zijn consistent
+
+Scenario wortel betwist waar
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 1
+- is niet drijfhout
+- is betwist
+Met als verwacht resultaat:
+- V1 is niet beloonbaar
+- de wachtpremie van V1 is 3
+- of V1 vindbaar is, staat niet vast
+- de gegevens zijn consistent
+
+Scenario wortel betwist niet
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 1
+- is niet drijfhout
+- is niet betwist
+Met als verwacht resultaat:
+- V1 is niet beloonbaar
+- de wachtpremie van V1 is 3
+- of V1 vindbaar is, staat niet vast
+- de gegevens zijn consistent
+
+Scenario gemeld waar
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 1
+- is niet drijfhout
+- is niet betwist
+- is gemeld
+Met als verwacht resultaat:
+- V1 is niet beloonbaar
+- de wachtpremie van V1 is 3
+- V1 is vindbaar
+- de gegevens zijn consistent
+
+Scenario gemeld niet
+Gegeven is de volgende situatie:
+een Vondst V1
+- het gewicht is 1
+- is niet drijfhout
+- is niet betwist
+- is niet gemeld
+Met als verwacht resultaat:
+- V1 is niet beloonbaar
+- de wachtpremie van V1 is 3
+- V1 is niet vindbaar
+- de gegevens zijn consistent
