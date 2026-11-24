@@ -390,3 +390,48 @@ Uit review § 5, nog niet hierboven:
   beslissen") en `openInputs` (`OpenReads.writers` mag de `OPEN`-lezing van zo'n variant niet als schrijver tellen);
   de `Verbaliser` mag een lagere default die `HOLDS` leest onder een `OPEN` default, waar de uitkomst open blijft, niet
   als de beslisser tonen (review § 2).
+
+## Result stap 2 (clingo; 2026-11-24)
+
+Twee commits op `card/same-conclusion-open-variant`:
+
+- `012521a44` — `ref/lib/eval.ml`, `ref/lib/reading.ml`, `ref/test/test_ref.ml`: vergelijking van stapelbeslissingen
+  zoals de schrijfstap ze schrijft beperkt tot strikte documenten (`infer_from_empty = false`); in gewone documenten
+  vergelijkt de verzoening weer met `Arith.equal`. Twee worked-example-tests
+  (`WV-1.5-stack-same-conclusion-unit-ordinary-unitless-first`, `-cent-first`) houden dit vast.
+- `49b0f6876` — `backends/clingo/lib/translate.ml`, `backends/clingo/test/test_clingo.ml`, `spec/ASP-TRANSLATION.md`:
+  vijf-uitkomsten-vertaling in `translate_chain`, `translate_group` en `translate_defaults_group` voor strikte
+  documenten (`s_oo(S,V)`, `beside_members`, `rch`/`prch`/`ar`/`pf`, `ctx.stack_reach`, `emit_viol` met
+  `provisional_ef_suppress` terwijl `ctx.limit_gate` limieten als `CLINGO-034` zichtbaar houdt, `deposit_guard` en
+  EF-027 van `translate_group` onder echte bereikbaarheid, `units_identical_ok` en `range_guard` op strikte
+  stapelconstanten, kenmerk-wortelsluiting `grp<g>_nil` alleen aan de wortel). `ASP-TRANSLATION.md` S20 en de suite
+  in `test_clingo.ml` (waarde, kenmerk met wortelsluiting vs. subgroep/ongeordend, ongeordend, genest met terugval en
+  onderdrukte geneste EF-027, voorlopige deponering/fout/limiet, initialisatie vs. regel naast initialisatie,
+  schrijfgrens EF-006 en luide weigering op niet-identieke eenheden) zijn bijgewerkt.
+
+**Gewoon-document-invariantie:** alle 1343 corpus-casussen vóór en ná `49b0f6876` vergeleken — van de 1271 gewone
+casussen wijkt er 0 af (byte-voor-byte identieke ASP-vertaling); 56 strikte casussen schuiven mee.
+
+**Meting gewoon document met gemengde eenheden (open punt uit stap 1):** op een ongeordende groep met `1`
+(eenheidloos) naast `1 ct` op `€` (2 decimalen), beide voorwaarden waar (`werk/same-conclusion-open-variant/meting-gewoon/`):
+- `ref`: geen conflict, schrijft het eerste lid (`1.00 €` resp. `0.01 €`);
+- `Drools` (exec-model en `--drl`): conflict met `EF-027` op beide doelen; bij `1 ct` alleen schrijft hij `0.01 €`;
+- `clingo`: draait op gewone defaults geen `units_identical_ok` en schaalt `1 ct` naar `1.00 €` (ook op `1 ct` alleen),
+  bestaand eenheidsverschil in gewone documenten buiten deze kaart.
+
+**Poorten 1–8 na `49b0f6876`:**
+- `check-self-contained`: PASS
+- `check-ir-schema`: PASS (`521 file(s) validate and round-trip, floor 192`)
+- `check-verifier`: PASS (`521 golden clean; 646 negative rejected`)
+- `check-case-schema`: PASS (`1343 case file(s) validate`)
+- `check-oracle`: PASS (`4502 worked examples; 1241 cases replayed exactly; monotonicity: 2789 runs, 0 listed gap(s)`)
+- `check-clingo`: PASS (`4983 checks, floor 4797, 278 units in 32 shards; 1211 cases replay exactly — ref = clingo over the corpus`)
+- `check-noop`: PASS (`1196 cases refute; 45 pinned survivors`)
+- `check-red`: PASS (`102 red cases fault observably in ref and clingo; Drools leg PASS 83 fault-pinned`)
+
+**Aanvulling voor stap 3 (Drools) uit de lezing van de toolchain-kaart (`werk/neon-review/antwoorden/xhigh-oo-same-conclusion-explanation-card.md`):**
+- `DefaultsDecision` krijgt het veld `List<String> open`: de JSON-pointers van de `OPEN`-defaults van deze stapel die
+  de uitkomst daadwerkelijk open houden, in stapelvolgorde — leeg bij een beslisser, bij een conflict, wanneer alle
+  defaults wijken en wanneer een kenmerkstapel aan de wortel sluit; voorlopig gefaalde defaults zonder open lezing
+  staan er niet in. Zonder dit veld kan de toolchain kenmerk-wortelsluiting naast een open supertype-regel of invoer en
+  onschadelijke open leden in ongeordende groepen (`havenloon` case 5) niet zonder eigen semantiek onderscheiden.
