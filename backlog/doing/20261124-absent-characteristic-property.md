@@ -72,7 +72,8 @@ een fout is of een contract.
 ## Result
 
 *Bouwer, 2026-11-24. Branch `card/absent-characteristic-property`, vier commits na de claim (`bc41795d5`) en dit
-Result; niet gemerged. Beschermd pad met mandaat uit de opdracht: `scripts/check-drools.sh` (`EXPECTED_PLAYED`).*
+Result; daarna twee commits van de herstelronde en de bijwerking van dit Result; niet gemerged. Beschermd pad met
+mandaat uit de opdracht: `scripts/check-drools.sh` (`EXPECTED_PLAYED`).*
 
 **Wat landde.**
 
@@ -96,9 +97,10 @@ Result; niet gemerged. Beschermd pad met mandaat uit de opdracht: `scripts/check
 - `43b52902d` corpus. Keuze: twee nieuwe goldens en een rode casus.
   - `corpus/golden/jutterswet-kenmerknamen-strikt` (`Afleiden uit leeg: nee`): een Vondst met de invoerkenmerken
     `op zee geborgen`, `half-vergaan`, `ex-VOC`, `met foto's vastgelegd` en de regel "afhaalbaar indien hij aan alle
-    volgende voorwaarden voldoet" (drie ontkende toetsen en één gewone). Drie casussen met handberekende verwachtingen,
-    elk met `characteristicAbsent` op de invoerkenmerken die vast niet gelden: alles gegeven (afhaalbaar geldt), ex-VOC
-    open (afhaalbaar open), op zee geborgen en geen foto's (afhaalbaar geldt niet).
+    volgende voorwaarden voldoet" (drie ontkende toetsen en één gewone). Vier casussen met handberekende verwachtingen
+    (de vierde uit de herstelronde, hieronder), elk met `characteristicAbsent` op de invoerkenmerken die vast niet
+    gelden: alles gegeven (afhaalbaar geldt), ex-VOC open (afhaalbaar open), op zee geborgen en geen foto's (afhaalbaar
+    geldt niet, de stop na lid 1), en alleen geen foto's (afhaalbaar geldt niet, na drie open leden).
   - `corpus/golden/jutterswet-kenmerknamen`: dezelfde regels in een gewoon document; casus 1 noemt de drie ontkende
     kenmerken niet, casus 2 geeft ze in `characteristicsAbsent`; dezelfde verwachtingen. De frontend waarschuwt bij de
     drie regels "- is niet …" dat ze hier niets veranderen (bedoeld; geen gate faalt erop).
@@ -115,44 +117,71 @@ Result; niet gemerged. Beschermd pad met mandaat uit de opdracht: `scripts/check
   casussen (7 namen × vast niet / ongenoemd × strikt / gewoon) PASS in beide, en de 14 rode casussen geven EF-047 in
   beide.
 
+**Herstelronde** (tweede bouwer, 2026-11-24; correctie van de getuige naar RUNTIME-SEMANTICS ch. 1.5, nagerekend door
+een externe review en de hoofdsessie, zie open punt 1):
+
+- `eff86663f` `ReadingsCorpusWitnessTest` (gate 12). `stop(...)` telt waar en onwaar apart; een onbepaald lid is geen
+  van beide. De stop is `ComputeHelpers.established(kw, k, touch, touch + fails, m - touch - fails)`, gelijk aan
+  `Composite.truth(kw, k, m, touch, fails)`, ook voor het eindoordeel (in plaats van `endVerdict`), en de toets aan het
+  eind is `verdict == null ? x.undetermined() : verdict.equals(x.value())`. Een bereikt lid zonder fout dat noch waar,
+  noch onwaar, noch onbepaald is, is een verschil met naam. De lus slaat alleen nog een samenstelling zonder `Boolean`
+  over die niet onbepaald is (de tijdlijn-clip, een samenstelling die een `Let` afbrak); een onbepaalde samenstelling
+  wordt getoetst en geteld. `readAsAtItsTurn`: een verdrongen default met een onbepaalde wortel van de voorwaarde telt
+  als een voorwaarde die niet geldt, zodat zijn waarde onbereikt moet zijn. Ch. 5.12 zegt dat zo: `DISPLACED` en
+  `OPEN` hebben "the nodes of the condition, and of the value where the condition holds" / "is true", en onder
+  **Open values** is `HOLDS` "where the condition is true". Zonder onbepaald lid geeft de getuige het oude oordeel.
+- `31720db2c` corpus: de oorspronkelijke casus 3 terug in `jutterswet-kenmerknamen-strikt`, als vierde casus naast de
+  huidige casus 3 (dus vier casussen): scenario "zonder foto's", `case4-zonder-foto-s.json` uit `--cases`, byte-gelijk
+  aan het bestand in `witness-gap/`; `ir.json` ongewijzigd; handberekening in `NOTE.md`. Casus 3 stopt op lid 1, casus 4
+  leest voorbij drie open leden tot het vierde, dat onwaar is; zo staan beide armen van de stop in het corpus.
+- Wat de getuige nu toetst: de stop van elke samenstelling met een oordeel (waar, onwaar of onbepaald) naar de tabel
+  van Kleene. `n.compounds` per tak: 1596 vóór de herstelronde (oude getuige, drie casussen), 1597 met de oude getuige
+  op vier casussen (rood op casus 4, beide takken: `samenstelling 0 bereikte lid 2 na de stop`), 1598 met de nieuwe
+  getuige: casus 4 en de ene onbepaalde samenstelling van het corpus (`case2-herkomst-open`, `0 Compound undetermined`
+  in de ref-trace van alle strikte goldens). In de strikte goldens staat geen verdrongen default met een onbepaalde
+  wortel (16 verdrongen lezingen, geen); de nieuwe tak van `readAsAtItsTurn` bereikt het corpus dus niet.
+
 **Gates** (elk apart, logs in `werk/absent-characteristic-property/gate*.log`; 2, 4–7 en 16 opnieuw na de laatste
-wijziging van casus 3, 12 ook):
+wijziging van casus 3, 12 ook; na de herstelronde 2, 4–7, 12, 16 en 17 opnieuw, logs `r2-gate*.log`, getallen hier
+van die run):
 
 - 1 `check-self-contained: PASS`
 - 2 `check-ir-schema: PASS (… 512 file(s) validate and round-trip, floor 192; 65560 object(s) in 1158 document(s) in
   the schema's key order, 2 in no subschema)`
 - 3 `check-verifier: PASS (… 512 golden clean; 646 negative rejected for their declared rule, floor 568; …)`
-- 4 `check-case-schema: PASS (schema valid; 146 self-test row(s); 1298 case file(s) validate)`
-- 5 `check-oracle: PASS (ref suite 4232 worked examples, floor 489; 1197 cases replayed exactly, floor 427;
+- 4 `check-case-schema: PASS (schema valid; 146 self-test row(s); 1299 case file(s) validate)`
+- 5 `check-oracle: PASS (ref suite 4232 worked examples, floor 489; 1198 cases replayed exactly, floor 427;
   preservation …: 281 goldens and 787 cases play; … 6 carrying the property already … jutterswet-kenmerknamen-strikt …;
-  monotonicity: 812 cases, 2680 runs without one input compared, floor 2652 …)`
-- 6 `check-clingo: PASS (backend suite 4879 checks, floor 4797 …; 1167 cases replay exactly through clingo …)`
-- 7 `check-noop: PASS (1152 cases refute a do-nothing executor; 45 pinned survivors pin defeasible standing)`
+  monotonicity: 813 cases, 2682 runs without one input compared, floor 2652 …)` (vóór de herstelronde 812 cases en
+  2681 runs; het Result noemde eerst 2680)
+- 6 `check-clingo: PASS (backend suite 4879 checks, floor 4797 …; 1168 cases replay exactly through clingo …)`
+- 7 `check-noop: PASS (1153 cases refute a do-nothing executor; 45 pinned survivors pin defeasible standing)`
 - 8 `check-red: PASS (101 red cases fault observably in ref and clingo, floor 44; …)`; Drools leg
   `PASS (82 fault-pinned, 82 of them reporting the case's code, 134 pinned parameter checks confirmed, floor 28; …)`
 - 10 `check-regelspraak: PASS — JUnit suite green (1716 tests, floor 173); 226 rgs golden(s) re-emit byte-identically`
 - 12 `check-drools: PASS` — `played 388`, `DRL-text branch played 388`, `JUnit 2066 tests, floor 1573`
+  (`ReadingsCorpusWitnessTest`: 1598 samenstellingen per tak)
 - 13 `check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens, floor 38; 242 executor replays …)`
 - 15 `check-graph: PASS` (route leg 226 goldens, 86 unit tests)
-- 16 `check-scenario: PASS — 53 scenario golden(s) (floor 7) regenerate 174 case file(s) (floor 31) and their ir.json
+- 16 `check-scenario: PASS — 53 scenario golden(s) (floor 7) regenerate 175 case file(s) (floor 31) and their ir.json
   byte-identically`
-- 17 `check-readings: PASS (ref traced 1197 golden case files …; on both branches 389 goldens and 1071 case files
-  compared, 8081 readings …; deviations 0, end-state deviations 0 …)`
+- 17 `check-readings: PASS (ref traced 1198 golden case files …; on both branches 389 goldens and 1072 case files
+  compared, 8082 readings …; deviations 0, end-state deviations 0 …)`
 
-Niet gedraaid: 9 (catala), 11 (toka), 14 (flogic): hun bronnen veranderden niet; `make gates` doet de hoofdsessie.
+Niet gedraaid: 9 (catala), 11 (toka), 14 (flogic): hun bronnen veranderden niet; na de herstelronde ook niet 1, 3, 8,
+10, 13 en 15 (gate 13 speelt de strikte golden in zijn presentatiebeen, dus ook casus 4); `make gates` doet de
+hoofdsessie.
 
 **Open punten.**
 
-1. **Een gat in `ReadingsCorpusWitnessTest.stop` (gate 12), buiten deze kaart.** De eerste versie van casus 3 van de
-   strikte golden (op zee geborgen, half-vergaan en ex-VOC open, geen foto's) speelt in ref, clingo en beide takken, en
-   de lezingen van de backend zijn gelijk aan de trace van ref (drie leden onbepaald, het vierde onwaar, de
-   samenstelling onwaar). De getuige faalt toch: `samenstelling 0 bereikte lid 2 na de stop`, omdat `stop()` met
-   `ComputeHelpers.established(kw, k, touch, i, m - i)` een onbepaald lid als onwaar telt, waar Kleene doorleest
-   (RUNTIME-SEMANTICS ch. 1.5). Ik heb de test niet veranderd (CLAUDE.md: eerst vragen) en casus 3 vervangen door een
-   casus die vóór een onbepaald lid stopt (op zee geborgen geldt). Meting, de oorspronkelijke casus en een voorstel van
-   drie regels (onbepaald telt als geen van beide; `established(kw, k, touch, touch + fails, m - touch - fails)` is
-   `Composite.truth` met `n = m`) staan in `werk/absent-characteristic-property/witness-gap/README.txt`. Na goedkeuring
-   kan de oorspronkelijke casus terug in de golden.
+1. **Het gat in `ReadingsCorpusWitnessTest.stop` (gate 12): gedicht in de herstelronde.** De eerste bouwer vond dat
+   `stop()` met `ComputeHelpers.established(kw, k, touch, i, m - i)` een onbepaald lid als onwaar telde, waar Kleene
+   doorleest (RUNTIME-SEMANTICS ch. 1.5); meting en voorstel in `werk/absent-characteristic-property/witness-gap/README.txt`.
+   Een externe review en de hoofdsessie rekenden het na als een correctie van de test naar ch. 1.5, geen verzwakking,
+   en vulden het voorstel aan (de lus die onbepaalde samenstellingen oversloeg, `readAsAtItsTurn`); de eigenaar laat
+   zo'n vraag door die review beslissen. Uitgevoerd in `eff86663f`, de oorspronkelijke casus terug in `31720db2c`.
+   Wat open blijft: geen golden heeft een verdrongen default met een onbepaalde voorwaarde, dus de nieuwe tak van
+   `readAsAtItsTurn` is op het corpus niet bereikt.
 2. Toolchain-pin en werkbank-pin: vervolgstap buiten deze repository (kaart).
 3. Geen spec-, CONSTRUCTS- of PLAN-wijziging: het gedrag stond al in RUNTIME-SEMANTICS ch. 1.5; geen rij voor de
    hoofdsessie.
