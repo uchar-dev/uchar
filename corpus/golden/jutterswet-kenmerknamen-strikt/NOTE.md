@@ -37,7 +37,11 @@ where every member holds, does not hold where one member does not hold, and is o
 | case1-niets-aan-de-hand | does not hold | does not hold | does not hold | holds | holds: every member holds |
 | case2-herkomst-open | does not hold | does not hold | open | holds | open: the member "niet ex-VOC" is open, the others hold |
 | case3-op-zee-geborgen-zonder-foto-s | holds | open | open | does not hold | does not hold: the member "niet op zee geborgen" does not hold, and the members after it are not read |
+| case4-zonder-foto-s | open | open | open | does not hold | does not hold: the first three members are open and the fourth does not hold |
 
 Each case expects the input characteristics it states not to hold as `characteristicAbsent`. Case 1 against case 2:
-ex-VOC stated not to hold makes afhaalbaar hold, ex-VOC not named leaves it open. ref, clingo and both branches of the
-Drools backend play the three cases.
+ex-VOC stated not to hold makes afhaalbaar hold, ex-VOC not named leaves it open. Case 3 against case 4: in case 3 the
+first member decides and the members after it are not read; in case 4 the first three members are open, each neither
+true nor false, so the conjunction reads on past them, and the fourth member, met foto's vastgelegd stated not to hold,
+is false and makes afhaalbaar not hold, with op zee geborgen, half-vergaan and ex-VOC open. ref, clingo and both
+branches of the Drools backend play the four cases.

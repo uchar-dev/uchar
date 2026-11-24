@@ -34,3 +34,12 @@ Met als verwacht resultaat:
 - V1 is niet met foto's vastgelegd
 - of V1 half-vergaan is, staat niet vast
 - V1 is niet afhaalbaar
+
+Scenario zonder foto's
+Gegeven is de volgende situatie:
+een Vondst V1
+- is niet met foto's vastgelegd
+Met als verwacht resultaat:
+- V1 is niet met foto's vastgelegd
+- of V1 op zee geborgen is, staat niet vast
+- V1 is niet afhaalbaar
