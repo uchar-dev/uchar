@@ -66,17 +66,14 @@ public enum Route {
      *  stands as the asOfDate-bucket scalar, which {@link Consequence.Input.MemberValue} inserts; where the value is open,
      *  the fact that says so. */
     CONTRIBUTION(ComputeHelpers.class, "contribution"),
-    /** {@link #CONTRIBUTION} of a member that can leave its fold open, with its place in the order of the fold, in a build
-     *  with readings; so are {@link #CONTRIBUTED_AT} and {@link #JUDGED_AT}. */
+    /** {@link #CONTRIBUTION} of a member that can leave its fold open, with what the rule knows of its place in the order
+     *  of the fold, its selection; so are {@link #CONTRIBUTED_AT} and {@link #JUDGED_AT}. */
     CONTRIBUTION_AT(ComputeHelpers.class, "contributionAt"),
     /** What a member inserts for its fold by the judgement of the fold's filter, which
-     *  {@link Consequence.FilteredContribution} inserts. */
-    CONTRIBUTED(ComputeHelpers.class, "contributed"),
-    /** {@link #CONTRIBUTED} with the member's place. */
+     *  {@link Consequence.FilteredContribution} inserts, with the member's selection. */
     CONTRIBUTED_AT(ComputeHelpers.class, "contributedAt"),
-    /** What a member inserts for a quantifier fold by the judgement of the matrix ({@link Consequence.Input.Judged}). */
-    JUDGED(ComputeHelpers.class, "judged"),
-    /** {@link #JUDGED} with the member's place. */
+    /** What a member inserts for a quantifier fold by the judgement of the matrix ({@link Consequence.Input.Judged}), with
+     *  the member's selection. */
     JUDGED_AT(ComputeHelpers.class, "judgedAt"),
     /** The test of a member by the matrix of a quantifier fold, with the judgement of the fold's filter for it
      *  ({@link Consequence.FilteredContribution}). */

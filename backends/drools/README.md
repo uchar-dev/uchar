@@ -526,13 +526,18 @@ analysis adds for the list of open members (`STANDING_COUNT`) is no node. A valu
 does: below a default that is open every default has its speculative reading, the initialisation default among them; an
 initialisation whose target is open input, or an initialisation rule whose target another writer leaves open, has no
 reading there and is `DISPLACED` without nodes. A fold that is broken off names the open read of the first member in the order of the fold, every filter before
-every value, and a quantifier fold that of its first member that is undetermined. That order shows in
-a reading alone, so only a build with readings binds it: the contribution rule of a member that can be open binds its place
-as the filter fault rule does, and its `FoldOpen` carries the place; the functions that read those facts take the first. A
-build without readings lowers the document without places. A contributor of a quantifier fold whose filter is undetermined
-says so (`ConditionReading.Contributor.filterUndetermined`, read off the judgement of the filter its `MemberTest` carries),
-and it always has a position: a filter that can be undetermined makes the rule that reads the fold read its contributors in
-their order (`TmsTranspiler.Fold.tested`).
+every value, and a quantifier fold that of its first member that is undetermined. Where the rules read a fold without the
+order of its members (a fold over a set whose filter cannot fault, a quantifier fold whose matrix can neither fault nor
+deposit), that order shows in a reading alone, and the rules of every build are the same: the open read of such a fold
+names the fold on its subject (`OpenMember.ofFold`), so the open member a fold in the filter of another passes up does not
+depend on the agenda, and a `FoldOpen` carries the part of its member that does not stand and its selection. The reading
+names the first member of that fold in its order, off the fold's facts, down a fold nested in another: by the part, the
+selection and the place of the member in the range of its selection, which the watch of the session walks over the lists
+`DroolsBackend.insert` gives it (`Watch.range`), or by reading the tests of a quantifier fold again in that order. A
+contributor of a quantifier fold whose filter is undetermined says so (`ConditionReading.Contributor.filterUndetermined`,
+read off the judgement of the filter its `MemberTest` carries), and it always has a position: a filter that can be
+undetermined makes the rule that reads the fold read its contributors in their order (`TmsTranspiler.Fold.tested`), and the
+reading reads them in the order of the range where the rules do not.
 
 What this backend refuses in such a document, `UncarriedForms` lists, the one place, in the order by which the first form a
 document holds is named:

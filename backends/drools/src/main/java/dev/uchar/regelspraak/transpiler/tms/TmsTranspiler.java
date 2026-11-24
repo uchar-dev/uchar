@@ -82,6 +82,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -365,6 +366,10 @@ public final class TmsTranspiler {
     private final Set<Integer> creationStrata = new TreeSet<>();
     /** The reference fields under which a rule reads a {@link ListPlace} ({@link #place}; see {@link #listFields}). */
     private final Set<String> listFields = new LinkedHashSet<>();
+    /** In a build with readings, per fold that the rules read without the order of its members and that can be open, by
+     *  its key, the range of each of its selections, as a reading walks it from the fold's subject ({@link Watch#range}):
+     *  a reading names the first member in that order where the rules name the fold ({@link OpenMember#ofFold}). */
+    private final Map<String, FoldOrder> foldOrders = new HashMap<>();
     /** Unique per constraint across the model: the executable model shares a constraint between rules by its id, so
      *  two different tests under one id would collapse into the first. */
     private int idSeq;
@@ -433,7 +438,7 @@ public final class TmsTranspiler {
         this.eff = eff;
         this.dayKinds = new DayKinds(model);
         this.readers = new SessionReaders(this, model, this.beanLoader, layouts, derived, documentOrder,
-                creationRules, typeClasses, types, positions, readingRules);
+                creationRules, typeClasses, types, positions, readingRules, foldOrders);
     }
 
     /** The switch relations of the document's instance-ordered parts, as the hops that reach the predecessor
@@ -838,6 +843,33 @@ public final class TmsTranspiler {
      *  to-many list holds toward the list's holder, named after the holder's role as the bean property is
      *  ({@link ListPlace#field}). Empty where {@link #readsListPlaces} is false. */
     public Set<String> listFields() { return Set.copyOf(listFields); }
+
+    /** The reference fields whose lists a reading walks to order the members of a fold that the rules read without that
+     *  order ({@link #foldOrders}): each the field of a backward step of such a range. Empty in a build without readings;
+     *  {@code DroolsBackend.insert} gives the watch of the session those lists ({@link Watch#range}). */
+    public Set<String> readingListFields() {
+        Set<String> out = new TreeSet<>();
+        for (FoldOrder f : foldOrders.values())
+            for (List<Watch.Hop> walk : f.selections().values())
+                for (Watch.Hop h : walk) if (h.backward()) out.add(h.field());
+        return out;
+    }
+
+    /** Notes, in a build with readings, the range of selection {@code selection} of the fold {@code key}, which the rules
+     *  read without the order of its members and which can be open, for the reading that names its first open member
+     *  ({@link #foldOrders}): of a quantifier fold with its {@code quantifier} and {@code threshold}, null and 0 for a fold
+     *  over a set. A range whose members have no order of the input is refused there, as the rules refuse it where they
+     *  need that order ({@link Range#walk}). Nothing in a build without readings. */
+    private void noteFoldOrder(String key, int selection, Range range, Condition.Quantifier quantifier, int threshold) {
+        if (positions == null) return;
+        foldOrders.computeIfAbsent(key, k -> new FoldOrder(new TreeMap<>(), quantifier, threshold)).selections()
+                .put(selection, List.copyOf(range.walk().get()));
+    }
+
+    /** The order of the members of a fold that the rules read without it, for a reading ({@link #noteFoldOrder}): the range
+     *  of each selection from the fold's subject ({@link Watch#range}), and of a quantifier fold the quantifier and the
+     *  threshold, by which a reading reads its members again; null and 0 for a fold over a set. */
+    record FoldOrder(Map<Integer, List<Watch.Hop>> selections, Condition.Quantifier quantifier, int threshold) {}
 
     /**
      * The size of the lowering of one effective defaults stack, counted when it is built: {@code name} as the manifest
@@ -2136,8 +2168,10 @@ public final class TmsTranspiler {
             List<RulePlan> rules = new ArrayList<>();
             List<Reads> readings = new ArrayList<>();
             Range range = range(f, reads.subject, elem);
-            if (created) range = new Range(range.join(),
-                    fieldRange(pair, reads.subject, elem, snippet(f.source())).perRoute());
+            if (created) {
+                Range input = fieldRange(pair, reads.subject, elem, snippet(f.source()));
+                range = new Range(range.join(), input.perRoute(), input.walk());
+            }
             contributionRules(key, name, Expr.FunctionKind.SOM, reads.subject, elem, range, 0,
                     null, a, null, rules, readings, true);
             return new Fold(key, List.copyOf(rules), List.copyOf(readings), false, false, false, false, false, true,
@@ -6697,18 +6731,15 @@ public final class TmsTranspiler {
      * its whole timeline ({@link #periodSum}). The rules go into {@code out} and their reads into {@code readings}, to be
      * registered with the form; returns whether the filter can fault, and whether the member can be open to the fold, its
      * filter undetermined or its value open (RUNTIME-SEMANTICS ch. 1.5, "A fold over a set").
-     * Such a member inserts its {@link FoldOpen} in the same rule, beside or in place of its contribution, in a build with
-     * readings with its place in the order of the fold, which that rule then binds as the filter fault rule does. A fold in
-     * the filter is read as any rule reads one, on the member.
+     * Such a member inserts its {@link FoldOpen} in the same rule, beside or in place of its contribution, with its
+     * selection; the rule knows no order of the members, and a reading orders them by the range of the selection
+     * ({@link #noteFoldOrder}). A fold in the filter is read as any rule reads one, on the member.
      */
     private Ends contributionRules(String key, String name, Expr.FunctionKind kind, ObjectType subject,
                                    ObjectType elem, Range range, int selection, Condition filter,
                                    Expr.AttributeReference arg, List<String> cell, List<RulePlan> out,
                                    List<Reads> readings, boolean whole) {
-        // in a build with readings a fold that can be open names the first member that leaves it so (ch. 5.12): the member's
-        // join then binds its place, which the reads of the filter and of the value decide
-        boolean placed = positions != null && !openable.isEmpty();
-        Reads reads = contributionReads(subject, elem, placed ? l -> { } : range.join());
+        Reads reads = contributionReads(subject, elem, range.join());
         Set<Integer> read = reads.follow();
         Term testTerm = filter == null ? null : conditionTerm(filter, reads);
         Ends ends = reads.ends();
@@ -6740,9 +6771,11 @@ public final class TmsTranspiler {
         boolean openValue = memberValue != null && openable.contains(memberValue.key());
         int openInput = openValue && !writers.containsKey(memberValue.key()) ? reads.openInput() : -1;
         reads.stop();
-        Consequence.FoldPlace place = null;
-        if (placed && (ends.open() || openValue)) place = openMemberPlace(range.perRoute().apply(reads), selection, use);
-        else if (placed) range.join().accept(reads);
+        // a member that can leave the fold open carries its selection, the part of its place in the order of the fold that
+        // no list of the input decides
+        Consequence.FoldPlace place = ends.open() || openValue
+                ? new Consequence.FoldPlace(selection, List.of(), Consequence.PlaceReason.OPEN_MEMBER) : null;
+        if (place != null) noteFoldOrder(key, selection, range, null, 0);
         List<LhsItem> items = reads.plan(Asked.ACTS, ends, testTerm, read);
         Consequence.Input input = new Consequence.Input.Count();
         if (kind != Expr.FunctionKind.AANTAL) {
@@ -6766,17 +6799,6 @@ public final class TmsTranspiler {
         if (deposits(filter)) out.add(filterDepositRule(key, formName + ": filterdeponering in " + name, subject,
                 elem, range, filter, readings::add));
         return new Ends(ends.fault(), ends.open() || openValue);
-    }
-
-    /** The place of a member that can leave its fold open, in the selection {@code selection}, at the steps {@code steps}
-     *  its rule binds; what a consequence reads of it goes into {@code use}. */
-    private static Consequence.FoldPlace openMemberPlace(List<Consequence.FoldPlace.Step> steps, int selection,
-                                                         Set<Integer> use) {
-        for (Consequence.FoldPlace.Step p : steps) {
-            use.add(p.count());
-            use.add(p.place());
-        }
-        return new Consequence.FoldPlace(selection, steps, Consequence.PlaceReason.OPEN_MEMBER);
     }
 
     /**
@@ -6931,9 +6953,12 @@ public final class TmsTranspiler {
      * pattern, and the intermediates a multi-step range needs right after it, quantified, so a member matches once.
      * {@code perRoute}, for the filter fault rule: the same join with the intermediates bound, so a member matches once
      * per route, and per to-many step of the route, in order, the place of the step's member in its list
-     * ({@link #place}); it returns those places, and refuses a range whose members have no place.
+     * ({@link #place}); it returns those places, and refuses a range whose members have no place. {@code walk}, for a
+     * reading: the steps of the range from the fold's subject ({@link Watch#range}), refused where {@code perRoute}
+     * refuses.
      */
-    private record Range(Consumer<Reads> join, Function<Reads, List<Consequence.FoldPlace.Step>> perRoute) {}
+    private record Range(Consumer<Reads> join, Function<Reads, List<Consequence.FoldPlace.Step>> perRoute,
+                         Supplier<List<Watch.Hop>> walk) {}
 
 
     /** The place of a to-many step's member in its list, for the filter fault rule, planned after the subject pattern:
@@ -7006,7 +7031,7 @@ public final class TmsTranspiler {
         return new Range(join, member -> {
             join.accept(member);
             return forward ? List.of() : List.of(place(member, listField, SUBJECT, List.of()));
-        });
+        }, () -> List.of(new Watch.Hop(listField, !forward, beanClass(elem))));
     }
 
     /** The one-step range of a fold over a relation of {@link #linkRelations}: the member and the fold's subject joined by
@@ -7018,10 +7043,13 @@ public final class TmsTranspiler {
      *  does not state; so a fold that reads its members in order over such a range is refused, by the code of either. */
     private Range linkRange(RoleBindingRef rb, RegelSpraakModel.Role memberRole, Object description) {
         LinkRelation r = linkRelation(rb, memberRole, description);
+        Supplier<Refusal> unordered = () -> new Refusal(createdRelations.contains(r.relation())
+                ? DroolsCode.CREATED_RELATION_FAILING_FILTER.reason("factType", rb.factType(), "description", description)
+                : DroolsCode.MANY_TO_MANY_FOLD_ORDER.reason("factType", rb.factType(), "description", description));
         return new Range(member -> member.addToRangePlan(linkExists(r)), member -> {
-            throw new Refusal(createdRelations.contains(r.relation())
-                    ? DroolsCode.CREATED_RELATION_FAILING_FILTER.reason("factType", rb.factType(), "description", description)
-                    : DroolsCode.MANY_TO_MANY_FOLD_ORDER.reason("factType", rb.factType(), "description", description));
+            throw unordered.get();
+        }, () -> {
+            throw unordered.get();
         });
     }
 
@@ -7090,6 +7118,16 @@ public final class TmsTranspiler {
         String manyToMany = manyToManyStep(path);
         SourcePath.Plan plan = SourcePath.parse(model, subject, path, elem, linkRelations::contains);
         if (plan.refusal() != null) throw new Refusal(plan.refusal().framed("with-description", "description", description));
+        // the steps from the subject, each with the bean class of the node it reaches; a link hop has no order of the input
+        Supplier<List<Watch.Hop>> walk = () -> {
+            if (manyToMany != null)
+                throw new Refusal(DroolsCode.MANY_TO_MANY_FOLD_ORDER.reason("factType", manyToMany, "description", description));
+            List<Watch.Hop> out = new ArrayList<>();
+            for (int i = 1; i <= plan.steps().size(); i++)
+                out.add(new Watch.Hop(plan.steps().get(i - 1).beanField(), plan.steps().get(i - 1).backward(),
+                        beanClass(plan.nodeTypes().get(i))));
+            return out;
+        };
         if (plan.meets()) {
             int m = plan.meeting();
             List<String> fromMember = List.copyOf(plan.chainFromElement(m)),
@@ -7099,7 +7137,7 @@ public final class TmsTranspiler {
             return new Range(join, member -> {
                 join.accept(member);
                 return placesAlong(plan, Map.of(), member);
-            });
+            }, walk);
         }
         return new Range(member -> {
             List<FactPattern> patterns = intermediatePatterns(plan, new LinkedHashMap<>());
@@ -7112,7 +7150,7 @@ public final class TmsTranspiler {
             Map<Integer, String> between = new LinkedHashMap<>();
             for (FactPattern p : intermediatePatterns(plan, between)) member.addToRangePlan(p);
             return placesAlong(plan, between, member);
-        });
+        }, walk);
     }
 
     /** The fact type, as the wire names it, of the first step of {@code path} over a relation of two to-many roles that
@@ -7616,7 +7654,10 @@ public final class TmsTranspiler {
         if (v.memberCanFail()) reads.markFail();
         if (v.canBeOpen()) reads.markOpen();
         int depositFlag = v.memberDeposits() ? reads.depositFlag() : -1;
-        return readFold(v, i, reads, new Term.QuantifierRead(StaticFunction.QUANTIFIER_READ, new Term.SlotValue(i[0], null),
+        // a matrix that can neither fault nor deposit is read in no order the rule knows (quantifierContributions)
+        StaticFunction read = v.memberCanFail() || v.memberDeposits() ? StaticFunction.QUANTIFIER_READ
+                : StaticFunction.QUANTIFIER_READ_UNORDERED;
+        return readFold(v, i, reads, new Term.QuantifierRead(read, new Term.SlotValue(i[0], null),
                 new Term.SlotValue(i[1], null), kw, threshold, depositFlag, source), source);
     }
 
@@ -7637,8 +7678,9 @@ public final class TmsTranspiler {
      * does not stand inserts a {@link FoldOpen} in place of its contribution, or where the matrix can fault or deposit, a
      * {@link MemberTest} of how it ended (ch. 1.5, "A quantifier fold"). Where the filter can be undetermined, every member
      * on which it is not false inserts its {@link MemberTest} with the judgement of the filter
-     * ({@link Consequence.FilteredContribution}); a matrix that can neither fault nor deposit shows no order there but to a
-     * reading, so its place is bound in a build with readings alone.
+     * ({@link Consequence.FilteredContribution}); a matrix that can neither fault nor deposit shows no order there but in the
+     * open read an undetermined verdict names, so the rule names the fold ({@link ComputeHelpers#quantifierReadUnordered})
+     * and a reading reads the members in the order of the range ({@link #noteFoldOrder}).
      */
     private Fold quantifierContributions(Condition.QuantifierFold kv, String key, String name, ObjectType subject,
                                   ObjectType elem) {
@@ -7673,10 +7715,11 @@ public final class TmsTranspiler {
                     && createdRelations.contains(Namen.norm(kv.sourceRole().factType())))
                 throw new Refusal(DroolsCode.QUANTIFIER_MEMBER_CREATED_RELATION.reason("factType", kv.sourceRole().factType(), "description", description));
         }
-        // in a build with readings the fold names the first member that leaves it open, so a member that can has its place
-        boolean placed = ordered || positions != null && (filterEnds.open() || matrixEnds.open());
-        if (placed) places.addAll(range.perRoute().apply(reads));
+        if (ordered) places.addAll(range.perRoute().apply(reads));
         else range.join().accept(reads);
+        // read without order, an open fold names the fold, and a reading the first member in the order of the range
+        if (!ordered && (filterEnds.open() || matrixEnds.open()))
+            noteFoldOrder(key, 0, range, kv.quantifier(), kv.threshold());
         for (Consequence.FoldPlace.Step p : places) {
             use.add(p.count());
             use.add(p.place());
@@ -7686,8 +7729,8 @@ public final class TmsTranspiler {
                 ? new Consequence.Input.MemberTest(matrix, depositFlag, new Consequence.FoldPlace(0, places,
                         Consequence.PlaceReason.QUANTIFIER), matrixEnds.open())
                 : matrixEnds.open() ? new Consequence.Input.Judged(matrix) : new Consequence.Input.Verdict(matrix);
-        Consequence.FoldPlace place = placed && !tested
-                ? new Consequence.FoldPlace(0, places, Consequence.PlaceReason.OPEN_MEMBER) : null;
+        Consequence.FoldPlace place = !tested && matrixEnds.open()
+                ? new Consequence.FoldPlace(0, List.of(), Consequence.PlaceReason.OPEN_MEMBER) : null;
         if (filterEnds.open()) use.addAll(read);
         Consequence.Contribution contribution = new Consequence.Contribution(FOLD_SUBJECT, key, member, input, place,
                 List.copyOf(use), reads.size(), Consequence.Insertion.LOGICAL);

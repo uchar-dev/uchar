@@ -438,13 +438,17 @@ final class SessionDump {
             if (o instanceof List<?> l) {
                 // a list of member tests is what an accumulate collected over the contributions of a quantifier fold, in
                 // the order of the agenda, which differs between the two branches; the rule that reads it sorts it by the
-                // members' places (ComputeHelpers.quantifierRead), and so does the dump
-                List<?> in = !l.isEmpty() && l.stream().allMatch(x -> x instanceof MemberTest)
-                        ? l.stream().map(x -> (MemberTest) x).sorted().toList() : l;
+                // members' places (ComputeHelpers.quantifierRead), and so does the dump, and where the places do not order
+                // them, as where the rule knows no order of the members (ComputeHelpers.quantifierReadUnordered), by text
                 List<String> r = new ArrayList<>();
-                for (Object x : in) r.add(render(x));
-                // nor does the list of the members of a fold that do not stand, which its reader orders by their places
-                // (FoldOpen.inOrder)
+                if (!l.isEmpty() && l.stream().allMatch(x -> x instanceof MemberTest)) {
+                    List<Map.Entry<MemberTest, String>> tests = new ArrayList<>();
+                    for (Object x : l) tests.add(Map.entry((MemberTest) x, render(x)));
+                    tests.sort(Map.Entry.<MemberTest, String>comparingByKey().thenComparing(Map.Entry.comparingByValue()));
+                    for (Map.Entry<MemberTest, String> t : tests) r.add(t.getValue());
+                } else for (Object x : l) r.add(render(x));
+                // nor does the list of the members of a fold that do not stand, which the rule reads in no order and a
+                // reading orders by the range of the fold (SessionReaders)
                 if (!l.isEmpty() && l.stream().allMatch(x -> x instanceof FoldOpen)) r.sort(Comparator.naturalOrder());
                 return "[" + String.join(", ", r) + "]";
             }

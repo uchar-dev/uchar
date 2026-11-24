@@ -1,7 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -19,12 +18,13 @@ import java.util.Set;
  * ({@link ComputeHelpers#standingCount}, {@link ComputeHelpers#quantifierVerdictOverOpen}).
  *
  * <p>Which of several members a broken off fold names shows in a reading alone, and that is the first in the order of the
- * fold (RUNTIME-SEMANTICS ch. 5.12, "Open values"): in a build with readings the fact carries the member's {@code place} in
- * it ({@link #placed}), and the evaluation reads the facts in that order ({@link #inOrder}). In a build without readings
- * {@code place} is empty.
+ * fold (RUNTIME-SEMANTICS ch. 5.12, "Open values"). The rule knows no order of the members, so the evaluation names the
+ * fold ({@link OpenMember#ofFold}); the fact carries what of the order does not depend on the lists of the input, the
+ * part of the member that does not stand and the selection ({@link #placed}), and a reading orders the facts by it and
+ * then by the place of the member in the range of its selection ({@code SessionReaders}).
  *
  * <p>Compared as {@link Contribution} is: the fold's key, the read and the place by value, the subject and the
- * member by identity. A member that two routes reach has a fact per route, whose least place is its first reach.
+ * member by identity. A member that two routes reach has one fact, as it has one contribution.
  */
 public record FoldOpen(String fold, Object subject, Object element, OpenMember read, List<Integer> place) {
 
@@ -40,31 +40,22 @@ public record FoldOpen(String fold, Object subject, Object element, OpenMember r
         place = List.copyOf(place);
     }
 
-    /** The place of a member whose {@code part} does not stand, where {@code place} is that of the member in the order of
-     *  the fold ({@link ComputeHelpers#foldPlace}): the part, then that place; empty where {@code place} is null. */
+    /** The place of a member whose {@code part} does not stand, where {@code place} is what the rule knows of the place of
+     *  the member in the order of the fold, its selection ({@link ComputeHelpers#foldPlace}): the part, then that place. */
     static List<Integer> placed(Part part, List<Integer> place) {
-        if (place == null) return List.of();
+        Objects.requireNonNull(place, "place");
         List<Integer> out = new ArrayList<>(place.size() + 1);
         out.add(part.ordinal());
         out.addAll(place);
         return out;
     }
 
-    /** The facts of {@code open}, the list a rule bound, in the order of their places, compared element by element; in the
-     *  order of the list where they have none. */
-    static List<FoldOpen> inOrder(Object open) {
-        List<FoldOpen> out = new ArrayList<>();
-        for (Object o : (List<?>) open) out.add((FoldOpen) o);
-        out.sort((a, b) -> Arrays.compare(a.place.toArray(new Integer[0]), b.place.toArray(new Integer[0])));
-        return out;
-    }
-
-    /** As {@link #inOrder}, each member once, at its first reach: the members of a quantifier fold, of which each has one
-     *  judgement. */
+    /** The facts of {@code open}, the list a rule bound, each member once: the members of a quantifier fold, of which each
+     *  has one judgement. */
     static List<FoldOpen> members(Object open) {
         Set<Object> seen = Collections.newSetFromMap(new IdentityHashMap<>());
-        List<FoldOpen> out = inOrder(open);
-        out.removeIf(f -> !seen.add(f.element));
+        List<FoldOpen> out = new ArrayList<>();
+        for (Object o : (List<?>) open) if (seen.add(((FoldOpen) o).element)) out.add((FoldOpen) o);
         return out;
     }
 

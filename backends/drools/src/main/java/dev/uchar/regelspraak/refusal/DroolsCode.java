@@ -393,7 +393,7 @@ public enum DroolsCode {
     TEXT_PART_UNIT_UNDECLARED("DROOLS-369", Kind.CONTRACT, "text-part-unit-undeclared", "snippet,unit,factor,unitSystem", null),
     INFER_FROM_EMPTY_FALSE("DROOLS-370", Kind.REFUSAL, "infer-from-empty-false", "form", null),
     INSERT_ABSENT_CHARACTERISTIC("DROOLS-371", Kind.CONTRACT, "insert-absent-characteristic", "bean,characteristic,reason", null),
-    LIST_PLACE_MISSING_OPEN_MEMBER("DROOLS-372", Kind.CONTRACT, "list-place-missing-open-member", "fold,member,field", null),
+    LIST_PLACE_MISSING_OPEN_MEMBER("DROOLS-372", Kind.RETIRED, "list-place-missing-open-member", "fold,member,field", null),
     SUM_TYPE_FORM_NOT_CARRIED("DROOLS-373", Kind.REFUSAL, "sum-type-form-not-carried", "form", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is

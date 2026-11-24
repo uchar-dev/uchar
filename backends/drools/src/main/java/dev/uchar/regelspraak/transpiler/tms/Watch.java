@@ -69,6 +69,10 @@ import java.util.function.Supplier;
  * the rule again: {@code fire} updates every bean that reaches an updated one before it fires
  * ({@link #reachingUpdated}).
  *
+ * <p>It keeps as well the to-many lists of the input that a reading walks to name the first open member of a fold the
+ * rules read without that order ({@link #range}), as {@code DroolsBackend.insert} gives them; no rule and no dump reads
+ * them.
+ *
  * <p>It lives on the session as a listener, so that it goes where the session goes and needs no table beside it, and
  * the entry finds it there ({@link #of}). The entry takes it off the session for its own work ({@link #without}): while
  * {@code fire} fires, the session holds no listener of the watch, and Drools makes no event for it, so the watch costs
@@ -94,8 +98,22 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
         }
     }
 
+    /** One step of the range of a fold, as a reading walks it from the fold's subject ({@link #range}): over the reference
+     *  field {@code field}, on the step's member where {@code backward}, so that the step reaches the members of the
+     *  node's list under the field, and else on the node, so that it reaches the object the field holds; each a bean of
+     *  {@code node}, the bean class of the step's end. */
+    public record Hop(String field, boolean backward, Class<?> node) {
+        public Hop {
+            Objects.requireNonNull(field, "field");
+            Objects.requireNonNull(node, "node");
+        }
+    }
+
     /** The bean classes of the model, each with its relations. */
     private final Map<Class<?>, RelationFields> beans;
+    /** The to-many lists of the input a reading walks, by reference field and then by holder, by identity: the members in
+     *  the order {@code DroolsBackend.insert} states them; null where the watch was put on without them. */
+    private Map<String, Map<Object, List<Object>>> lists;
     /** The kinds of fact {@code insert} puts in: the bean classes, and what it states beside them. */
     private final Set<Class<?>> input;
     /** The beans of the input, each with the objects its reference fields held when it came in, or after the
@@ -142,6 +160,39 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
         return inputBeans.size();
     }
 
+    /**
+     * The objects the range {@code hops} reaches from {@code subject}, in the order of a fold over it (RUNTIME-SEMANTICS
+     * ch. 3.4b, 5.7a): step by step, a backward step the members of each node's list under its field in the order of the
+     * list, a forward step the object the field of each node holds, each step keeping the beans of its node's class and
+     * every object at its first reach. Null where a step is backward and the watch has no lists, as in a session that
+     * {@code DroolsBackend.insert} did not fill.
+     */
+    List<Object> range(Object subject, List<Hop> hops) {
+        List<Object> nodes = List.of(subject);
+        for (Hop h : hops) {
+            if (h.backward() && lists == null) return null;
+            Set<Object> reached = Collections.newSetFromMap(new IdentityHashMap<>());
+            List<Object> next = new ArrayList<>();
+            for (Object node : nodes) {
+                List<Object> found = h.backward()
+                        ? lists.getOrDefault(h.field(), Map.of()).getOrDefault(node, List.of())
+                        : java.util.Collections.singletonList(field(node, h.field()));
+                for (Object o : found)
+                    if (o != null && h.node().isInstance(o) && reached.add(o)) next.add(o);
+            }
+            nodes = next;
+        }
+        return nodes;
+    }
+
+    /** The object the reference field {@code field} of {@code bean} holds, null where it holds none. */
+    private Object field(Object bean, String field) {
+        RelationFields r = beans.get(bean.getClass());
+        int i = r == null ? -1 : r.names().indexOf(field);
+        if (i < 0) throw new IllegalStateException(FactNames.object(bean) + " has no reference field " + field);
+        return r.readers().get(i).apply(bean);
+    }
+
     /** The watch on {@code session}, or null where the entry put none there. */
     public static Watch of(KieSession session) {
         for (RuleRuntimeEventListener l : session.getRuleRuntimeEventListeners())
@@ -150,14 +201,16 @@ public final class Watch extends DefaultAgendaEventListener implements RuleRunti
     }
 
     /** The watch on {@code session}, put there where there is none, with {@code beans} the bean classes of the model and
-     *  their relations; it takes {@code inputBeans} as beans of the input, with the relations they hold now, forgets
+     *  their relations and {@code lists} the to-many lists of the input a reading walks ({@link #range}), null where the
+     *  caller has none; it takes {@code inputBeans} as beans of the input, with the relations they hold now, forgets
      *  what happened and keeps from now on, {@code since} naming the call of the entry it keeps from and, where it puts
      *  the watch there, the call at which it took the beans. */
     public static Watch op(KieSession session, Map<Class<?>, RelationFields> beans, Iterable<?> inputBeans,
-                              Object since) {
+                              Map<String, Map<Object, List<Object>>> lists, Object since) {
         Watch b = of(session);
         if (b == null) {
             b = new Watch(beans);
+            b.lists = lists;
             b.recorded = Objects.requireNonNull(since, "since");
             session.addEventListener((RuleRuntimeEventListener) b);
             session.addEventListener((AgendaEventListener) b);

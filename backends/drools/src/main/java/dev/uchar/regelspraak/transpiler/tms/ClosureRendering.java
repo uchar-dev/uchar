@@ -469,6 +469,8 @@ final class ClosureRendering {
                     (Integer) x[3]);
             case QUANTIFIER_READ -> x -> ComputeHelpers.quantifierRead(x[0], x[1], (Condition.Quantifier) x[2], (Integer) x[3],
                     x[4]);
+            case QUANTIFIER_READ_UNORDERED -> x -> ComputeHelpers.quantifierReadUnordered(x[0], x[1],
+                    (Condition.Quantifier) x[2], (Integer) x[3], x[4]);
             case CHANNEL -> x -> ComputeHelpers.channel(x[0]);
             case NIET -> x -> ComputeHelpers.not(x[0]);
             case INCOMPLETE_INPUT -> x -> ComputeHelpers.incompleteInput(x[0], x[1], (ElementKey) x[2]);

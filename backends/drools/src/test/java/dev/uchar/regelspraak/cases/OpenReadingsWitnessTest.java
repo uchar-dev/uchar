@@ -168,6 +168,28 @@ class OpenReadingsWitnessTest {
         }
     }
 
+    /** A quantifier fold over a relation both of whose roles are to-many in a document with {@code inferFromEmpty: false}
+     *  ({@code jutterswet-ketenkwantor}): its matrix can neither fault nor deposit, so the rules read it without the order
+     *  of its members, and the build without readings plays its cases on both branches, as it plays the golden, whose
+     *  cases give every value the fold reads; the build with readings refuses it, since which member it names cannot be
+     *  told (DROOLS-318). A build that bound the order of such a fold in its rules would refuse it without readings as
+     *  well. */
+    @Test void a_strict_quantifier_fold_over_a_many_to_many_relation_plays_without_readings(@TempDir Path dir)
+            throws Exception {
+        Path golden = GOLDEN.resolve("jutterswet-ketenkwantor");
+        var ir = (com.fasterxml.jackson.databind.node.ObjectNode) TmsDocuments.JSON.readTree(golden.resolve("ir.json").toFile());
+        ir.put("inferFromEmpty", false);
+        Path strict = dir.resolve("ir.json");
+        Files.writeString(strict, ir.toString());
+        List<Path> cases = cases(golden);
+        CaseRunner.Result exec = CaseRunner.viaExecModel(strict, cases), drl = CaseRunner.viaDrlText(strict, cases);
+        assertEquals("PLAYED " + cases.size(), exec.status() + " " + exec.casesPlayed(), exec::toString);
+        assertEquals("PLAYED " + cases.size(), drl.status() + " " + drl.casesPlayed(), drl::toString);
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values())
+            assertEquals(DroolsCode.MANY_TO_MANY_FOLD_ORDER,
+                    assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(ir, branch, true)).code());
+    }
+
     /** WV-5.12-open-status: a rule is open exactly where the session left its target open; and a status, a judgement and a
      *  value are told apart in the records: an undetermined node has no value and names no object. */
     @Test void wv_5_12_open_status() throws Exception {

@@ -86,11 +86,9 @@ class RouteWitnessTest {
                         + " boolean, boolean]",
                 "CONTRIBUTION_AT: Object ComputeHelpers.contributionAt[String, Object, Object, Object, String, String,"
                         + " boolean, boolean, List]",
-                "CONTRIBUTED: List ComputeHelpers.contributed[Object, String, Object, Object, Object]",
                 "CONTRIBUTED_AT: List ComputeHelpers.contributedAt[Object, String, Object, Object, Object, List]",
-                "JUDGED: Object ComputeHelpers.judged[String, Object, Object, Object]",
                 "JUDGED_AT: Object ComputeHelpers.judgedAt[String, Object, Object, Object, List]",
-                "FILTERED: Object ComputeHelpers.filtered[Object, Object, Object]",
+                "FILTERED: Object ComputeHelpers.filtered[Object, String, Object, Object, Object]",
                 "FOLD_PLACE: List ComputeHelpers.foldPlace[PlaceReason, String, Object, int, List, List, List]",
                 "CREATION_DEPTH: int ComputeHelpers.creationDepth[String, int, String, List, int]",
                 "NEW_OBJECT: Object ComputeHelpers.newObject[Object, String]",

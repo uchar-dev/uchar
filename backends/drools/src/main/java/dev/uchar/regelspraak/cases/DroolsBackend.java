@@ -389,7 +389,9 @@ public final class DroolsBackend {
      * {@code BucketInput} for every bucket scalar {@code input} names ({@link Input#bucketScalar}), without which the
      * branch reads an input timeline as a full timeline (RUNTIME-SEMANTICS ch. 8.4); and where a rule of the model reads
      * the order of a to-many list ({@link TmsTranspiler#listFields}), a {@code ListPlace} for every member of every
-     * such list, in the order {@link Input#list} gives or else in the order of the beans.
+     * such list, in the order {@link Input#list} gives or else in the order of the beans. The lists that a reading of a
+     * build with readings walks ({@link TmsTranspiler#readingListFields}), in the same order, go to the watch of the
+     * session, outside its facts.
      *
      * <p>It checks all of it before it inserts anything, and refuses by name: a session
      * that already holds a fact, since the places of a list are numbered over the beans of one input and a bean
@@ -438,12 +440,17 @@ public final class DroolsBackend {
         if (outsideSentence != null) throw new IllegalArgumentException(outsideSentence);
         List<Object> facts = new ArrayList<>(beans);
         for (Input.Bucket e : input.buckets()) facts.add(bucketInput(types, e));
-        facts.addAll(listPlaces(build, tms.listFields(), beans, types, input.lists()));
+        Set<String> listFields = tms.listFields(), readingFields = tms.readingListFields();
+        Set<String> read = new HashSet<>(listFields);
+        read.addAll(readingFields);
+        Map<ListKey, List<Object>> lists = lists(build, read, beans, types, input.lists());
+        facts.addAll(listPlaces(lists, listFields));
         facts.addAll(inputLinks(build, types, input.links()));
         OpenInput open = openInput(build, beans, types, input);
         if (open != null) session.setGlobal(Consequence.OPEN_INPUT, open);
         for (Object fact : facts) session.insert(fact);
-        Watch.op(session, relationFields(build, beansClasses(build)), beans, "DroolsBackend.insert");
+        Watch.op(session, relationFields(build, beansClasses(build)), beans, readingLists(lists, readingFields),
+                "DroolsBackend.insert");
     }
 
     /**
@@ -630,13 +637,13 @@ public final class DroolsBackend {
     private record ListKey(String field, Object holder, FactModelGenerator.Origin relation) {}
 
     /**
-     * The places of the members of every to-many list a rule reads ({@code read}, the fields the members hold toward
-     * the holder): per field, holder and relation, the beans of the input whose field holds the holder, in the order of
-     * the beans, or in the order of the list {@code suppliedLists} gives for that holder. A given list is checked against the
-     * beans whether or not a rule reads its field, and counts only where one does; split by the relations of its
-     * members, the order kept, it must name every bean of the input whose field of that relation holds the holder.
+     * Every to-many list a rule or a reading reads ({@code read}, the fields the members hold toward the holder): per
+     * field, holder and relation, the beans of the input whose field holds the holder, in the order of the beans, or in
+     * the order of the list {@code suppliedLists} gives for that holder. A given list is checked against the beans whether
+     * or not a rule reads its field, and counts only where one does; split by the relations of its members, the order
+     * kept, it must name every bean of the input whose field of that relation holds the holder.
      */
-    private static List<ListPlace> listPlaces(Build build, Set<String> read, List<Object> beans,
+    private static Map<ListKey, List<Object>> lists(Build build, Set<String> read, List<Object> beans,
                                                    Map<Object, ObjectType> types, List<Input.ToManyList> suppliedLists) {
         RegelSpraakModel model = build.model();
         Set<String> fields = new HashSet<>(read);
@@ -697,9 +704,29 @@ public final class DroolsBackend {
                 if (read.contains(field)) lists.put(part.getKey(), part.getValue());
             }
         }
+        return lists;
+    }
+
+    /** The places of the members of the lists of {@code lists} under the fields a rule reads ({@code fields}). */
+    private static List<ListPlace> listPlaces(Map<ListKey, List<Object>> lists, Set<String> fields) {
         List<ListPlace> out = new ArrayList<>();
         lists.forEach((k, members) -> {
-            for (int i = 0; i < members.size(); i++) out.add(new ListPlace(members.get(i), k.field(), i));
+            if (fields.contains(k.field()))
+                for (int i = 0; i < members.size(); i++) out.add(new ListPlace(members.get(i), k.field(), i));
+        });
+        return out;
+    }
+
+    /** The lists of {@code lists} under the fields a reading walks ({@code fields}), for the watch of the session: by field
+     *  and then by holder, by identity, the lists of the relations of one holder one after the other; the class of the
+     *  step a reading walks keeps those of its own relation ({@link Watch#range}). */
+    private static Map<String, Map<Object, List<Object>>> readingLists(Map<ListKey, List<Object>> lists,
+                                                                       Set<String> fields) {
+        Map<String, Map<Object, List<Object>>> out = new HashMap<>();
+        lists.forEach((k, members) -> {
+            if (fields.contains(k.field()))
+                out.computeIfAbsent(k.field(), f -> new IdentityHashMap<>())
+                        .computeIfAbsent(k.holder(), h -> new ArrayList<>()).addAll(members);
         });
         return out;
     }
@@ -1464,7 +1491,7 @@ public final class DroolsBackend {
         if (relation != null)
             throw new IllegalStateException(DroolsCode.FIRE_RELATION_CHANGED.reason("change", relation).text());
         Watch watch = installedWatch != null ? installedWatch
-                : Watch.op(session, relationFields(build, classes), beansInSession(session, classes),
+                : Watch.op(session, relationFields(build, classes), beansInSession(session, classes), null,
                         Msg.drools("PART.watch.since-first-fire"));
         watch.recordGlobals(session);
         // a rule that reads an input over a path reads it off the bean of its subject, which an update of the bean the path

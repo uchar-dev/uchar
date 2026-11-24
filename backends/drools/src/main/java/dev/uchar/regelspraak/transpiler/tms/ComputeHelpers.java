@@ -477,24 +477,20 @@ public final class ComputeHelpers {
     }
 
     /** The count {@code count} of the contributions to a fold over a set, as the fold stands by {@code open}, the list of
-     *  its {@link FoldOpen} facts, read in their order (RUNTIME-SEMANTICS ch. 1.5): where a member is undetermined, the open
-     *  read of the first such breaks the evaluation off ({@link OpenRead}). */
+     *  its {@link FoldOpen} facts (RUNTIME-SEMANTICS ch. 1.5): where a member is undetermined, the open read of the fold
+     *  breaks the evaluation off ({@link OpenRead}). The rule knows no order of those members, so it names the fold, and a
+     *  reading names the first of them in the order of the fold ({@link OpenMember#ofFold}). */
     public static Object standingCount(Object count, Object open) {
-        for (FoldOpen f : FoldOpen.inOrder(open)) throw new OpenRead(f.read());
+        for (Object f : (List<?>) open)
+            throw new OpenRead(OpenMember.ofFold(((FoldOpen) f).fold(), ((FoldOpen) f).subject()));
         return count;
     }
 
     /** What a member of the range of the fold {@code fold} on {@code subject} inserts for its fold, where {@code judgement}
      *  is that of the fold's filter for it ({@link #judge}) and {@code contribution} what it contributes where the filter
      *  holds, a {@link Contribution}, a {@link FoldOpen} or nothing (RUNTIME-SEMANTICS ch. 1.5): that, where the filter is
-     *  true; and a {@link FoldOpen} where the filter is undetermined. */
-    public static List<Object> contributed(Object judgement, String fold, Object subject, Object member,
-                                           Object contribution) {
-        return contributedAt(judgement, fold, subject, member, contribution, null);
-    }
-
-    /** As {@link #contributed}, of a member at {@code place} in the order of the
-     *  fold ({@link #foldPlace}), null in a build without readings. */
+     *  true; and a {@link FoldOpen} where the filter is undetermined, with {@code place}, the member's selection
+     *  ({@link #foldPlace}). */
     public static List<Object> contributedAt(Object judgement, String fold, Object subject, Object member,
                                              Object contribution, List<Integer> place) {
         List<Object> out = new ArrayList<>(2);
@@ -506,23 +502,18 @@ public final class ComputeHelpers {
 
     /** What the matrix of a quantifier fold says of the member {@code member}, whose judgement is {@code judgement}
      *  ({@link #judge}), for the fold {@code fold} on {@code subject}: the {@link Contribution} of its verdict where it
-     *  is established, and else a {@link FoldOpen}. */
-    public static Object judged(String fold, Object subject, Object member, Object judgement) {
-        return judgedAt(fold, subject, member, judgement, null);
-    }
-
-    /** As {@link #judged}, of a member at {@code place} in the order of the fold
-     *  ({@link #foldPlace}), null in a build without readings. */
+     *  is established, and else a {@link FoldOpen} with {@code place}, the member's selection ({@link #foldPlace}). */
     public static Object judgedAt(String fold, Object subject, Object member, Object judgement, List<Integer> place) {
         return judgement instanceof Undetermined u
                 ? new FoldOpen(fold, subject, member, u.read(), FoldOpen.placed(FoldOpen.Part.FILTER, place))
                 : new Contribution(fold, subject, member, verdict((Boolean) judgement));
     }
 
-    /** The test {@code test} of the member {@code member} by the matrix of a quantifier fold whose filter can be undetermined,
-     *  and whose judgement for it is {@code judgement} ({@link #judge}): with that judgement ({@link MemberTest#filtered}). */
-    public static Object filtered(Object judgement, Object member, Object test) {
-        return ((MemberTest) test).filtered(judgement, member);
+    /** The test {@code test} of the member {@code member} by the matrix of the quantifier fold {@code fold} on
+     *  {@code subject}, whose filter can be undetermined, and whose judgement for it is {@code judgement} ({@link #judge}):
+     *  with that judgement ({@link MemberTest#filtered}). */
+    public static Object filtered(Object judgement, String fold, Object subject, Object member, Object test) {
+        return ((MemberTest) test).filtered(judgement, fold, subject, member);
     }
 
     /** The value of a fold from what the accumulate bound (RUNTIME-SEMANTICS ch. 1.2 "Aggregations"): the folded
@@ -909,7 +900,8 @@ public final class ComputeHelpers {
         long hits = standing == 0 ? 0 : ((BigDecimal) touch).longValueExact(), fails = standing - hits;
         List<FoldOpen> members = FoldOpen.members(open);
         Boolean truth = Composite.truth(kw, threshold, standing + members.size(), hits, fails);
-        if (truth == null) throw new Undetermined(members.get(0).read());
+        // the rule knows no order of the members, so it names the fold, and a reading names the first in its order
+        if (truth == null) throw new Undetermined(OpenMember.ofFold(members.get(0).fold(), members.get(0).subject()));
         return truth;
     }
 
@@ -931,6 +923,20 @@ public final class ComputeHelpers {
             reading.read(member.filter(), () -> member.replayed(depositFlag));
         }
         return reading.verdict();
+    }
+
+    /** As {@link #quantifierRead}, of a quantifier fold whose filter can be undetermined and whose matrix can neither fault
+     *  nor deposit: the rule knows no order of its members, which shows only in the open read an undetermined verdict
+     *  names (ch. 1.5, 5.11), so that read names the fold, and a reading names the first member in its order
+     *  ({@link OpenMember#ofFold}). Each test carries the fold and its subject ({@link MemberTest#filtered}). */
+    public static boolean quantifierReadUnordered(Object countOf, Object contributions, Condition.Quantifier kw,
+                                                  int threshold, Object depositFlag) {
+        try {
+            return quantifierRead(countOf, contributions, kw, threshold, depositFlag);
+        } catch (Undetermined u) {
+            MemberTest first = (MemberTest) ((List<?>) contributions).get(0);
+            throw new Undetermined(OpenMember.ofFold(first.fold(), first.subject()));
+        }
     }
 
     /** A test of the §9.5 channel (RUNTIME-SEMANTICS ch. 5.6): whether {@code inconsistent}, the standing of a form's
@@ -1279,8 +1285,8 @@ public final class ComputeHelpers {
         return contributionAt(fold, subject, member, value, total, fixed, filled, whole, null);
     }
 
-    /** As {@link #contribution}, of a member at {@code place} in the order of the fold ({@link #foldPlace}), null in a build
-     *  without readings. */
+    /** As {@link #contribution}, of a member at {@code place} in the order of the fold, its selection ({@link #foldPlace}),
+     *  which its {@link FoldOpen} carries. */
     public static Object contributionAt(String fold, Object subject, Object member, Object value, String total,
                                       String fixed, boolean filled, boolean whole, List<Integer> place) {
         if (value instanceof OpenMember open)
@@ -1315,8 +1321,9 @@ public final class ComputeHelpers {
                             FactNames.object(member), "field", field);
                     case QUANTIFIER -> DroolsCode.LIST_PLACE_MISSING_QUANTIFIER.reason("fold", fold, "member",
                             FactNames.object(member), "field", field);
-                    case OPEN_MEMBER -> DroolsCode.LIST_PLACE_MISSING_OPEN_MEMBER.reason("fold", fold, "member",
-                            FactNames.object(member), "field", field);
+                    // the place of an open member is its selection alone (Consequence.Contribution)
+                    case OPEN_MEMBER -> throw new IllegalStateException("the place of an open member of " + fold
+                            + " has a step, under the field '" + field + "'");
                 }).text());
             }
             place.add(((Number) places.get(i)).intValue());

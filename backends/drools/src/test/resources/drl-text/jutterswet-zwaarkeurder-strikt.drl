@@ -125,7 +125,7 @@ when
     $parameter_5 : ParameterState( parameter == "keurgrens", $keurgrens : value )
     eval( ComputeHelpers.acts(oordeel_zwaarkeurderBijdrageAanVouw0($gemerkt, open_invoer, $onderwerp, $drijfhout)) )
 then
-    insertLogical(new Contribution("zwaarkeurder: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.filtered(oordeel_zwaarkeurderBijdrageAanVouw0($gemerkt, open_invoer, $onderwerp, $drijfhout), $onderwerp, lidtoets_zwaarkeurderBijdrageAanVouw0($gemerkt, open_invoer, $onderwerp, $drijfhout, $gewicht, $keurgrens, $lijstplaatsen_plaats_4, $plaats_plaats_5))));
+    insertLogical(new Contribution("zwaarkeurder: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.filtered(oordeel_zwaarkeurderBijdrageAanVouw0($gemerkt, open_invoer, $onderwerp, $drijfhout), "zwaarkeurder: vouw 0", $vouwonderwerp, $onderwerp, lidtoets_zwaarkeurderBijdrageAanVouw0($gemerkt, open_invoer, $onderwerp, $drijfhout, $gewicht, $keurgrens, $lijstplaatsen_plaats_4, $plaats_plaats_5))));
 end
 
 rule "parameterstand keurgrens"

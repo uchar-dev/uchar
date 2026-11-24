@@ -197,7 +197,8 @@ public sealed interface Term {
 
     /**
      * The verdict of a quantifier fold whose matrix can fault or deposit, or whose filter can be undetermined (ch. 1.5), in
-     * the rule that reads the fold (RUNTIME-SEMANTICS ch. 3.9a, 5.10, 5.11), through {@code function} ({@link StaticFunction#QUANTIFIER_READ}): the outcome of
+     * the rule that reads the fold (RUNTIME-SEMANTICS ch. 3.9a, 5.10, 5.11), through {@code function} ({@link StaticFunction#QUANTIFIER_READ},
+     * or {@link StaticFunction#QUANTIFIER_READ_UNORDERED} where the rule knows no order of the contributors): the outcome of
      * the matrix per contributor, the list {@code contributions} over the count {@code count}, read in the contributors'
      * order under {@code quantifier} with the threshold {@code threshold} of a counting quantifier, the stop triggers of
      * ch. 5.10 tested before each contributor. A contributor that is reached deposits where its matrix deposited, heard
@@ -208,8 +209,9 @@ public sealed interface Term {
     record QuantifierRead(StaticFunction function, Term count, Term contributions, Condition.Quantifier quantifier, int threshold, int depositFlag,
                          String source) implements Term {
         public QuantifierRead {
-            if (function != StaticFunction.QUANTIFIER_READ)
-                throw new IllegalArgumentException("a quantifier reading takes KWANTORLEZING as function, not " + function);
+            if (function != StaticFunction.QUANTIFIER_READ && function != StaticFunction.QUANTIFIER_READ_UNORDERED)
+                throw new IllegalArgumentException("a quantifier reading takes QUANTIFIER_READ or QUANTIFIER_READ_UNORDERED as"
+                        + " function, not " + function);
         }
     }
 

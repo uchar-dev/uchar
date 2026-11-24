@@ -1614,7 +1614,7 @@ final class DrlRendering {
                     Context c = context(x.slots(), -1, null, o.matrix());
                     fill(place, o.matrix().source(), "Object " + name + "(" + c.declaration() + ")", "    return "
                             + route(Route.JUDGE) + "(" + lambda(o.matrix(), c) + ", false);\n");
-                    insert(b, "    ", x.insertion(), route(x.place() == null ? Route.JUDGED : Route.JUDGED_AT) + "(" + str(x.fold()) + ", " + x.subject() + ", "
+                    insert(b, "    ", x.insertion(), route(Route.JUDGED_AT) + "(" + str(x.fold()) + ", " + x.subject() + ", "
                             + variable(x.member()) + ", " + name + "(" + c.arguments() + ")" + last(placeOf(x)) + ")");
                 }
                 case Consequence.Input.MemberTest l -> insert(b, "    ", x.insertion(), fresh + memberTest(x, l) + ")");
@@ -1680,15 +1680,14 @@ final class DrlRendering {
             Consequence.Contribution c = x.contributes();
             if (c.input() instanceof Consequence.Input.MemberTest l) {
                 insert(b, "    ", c.insertion(), "new " + typeName(Contribution.class) + "(" + str(c.fold()) + ", " + c.subject()
-                        + ", " + variable(c.member()) + ", " + route(Route.FILTERED) + "(" + outcome + ", " + variable(c.member())
-                        + ", " + memberTest(c, l) + "))");
+                        + ", " + variable(c.member()) + ", " + route(Route.FILTERED) + "(" + outcome + ", " + str(c.fold()) + ", "
+                        + c.subject() + ", " + variable(c.member()) + ", " + memberTest(c, l) + "))");
                 return;
             }
-            String place = placeOf(c);
-            if (place != null) b.append("    java.util.List p = ").append(place).append(";\n");
-            b.append("    for (Object f : ").append(route(place == null ? Route.CONTRIBUTED : Route.CONTRIBUTED_AT)).append("(").append(outcome).append(", ")
+            b.append("    java.util.List p = ").append(placeOf(c)).append(";\n");
+            b.append("    for (Object f : ").append(route(Route.CONTRIBUTED_AT)).append("(").append(outcome).append(", ")
                     .append(str(c.fold())).append(", ").append(c.subject()).append(", ").append(variable(c.member()))
-                    .append(", ").append(memberOf(c, place == null ? null : "p")).append(last(place == null ? null : "p")).append(")) {\n");
+                    .append(", ").append(memberOf(c, "p")).append(last("p")).append(")) {\n");
             insert(b, "        ", c.insertion(), "f");
             b.append("    }\n");
         }

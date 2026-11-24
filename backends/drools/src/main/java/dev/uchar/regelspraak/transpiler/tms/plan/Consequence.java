@@ -349,16 +349,17 @@ public sealed interface Consequence {
 
     /** What a rule of a fold needs a member's place for: the first fault among the members' filters
      *  ({@code FILTER_FAULT}), the first member whose timeline the case gives as the asOfDate-bucket scalar
-     *  ({@code MEMBER_FAULT}), the members that the short circuit of a quantifier fold reaches ({@code QUANTIFIER}), or, in a
-     *  build with readings, the first member that leaves the fold open ({@code OPEN_MEMBER}). */
+     *  ({@code MEMBER_FAULT}), the members that the short circuit of a quantifier fold reaches ({@code QUANTIFIER}), or the
+     *  selection of a member that can leave the fold open, without a step ({@code OPEN_MEMBER}). */
     enum PlaceReason { FILTER_FAULT, MEMBER_FAULT, QUANTIFIER, OPEN_MEMBER }
 
     /**
      * The contribution ({@code Contribution}, RUNTIME-SEMANTICS ch. 3.4) of the member in slot {@code member}, the subject of a
      * contribution rule, to the fold {@code fold} of the fold's subject, the object {@code subject} binds: what the
      * member contributes is {@code input}, computed over a value array of {@code size} slots with the bound values
-     * at {@code slots}. Where the member can leave the fold open, {@code place} is in a build with readings its place in the
-     * order of the fold, which its {@code FoldOpen} carries (RUNTIME-SEMANTICS ch. 5.12); null everywhere else.
+     * at {@code slots}. Where the member can leave the fold open, {@code place} is what the rule knows of its place in the
+     * order of the fold, its selection, which its {@code FoldOpen} carries (RUNTIME-SEMANTICS ch. 5.12); null everywhere
+     * else.
      */
     record Contribution(String subject, String fold, int member, Input input, FoldPlace place, List<Integer> slots,
                     int size, Insertion insertion) implements Consequence {
@@ -367,6 +368,10 @@ public sealed interface Consequence {
             if (place != null && place.reason() != PlaceReason.OPEN_MEMBER)
                 throw new IllegalArgumentException("the place of a contribution is that of an open member, not "
                         + place.reason());
+            if (place != null && !place.steps().isEmpty())
+                throw new IllegalArgumentException("the place of an open member is its selection, without the steps " + place.steps());
+            if ((input instanceof Input.Judged || input instanceof Input.IncompleteInput) && place == null)
+                throw new IllegalArgumentException("a member that can leave its fold open has its selection, not " + input);
         }
     }
 
@@ -376,7 +381,7 @@ public sealed interface Consequence {
      * not established false ({@link TestItem.Role#ACTS}), and the consequence evaluates it again over the bound values
      * of {@code contributes} and inserts what the member gives its fold by that judgement: to a fold over a set the
      * contribution where the filter is established true, and a {@code FoldOpen} where it is undetermined,
-     * made by the route {@link Route#CONTRIBUTED}; to a quantifier fold its test ({@link Input.MemberTest}) with the
+     * made by the route {@link Route#CONTRIBUTED_AT}; to a quantifier fold its test ({@link Input.MemberTest}) with the
      * judgement, made by the route {@link Route#FILTERED}.
      */
     record FilteredContribution(Term filter, Contribution contributes) implements Consequence {
@@ -384,6 +389,8 @@ public sealed interface Consequence {
             if (contributes.input() instanceof Input.Verdict || contributes.input() instanceof Input.Judged)
                 throw new IllegalArgumentException("a member of a quantifier fold whose filter can be undetermined has a test,"
                         + " not " + contributes.input());
+            if (!(contributes.input() instanceof Input.MemberTest) && contributes.place() == null)
+                throw new IllegalArgumentException("a member whose filter can be undetermined has its selection");
         }
     }
 
@@ -430,7 +437,7 @@ public sealed interface Consequence {
 
         /** The judgement of the matrix of a quantifier fold for the member, the condition {@code matrix}, which cannot fault
          *  or deposit and can be undetermined (RUNTIME-SEMANTICS ch. 1.5): the verdict where it is established, and else a
-         *  {@code FoldOpen}, made by the route {@link Route#JUDGED}. */
+         *  {@code FoldOpen}, made by the route {@link Route#JUDGED_AT}. */
         record Judged(Term matrix) implements Input {}
 
         /** The test of the member by the matrix of a quantifier fold, the condition {@code matrix}, which can fault or

@@ -371,6 +371,10 @@ public enum StaticFunction {
      *  the contributors' order and stopped as ch. 5.10 says; a contributor that is reached deposits to the probe and
      *  raises its fault. The function of a {@link Term.QuantifierRead}. */
     QUANTIFIER_READ(ComputeHelpers.class, "quantifierRead", true),
+    /** As {@link #QUANTIFIER_READ}, of a quantifier fold whose filter can be undetermined and whose matrix can neither
+     *  fault nor deposit: the rule knows no order of its contributors, and an undetermined verdict names the fold, whose
+     *  first open member a reading names (ch. 1.5, 5.12). The function of a {@link Term.QuantifierRead}. */
+    QUANTIFIER_READ_UNORDERED(ComputeHelpers.class, "quantifierReadUnordered", true),
     /** A test of the §9.5 channel of a form (ch. 5.6): whether the standing of its channel, bound off its
      *  {@code ChannelState}, says it is inconsistent. */
     CHANNEL(ComputeHelpers.class, "channel", false),

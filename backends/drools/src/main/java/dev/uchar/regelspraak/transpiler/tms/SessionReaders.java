@@ -76,13 +76,16 @@ final class SessionReaders {
     private final NodePositions positions;
     /** The reading rules of a build with readings, in the order their forms lowered. */
     private final List<ReadingRule> readingRules;
+    /** In a build with readings, the order of the members of each fold that the rules read without it, by the fold's key
+     *  ({@link TmsTranspiler.FoldOrder}). */
+    private final Map<String, TmsTranspiler.FoldOrder> foldOrders;
 
     /** The readers over the outcome of {@code analysis}: the collections are the analysis' own, which it fills while it
      *  plans and leaves alone after, so the readers see them complete once the analysis is built. */
     SessionReaders(TmsTranspiler analysis, RegelSpraakModel model, ClassLoader beanLoader,
                    Map<String, StackLayout> layouts, Map<ElementKey, Member> derived, List<String> documentOrder,
                    Set<String> creationRules, List<String> typeClasses, List<String> types, NodePositions positions,
-                   List<ReadingRule> readingRules) {
+                   List<ReadingRule> readingRules, Map<String, TmsTranspiler.FoldOrder> foldOrders) {
         this.analysis = analysis;
         this.model = model;
         this.beanLoader = beanLoader;
@@ -94,6 +97,7 @@ final class SessionReaders {
         this.types = types;
         this.positions = positions;
         this.readingRules = readingRules;
+        this.foldOrders = foldOrders;
     }
 
     /**
@@ -1028,6 +1032,7 @@ final class SessionReaders {
         }
         LocalDate date = null;
         for (Object f : session.getObjects(new ClassObjectFilter(EvaluationDate.class))) date = ((EvaluationDate) f).date();
+        Watch watch = Watch.of(session);
         FoldFacts folds = null;
         List<ConditionReading> out = new ArrayList<>();
         for (ReadingRule r : readingRules) {
@@ -1047,8 +1052,11 @@ final class SessionReaders {
                     out.add(new ConditionReading(o, r.pointer(), withoutReading(r, o, date), List.of()));
                     continue;
                 }
-                if (folds == null && r.sites().stream().anyMatch(x -> x.fold() != null)) folds = foldFacts(session);
-                out.add(reading(session, r, o, read, reading == null, folds));
+                // the facts of the folds: the contributors of a node of a fold, and the members a reading names where the
+                // rules name a fold (named)
+                if (folds == null && (!foldOrders.isEmpty() || r.sites().stream().anyMatch(x -> x.fold() != null)))
+                    folds = foldFacts(session);
+                out.add(reading(session, r, o, read, reading == null, folds, watch));
             }
         }
         facts.forEach((kind, ofKind) -> ofKind.forEach((form, rest) -> {
@@ -1108,7 +1116,7 @@ final class SessionReaders {
      *  the speculative reading rule, of a default that was not at its turn: evaluated as at its turn, its status
      *  {@link ConditionReading.Status#DISPLACED}, a fault of its condition at its nodes. */
     private ConditionReading reading(KieSession session, ReadingRule r, Object o, Reading reading, boolean displaced,
-                                     FoldFacts folds) {
+                                     FoldFacts folds, Watch watch) {
         Object[] w = reading.values().toArray();
         List<dev.uchar.regelspraak.transpiler.tms.plan.Read> slots = r.plan().readings().slots();
         if (w.length != slots.size())
@@ -1163,10 +1171,10 @@ final class SessionReaders {
                 nodes.add(new ConditionReading.NodeReading(s.node(), s.kind(), false, null, s.unit(), null, null));
                 continue;
             }
-            List<ConditionReading.Contributor> contributors = s.fold() == null ? List.of() : contributors(s, oc,
-                    folds.contributions(s.fold().key(), o), folds.open(s.fold().key(), o), rec);
+            List<ConditionReading.Contributor> contributors = s.fold() == null ? List.of() : contributors(s, o, oc,
+                    folds.contributions(s.fold().key(), o), folds.open(s.fold().key(), o), rec, watch);
             boolean found = oc.fault() == null && !oc.undetermined();
-            OpenMember open = oc.undetermined() ? oc.judgement().read() : null;
+            OpenMember open = oc.undetermined() ? named(oc.judgement().read(), folds, watch) : null;
             nodes.add(new ConditionReading.NodeReading(s.node(), s.kind(), true, RecordingRendering.given(oc.value()),
                     s.unit(), oc.fault(), !found ? null : s.navigates() ? w[s.objectSlot()] : own(s, o), contributors,
                     open == null ? null : new Fixpoint.OpenValue(open.subject(), declaredName(open.member()),
@@ -1231,11 +1239,111 @@ final class SessionReaders {
         throw new IllegalStateException(DroolsCode.READINGS_NO_NODE.reason("node", node, "form", form).text());
     }
 
-    /** The contributors of the fold of {@code s}, from its {@code contributions} and its members {@code open} that do not
-     *  stand on the object, as the evaluation {@code rec} reached them, whose node came out as {@code found}. */
-    private static List<ConditionReading.Contributor> contributors(Site s, RecordingRendering.Outcome found,
-                                                                   List<Contribution> contributions, List<FoldOpen> open,
-                                                                   RecordingRendering rec) {
+    /** The open read {@code read} names, in the order of the folds (RUNTIME-SEMANTICS ch. 5.12, "Open values"): a read of
+     *  a member as it is; the open read of a fold that the rules read without the order of its members
+     *  ({@link OpenMember#ofFold}) as that of its first member that does not stand, in the order of the fold, read off the
+     *  facts of that fold on its subject in {@code folds}: the first of its {@link FoldOpen} facts, or of a quantifier
+     *  fold whose filter can be undetermined its tests read again in that order ({@link ComputeHelpers#quantifierRead});
+     *  and so on down a fold in the filter or the matrix of another. */
+    private OpenMember named(OpenMember read, FoldFacts folds, Watch watch) {
+        if (read.fold() != null && folds == null)
+            throw new IllegalStateException("the open read of the fold " + read.fold() + " names the fold, in a build"
+                    + " that noted no fold read without order");
+        while (read.fold() != null) {
+            String key = read.fold();
+            Object subject = read.subject();
+            List<FoldOpen> open = folds.open(key, subject);
+            if (!open.isEmpty()) {
+                read = openInOrder(key, subject, open, watch).get(0).read();
+                continue;
+            }
+            TmsTranspiler.FoldOrder order = order(key);
+            List<MemberTest> tests = folds.contributions(key, subject).stream().map(b -> (MemberTest) b.value()).toList();
+            try {
+                if (order.quantifier() != null)
+                    ComputeHelpers.quantifierRead(tests.size(), inOrder(key, subject, tests, watch), order.quantifier(),
+                            order.threshold(), null);
+            } catch (Undetermined u) {
+                read = u.read();
+                continue;
+            }
+            throw new IllegalStateException("the open read of the fold " + key + " on " + FactNames.object(subject)
+                    + " names the fold, and its facts at the fixpoint do not leave it open");
+        }
+        return read;
+    }
+
+    /** The {@link FoldOpen} facts {@code open} of the fold {@code key} on {@code subject} in the order of the fold: by their
+     *  places, the part that does not stand and the selection, and then by the place of the member in the range of its
+     *  selection ({@link #rangeOrder}). */
+    private List<FoldOpen> openInOrder(String key, Object subject, List<FoldOpen> open, Watch watch) {
+        Map<Integer, Map<Object, Integer>> ranges = new HashMap<>();
+        List<FoldOpen> out = new ArrayList<>(open);
+        out.sort(Comparator.<FoldOpen, List<Integer>>comparing(FoldOpen::place, SessionReaders::comparePlaces)
+                .thenComparingInt(f -> rangeOrder(key, subject, f.place().get(1), f.element(), ranges, watch)));
+        return out;
+    }
+
+    /** The tests {@code tests} of the quantifier fold {@code key} on {@code subject}, of members whose filter can be
+     *  undetermined ({@link MemberTest#filtered}), in the order of the members in the range of the fold. */
+    private List<MemberTest> inOrder(String key, Object subject, List<MemberTest> tests, Watch watch) {
+        Map<Integer, Map<Object, Integer>> ranges = new HashMap<>();
+        List<MemberTest> out = new ArrayList<>(tests);
+        out.sort(Comparator.comparingInt(t -> rangeOrder(key, subject, 0, t.element(), ranges, watch)));
+        return out;
+    }
+
+    /** The place of {@code member} in the range of selection {@code selection} of the fold {@code key} from {@code subject},
+     *  as the watch walks it ({@link Watch#range}), each range walked once into {@code ranges}. */
+    private int rangeOrder(String key, Object subject, int selection, Object member,
+                           Map<Integer, Map<Object, Integer>> ranges, Watch watch) {
+        Map<Object, Integer> places = ranges.computeIfAbsent(selection, k -> {
+            List<Watch.Hop> hops = order(key).selections().get(k);
+            if (hops == null)
+                throw new IllegalStateException("the fold " + key + " has no range noted for its selection " + k);
+            List<Object> range = watch.range(subject, hops);
+            // a session DroolsBackend.insert did not fill has no OpenInput either, and its fire fails at the first open
+            // read (ComputeHelpers.input), so no fold of it is open
+            if (range == null)
+                throw new IllegalStateException("the reading names the first open member of the fold " + key + " in the"
+                        + " order of its lists, which DroolsBackend.insert gives the watch, and this session was not filled"
+                        + " by DroolsBackend.insert");
+            Map<Object, Integer> out = new IdentityHashMap<>();
+            for (int i = 0; i < range.size(); i++) out.put(range.get(i), i);
+            return out;
+        });
+        Integer place = places.get(member);
+        if (place == null)
+            throw new IllegalStateException("the member " + FactNames.object(member) + " of the fold " + key + " on "
+                    + FactNames.object(subject) + " is not in the range of its selection " + selection + " as the input"
+                    + " gives it");
+        return place;
+    }
+
+    /** The order of the members of the fold {@code key}, which the rules read without it ({@link TmsTranspiler.FoldOrder}). */
+    private TmsTranspiler.FoldOrder order(String key) {
+        TmsTranspiler.FoldOrder order = foldOrders.get(key);
+        if (order == null)
+            throw new IllegalStateException("the open read of the fold " + key + " names the fold, and the build noted no"
+                    + " order of its members");
+        return order;
+    }
+
+    /** Two places in the order of a fold, compared element by element, a shorter one first where one begins the other. */
+    private static int comparePlaces(List<Integer> a, List<Integer> b) {
+        for (int i = 0; i < Math.min(a.size(), b.size()); i++) {
+            int c = Integer.compare(a.get(i), b.get(i));
+            if (c != 0) return c;
+        }
+        return Integer.compare(a.size(), b.size());
+    }
+
+    /** The contributors of the fold of {@code s} on the object {@code o}, from its {@code contributions} and its members
+     *  {@code open} that do not stand on the object, as the evaluation {@code rec} reached them, whose node came out as
+     *  {@code found}; the members of a fold the rules read without their order in the order of the fold ({@link #inOrder}). */
+    private List<ConditionReading.Contributor> contributors(Site s, Object o, RecordingRendering.Outcome found,
+                                                            List<Contribution> contributions, List<FoldOpen> open,
+                                                            RecordingRendering rec, Watch watch) {
         List<ConditionReading.Contributor> out = new ArrayList<>();
         // a fault of the fold's filter, or of a member's value, comes before the fold's value: its contributors are
         // not settled, and the node carries none (RUNTIME-SEMANTICS ch. 3.9a, 5.12)
@@ -1252,8 +1360,8 @@ final class SessionReaders {
                         false));
             // a filter that can be undetermined makes the fold tested (TmsTranspiler.Fold#tested), so a member listed open
             // here is one on which the matrix is undetermined
-            for (FoldOpen o : FoldOpen.members(open))
-                out.add(new ConditionReading.Contributor(o.element(), null, null, null, true, false));
+            for (FoldOpen f : FoldOpen.members(open))
+                out.add(new ConditionReading.Contributor(f.element(), null, null, null, true, false));
             return out;
         }
         // the members read in their order as ComputeHelpers.quantifierRead reads them, each once; every one keeps the judgement
@@ -1261,7 +1369,9 @@ final class SessionReaders {
         // matrix, and a fault of one read provisionally leaves it undetermined (ch. 1.5)
         Map<Object, Object> elements = new IdentityHashMap<>();
         for (Contribution b : contributions) elements.put(b.value(), b.element());
-        List<MemberTest> ordered = MemberTest.inOrder(contributions.stream().map(Contribution::value).toList());
+        List<MemberTest> tests = contributions.stream().map(b -> (MemberTest) b.value()).toList();
+        String key = s.fold().key();
+        List<MemberTest> ordered = MemberTest.inOrder(foldOrders.containsKey(key) ? inOrder(key, o, tests, watch) : tests);
         Condition.QuantifierFold q = s.quantifier();
         Composite reading = new Composite(q.quantifier(), q.threshold(), ordered.size(), MemberTest.past(ordered), null);
         boolean stopped = false;

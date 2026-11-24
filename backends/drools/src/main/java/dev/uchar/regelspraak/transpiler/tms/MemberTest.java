@@ -27,9 +27,10 @@ import java.util.Set;
  *
  * <p>Where the filter of the fold can be undetermined (ch. 1.5, "A quantifier fold"), every contributor has such a test,
  * also of a matrix that can neither fault nor deposit, and it carries the judgement of the filter on the member where that
- * is undetermined ({@code filter}, null where the filter is true) and the {@code element} itself
- * ({@link #filtered}): in a build without readings such a matrix shows no order and the place is that of the selection
- * alone, and in a build with readings a member that two routes reach has a test per route and is read at its first.
+ * is undetermined ({@code filter}, null where the filter is true), the {@code element} itself, and the fold and its
+ * subject ({@link #filtered}). Such a matrix shows no order to the outcome, only to the open read an undetermined
+ * verdict names, and the place is that of the selection alone: the rule names the fold
+ * ({@link ComputeHelpers#quantifierReadUnordered}), and a reading reads the tests in the order of the fold.
  */
 public final class MemberTest implements Comparable<MemberTest> {
 
@@ -40,14 +41,16 @@ public final class MemberTest implements Comparable<MemberTest> {
     private final List<String> codes;
     private final Object element;
     private final Undetermined filter;
+    private final String fold;
+    private final Object subject;
 
     public MemberTest(List<Integer> place, Boolean holds, RuntimeException fault, boolean deposited,
                       List<String> codes) {
-        this(place, holds, fault, deposited, codes, null, null);
+        this(place, holds, fault, deposited, codes, null, null, null, null);
     }
 
     private MemberTest(List<Integer> place, Boolean holds, RuntimeException fault, boolean deposited,
-                       List<String> codes, Object element, Undetermined filter) {
+                       List<String> codes, Object element, Undetermined filter, String fold, Object subject) {
         this.place = List.copyOf(place);
         if (this.place.isEmpty()) throw new IllegalArgumentException("a place in the order begins with the selection");
         if ((holds == null) == (fault == null))
@@ -58,14 +61,25 @@ public final class MemberTest implements Comparable<MemberTest> {
         this.codes = List.copyOf(codes);
         this.element = element;
         this.filter = filter;
+        this.fold = fold;
+        this.subject = subject;
     }
 
-    /** This test of the member {@code element}, on which the fold's filter has the judgement {@code judgement}
-     *  ({@link ComputeHelpers#judge}), which is not false. */
-    MemberTest filtered(Object judgement, Object element) {
+    /** This test of the member {@code element} of the fold {@code fold} on {@code subject}, on which the fold's filter has
+     *  the judgement {@code judgement} ({@link ComputeHelpers#judge}), which is not false. */
+    MemberTest filtered(Object judgement, String fold, Object subject, Object element) {
         return new MemberTest(place, holds, fault, deposited, codes, element,
-                judgement instanceof Undetermined u ? u : null);
+                judgement instanceof Undetermined u ? u : null, fold, subject);
     }
+
+    /** The member the test is of, where the fold's filter can be undetermined ({@link #filtered}); null elsewhere. */
+    Object element() { return element; }
+
+    /** The key of the fold the test is of, where its filter can be undetermined; null elsewhere. */
+    String fold() { return fold; }
+
+    /** The subject of the fold the test is of, where its filter can be undetermined; null elsewhere. */
+    Object subject() { return subject; }
 
     /** The judgement of the fold's filter on the member where it is undetermined; null where the filter is true. */
     Undetermined filter() { return filter; }
@@ -122,8 +136,8 @@ public final class MemberTest implements Comparable<MemberTest> {
                 && t.deposited == deposited && t.codes.equals(codes) && (fault == null ? t.fault == null
                 : t.fault != null && t.fault.getClass() == fault.getClass()
                   && Objects.equals(t.fault.getMessage(), fault.getMessage()))
-                && t.element == element && (filter == null ? t.filter == null : t.filter != null
-                && t.filter.read().equals(filter.read()));
+                && t.element == element && t.subject == subject && Objects.equals(t.fold, fold)
+                && (filter == null ? t.filter == null : t.filter != null && t.filter.read().equals(filter.read()));
     }
 
     @Override public int hashCode() {

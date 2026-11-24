@@ -271,7 +271,8 @@ final class PatternDslRendering {
                     yield consequenceItem(c.subject(), c.slots(), c.size(), (drools, carrier, w) -> {
                         Object judgement = ComputeHelpers.judge(() -> filter.test(w), false);
                         insert(drools, c.insertion(), new Contribution(c.fold(), carrier, w[c.member()],
-                                ComputeHelpers.filtered(judgement, w[c.member()], memberTest(c, t, matrix, w))));
+                                ComputeHelpers.filtered(judgement, c.fold(), carrier, w[c.member()],
+                                        memberTest(c, t, matrix, w))));
                     });
                 }
                 yield consequenceItem(c.subject(), c.slots(), c.size(), (drools, carrier, w) -> {
