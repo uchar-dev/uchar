@@ -152,30 +152,40 @@ public record ConditionReading(Object object, String form, Status status, List<N
     }
 
     /**
-     * One contributor of a fold over a set on the object: a member of its range that passes its filter
-     * (RUNTIME-SEMANTICS ch. 3.4, 3.9a). For a quantifier fold every contributor carries the verdict of the matrix on it,
-     * or its fault, after the stop and after a fault as well: the table of ch. 3.9a over the contributors, which
-     * ch. 5.12 records, read off the rule that evaluates the matrix per member and deposits nothing here. Its position is
-     * {@code reached}. Where the matrix can fault or deposit, the contributors are in their order (ch. 5.11) and
-     * {@code reached} says whether the stop rule of ch. 5.10 reached the contributor; a verdict or a fault of a
-     * contributor it did not reach is the reading's, not the session's. Where the matrix can do neither, no fault and no
-     * deposit shows the order, the session keeps none, and the fold has no position: {@code reached} is null. For a
-     * value fold every contributor is reached. A fold whose filter faults has no contributors, and neither has a fold over a
-     * set that an open read broke off (ch. 1.5); a quantifier fold that is undetermined has its own.
+     * One contributor of a fold over a set on the object (RUNTIME-SEMANTICS ch. 3.4, 3.9a, 5.12): a member of its range
+     * whose filter holds, and of a quantifier fold a member whose filter is not false, true or undetermined (ch. 1.5). A
+     * member whose filter is false is none, also where that filter has an open part. For a quantifier fold every
+     * contributor carries the verdict of the matrix on it, or its fault, after the stop and after a fault as well: the
+     * table of ch. 3.9a over the contributors, which ch. 5.12 records, read off the rule that evaluates the matrix per
+     * member and deposits nothing here; and whether its filter is undetermined ({@code filterUndetermined}), which the
+     * verdict of the matrix does not say. Its position is {@code reached}, and concerns the matrix: every filter is read
+     * before every matrix. Where the matrix can fault or deposit, or the filter can be undetermined, the contributors are
+     * in their order (ch. 5.11) and {@code reached} says whether the stop rule of ch. 5.10 reached the contributor; a
+     * verdict or a fault of a contributor it did not reach is the reading's, not the session's. Where none of the three
+     * holds, no fault, no deposit and no open filter shows the order, the session keeps none, and the fold has no
+     * position: {@code reached} is null, and no contributor has an undetermined filter. For a value fold every
+     * contributor is reached. A fold whose filter faults has no contributors, and neither has a fold over a set that an
+     * open read broke off (ch. 1.5); a quantifier fold that is undetermined has its own.
      *
-     * @param member       the member, a bean of the build's bean model
-     * @param value        for a quantifier fold the verdict of its matrix on the member, a {@code Boolean}, null where
-     *                     it faulted or is undetermined; for a value fold the value the member
-     *                     contributes, null for a count
-     * @param fault        the evaluation fault the matrix raised for the member, unnamed, null where it raised none
-     * @param reached      the position: whether the evaluation reached the member, null where the fold has none
-     * @param undetermined for a quantifier fold, whether its matrix is undetermined on the member (ch. 1.5)
+     * @param member             the member, a bean of the build's bean model
+     * @param value              for a quantifier fold the verdict of its matrix on the member, a {@code Boolean}, null
+     *                           where it faulted or is undetermined; for a value fold the value the member contributes,
+     *                           null for a count
+     * @param fault              the evaluation fault the matrix raised for the member, unnamed, null where it raised none
+     * @param reached            the position: whether the evaluation reached the member's matrix, null where the fold
+     *                           has none
+     * @param undetermined       for a quantifier fold, whether its matrix is undetermined on the member (ch. 1.5)
+     * @param filterUndetermined for a quantifier fold, whether its filter is undetermined on the member (ch. 1.5); false
+     *                           for a value fold, whose contributors' filters hold
      */
-    public record Contributor(Object member, Object value, RuntimeException fault, Boolean reached, boolean undetermined) {
+    public record Contributor(Object member, Object value, RuntimeException fault, Boolean reached, boolean undetermined,
+                              boolean filterUndetermined) {
         public Contributor {
             Objects.requireNonNull(member, "member");
             if (undetermined && (value != null || fault != null))
                 throw new IllegalArgumentException("a member on which the matrix is undetermined has no verdict and no fault");
+            if (filterUndetermined && reached == null)
+                throw new IllegalArgumentException("a member whose filter is undetermined is read in the order of its fold");
         }
     }
 }

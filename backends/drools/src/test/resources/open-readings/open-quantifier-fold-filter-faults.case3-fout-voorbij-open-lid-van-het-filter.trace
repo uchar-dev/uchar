@@ -1,4 +1,4 @@
-reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached]
+reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached filter undetermined]
 reading /rules/rules/0/versions/0 "J1" HOLDS
 state attribute "V1" "gewicht" 20
 state characteristic "J1" "keurder"

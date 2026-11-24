@@ -1243,19 +1243,22 @@ final class SessionReaders {
         if (s.quantifier() == null) {
             // nor are those of a fold over a set that an open read broke off (ch. 5.12, "Open values")
             if (!found.undetermined()) for (Contribution b : contributions)
-                out.add(new ConditionReading.Contributor(b.element(), RecordingRendering.given(b.value()), null, true, false));
+                out.add(new ConditionReading.Contributor(b.element(), RecordingRendering.given(b.value()), null, true, false, false));
             return out;
         }
         if (!s.fold().tested()) {
             for (Contribution b : contributions)
-                out.add(new ConditionReading.Contributor(b.element(), ((BigDecimal) b.value()).signum() > 0, null, null, false));
+                out.add(new ConditionReading.Contributor(b.element(), ((BigDecimal) b.value()).signum() > 0, null, null, false,
+                        false));
+            // a filter that can be undetermined makes the fold tested (TmsTranspiler.Fold#tested), so a member listed open
+            // here is one on which the matrix is undetermined
             for (FoldOpen o : FoldOpen.members(open))
-                out.add(new ConditionReading.Contributor(o.element(), null, null, null, true));
+                out.add(new ConditionReading.Contributor(o.element(), null, null, null, true, false));
             return out;
         }
         // the members read in their order as ComputeHelpers.quantifierRead reads them, each once; every one keeps the judgement
-        // or the fault of its matrix, the position says whether the read reached it, and a fault of one read provisionally
-        // leaves it undetermined (ch. 1.5)
+        // or the fault of its matrix and whether its filter is undetermined, the position says whether the read reached its
+        // matrix, and a fault of one read provisionally leaves it undetermined (ch. 1.5)
         Map<Object, Object> elements = new IdentityHashMap<>();
         for (Contribution b : contributions) elements.put(b.value(), b.element());
         List<MemberTest> ordered = MemberTest.inOrder(contributions.stream().map(Contribution::value).toList());
@@ -1274,7 +1277,8 @@ final class SessionReaders {
             RuntimeException ended = m.fault();
             RuntimeException fault = ComputeHelpers.isEvaluationFault(ended) && !provisional ? ended : null;
             Boolean verdict = ended instanceof Undetermined ? null : m.holds();
-            out.add(new ConditionReading.Contributor(elements.get(m), verdict, fault, reached, verdict == null && fault == null));
+            out.add(new ConditionReading.Contributor(elements.get(m), verdict, fault, reached, verdict == null && fault == null,
+                    m.filter() != null));
         }
         return out;
     }

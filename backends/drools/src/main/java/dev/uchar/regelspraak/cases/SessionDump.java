@@ -510,7 +510,8 @@ final class SessionDump {
      * over a path ({@link dev.uchar.regelspraak.transpiler.tms.TmsTranspiler#navigates}) and did not fault, {@code on}
      * and the object the path reached, named as above, or {@code on none} where a link on it is absent; the
      * contributors of a fold sorted by member, each with its value, {@code undetermined} or the code of its fault and whether it was reached
-     * ({@code unordered} where its fold keeps no order). {@code labels} maps each case label to its input bean.
+     * ({@code unordered} where its fold keeps no order), and after that {@code filter undetermined} where its filter is undetermined.
+     * {@code labels} maps each case label to its input bean.
      */
     static List<String> readingLines(DroolsBackend.Build build, KieSession session, Map<String, Object> labels) {
         Naming n = naming(session, labels);
@@ -537,7 +538,7 @@ final class SessionDump {
                     for (ConditionReading.Contributor c : x.contributors())
                         cs.add(n.nameOf(c.member()) + " " + (c.fault() != null ? "fault " + code(c.fault())
                                 : c.undetermined() ? "undetermined" : canonical(c.value())) + " " + (c.reached() == null ? "unordered"
-                                : c.reached() ? "reached" : "unreached"));
+                                : c.reached() ? "reached" : "unreached") + (c.filterUndetermined() ? " filter undetermined" : ""));
                     cs.sort(Comparator.naturalOrder());
                     b.append(" contributors [").append(String.join("; ", cs)).append(']');
                 }

@@ -20,7 +20,7 @@ reading /rules/rules/6/versions/0 "J1" 0 QuantifierFold true contributors ["V1" 
 reading /rules/rules/6/versions/0 "J1" HOLDS
 reading /rules/rules/7/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached]
 reading /rules/rules/7/versions/0 "J1" HOLDS
-reading /rules/rules/8/versions/0 "J1" 0 QuantifierFold undetermined open "V2" "duur" contributors ["V1" true reached; "V2" undetermined reached]
+reading /rules/rules/8/versions/0 "J1" 0 QuantifierFold undetermined open "V2" "duur" contributors ["V1" true reached filter undetermined; "V2" undetermined reached filter undetermined]
 reading /rules/rules/8/versions/0 "J1" OPEN
 state attribute "V1" "gewicht" 20
 state attribute "V1" "taxatie" open

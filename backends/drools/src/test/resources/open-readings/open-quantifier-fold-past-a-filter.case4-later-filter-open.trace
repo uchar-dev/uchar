@@ -1,6 +1,6 @@
-reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached; "V2" true unreached]
+reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached; "V2" true unreached filter undetermined]
 reading /rules/rules/0/versions/0 "J1" FAILS
-reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached; "V2" true unreached]
+reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached; "V2" true unreached filter undetermined]
 reading /rules/rules/1/versions/0 "J1" FAILS
 reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold undetermined open "V2" "gemerkt" contributors ["V2" undetermined reached]
 reading /rules/rules/2/versions/0 "J1" OPEN

@@ -10,21 +10,21 @@ reading /rules/rules/0/versions/0 "V3" 0 Comparison undetermined open "V3" "taxa
 reading /rules/rules/0/versions/0 "V3" 1 AttributeReference undetermined open "V3" "taxatie"
 reading /rules/rules/0/versions/0 "V3" 2 Literal unreached
 reading /rules/rules/0/versions/0 "V3" OPEN
-reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached; "V2" true reached; "V3" false reached]
+reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached filter undetermined; "V2" true reached; "V3" false reached]
 reading /rules/rules/1/versions/0 "J1" FAILS
-reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached; "V2" true reached; "V3" false unreached]
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached filter undetermined; "V2" true reached; "V3" false unreached]
 reading /rules/rules/2/versions/0 "J1" FAILS
-reading /rules/rules/3/versions/0 "J1" 0 QuantifierFold true contributors ["V1" false reached; "V2" true reached; "V3" false unreached]
+reading /rules/rules/3/versions/0 "J1" 0 QuantifierFold true contributors ["V1" false reached filter undetermined; "V2" true reached; "V3" false unreached]
 reading /rules/rules/3/versions/0 "J1" HOLDS
-reading /rules/rules/4/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached; "V2" true reached; "V3" false reached]
+reading /rules/rules/4/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached filter undetermined; "V2" true reached; "V3" false reached]
 reading /rules/rules/4/versions/0 "J1" FAILS
-reading /rules/rules/5/versions/0 "J1" 0 QuantifierFold true contributors ["V1" false reached; "V2" true reached; "V3" false reached]
+reading /rules/rules/5/versions/0 "J1" 0 QuantifierFold true contributors ["V1" false reached filter undetermined; "V2" true reached; "V3" false reached]
 reading /rules/rules/5/versions/0 "J1" HOLDS
-reading /rules/rules/6/versions/0 "J1" 0 QuantifierFold true contributors ["V1" false reached; "V2" true reached; "V3" false reached]
+reading /rules/rules/6/versions/0 "J1" 0 QuantifierFold true contributors ["V1" false reached filter undetermined; "V2" true reached; "V3" false reached]
 reading /rules/rules/6/versions/0 "J1" HOLDS
-reading /rules/rules/7/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" true reached; "V3" true reached]
+reading /rules/rules/7/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached filter undetermined; "V2" true reached; "V3" true reached]
 reading /rules/rules/7/versions/0 "J1" HOLDS
-reading /rules/rules/8/versions/0 "J1" 0 QuantifierFold undetermined open "V1" "duur" contributors ["V1" false reached; "V2" true reached; "V3" false reached]
+reading /rules/rules/8/versions/0 "J1" 0 QuantifierFold undetermined open "V1" "duur" contributors ["V1" false reached filter undetermined; "V2" true reached filter undetermined; "V3" false reached filter undetermined]
 reading /rules/rules/8/versions/0 "J1" OPEN
 state attribute "V1" "gewicht" 5
 state attribute "V1" "taxatie" open

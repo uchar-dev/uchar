@@ -2,7 +2,7 @@ reading /rules/rules/0/versions/0 "J1" 0 Aggregation undetermined open "J1" "dre
 reading /rules/rules/0/versions/0 "J1" OPEN
 reading /rules/rules/1/versions/0 "J1" 0 Aggregation undetermined open "V1" "gemerkt"
 reading /rules/rules/1/versions/0 "J1" OPEN
-reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold undetermined open "V1" "gemerkt" contributors ["V1" undetermined reached]
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold undetermined open "V1" "gemerkt" contributors ["V1" undetermined reached filter undetermined]
 reading /rules/rules/2/versions/0 "J1" OPEN
 reading /rules/rules/3/versions/0 "J1" 0 Aggregation empty
 reading /rules/rules/3/versions/0 "J1" HOLDS

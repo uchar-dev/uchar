@@ -1,10 +1,10 @@
-reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold undetermined open "V2" "gemerkt" contributors ["V1" true reached; "V2" false reached]
+reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold undetermined open "V2" "gemerkt" contributors ["V1" true reached; "V2" false reached filter undetermined]
 reading /rules/rules/0/versions/0 "J1" OPEN
-reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" false reached]
+reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" false reached filter undetermined]
 reading /rules/rules/1/versions/0 "J1" FAILS
-reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" false reached]
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" false reached filter undetermined]
 reading /rules/rules/2/versions/0 "J1" HOLDS
-reading /rules/rules/3/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" false reached]
+reading /rules/rules/3/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" false reached filter undetermined]
 reading /rules/rules/3/versions/0 "J1" FAILS
 state attribute "V1" "gewicht" 20
 state attribute "V2" "gewicht" 5

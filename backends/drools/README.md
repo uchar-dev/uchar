@@ -529,7 +529,10 @@ reading there and is `DISPLACED` without nodes. A fold that is broken off names 
 every value, and a quantifier fold that of its first member that is undetermined. That order shows in
 a reading alone, so only a build with readings binds it: the contribution rule of a member that can be open binds its place
 as the filter fault rule does, and its `FoldOpen` carries the place; the functions that read those facts take the first. A
-build without readings lowers the document without places.
+build without readings lowers the document without places. A contributor of a quantifier fold whose filter is undetermined
+says so (`ConditionReading.Contributor.filterUndetermined`, read off the judgement of the filter its `MemberTest` carries),
+and it always has a position: a filter that can be undetermined makes the rule that reads the fold read its contributors in
+their order (`TmsTranspiler.Fold.tested`).
 
 What this backend refuses in such a document, `UncarriedForms` lists, the one place, in the order by which the first form a
 document holds is named:

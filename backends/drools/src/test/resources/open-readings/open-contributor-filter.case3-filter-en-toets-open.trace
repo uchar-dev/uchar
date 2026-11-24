@@ -1,0 +1,21 @@
+reading /rules/rules/0/versions/0 "J1" 0 QuantifierFold undetermined open "V1" "gemerkt" contributors ["V1" undetermined reached filter undetermined; "V2" true reached]
+reading /rules/rules/0/versions/0 "J1" OPEN
+reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold true
+reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold undetermined open "V1" "gemerkt" contributors ["V1" undetermined reached filter undetermined; "V2" true reached]
+reading /rules/rules/2/versions/0 "J1" OPEN
+reading /rules/rules/3/versions/0 "J1" 0 QuantifierFold undetermined open "V1" "gemerkt" contributors ["V1" undetermined reached filter undetermined; "V2" true reached]
+reading /rules/rules/3/versions/0 "J1" OPEN
+state attribute "V1" "gewicht" open
+state attribute "V2" "gewicht" 20
+state characteristic "J1" "grenskeurder" open
+state characteristic "J1" "keurder" open
+state characteristic "J1" "nauwgezet"
+state characteristic "J1" "zwaarkeurder" open
+state characteristic "V1" "gemerkt" open
+state characteristic "V2" "gemerkt"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"

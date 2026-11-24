@@ -4,9 +4,9 @@ reading /rules/rules/1/versions/0 "S1" 0 QuantifierFold false contributors ["C1"
 reading /rules/rules/1/versions/0 "S1" FAILS
 reading /rules/rules/2/versions/0 "S1" 0 QuantifierFold true contributors ["C1" true reached; "C2" true reached]
 reading /rules/rules/2/versions/0 "S1" HOLDS
-reading /rules/rules/3/versions/0 "S1" 0 QuantifierFold false contributors ["C1" true unreached]
+reading /rules/rules/3/versions/0 "S1" 0 QuantifierFold false contributors ["C1" true unreached filter undetermined]
 reading /rules/rules/3/versions/0 "S1" FAILS
-reading /rules/rules/4/versions/0 "S1" 0 QuantifierFold undetermined open "C1" "ledentelling" contributors ["C1" true reached]
+reading /rules/rules/4/versions/0 "S1" 0 QuantifierFold undetermined open "C1" "ledentelling" contributors ["C1" true reached filter undetermined]
 reading /rules/rules/4/versions/0 "S1" OPEN
 state attribute "C1" "contributie" 10
 state attribute "C1" "ledentelling" open

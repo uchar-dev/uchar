@@ -4,6 +4,7 @@ import dev.uchar.regelspraak.refusal.DroolsCode;
 import dev.uchar.regelspraak.transpiler.tms.ConditionReading;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +32,8 @@ class OpenReadingsWitnessTest {
     private static final Path PINS = Path.of("src", "test", "resources", "open-readings");
     private static final Path VALUES = Path.of("src", "test", "resources", "open-values");
     private static final Path GOLDEN = Path.of("..", "..", "corpus", "golden");
+    private static final Path CONTRIBUTOR_FILTER = Path.of("..", "..", "ref", "test", "fixtures", "strict-empty",
+            "contributor-filter");
 
     /** WV-5.12-afleiden-uit-leeg and WV-5.12a-afleiden-uit-leeg, every case of the golden. */
     @Test void wv_5_12_afleiden_uit_leeg() throws Exception {
@@ -74,7 +77,7 @@ class OpenReadingsWitnessTest {
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
             List<String> lines = lines(witness, witness.resolve("case7-filter-onbepaald.json"), branch);
             assertTrue(lines.stream().anyMatch(l -> l.endsWith("QuantifierFold undetermined open \"V2\" \"gemerkt\" contributors"
-                    + " [\"V1\" true reached; \"V2\" false reached]")), () -> branch + ": " + lines);
+                    + " [\"V1\" true reached; \"V2\" false reached filter undetermined]")), () -> branch + ": " + lines);
         }
         pinned("open-quantifier-fold-filter", VALUES.resolve("quantifier-fold-filter"));
         pinned("open-quantifier-fold-past-a-filter", VALUES.resolve("past-undetermined-filter"));
@@ -82,6 +85,31 @@ class OpenReadingsWitnessTest {
         pinned("open-quantifier-fold-filter-faults", VALUES.resolve("quantifier-fold-filter-faults"));
         pinned("open-quantifier-fold-two-routes", VALUES.resolve("quantifier-fold-two-routes"));
         documents("reading-quantifier-filter");
+    }
+
+    /** WV-5.12-contributor-filter: the witness of the reference interpreter, a contributor whose filter is undetermined
+     *  beside one whose filter "A of B" holds with B open; a filter "A en B" that is false with one part open, whose member
+     *  is no contributor; a contributor after the stop whose filter is undetermined; filter and matrix undetermined, the
+     *  matrix by an open read and by a fault read provisionally. */
+    @Test void wv_5_12_contributor_filter() throws Exception {
+        pinned("open-contributor-filter", CONTRIBUTOR_FILTER);
+    }
+
+    /** WV-5.12-contributor-filter, its red case: a filter that faults on a member after one whose filter is undetermined
+     *  faults the fold, and its node carries no contributors. The case pins the fault, so it is read here without that
+     *  pin, as the session that faults gives its readings all the same. */
+    @Test void a_filter_fault_after_an_undetermined_filter(@TempDir Path dir) throws Exception {
+        var c = (com.fasterxml.jackson.databind.node.ObjectNode) TmsDocuments.JSON.readTree(
+                CONTRIBUTOR_FILTER.resolve("red1-filterfout-na-open-filter.json").toFile());
+        assertEquals("EF-014", c.remove("expectedFault").get("code").asText());
+        Path played = dir.resolve("red1-filterfout-na-open-filter.json");
+        Files.writeString(played, c.toString());
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+            List<String> lines = lines(CONTRIBUTOR_FILTER, played, branch);
+            List<String> fold = lines.stream().filter(l -> l.startsWith("reading /rules/rules/2/versions/0 ")).sorted().toList();
+            assertEquals(List.of("reading /rules/rules/2/versions/0 \"J1\" 0 QuantifierFold fault EF-014",
+                    "reading /rules/rules/2/versions/0 \"J1\" FAULTS"), fold, branch::toString);
+        }
     }
 
     /** WV-5.12-open-fold-over-a-set over an anchored read: the open read names the form's subject. */
@@ -214,7 +242,7 @@ class OpenReadingsWitnessTest {
     }
 
     private static String withoutPositions(String line) {
-        return line.replaceAll(" (reached|unreached|unordered)(?=[;\\]])", "");
+        return line.replaceAll(" (reached|unreached|unordered)(?=( filter undetermined)?[;\\]])", "");
     }
 
     /** The lines of the readings and the end state of case {@code c}. */
