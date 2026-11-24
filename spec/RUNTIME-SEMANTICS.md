@@ -7742,11 +7742,12 @@ among them; so is the content of a default whose exception groups are open.
 Below a default that is open with a value, and below exception groups open
 with a value, the chain is read on as ch. 1.5 reads it: each default is at
 its turn, read provisionally, with its own status by its justification and
-its value — `HOLDS` where its justification holds and its value is not open,
-a settled leeg value on which it gives way included; `FAILS` where its
+its value — `HOLDS` where its justification holds and its value stands, a
+settled leeg value on which it gives way included; `FAILS` where its
 justification stands not to hold; `OPEN` where its justification is
-undetermined or its value open — down to the one whose row fixes the outcome
-of the chain, and every default below that one is `DISPLACED`. Where a lower default decides the value of the open one above
+undetermined, its value open, or its evaluation faults — down to the one
+whose row fixes the outcome of the chain, and every default below that one
+is `DISPLACED`. Where a lower default decides the value of the open one above
 it, it is the default that decides the target, `HOLDS` with its justification
 and its value, and the one above is `OPEN`. A default read so whose
 evaluation faults is open (ch. 1.5): `OPEN`, the fault at its nodes. An
