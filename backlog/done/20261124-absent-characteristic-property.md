@@ -185,3 +185,10 @@ hoofdsessie.
 2. Toolchain-pin en werkbank-pin: vervolgstap buiten deze repository (kaart).
 3. Geen spec-, CONSTRUCTS- of PLAN-wijziging: het gedrag stond al in RUNTIME-SEMANTICS ch. 1.5; geen rij voor de
    hoofdsessie.
+
+**Landing (hoofdsessie, 2026-11-24).** Vóór de bouw en na elke bouwstap las een extern model (xhigh) het werk. Na de
+eerste stap vond het geen fout in het herstel en de goldens, en beoordeelde het de vraag over de getuige van de stop:
+een correctie van `ReadingsCorpusWitnessTest` naar RUNTIME-SEMANTICS ch. 1.5, geen verzwakking (de eigenaar laat zulke
+vragen door die lezing beslissen). Het vulde het voorstel aan: een onbepaalde samenstelling wordt nu getoetst en een
+onbepaalde voorwaarde telt in `readAsAtItsTurn` als een die niet geldt. Na de herstelronde: akkoord. `make gates` op
+`41adc7fe4`: alle zeventien gates groen in 326 s (red=0). De toolchain-pin met dit herstel volgt in de toolchain.
