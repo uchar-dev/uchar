@@ -174,14 +174,64 @@ Gates (elk apart, na elkaar; logs in `werk/fold-order-in-readings/gates/`):
 - Niet gedraaid: 9 (catala), 11 (toka), 14 (flogic): deze kaart raakt hun bronnen niet. `make gates` draait de
   hoofdsessie.
 
+**Herstelronde, 2026-11-24**, na de review van het externe model (`werk/neon-review/antwoorden/xhigh-jj-fold-order-build.md`,
+bevindingen 1 en 2 en het punt over `FormsPlan`), vanaf `0b1e18fc8`. Commits:
+
+- `449e09ff7` een sessie die `DroolsBackend.insert` niet vulde, heeft geen lijsten op haar watch. Zij vuurt tot het
+  fixpunt zolang elk lid dat de regels lezen gevuld is (`ComputeHelpers.input` faalt alleen op een lid zonder waarde),
+  ook in een strikt document met een kwantorvouw die de regels zonder volgorde lezen; `readingsOf` brak dan af in
+  `SessionReaders.rangeOrder` met een `IllegalStateException` zonder registercode, met een zin over een open lid. Nu
+  weigert het met de nieuwe code `DROOLS-374` (`READINGS_WITHOUT_INPUT_LISTS`, `Kind.CONTRACT`, parameter `fold`), met
+  meldingen in beide catalogi, zoals `DROOLS-351` een verwijderde watch weigert; het commentaar daar, de javadoc van
+  `readingsOf` (`DroolsBackend`, `SessionReaders`) en `backends/drools/README.md` zeggen het. Test
+  `OpenReadingsWitnessTest.the_readings_refuse_a_session_insert_did_not_fill` (`jutterswet-keurder-strikt`, beans met
+  `session.insert`, alle leden gevuld, beide takken): de fire haalt het fixpunt, `readingsOf` weigert met `DROOLS-374`;
+  rood op `0b1e18fc8` met de oude zin. `rangeOrder` is de enige plek die `Watch.range` en dus de lijsten van `insert`
+  leest (via `openInOrder` en `inOrder`); de `ListPlace`-feiten die productie leest, hebben al hun codes
+  (`DROOLS-357`..`359`).
+- `6fdf5cbad` `FormsPlan` draagt naast `QUANTIFIER_READ` een `QUANTIFIER_READ_UNORDERED` in dezelfde regel; `FORMS`
+  toetst beide aanroepen (`ComputeHelpers.quantifierRead(`, `ComputeHelpers.quantifierReadUnordered(`). Twee
+  kwantorlezingen in één regel nummeren hun functienamen, dus het fragment `kwantorlezing_alleTermen(` werd
+  `kwantorlezing1_alleTermen(` en `kwantorlezing2_alleTermen(`.
+- `0d93c7454` fixture `open-readings/reading-nested-quantifier` (strikt document, Jutterswet-namen): de kwantorvouw
+  "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is officieel groter is dan 5"
+  (filter open, matrix kan niet falen of deponeren) in het filter van de som `keurgewicht` en van de kwantorvouw
+  `streng`, beide zonder volgorde gelezen; vier casussen met vondsten en keuringen in een andere volgorde dan hun
+  objecten. Ref noemt `"K3"` (casus 1) en `"K4"` (casus 2) open, in objectvolgorde zou het `"K2"` en `"K1"` zijn;
+  casus 4 stopt bij `"V1"` na het open filter van `"V2"`, `"V3"` `unreached`. Pins van `runner --trace`; de IR is
+  gemaakt uit `source.rgs` en `scenario.rgs` met de frontend, waarna de vouw van een hulpregel in de twee filters is
+  gezet (`werk/fold-order-in-readings/reading-nested-quantifier/`, `splice.py`), verifier-schoon. Loopt mee in
+  `OpenReadingsWitnessTest.wv_5_12_open_quantifier_fold` (beide takken gelijk aan ref) en in
+  `OpenFixturesFixpointWitnessTest`. Daarmee loopt de tak `order.quantifier() != null` van `SessionReaders.named` ook
+  genest; het vroegere open punt 1 (geen fixture met een geneste kwantorvouw zonder volgorde) vervalt.
+- `ONTWERP.md` §5: de bewering dat een sessie zonder `insert` onbereikbaar is, is eruit; §2b punt 4 noemt de code. Het
+  `Result:` hierboven bevatte die bewering niet.
+
+Getallen (oud → nieuw): `OpenFixturesFixpointWitnessTest` 95 → 96 documenten, 417 → 421 casussen, 2451 → 2459
+lezingen per tak (vloeren mee verhoogd); `ReadingRulesPlanWitnessTest` 487 → 488 documenten (vloer mee); JUnit gate 12
+2071 → 2072; `check-drools-codes` 373 → 374 codes; `OpenReadingsWitnessTest` 16 → 17 tests. Geen vloer verlaagd.
+
+Gates (elk apart, na elkaar, op `0d93c7454`; logs in `werk/fold-order-in-readings/gates2/`):
+
+- 1 `check-self-contained: PASS`
+- 8 `check-red: PASS (101 red cases fault observably in ref and clingo, floor 44; 179 ref and clingo code checks report
+  the case's code, floor 82, 23 listed as divergence; 297 pinned parameter checks confirmed, floor 120; 47 fault kinds
+  in RUNTIME-SEMANTICS ch. 5.7b, floor 31)`; `Drools leg PASS (82 fault-pinned, 82 of them reporting the case's code,
+  134 pinned parameter checks confirmed, floor 28; 19 not-carried with reason, 19 of them EXCLUDE pinned by their
+  DROOLS code)`
+- 12 `check-drools: PASS`, `played 389`, `DRL-text branch played 389`, `JUnit 2072 tests, floor 1573`;
+  `check-drools-codes: PASS — 374 codes, numbered 001..374, every one raised in the sources but the 41 retired, …`
+- 17 `check-readings: PASS (ref traced 1201 golden case files, …; on both branches 390 goldens and 1075 case files
+  compared, 8091 readings, 25857 node lines of which 4143 unreached, 1019 with contributors, …, 150 contributors of ref
+  not reached; …; deviations 0, end-state deviations 0; …)`
+- Niet opnieuw gedraaid: 2–7, 9–11, 13–16: de herstelronde raakt alleen de lezingen van de Drools-backend, haar
+  register en haar tests; de fixture staat buiten het corpus (de verifier van de workspace noemt haar schoon).
+
 Open punten:
 
-1. Geen fixture met een geneste kwantorvouw die de regels zonder volgorde lezen (een kwantorvouw in het filter van een
-   andere vouw); de oplossing in `SessionReaders.named` (de tests opnieuw gelezen met `quantifierRead`) loopt nu alleen op
-   het hoogste niveau (`reading-quantifier-filter`, de nieuwe golden), de recursie alleen over vouwen over een set
-   (`fold-in-a-filter`, `reading-nested`).
-2. De dump schrijft elke `OpenMember` nu met `fold=empty` (een component meer); geen pin bevat er een.
-3. Toolchain: `ConditionReading` en de publieke API veranderden niet; `OpenMember` kreeg een component, `Watch.op` een
+1. De dump schrijft elke `OpenMember` nu met `fold=empty` (een component meer); geen pin bevat er een.
+2. Toolchain: `ConditionReading` en de publieke API veranderden niet; `OpenMember` kreeg een component, `Watch.op` een
    argument (de lijsten). De toolchain gebruikt `DroolsBackend.insert`, dus haar lezingen krijgen de lijsten; of zij
-   `OpenMember` of `Watch.op` zelf aanroept, is bij de pin-bump na te gaan.
-4. Geen rij voor `spec/CONSTRUCTS.md` of `spec/PLAN.md`: geen wire en geen semantiek veranderde.
+   `OpenMember` of `Watch.op` zelf aanroept, is bij de pin-bump na te gaan. Een directe beller die de beans zelf in de
+   sessie zet, krijgt bij zo'n vouw nu `DROOLS-374`.
+3. Geen rij voor `spec/CONSTRUCTS.md` of `spec/PLAN.md`: geen wire en geen semantiek veranderde.
