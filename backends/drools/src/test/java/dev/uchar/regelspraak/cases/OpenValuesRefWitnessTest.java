@@ -39,6 +39,7 @@ class OpenValuesRefWitnessTest {
     static {
         for (String plays : List.of("absent-link", "absent-link-path", "arithmetic", "characteristic", "closed-input",
                 "comparison", "composite-filled-test", "compound-all", "compound-any", "compound-counting", "compound-none",
+                "contributor-filter",
                 "consistency", "defaults-characteristic", "defaults-initialisation-exception", "defaults-initialisation-only",
                 "defaults-stack", "defaults-subtype",
                 "empty-by-fault", "exact-digits",
@@ -84,8 +85,8 @@ class OpenValuesRefWitnessTest {
                 }
             }
         }
-        // the cases of the thirty-three witnesses that play, on two branches, counted 2026-11-23: 140 of thirty-one, and the
-        // 2 of defaults-initialisation-only and 6 of defaults-initialisation-exception
-        assertEquals(2 * 148, played);
+        // the cases of the thirty-four witnesses that play, on two branches, counted 2026-11-24: 140 of thirty-one, the 2 of
+        // defaults-initialisation-only, the 6 of defaults-initialisation-exception and the 4 of contributor-filter
+        assertEquals(2 * 152, played);
     }
 }

@@ -156,8 +156,13 @@ type member_found =
   | Member_fault of string option (* the matrix faulted on the member, with the EF code *)
 
 (* [reached] is false for a member of a quantifier fold after its stop or
-   after a fault (ch. 5.10 over the contributors, ch. 3.9a) *)
-type contribution = { found : member_found; reached : bool }
+   after a fault (ch. 5.10 over the contributors, ch. 3.9a); it says whether
+   the evaluation read the member's matrix, since every filter is read
+   before every matrix. [filter_undetermined] is true for a member of a
+   quantifier fold whose filter is undetermined (ch. 1.5): such a member is a
+   contributor, its filter not being false, and the verdict of its matrix
+   alone does not say what it gives the fold (ch. 5.12) *)
+type contribution = { found : member_found; reached : bool; filter_undetermined : bool }
 
 (* a node that reads a member over a path of roles (ch. 5.8): an attribute
    read, also one read as a timeline, and a characteristic check *)
@@ -175,8 +180,8 @@ type observer = {
 }
 
 let observer : observer option ref = ref None
-let contribute ?(reached = true) label found =
-  match !observer with None -> () | Some o -> o.member label { found; reached }
+let contribute ?(reached = true) ?(filter_undetermined = false) label found =
+  match !observer with None -> () | Some o -> o.member label { found; reached; filter_undetermined }
 let read_whole e tl = match !observer with None -> () | Some o -> o.timeline e tl
 let held_over c tl = match !observer with None -> () | Some o -> o.periods c tl
 let read_period_members e cs = match !observer with None -> () | Some o -> o.period_members e cs
@@ -3709,7 +3714,7 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
          evaluation did not reach would evaluate a value the session did not
          and record its nodes as reached; the binder stays a tripwire that
          names the shape. *)
-      let unreached (parts : World.instance list) =
+      let unreached (parts : (World.instance * judgement) list) =
         match !observer with
         | None -> ()
         | Some o when not (o.records ()) -> ()
@@ -3732,13 +3737,13 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
                 env.locals
             in
             List.iter
-              (fun (m : World.instance) ->
+              (fun ((m : World.instance), (f : judgement)) ->
                 let found =
                   match judge_cond { (at_member env self (Some el)) with locals } world m ~err:ignore test with
                   | j -> Member_verdict j
                   | exception Value.Fault { code; _ } -> Member_fault code
                 in
-                contribute ~reached:false m.label found)
+                contribute ~reached:false ~filter_undetermined:(f.truth = Undetermined) m.label found)
               parts
       in
       (* the filters are read before every matrix: where one of them is
@@ -3754,19 +3759,20 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
         let j = judged ~verdict ~counts ~first in
         match (j, parts) with
         | { truth = Established _; _ }, _ ->
-            unreached (List.map fst parts);
+            unreached parts;
             j
         | _, [] -> j
         | _, (m, f) :: rest ->
             let past = if filter_past <> None then filter_past else first in
+            let filter_undetermined = f.truth = Undetermined in
             let t =
               try judge_cond ?past (at_member env self (Some el)) world m ~err test
               with Value.Fault { code; _ } as fault ->
-                contribute m.label (Member_fault code);
-                unreached (List.map fst rest);
+                contribute ~filter_undetermined m.label (Member_fault code);
+                unreached rest;
                 raise fault
             in
-            (match !observer with None -> () | Some _ -> contribute m.label (Member_verdict t));
+            (match !observer with None -> () | Some _ -> contribute ~filter_undetermined m.label (Member_verdict t));
             let truth = member f.truth t.truth in
             let first =
               if first <> None || truth <> Undetermined then first
@@ -4286,7 +4292,7 @@ let rec period_timeline env w (self : World.instance) ~err ~(target : Timeline.g
          contributes nothing, as a leeg member of a value fold does *)
       read_period_members e
         (List.filter_map
-           (fun (label, tl) -> if tl = [] then None else Some (label, { found = Member_timeline tl; reached = true }))
+           (fun (label, tl) -> if tl = [] then None else Some (label, { found = Member_timeline tl; reached = true; filter_undetermined = false }))
            timelines);
       seen (Timeline.summed ?fallback ~target_unit (List.map snd timelines))
   | Rounding { base_expr = Some b; mode_kind; decimal_places; _ } when is_period_arithmetic b ->

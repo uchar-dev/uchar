@@ -1110,7 +1110,8 @@ let judgement_text doc world (j : Eval.judgement) =
    over a path, [on] and the object the path reached, or [on none] where a
    link on it is absent; and the contributors of a fold over a set, sorted,
    each with its value, its truth or its fault and
-   [reached] or [unreached]. An
+   [reached] or [unreached], and [filter undetermined] after a contributor
+   of a quantifier fold whose filter is undetermined. An
    expression whose value is leeg, which a read of a leeg binder ended or
    which faulted carries the unit of its declaration or its annotation. *)
 let lines env ~world (rs : reading list) =
@@ -1195,7 +1196,8 @@ let lines env ~world (rs : reading list) =
           | Member_timeline tl -> timeline_text tl
           | Member_verdict j -> truth_text j.truth
           | Member_fault code -> fault_text code)
-        ^ if c.reached then " reached" else " unreached"
+        ^ (if c.reached then " reached" else " unreached")
+        ^ if c.filter_undetermined then " filter undetermined" else ""
       in
       found ^ " contributors [" ^ String.concat "; " (List.sort compare (List.map contributor n.members)) ^ "]"
   in

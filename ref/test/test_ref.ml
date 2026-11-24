@@ -17181,6 +17181,7 @@ let () =
 let () =
   let witnesses =
     [ "absent-link"; "absent-link-path"; "arithmetic"; "characteristic"; "closed-input"; "comparison"; "composite-filled-test";
+      "contributor-filter";
       "compound-all"; "compound-any"; "compound-counting"; "compound-none"; "consistency"; "defaults-characteristic";
       "defaults-initialisation-exception"; "defaults-initialisation-only"; "defaults-stack"; "defaults-subtype"; "empty-by-fault";
       "exact-digits"; "fact-creation"; "filled-test";
@@ -17495,11 +17496,11 @@ let () =
          "7 Comparison false"; "8 AttributeReference 50"; "9 Literal 1000"; "FAILS" ])
 
 (* WV-5.12-open-quantifier-fold: a contributor carries the truth of the matrix
-   on it, undetermined among them, and the fold the open
-   read of its first undetermined member — its filter's where its filter is
-   undetermined. The fixture quantifier-fold: "alle vondsten zwaar" over V1
-   and V2 of 20 and 30 and V3 without a gewicht; and "keurder", over gemerkte
-   vondsten, with V2's gemerkt open and its gewicht 5 *)
+   on it, undetermined among them, and whether its filter is undetermined; the
+   fold the open read of its first undetermined member — its filter's where
+   its filter is undetermined. The fixture quantifier-fold: "alle vondsten
+   zwaar" over V1 and V2 of 20 and 30 and V3 without a gewicht; and "keurder",
+   over gemerkte vondsten, with V2's gemerkt open and its gewicht 5 *)
 let () =
   let fixture = strict_fixture "quantifier-fold" in
   lines_equal "WV-5.12-open-quantifier-fold (matrix)"
@@ -17511,8 +17512,72 @@ let () =
   lines_equal "WV-5.12-open-quantifier-fold (filter)"
     (readings_named (fixture ^ "ir.json") (fixture ^ "case7-filter-onbepaald.json") [ rule_form 6 ])
     (on_object (rule_form 6) "J1"
-       [ "0 QuantifierFold undetermined open \"V2\" \"gemerkt\" contributors [\"V1\" true reached; \"V2\" false reached]";
+       [ "0 QuantifierFold undetermined open \"V2\" \"gemerkt\" contributors [\"V1\" true reached; \"V2\" false reached \
+          filter undetermined]";
          "OPEN" ])
+
+(* WV-5.12-contributor-filter: the chapter's worked example of the filter of a
+   contributor, the fixture contributor-filter. A contributor of a quantifier
+   fold is a member whose filter is not false; one whose filter is
+   undetermined says so after its position, one whose filter holds does not,
+   also where the filter has an open part ("A of B", A true and B open); a
+   member whose filter is false is none, also where it has an open part ("A en
+   B", A false and B open). Keurder (rule 0) reads "die gemerkt of drijfhout
+   zijn", nauwgezet (rule 1) "die gemerkt en drijfhout zijn", each "groter dan
+   10,00"; grenskeurder (rule 2) "die gemerkt zijn of een gewicht groter dan
+   de keurgrens hebben", and zwaarkeurder (rule 3) the filter of keurder and
+   "groter dan de keurgrens". Case 1 is the example verbatim; case 2 reads a
+   contributor after the stop whose filter is undetermined; case 3 a filter
+   and a matrix undetermined by an open read; case 4, without a keurgrens, a
+   matrix whose fault (EF-014) the provisional read past an undetermined
+   filter leaves undetermined, and a filter that reads the keurgrens after its
+   open part, provisionally as well; the red case a filter that faults on a
+   member after one whose filter is undetermined, so the fold faults and
+   carries no contributors (read on the input world, as the session that
+   faults has no fixpoint) *)
+let () =
+  let fixture = strict_fixture "contributor-filter" in
+  let read case forms = readings_named (fixture ^ "ir.json") (fixture ^ case) forms in
+  let fold k found = on_object (rule_form k) "J1" [ "0 QuantifierFold " ^ found ] in
+  let status k s = on_object (rule_form k) "J1" [ s ] in
+  lines_equal "WV-5.12-contributor-filter (the example)" (read "case1-voorbeeld.json" [ rule_form 0; rule_form 1 ])
+    (fold 0
+       "undetermined open \"V2\" \"gemerkt\" contributors [\"V1\" true reached; \"V2\" false reached filter undetermined; \
+        \"V3\" true reached filter undetermined]"
+    @ status 0 "OPEN"
+    @ fold 1 "true contributors [\"V1\" true reached filter undetermined]"
+    @ status 1 "HOLDS");
+  lines_equal "WV-5.12-contributor-filter (a filter true beside one undetermined)"
+    (read "case1-voorbeeld.json" [ rule_form 2 ])
+    (fold 2
+       "undetermined open \"V2\" \"gemerkt\" contributors [\"V1\" true reached; \"V2\" false reached filter undetermined; \
+        \"V3\" true reached]"
+    @ status 2 "OPEN");
+  lines_equal "WV-5.12-contributor-filter (after the stop)" (read "case2-gestopt.json" [ rule_form 0; rule_form 1; rule_form 2 ])
+    (fold 0 "false contributors [\"V1\" false reached; \"V2\" true unreached filter undetermined]"
+    @ status 0 "FAILS" @ fold 1 "true" @ status 1 "HOLDS"
+    @ fold 2 "false contributors [\"V1\" false reached; \"V2\" true unreached]"
+    @ status 2 "FAILS");
+  lines_equal "WV-5.12-contributor-filter (filter and matrix undetermined)"
+    (read "case3-filter-en-toets-open.json" [ rule_form 0 ])
+    (fold 0
+       "undetermined open \"V1\" \"gemerkt\" contributors [\"V1\" undetermined reached filter undetermined; \"V2\" true \
+        reached]"
+    @ status 0 "OPEN");
+  lines_equal "WV-5.12-contributor-filter (a matrix fault read provisionally)"
+    (read "case4-geen-keurgrens.json" [ rule_form 2; rule_form 3 ])
+    (fold 2 "false contributors [\"V1\" true reached filter undetermined; \"V2\" false reached]"
+    @ status 2 "FAILS"
+    @ fold 3
+        "undetermined open \"V1\" \"gemerkt\" contributors [\"V1\" undetermined reached filter undetermined; \"V2\" \
+         undetermined reached]"
+    @ status 3 "OPEN");
+  let red = fixture ^ "red1-filterfout-na-open-filter.json" in
+  lines_equal "WV-5.12-contributor-filter (a filter fault after an undetermined filter)"
+    (List.filter
+       (fun l -> String.starts_with ~prefix:(rule_form 2 ^ " ") l)
+       (readings_of ~evaluate:false (fixture ^ "ir.json") red))
+    (fold 2 "fault EF-014" @ status 2 "FAULTS")
 
 (* WV-5.12-open-fold-over-a-set: a fold over a set that a member's open value
    or undetermined filter broke off is undetermined, names that open read, and
