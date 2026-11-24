@@ -3771,28 +3771,70 @@ limits:
   or an open value derives neither `val`/`has` nor `wnil<index>`, leaving
   the target open unless another writer decides it.
 - **Stacks (`translate_chain`, `translate_group`, `translate_defaults_group`)**:
-  each chain and exception group carries `stack_atoms = { s_out; s_cfl; s_gw; s_st }`
-  (`nl<t>_*` / `ng<t>_*`). Default `n` is reached at `nl<t>_rch<n>(S)`,
-  which chains from `nl<t>_rch0(S) :- base, outer_displaced.` through
-  `nl<t>_rch<n+1>(S) :- nl<t>_rch<n>(S), nl<t>_gw<n>(S).` — a lower
-  default is reached only when every higher default stands to give way.
-  Default `n` gives way (`nl<t>_gw<n>(S)`) only when its justification is
+  each chain and exception group carries `stack_atoms = { s_out; s_cfl; s_gw; s_st; s_oo }`
+  (`nl<t>_*` / `ng<t>_*`), encoding the five outcomes of `RUNTIME-SEMANTICS.md`
+  ch. 1.5 ("An open default with a constant"): decided (`s_out(S,V)`),
+  conflict (`s_cfl(S)`), gave way (`s_gw(S)`), open with constant `V`
+  (`s_oo(S,V)`), and open (none of the four). A chain walks positions `p`
+  in order: a plain default is one position (`n`); a default with exception
+  groups is two, its reconciled exception groups (`n`) and, where it has own
+  content, its fall-back (`nf`). Reach splits into two predicates:
+  - **real reach** (`nl<t>_rch<p>(S)`): starts at
+    `nl<t>_rch0(S) :- base, outer_displaced.` and advances only where
+    `nl<t>_gw<p>(S)` holds (and `not nl<t>_pf<p>(S)` on an own position);
+  - **provisional reach** (`nl<t>_prch<p>(S,V)`): entered from `nl<t>_rch<p>(S)`
+    on `nl<t>_oo<p>(S,V)` and passed on across positions that give way
+    (`nl<t>_gw<p>(S)`) or are open with the same `V` (`nl<t>_oo<p>(S,V)`),
+    each guarded by `not nl<t>_pf<p>(S)` on an own position.
+  `nl<t>_ar<p>(S)` is their union (`rch` or `prch(_,_)`) and gates
+  `ctx.rule_guard`, `ctx.param_reach` and nested exception groups'
+  `outer_displaced`. Real reach across enclosing chains (`real p = rch p :: outer_real`)
+  gates every side effect:
+  - `ctx.deposit_guard` requires `nl<t>_dec<p>(S,_)` and `real p`, and
+    `translate_group`'s `EF-027` deposit waits for `outer_real` instead of
+    `outer_displaced`, so a §9.5 fact or nested conflict below an `s_oo`
+    position is not deposited;
+  - `ctx.stack_reach` carries `Some (real p, nl<t>_pf<p>(S))` inside
+    `emit_own_dec`: in `emit_viol`, an `EF-*` fault derives `nl<t>_pf<p>(S)`
+    under its active body (after `ctx.member_gate` where inside a boundary)
+    and adds `real p` to its `viol/2` head, so a fault under provisional
+    reach leaves the position open without failing the session, while an
+    encoding limit (`CLINGO-*` or uncoded) still fires under `ctx.limit_gate`.
+  An own position `p` gives way (`nl<t>_gw<p>(S)`) when its justification is
   established false (`j.fails`; for an initialisation default
   `grp<g>_has_input(S)`, and for a conditional one also its `j.fails`
-  where the input does not fill the target) or, on an attribute default, when its
-  justification holds with a settled leeg consequence
-  (`not vdef<k>(S), not ob<m>(S)`); a default with exception groups falls
-  back to its own content (or gives way, for a group-default) only on
-  `ng<t>_gw(S)`. When a default is open, `nl<t>_rch<n+1>` is not derived
-  and the chain derives none of `s_out`, `s_cfl`, `s_gw`, `s_st`. In an
-  exception group or an unordered root group, `stands_beside` requires
-  `m.s_st(S)` for every other member before any member decides, and
-  `ng<t>_gw` requires every member's `s_gw`. A top-level member outside
-  its validity window derives both `s_gw` and `s_st`. At the root,
-  `grp<g>_nil(S)` holds when every member gives way, on `grp<g>_conflict(S)`,
-  or on a characteristic `0` decision with all siblings standing; it is
-  registered in `ctx.group_writers` and guards the defeasible `inputval/3`
-  pass-through.
+  where the input does not fill the target) or, on an attribute default, when
+  its justification holds with a settled leeg consequence
+  (`not vdef<k>(S), not ob<m>(S)`). It derives `nl<t>_oo<p>(S,V)` when
+  reached (`nl<t>_ar<p>(S)`), neither decided nor gave way nor faulted
+  (`not nl<t>_dec<p>(S,_)`, `not nl<t>_gw<p>(S)`, `not nl<t>_pf<p>(S)`), and
+  its decision is a constant: on a characteristic `1`/`0`, on an attribute a
+  `Literal` (with `bindings = []`) passed through `units_identical_ok`
+  against the target's declared unit and through `fitted` to the target's
+  scale (`fit_guards` hold; a literal failing the write boundary derives no
+  `s_oo`). The chain decides `V` (`s_out(S,V)`) where a position decides `V`
+  under `rch` or under `prch` with the same `V` (and `not pf`), conflicts
+  (`s_cfl(S)`) only where a groups position conflicts under `rch`, gives way
+  (`s_gw(S)`) at `rch<final>`, and is open with `V` (`s_oo(S,V)`) at
+  `prch<final>(S,V)`.
+  In an exception group (`translate_group`) or unordered root group
+  (`translate_defaults_group`), `beside_members` builds per member
+  `<tag>_bs<i>(S,V)` holding when that member decides `V`, is open with `V`,
+  or gives way (with `V` ranging over `<tag>_cand(S,V)`, the union of
+  members' `s_out` and `s_oo`). A member's `s_out(S,V)` decides for the group
+  when `not cfl` and every other member satisfies `<tag>_bs<k>(S,V)`; in an
+  exception group, `ng<t>_oo(S,V)` holds when no member conflicts or decides,
+  some member has `s_oo(S,V)`, and every other member satisfies
+  `<tag>_bs<k>(S,V)`; `ng<t>_gw` requires every member's `s_gw`. A top-level
+  member outside its validity window derives both `s_gw` and `s_st`. At the
+  root, `grp<g>_nil(S)` holds when every member gives way, on
+  `grp<g>_conflict(S)`, or on a characteristic where some member has
+  `s_out(S,0)` **or `s_oo(S,0)`** with `not root_cfl` and every other member
+  satisfying `grp<g>_bs<k>(S,0)` (root closing of a characteristic, ch. 1.5,
+  "A stack on a characteristic"; never in a subgroup and never on an
+  attribute, where `s_oo` leaves `grp<g>_nil` underived so defeasible
+  `inputval/3` stays open beside it). `grp<g>_nil` is registered in
+  `ctx.group_writers` and guards the defeasible `inputval/3` pass-through.
 - **Consistency rules (`translate_consistency`)**: deposits `inconsistent/2`
   (with `EF-025`) on `isa(S,subject_ot) :: (judge ... assertion).fails` —
   reporting only when established false and depositing nothing when
@@ -3921,11 +3963,12 @@ first), and the runtime `viol/2` limits such as
 `CLINGO-034` and `CLINGO-035`.
 
 Witnesses: corpus goldens `jutterswet-afleiden-uit-leeg`,
-`jutterswet-volledig-gegeven`, `jutterswet-afhaalbaar-strikt` and
-`jutterswet-heffing-strikt` (gate 6); the `WV-1.5-*` differential frames
+`jutterswet-volledig-gegeven`, `jutterswet-afhaalbaar-strikt`,
+`jutterswet-heffing-strikt` and `jutterswet-zelfde-conclusie-*` (gate 6);
+the `WV-1.5-*` differential frames
 and `ref/test/fixtures/strict-empty/` witnesses in
 `backends/clingo/test/test_clingo.ml` (including `CLINGO-049` and
-`CLINGO-052` refusal frames and the `CLINGO-034` provisional-limit frame).
+`CLINGO-052` refusal frames and the `CLINGO-034` provisional-limit frames).
 
 ## Part II — The hand exercises and encoding notes (historical)
 

@@ -666,6 +666,14 @@ type ctx = {
      as CLINGO-034) is a limit of this encoding, says that it cannot tell what
      the member is, and is no fault of the member *)
   mutable limit_gate : string list;
+  (* inside a default of a stack, in a document with inferFromEmpty false
+     ([translate_chain]): the atoms that say the default is reached for real,
+     every higher default of its chain and of the chains around it having given
+     way, and the atom that says it faulted. Below a default open with a
+     constant the default is read provisionally (ch. 1.5, "An open default with
+     a constant"): a fault of an EF code is raised only where the default is
+     reached for real ([emit_viol]), and otherwise leaves it open *)
+  mutable stack_reach : (string list * string) option;
   (* per writer of a member, by its index in the document, the predicate that
      says of a subject that the writer fills nothing there *)
   mutable fills_nothing : (int * string) list;
@@ -1303,16 +1311,26 @@ let emit_viol ctx ?code ?(parts = []) ~subject reason body =
   (* ch. 1.5, "An open read": a fault after an open read within one boundary
      does not arise; one in a member of a composite read provisionally leaves
      the member undetermined, as an open read does *)
+  let is_fault = match code with Some { gc_code; _ } -> String.starts_with ~prefix:"EF-" gc_code | None -> false in
+  (* inside a default of a stack a fault is raised where the default is reached
+     for real, and marks the default where it is read provisionally *)
+  let provisional body =
+    match ctx.stack_reach with
+    | Some (real, faulted) when is_fault ->
+        emit_rule ctx ~head:faulted ~body;
+        body @ real
+    | _ -> body
+  in
   let body =
     match ctx.boundary with
     | Some b ->
         let body = binding b body @ List.map (fun r -> Printf.sprintf "not %s(%s)" r b.bd_key) b.bd_reads in
-        (match code with
-        | Some { gc_code; _ } when String.starts_with ~prefix:"EF-" gc_code ->
-            emit_rule ctx ~head:(Printf.sprintf "%s(%s)" b.bd_pred b.bd_key) ~body;
-            body @ ctx.member_gate
-        | _ -> body @ ctx.limit_gate)
-    | None -> body
+        if is_fault then begin
+          emit_rule ctx ~head:(Printf.sprintf "%s(%s)" b.bd_pred b.bd_key) ~body;
+          provisional (body @ ctx.member_gate)
+        end
+        else body @ ctx.limit_gate
+    | None -> provisional body
   in
   emit_rule ctx ~head:(Printf.sprintf "viol(%s,%s)" first subject) ~body
 
@@ -14154,25 +14172,54 @@ let path_key target_form = function
 (* the atoms of a chain of defaults or of a group of them: its outcome
    [s_out](S,V) and its conflict [s_cfl](S); in a document with inferFromEmpty
    false (ch. 1.5, "A stack") also [s_gw](S), it stands that every default gives
-   way, and [s_st](S), it decides, conflicts or gives way: where none of the
-   three stands it is open *)
-type stack_atoms = { s_out : string; s_cfl : string; s_gw : string; s_st : string }
+   way, [s_st](S), it decides, conflicts or gives way, and [s_oo](S,V), it is
+   open with V: open, and whatever the case adds it decides V or gives way ("An
+   open default with a constant"). Where none of the four stands it is open *)
+type stack_atoms = { s_out : string; s_cfl : string; s_gw : string; s_st : string; s_oo : string }
 
-(* in a document with inferFromEmpty false: every member of a group but the
-   [i]th stands (decides, conflicts or gives way) on the subject; nothing
-   otherwise *)
-let stands_beside ctx ~subject members i =
-  if ctx.strict then
-    List.concat (List.mapi (fun k m -> if k = i then [] else [ Printf.sprintf "%s(%s)" m.s_st subject ]) members)
-  else []
+(* in a document with inferFromEmpty false, per member of a group (exception
+   groups, or the root of a defaults group) the predicate [tag]_bs<i>(S,V): the
+   member decides V, gives way, or is open with V — what every other member
+   does where one decides V, or is open with V, as the group's outcome
+   (ch. 1.5, "Exception groups and a declared-unordered group"). Where a member
+   gives way, V ranges over what the members decide or are open with. None in
+   another document *)
+let beside_members ctx ~subject ~tag members =
+  if not ctx.strict then []
+  else begin
+    let cand = Printf.sprintf "%s_cand" tag in
+    List.iter
+      (fun m ->
+        List.iter
+          (fun p -> head_body ctx (Printf.sprintf "%s(%s,V)" cand subject) [ Printf.sprintf "%s(%s,V)" p subject ])
+          [ m.s_out; m.s_oo ])
+      members;
+    List.mapi
+      (fun i m ->
+        let bs = Printf.sprintf "%s_bs%d" tag i in
+        List.iter
+          (fun body -> head_body ctx (Printf.sprintf "%s(%s,V)" bs subject) body)
+          [ [ Printf.sprintf "%s(%s,V)" m.s_out subject ];
+            [ Printf.sprintf "%s(%s,V)" m.s_oo subject ];
+            [ Printf.sprintf "%s(%s)" m.s_gw subject; Printf.sprintf "%s(%s,V)" cand subject ] ];
+        bs)
+      members
+  end
+
+(* every member of a group but the [i]th stands beside [value]
+   ([beside_members]); nothing in a document without inferFromEmpty false *)
+let stands_beside ~subject ~value beside i =
+  List.concat (List.mapi (fun k bs -> if k = i then [] else [ Printf.sprintf "%s(%s,%s)" bs subject value ]) beside)
 
 (* [origins] is aligned with [defaults]: the subject type each default was
    declared on, which its own reads name (WF-053). A composed stack
    (RUNTIME-SEMANTICS ch. 7.10) moves an ancestor's defaults under a
    descendant's, so the position a default is translated on is its own and
-   not the owner's. *)
+   not the owner's. In a document with inferFromEmpty false [outer_displaced]
+   says where the chain is reached, for real or provisionally, and
+   [outer_real] where for real (ch. 1.5, "An open default with a constant") *)
 let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
-    ~target_form ~target_scale ~target_unbounded ~has_input ~outer_displaced (defaults : default list) :
+    ~target_form ~target_scale ~target_unit ~target_unbounded ~has_input ~outer_displaced ~outer_real (defaults : default list) :
     stack_atoms =
   let ot_at n = List.nth origins n in
   let tag = fresh ctx "nl" in
@@ -14182,38 +14229,69 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
      the root/parent's `not cfl` reference raises no undefined-atom warning *)
   emit ctx "#defined %s/1." cfl;
   let stl n = Printf.sprintf "%s_stl%d" tag n in
-  (* ch. 1.5, "A stack": default [n] is reached where it stands of every higher
-     one that it gives way ([rch]), the initialisation default as any other.
-     [gw n] says that default [n], reached, gives way *)
-  let gw n = Printf.sprintf "%s_gw%d" tag n in
-  let rch n = Printf.sprintf "%s_rch%d(%s)" tag n subject in
+  let has_own (r : default) = if is_char then r.default_decision <> None else r.default_consequence <> None in
+  (* ch. 1.5, "A stack", read as a walk over positions [p]: a default without
+     exception groups is one, named by its index; a default with exception
+     groups is two, its exception groups reconciled into one outcome and, where
+     it has content of its own, its fall-back [p]f. A position is reached for
+     real ([rch]) where every higher one gave way, and provisionally ([prch]
+     with the value V) where a higher one is open with V and every one between
+     gave way or is open with V; [ar] is either. [gw], [dec], [conf], [oo] and
+     [pf] say that the position gives way, decides, conflicts, is open with a
+     value and, read provisionally, faulted *)
+  let gw p = Printf.sprintf "%s_gw%s" tag p in
+  let rch p = Printf.sprintf "%s_rch%s(%s)" tag p subject in
+  let prch p v = Printf.sprintf "%s_prch%s(%s,%s)" tag p subject v in
+  let ar p = Printf.sprintf "%s_ar%s(%s)" tag p subject in
+  let oo p = Printf.sprintf "%s_oo%s" tag p in
+  let pf p = Printf.sprintf "%s_pf%s(%s)" tag p subject in
+  let real p = if ctx.strict then rch p :: outer_real else [] in
+  let positions =
+    List.concat
+      (List.mapi
+         (fun n (r : default) ->
+           let p = string_of_int n in
+           match r.default_exceptions with
+           | None -> [ (p, `Own) ]
+           | Some _ -> (p, `Groups) :: (if has_own r then [ (p ^ "f", `Own) ] else []))
+         defaults)
+  in
+  let final = string_of_int (List.length defaults) in
   if ctx.strict then begin
-    List.iteri (fun n _ -> emit ctx "#defined %s/1." (gw n)) defaults;
-    emit_rule ctx ~head:(rch 0) ~body:(base :: outer_displaced)
+    List.iter
+      (fun (p, kind) ->
+        emit ctx "#defined %s/1." (gw p);
+        emit ctx "#defined %s_prch%s/2." tag p;
+        emit ctx "#defined %s/2." (oo p);
+        if kind = `Own then emit ctx "#defined %s_pf%s/1." tag p)
+      positions;
+    emit ctx "#defined %s_prch%s/2." tag final;
+    emit_rule ctx ~head:(rch "0") ~body:(base :: outer_displaced)
   end;
   (* the shared fail-fast's reach inside the chain (ch. 7.1/7.9): ref walks the
      defaults in order and stops at the first that settles, so default [n] is
      read only where no strictly-higher default of this chain settled, inside
-     the enclosing defaults' own waits *)
-  let reached n =
-    if ctx.strict then [ rch n ]
+     the enclosing defaults' own waits. In a document with inferFromEmpty false
+     position [p] is read where it is reached, for real or provisionally *)
+  let reached n p =
+    if ctx.strict then [ ar p ]
     else outer_displaced @ List.init n (fun m -> Printf.sprintf "not %s(%s)" (stl m) subject)
   in
-  let dec n = Printf.sprintf "%s_dec%d" tag n in
-  let conf n = Printf.sprintf "%s_conf%d" tag n in
+  let dec p = Printf.sprintf "%s_dec%s" tag p in
+  let conf p = Printf.sprintf "%s_conf%s" tag p in
   (* the chain's own context, whatever position asks for the atoms: they are
      asked for early, inside the consequence, when that consequence reads a
      parameter the case does not bind (below). [extra] is a form-a default's
      wait on its exception groups: ref reads the justification only when they
      decide nothing *)
-  let in_condition ~extra n f =
+  let in_condition ~extra n p f =
     let saved_r = ctx.param_reach and saved_g = ctx.rule_guard in
     let saved_n = ctx.let_needs and saved_b = ctx.binders and saved_v = ctx.value_of in
-    ctx.param_reach <- (fun _ -> (base :: reached n) @ extra);
+    ctx.param_reach <- (fun _ -> (base :: reached n p) @ extra);
     (* what a default evaluates, it evaluates only where it is reached: its
        fences and deposits carry that (ch. 5.7, 7.1) *)
     ctx.rule_guard <-
-      (reached n @ extra
+      (reached n p @ extra
       @ if (List.nth defaults n).default_initialisation then
           match has_input with Some hi -> [ Printf.sprintf "not %s(%s)" hi subject ] | None -> []
         else []);
@@ -14231,14 +14309,14 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
   (* the justification: the bodies where it holds, and, in a document with
      inferFromEmpty false, those where it is established false, which give way
      (ch. 1.5) *)
-  let condition ~extra n c =
-    in_condition ~extra n (fun () ->
+  let condition ~extra n p c =
+    in_condition ~extra n p (fun () ->
         if ctx.strict then
           let j = judge ctx ~subject ~subject_ot:(ot_at n) c in
           (j.holds, [ j.fails ])
         else (cond_atoms ctx ~subject ~subject_ot:(ot_at n) c, []))
   in
-  let own_just ?(extra = []) n (r : default) =
+  let own_just ?(extra = []) n p (r : default) =
     if r.default_initialisation then (
       if not root then
         fault "an initialisation default inside an exception group is ill-formed";
@@ -14252,47 +14330,65 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
           let input_empty = Printf.sprintf "not %s(%s)" hi subject in
           let holds, fails =
             match r.default_justification with
-            | Some c -> condition ~extra n c
+            | Some c -> condition ~extra n p c
             | None -> ([], [])
           in
           (input_empty :: holds, (if ctx.strict then [ Printf.sprintf "%s(%s)" hi subject ] else [])
                                  :: List.map (fun f -> input_empty :: f) fails)
       | None -> fault "initialisation default on characteristic defaults")
-    else condition ~extra n (req "default justification" r.default_justification)
+    else condition ~extra n p (req "default justification" r.default_justification)
+  in
+  (* in a document with inferFromEmpty false: position [p], reached, is open
+     with [value] where it neither decides nor gives way and did not fault
+     ([guards]: the write step writes the value) — the decision of a default
+     that can decide nothing else, a constant (ch. 1.5) *)
+  let open_with p value guards =
+    head_body ctx
+      (Printf.sprintf "%s(%s,%s)" (oo p) subject value)
+      ([ base; ar p ] @ guards
+      @ [ Printf.sprintf "not %s(%s,_)" (dec p) subject; Printf.sprintf "not %s(%s)" (gw p) subject; "not " ^ pf p ])
   in
   (* a default's OWN decision (a plain default, an init default, or a form-a
-     fall-back): on the attribute arm the consequence bindings sit in the
-     body, so a leeg consequence leaves the decision underivable — the
-     fall-through gate for free; [extra] carries the `not U_any` guard that
-     restricts a form-a fall-back to exception groups that decide nothing (ch. 7.9).
-     In a document with inferFromEmpty false it gives way where its
-     justification is established false or holds with a settled leeg value,
-     and its value is one boundary: it decides only where that reads nothing
-     open (ch. 1.5) *)
-  let emit_own_dec n (r : default) ~extra =
+     fall-back) at position [p]: on the attribute arm the consequence bindings
+     sit in the body, so a leeg consequence leaves the decision underivable —
+     the fall-through gate for free; [extra] carries the `not U_any` guard that
+     restricts a form-a fall-back to exception groups that decide nothing (ch.
+     7.9). In a document with inferFromEmpty false it gives way where its
+     justification is established false or holds with a settled leeg value, its
+     value is one boundary: it decides only where that reads nothing open, and
+     it is open with its decision where that is a constant: on a
+     characteristic its decision, on an attribute a Literal (ch. 1.5) *)
+  let emit_own_dec n p (r : default) ~extra =
     (* the channel key of what this default deposits: as ref keys it, the stack's
        target form, and on a v0 form the desugaring moved here its own rule's name.
        A v0 form is no speculative context (ch. 7.8): its deposit stands where it is
-       evaluated. A default of a group deposits only where it decides (ch. 7.1) *)
-    let saved_name = ctx.rule_name and saved_d = ctx.deposit_guard in
+       evaluated. A default of a group deposits only where it decides (ch. 7.1),
+       and in a document with inferFromEmpty false where it is reached for real *)
+    let saved_name = ctx.rule_name and saved_d = ctx.deposit_guard and saved_s = ctx.stack_reach in
     ctx.rule_name <-
       (if ctx.desugared_group then Option.value r.default_source ~default:target_form else target_form);
     ctx.deposit_guard <-
-      (if ctx.desugared_group then [] else [ Printf.sprintf "%s(%s,_)" (dec n) subject ]);
-    let just, fails = own_just ~extra n r in
+      (if ctx.desugared_group then [] else Printf.sprintf "%s(%s,_)" (dec p) subject :: real p);
+    if ctx.strict then ctx.stack_reach <- Some (real p, pf p);
+    let just, fails = own_just ~extra n p r in
     List.iter
-      (fun f -> head_body ctx (Printf.sprintf "%s(%s)" (gw n) subject) ((base :: f) @ extra))
+      (fun f -> head_body ctx (Printf.sprintf "%s(%s)" (gw p) subject) ((base :: f) @ extra))
       (if ctx.strict then fails else []);
-    if is_char then
+    if is_char then begin
       let b = if req "default decision" r.default_decision then 1 else 0 in
-      head_body ctx (Printf.sprintf "%s(%s,%d)" (dec n) subject b)
-        ((base :: just) @ extra)
+      head_body ctx (Printf.sprintf "%s(%s,%d)" (dec p) subject b)
+        ((base :: just) @ extra);
+      if ctx.strict then open_with p (string_of_int b) []
+    end
     else begin
+      if ctx.strict then
+        units_identical_ok ~what:(Printf.sprintf "the write to %S" target_form) target_unit
+          (Option.bind r.default_consequence (eff_unit ctx));
       let saved_r = ctx.param_reach and saved_g = ctx.rule_guard in
-      ctx.param_reach <- (fun _ -> (base :: reached n) @ just @ extra);
+      ctx.param_reach <- (fun _ -> (base :: reached n p) @ just @ extra);
       (* a consequence is read only under its holding justification, on a default
          that is reached *)
-      ctx.rule_guard <- reached n @ just @ extra;
+      ctx.rule_guard <- reached n p @ just @ extra;
       (* a bare division that is not whole names the unbounded form, as in a
          rule's write, and no EF-006 *)
       ctx.write_unbounded <- target_unbounded;
@@ -14309,13 +14405,26 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
            in that form's words — ref writes the exact value there, so a value
            that is not whole is this encoding's limit and no fault of the write *)
         let body = (base :: just) @ bindings @ extra in
+        let raw_term = term in
         let term, fit_guards =
           fitted ~unbounded:target_unbounded ctx ~subject ~what:target_form ~body term scale target_scale
         in
         let decided =
           match ctx.boundary with Some b -> [ Printf.sprintf "not %s(%s)" b.bd_pred b.bd_key ] | None -> []
         in
-        head_body ctx (Printf.sprintf "%s(%s,%s)" (dec n) subject term) (body @ fit_guards @ decided);
+        head_body ctx (Printf.sprintf "%s(%s,%s)" (dec p) subject term) (body @ fit_guards @ decided);
+        (* a Literal as the write step writes it: where the write faults on it,
+           the guards do not hold, and it is no constant *)
+        (match r.default_consequence with
+        | Some (Literal _) when ctx.strict && bindings = [] ->
+            if target_scale > scale && target_scale mod scale = 0 then
+              range_guard ctx ~subject
+                ~body:
+                  [ base; ar p; Printf.sprintf "not %s(%s,_)" (dec p) subject;
+                    Printf.sprintf "not %s(%s)" (gw p) subject; "not " ^ pf p ]
+                [ (raw_term, max_int31 / (target_scale / scale)) ];
+            open_with p term fit_guards
+        | _ -> ());
         body
       in
       if ctx.strict then begin
@@ -14324,71 +14433,95 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
         let valued = Printf.sprintf "vdef%d(%s)" ctx.fresh subject in
         emit ctx "#defined vdef%d/1." ctx.fresh;
         head_body ctx valued body;
-        head_body ctx (Printf.sprintf "%s(%s)" (gw n) subject)
+        head_body ctx (Printf.sprintf "%s(%s)" (gw p) subject)
           ((base :: just) @ extra @ [ "not " ^ valued; "not " ^ opened ])
       end
       else ignore (consequence ())
     end;
     ctx.rule_name <- saved_name;
-    ctx.deposit_guard <- saved_d
+    ctx.deposit_guard <- saved_d;
+    ctx.stack_reach <- saved_s
   in
   List.iteri
     (fun n (r : default) ->
+      let p = string_of_int n in
       (match r.default_exceptions with
-      | None -> emit_own_dec n r ~extra:[]
+      | None -> emit_own_dec n p r ~extra:[]
       | Some egs ->
           (* the displacement wait threaded into the exception groups: every
              strictly-higher (lower-index) default of this chain, accumulated
              with the enclosing defaults' waits, so the exception groups' own
              §9.5 inconsistent deposit is suppressed when a higher default
              settles — exactly the guard the chain outcome below puts on
-             [out]/[cfl] *)
+             [out]/[cfl]. In a document with inferFromEmpty false the groups
+             are reached where their position is, and deposit where it is
+             reached for real *)
           let default_displaced =
-            if ctx.strict then reached n
+            if ctx.strict then [ ar p ]
             else outer_displaced @ List.init n (fun m -> Printf.sprintf "not %s(%s)" (stl m) subject)
           in
           let u, u_any =
             translate_group ctx ~is_char ~subject ~subject_ot:(ot_at n) ~base
-              ~group_path:(path @ [ n ]) ~target_form ~target_scale ~target_unbounded ~has_input
-              ~outer_displaced:default_displaced egs
+              ~group_path:(path @ [ n ]) ~target_form ~target_scale ~target_unit ~target_unbounded ~has_input
+              ~outer_displaced:default_displaced ~outer_real:(real p) egs
           in
           (* the exception groups go first: adopt their clean decision,
              propagate its conflict; the own justification/consequence is the
              fall-back only when they decide nothing
              (ch. 7.9) *)
-          head_body ctx (Printf.sprintf "%s(%s,V)" (dec n) subject)
+          head_body ctx (Printf.sprintf "%s(%s,V)" (dec p) subject)
             [ Printf.sprintf "%s(%s,V)" u.s_out subject ];
-          head_body ctx (Printf.sprintf "%s(%s)" (conf n) subject)
+          head_body ctx (Printf.sprintf "%s(%s)" (conf p) subject)
             [ Printf.sprintf "%s(%s)" u.s_cfl subject ];
-          let has_own =
-            if is_char then r.default_decision <> None else r.default_consequence <> None
-          in
-          (* in a document with inferFromEmpty false the fall-back waits until it
-             stands that every exception group gives way (ch. 1.5) *)
-          let gave_way = Printf.sprintf "%s(%s)" u.s_gw subject in
-          if has_own then
-            emit_own_dec n r
-              ~extra:[ (if ctx.strict then gave_way else Printf.sprintf "not %s(%s)" u_any subject) ]
-          else if ctx.strict then head_body ctx (Printf.sprintf "%s(%s)" (gw n) subject) [ gave_way ]);
-      head_body ctx (Printf.sprintf "%s(%s)" (stl n) subject)
-        [ Printf.sprintf "%s(%s,_)" (dec n) subject ];
-      if r.default_exceptions <> None then
+          (* in a document with inferFromEmpty false the exception groups are a
+             position of their own, and the fall-back is the next one, at its
+             turn where they give way or are open with a value (ch. 1.5) *)
+          if ctx.strict then begin
+            head_body ctx (Printf.sprintf "%s(%s)" (gw p) subject) [ Printf.sprintf "%s(%s)" u.s_gw subject ];
+            head_body ctx (Printf.sprintf "%s(%s,V)" (oo p) subject) [ Printf.sprintf "%s(%s,V)" u.s_oo subject ];
+            if has_own r then emit_own_dec n (p ^ "f") r ~extra:[]
+          end
+          else if has_own r then emit_own_dec n p r ~extra:[ Printf.sprintf "not %s(%s)" u_any subject ]);
+      if not ctx.strict then begin
         head_body ctx (Printf.sprintf "%s(%s)" (stl n) subject)
-          [ Printf.sprintf "%s(%s)" (conf n) subject ])
-    defaults;
-  let gw_all = Printf.sprintf "%s_gw" tag and st = Printf.sprintf "%s_st" tag in
-  if ctx.strict then begin
-    (* the walk of ch. 1.5: a default is reached where every higher one gave
-       way. The chain gives way where every default does *)
-    List.iteri
-      (fun n (r : default) ->
-        emit_rule ctx ~head:(rch (n + 1)) ~body:[ rch n; Printf.sprintf "%s(%s)" (gw n) subject ];
-        head_body ctx (Printf.sprintf "%s(%s,V)" out subject)
-          (Printf.sprintf "%s(%s,V)" (dec n) subject :: reached n);
+          [ Printf.sprintf "%s(%s,_)" (dec p) subject ];
         if r.default_exceptions <> None then
-          head_body ctx (Printf.sprintf "%s(%s)" cfl subject) [ Printf.sprintf "%s(%s)" (conf n) subject; rch n ])
-      defaults;
-    emit_rule ctx ~head:(Printf.sprintf "%s(%s)" gw_all subject) ~body:[ rch (List.length defaults) ];
+          head_body ctx (Printf.sprintf "%s(%s)" (stl n) subject)
+            [ Printf.sprintf "%s(%s)" (conf p) subject ]
+      end)
+    defaults;
+  let gw_all = Printf.sprintf "%s_gw" tag and st = Printf.sprintf "%s_st" tag and oo_all = Printf.sprintf "%s_oo" tag in
+  if ctx.strict then begin
+    (* the walk of ch. 1.5, the table of "An open default with a constant": a
+       position reached for real decides, conflicts or is open as it does; where
+       it gives way the next one is reached for real, and where it is open with V
+       provisionally. Reached provisionally with V, it decides V where it
+       decides V, and passes V on where it gives way or is open with V; anything
+       else leaves the chain open. A fault of a position read provisionally
+       leaves it open. The chain gives way where the walk passes every
+       position for real, and is open with V where it passes them with V *)
+    let rec walk = function
+      | [] -> ()
+      | (p, kind) :: rest ->
+          let next = match rest with (q, _) :: _ -> q | [] -> final in
+          let sound = if kind = `Own then [ "not " ^ pf p ] else [] in
+          let gave = Printf.sprintf "%s(%s)" (gw p) subject and with_v = Printf.sprintf "%s(%s,V)" (oo p) subject in
+          emit_rule ctx ~head:(ar p) ~body:[ rch p ];
+          emit_rule ctx ~head:(ar p) ~body:[ prch p "_" ];
+          emit_rule ctx ~head:(rch next) ~body:([ rch p; gave ] @ sound);
+          emit_rule ctx ~head:(prch next "V") ~body:([ rch p; with_v ] @ sound);
+          emit_rule ctx ~head:(prch next "V") ~body:([ prch p "V"; gave ] @ sound);
+          emit_rule ctx ~head:(prch next "V") ~body:([ prch p "V"; with_v ] @ sound);
+          head_body ctx (Printf.sprintf "%s(%s,V)" out subject) ([ Printf.sprintf "%s(%s,V)" (dec p) subject; rch p ] @ sound);
+          head_body ctx (Printf.sprintf "%s(%s,V)" out subject)
+            ([ Printf.sprintf "%s(%s,V)" (dec p) subject; prch p "V" ] @ sound);
+          if kind = `Groups then
+            head_body ctx (Printf.sprintf "%s(%s)" cfl subject) [ Printf.sprintf "%s(%s)" (conf p) subject; rch p ];
+          walk rest
+    in
+    walk positions;
+    emit_rule ctx ~head:(Printf.sprintf "%s(%s)" gw_all subject) ~body:[ rch final ];
+    emit_rule ctx ~head:(Printf.sprintf "%s(%s,V)" oo_all subject) ~body:[ prch final "V" ];
     List.iter
       (fun b -> emit_rule ctx ~head:(Printf.sprintf "%s(%s)" st subject) ~body:[ b ])
       [ Printf.sprintf "%s(%s,_)" out subject; Printf.sprintf "%s(%s)" cfl subject; Printf.sprintf "%s(%s)" gw_all subject ]
@@ -14400,15 +14533,15 @@ let rec translate_chain ctx ~is_char ~subject ~origins ~base ~path ~root
     (fun n (r : default) ->
       let displaced = List.init n (fun m -> Printf.sprintf "not %s(%s)" (stl m) subject) in
       head_body ctx (Printf.sprintf "%s(%s,V)" out subject)
-        (Printf.sprintf "%s(%s,V)" (dec n) subject :: displaced);
+        (Printf.sprintf "%s(%s,V)" (dec (string_of_int n)) subject :: displaced);
       if r.default_exceptions <> None then
         head_body ctx (Printf.sprintf "%s(%s)" cfl subject)
-          (Printf.sprintf "%s(%s)" (conf n) subject :: displaced))
+          (Printf.sprintf "%s(%s)" (conf (string_of_int n)) subject :: displaced))
     defaults;
-  { s_out = out; s_cfl = cfl; s_gw = gw_all; s_st = st }
+  { s_out = out; s_cfl = cfl; s_gw = gw_all; s_st = st; s_oo = oo_all }
 
 and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
-    ~target_form ~target_scale ~target_unbounded ~has_input ~outer_displaced (egs : exception_groups) :
+    ~target_form ~target_scale ~target_unit ~target_unbounded ~has_input ~outer_displaced ~outer_real (egs : exception_groups) :
     stack_atoms * string =
   let tag = fresh ctx "ng" in
   let out = Printf.sprintf "%s_out" tag in
@@ -14423,8 +14556,8 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
       (fun (eg : exception_group) ->
         translate_chain ctx ~is_char ~subject
           ~origins:(List.map (fun _ -> subject_ot) eg.eg_defaults) ~base ~path:group_path
-          ~root:false ~target_form ~target_scale ~target_unbounded ~has_input
-          ~outer_displaced eg.eg_defaults)
+          ~root:false ~target_form ~target_scale ~target_unit ~target_unbounded ~has_input
+          ~outer_displaced ~outer_real eg.eg_defaults)
       egs.egs_members
   in
   let no_member_cfl =
@@ -14454,37 +14587,50 @@ and translate_group ctx ~is_char ~subject ~subject_ot ~base ~group_path
   (* the clean group decision (equal decisions collapse to one, differing are
      suppressed by the conflict); [any] = decided-or-conflicted, the fall-back
      gate of a form-a parent default. In a document with inferFromEmpty false
-     a member decides only where it stands of every other member that it
-     decides, gives way or conflicts: beside a member that is open the group is
-     open (ch. 1.5) *)
+     a member decides only where every other member decides the same, gives
+     way or is open with the same value: beside a member that is open, or open
+     with another value, the group is open (ch. 1.5) *)
+  let beside = beside_members ctx ~subject ~tag members in
   List.iteri
     (fun i m ->
       head_body ctx (Printf.sprintf "%s(%s,V)" out subject)
         ([ Printf.sprintf "%s(%s,V)" m.s_out subject; Printf.sprintf "not %s(%s)" cfl subject ]
-        @ stands_beside ctx ~subject members i))
+        @ stands_beside ~subject ~value:"V" beside i))
     members;
   head_body ctx (Printf.sprintf "%s(%s)" any subject)
     [ Printf.sprintf "%s(%s,_)" out subject ];
   head_body ctx (Printf.sprintf "%s(%s)" any subject)
     [ Printf.sprintf "%s(%s)" cfl subject ];
-  let gw = Printf.sprintf "%s_gw" tag and st = Printf.sprintf "%s_st" tag in
+  let gw = Printf.sprintf "%s_gw" tag and st = Printf.sprintf "%s_st" tag and oo = Printf.sprintf "%s_oo" tag in
   if ctx.strict then begin
     emit ctx "#defined %s/1." gw;
     emit_rule ctx ~head:(Printf.sprintf "%s(%s)" gw subject)
       ~body:(base :: List.map (fun m -> Printf.sprintf "%s(%s)" m.s_gw subject) members);
     List.iter
       (fun b -> emit_rule ctx ~head:(Printf.sprintf "%s(%s)" st subject) ~body:[ b ])
-      [ Printf.sprintf "%s(%s,_)" out subject; Printf.sprintf "%s(%s)" cfl subject; Printf.sprintf "%s(%s)" gw subject ]
+      [ Printf.sprintf "%s(%s,_)" out subject; Printf.sprintf "%s(%s)" cfl subject; Printf.sprintf "%s(%s)" gw subject ];
+    (* where no member decides and every member gives way or is open with V,
+       one of them so, the group is open with V *)
+    emit ctx "#defined %s/2." oo;
+    List.iteri
+      (fun i m ->
+        head_body ctx (Printf.sprintf "%s(%s,V)" oo subject)
+          ([ Printf.sprintf "%s(%s,V)" m.s_oo subject; Printf.sprintf "not %s(%s)" cfl subject;
+             Printf.sprintf "not %s(%s,_)" out subject ]
+          @ stands_beside ~subject ~value:"V" beside i))
+      members
   end;
   (* the exception groups' §9.5 deposit carries the SAME displacement wait the
      enclosing chain puts on its outcome (ch. 7.9): a strictly-higher settling
      default displaces these exception groups entirely, path-keyed fact and all, so
      the deposit must not fire on the bare [diff] atom alone (root members do
      not displace each other, so the bare-keyed root deposit stays
-     unguarded) *)
+     unguarded). In a document with inferFromEmpty false it waits for the
+     groups to be reached for real: below a default open with a constant they
+     are read provisionally (ch. 1.5) *)
   deposit ctx ~code:"EF-027" ~rule:(str (path_key target_form group_path)) ~subject
-    (Printf.sprintf "%s(%s)" diff subject :: outer_displaced);
-  ({ s_out = out; s_cfl = cfl; s_gw = gw; s_st = st }, any)
+    (Printf.sprintf "%s(%s)" diff subject :: (if ctx.strict then outer_real else outer_displaced));
+  ({ s_out = out; s_cfl = cfl; s_gw = gw; s_st = st; s_oo = oo }, any)
 
 (* The defaults group of a timeline attribute target, read per day
    (RUNTIME-SEMANTICS ch. 7.11): the chain and
@@ -14803,6 +14949,7 @@ let translate_defaults_group ctx gidx ~owner
       (pow10 (attr_decimals ctx ~otype:owner ~attr:target_name), Some hi)
     end
   in
+  let target_unit = if is_char then None else attr_unit ctx ~otype:owner ~attr:target_name in
   let target_unbounded =
     (not is_char) && unbounded_datatype (attr_datatype ctx ~otype:owner ~attr:target_name)
   in
@@ -14814,7 +14961,8 @@ let translate_defaults_group ctx gidx ~owner
           validity_gate ctx l.pd_validity (fun () ->
               let chain =
                 translate_chain ctx ~is_char ~subject ~origins ~base ~path:[]
-                  ~root:true ~target_form ~target_scale ~target_unbounded ~has_input ~outer_displaced:[] l.defaults
+                  ~root:true ~target_form ~target_scale ~target_unit ~target_unbounded ~has_input ~outer_displaced:[] ~outer_real:[]
+                  l.defaults
               in
               (* a member outside its window gives way (ch. 1.5) *)
               if ctx.strict then
@@ -14867,9 +15015,13 @@ let translate_defaults_group ctx gidx ~owner
   let conflict_guard = if conflict_possible then [ "not " ^ root_cfl ] else [] in
   (* in a document with inferFromEmpty false the group is one writer of its
      target (ch. 1.5): it decides where a member decides and every other one
-     stands, and it stands that it fills nothing ([nil]) where every member
-     gives way, where the group conflicts, and on a characteristic where it
-     decides not to attribute; [member_states] reads [nil] *)
+     decides the same, gives way or is open with the same value, and it stands
+     that it fills nothing ([nil]) where every member gives way, where the
+     group conflicts, and on a characteristic where it decides not to
+     attribute, or is open with not attributing: at the root of a
+     characteristic that leaves it not holding whatever the case adds (ch. 1.5,
+     "A stack on a characteristic"). On an attribute a group open with a value
+     leaves its target open. [member_states] reads [nil] *)
   let nil = Printf.sprintf "grp%d_nil" gidx in
   if ctx.strict then begin
     emit ctx "#defined %s/1." nil;
@@ -14878,24 +15030,32 @@ let translate_defaults_group ctx gidx ~owner
     if conflict_possible then emit_rule ctx ~head:(Printf.sprintf "%s(%s)" nil subject) ~body:[ base; root_cfl ];
     ctx.group_writers <- (owner, target_name, is_char, nil) :: ctx.group_writers
   end;
+  let beside = beside_members ctx ~subject ~tag:(Printf.sprintf "grp%d" gidx) chains in
   if is_char then
     List.iteri
       (fun i m ->
         head_body ctx (Printf.sprintf "has(%s,%s)" subject (str target_name))
-          ((Printf.sprintf "%s(%s,1)" m.s_out subject :: conflict_guard) @ [ base ] @ stands_beside ctx ~subject chains i);
-        if ctx.strict then
+          ((Printf.sprintf "%s(%s,1)" m.s_out subject :: conflict_guard) @ [ base ]
+          @ stands_beside ~subject ~value:"1" beside i);
+        if ctx.strict then begin
           head_body ctx (Printf.sprintf "%s(%s)" nil subject)
-            ((Printf.sprintf "%s(%s,0)" m.s_out subject :: conflict_guard) @ [ base ] @ stands_beside ctx ~subject chains i))
+            ((Printf.sprintf "%s(%s,0)" m.s_out subject :: conflict_guard) @ [ base ]
+            @ stands_beside ~subject ~value:"0" beside i);
+          head_body ctx (Printf.sprintf "%s(%s)" nil subject)
+            ((Printf.sprintf "%s(%s,0)" m.s_oo subject :: conflict_guard) @ [ base ]
+            @ stands_beside ~subject ~value:"0" beside i)
+        end)
       chains
   else begin
     let eff = Printf.sprintf "grp%d_eff(%s)" gidx subject in
     List.iteri
       (fun i m ->
-        let beside = stands_beside ctx ~subject chains i in
+        let beside = stands_beside ~subject ~value:"V" beside i in
         head_body ctx (Printf.sprintf "val(%s,%s,V)" subject (str target_name))
           ((Printf.sprintf "%s(%s,V)" m.s_out subject :: conflict_guard) @ [ base ] @ beside);
         head_body ctx eff
-          ((Printf.sprintf "%s(%s,_)" m.s_out subject :: conflict_guard) @ [ base ] @ beside))
+          ((Printf.sprintf "%s(%s,%s)" m.s_out subject (if ctx.strict then "V" else "_") :: conflict_guard)
+          @ [ base ] @ beside))
       chains;
     (* the defeasible input: the case value stands unless the group
        effectively writes (a conflicting group leaves it standing); in a
@@ -17008,7 +17168,7 @@ let translate_guarded ?(closed_inputs = false) (doc : document) (case : Case.t) 
       form_subject = None; members = []; around = Hashtbl.create 16; scope_type = Hashtbl.create 16; outer_reads = []; form_name = "?";
       payloads = []; member_reach = lazy []; calendar_rounding = false; form_gate = [];
       windows = 0; strict; closed_inputs;
-      case_only = (if strict then case_only_attributes doc else []); boundary = None; reach = []; member_gate = []; limit_gate = []; fills_nothing = []; fold_filter = None; group_writers = [] }
+      case_only = (if strict then case_only_attributes doc else []); boundary = None; reach = []; member_gate = []; limit_gate = []; stack_reach = None; fills_nothing = []; fold_filter = None; group_writers = [] }
   in
   check_parameter_set wire_doc case;
   emit ctx "%% generated by backends/clingo from uchar-ir-v1 + uchar-case-v0.";

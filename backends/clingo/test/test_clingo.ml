@@ -20174,8 +20174,8 @@ let ov_case ?(as_of = "null") ?(parameters = []) objs expected =
 
 (* the frame: verifier-clean, and ref and this encoding hold the case's
    expectations, with every input member complete where [closed] *)
-let ov_frame ?(closed = false) ~name ~ir ~case_text () =
-  verifier_clean ~name ~ir;
+let ov_frame ?(closed = false) ?(verify = true) ~name ~ir ~case_text () =
+  if verify then verifier_clean ~name ~ir;
   let doc, case = load_pair ~ir ~case_text in
   let env =
     { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of;
@@ -20970,6 +20970,286 @@ let () =
       ("WV-1.5-stack-unordered (one decides beside one open)", unordered, [], [ "betwist" ], [], "open", None);
       ("WV-1.5-stack-unordered (none decides)", unordered, [ "betwist"; "beschadigd" ], [], [], "leeg", None);
       ("WV-1.5-stack-unordered (conflict)", unordered, [], [ "betwist"; "beschadigd" ], [], "leeg", Some "Vondst.vindloon") ]
+
+(* WV-1.5-stack-same-conclusion-*: a default open with a constant in a stack,
+   exception group or unordered group (ch. 1.5, "An open default with a
+   constant"): value stacks (same constant, another constant, computed, a
+   default between), characteristic stacks (including root closing only at the
+   root, not inside an exception group or unordered member), unordered groups
+   (chain as member, three members), nested exception groups (with fall-back
+   and suppressed nested EF-027), provisional reading (EF-005 dropped, EF-011
+   in justification and consequence left open, CLINGO-034 limit kept visible),
+   initialisation default vs rule beside initialisation, write boundary EF-006
+   and loud refusal on non-identical units *)
+let () =
+  work @@ fun () ->
+  let stack_doc ?(highest = ov_betwist) ?(between = []) ?(middle = "0") complete =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"vindloon"
+            ((highest :: between)
+            @ [ ov_dflt ~justification:(ov_check "beschadigd") ~consequence:(ov_lit middle) (); ov_stack_base ]) ]
+      [ ov_type ~complete "Vondst" [ "gewicht"; "vindloon" ] [ "betwist"; "beschadigd"; "gemeld" ] ] []
+  in
+  let row name ir chars want =
+    ov_frame ~name:("WV-1.5-stack-same-conclusion-" ^ name) ~ir
+      ~case_text:(ov_case (ov_v1 ~chars [ ("gewicht", "50") ]) [ ov_attr_is "vindloon" want; ov_consistent ]) ()
+  in
+  row "betwist-open" (stack_doc []) [ "beschadigd" ] "0";
+  row "betwist-holds" (stack_doc []) [ "beschadigd"; "betwist" ] "0";
+  row "betwist-stands-not" (stack_doc [ "betwist" ]) [ "beschadigd" ] "0";
+  row "open" (stack_doc [ "beschadigd" ]) [] "open";
+  row "another-constant" (stack_doc ~middle:"5" []) [ "beschadigd" ] "open";
+  let computed =
+    ov_dflt ~justification:(ov_check "betwist") ~consequence:(ov_bin "times" (ov_attr "gewicht") (ov_lit "0")) ()
+  in
+  row "computed" (stack_doc ~highest:computed []) [ "beschadigd" ] "open";
+  let between = [ ov_dflt ~justification:(ov_check "gemeld") ~consequence:(ov_lit "7") () ] in
+  row "between-gives-way" (stack_doc ~between [ "gemeld" ]) [ "beschadigd" ] "0";
+  row "between-decides" (stack_doc ~between []) [ "beschadigd"; "gemeld" ] "open";
+  row "between-open" (stack_doc ~between []) [ "beschadigd" ] "open"
+
+let () =
+  work @@ fun () ->
+  let zwaar = ov_gt "gewicht" "2" in
+  let ir complete =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~characteristic:"beloonbaar"
+            [ ov_dflt ~justification:(ov_check "betwist") ~decision:false ();
+              ov_dflt ~justification:(ov_check "drijfhout") ~decision:false ();
+              ov_dflt ~justification:zwaar ~decision:true () ];
+          ov_stack ~characteristic:"vindbaar"
+            [ ov_dflt ~justification:(ov_check "gemeld") ~decision:true (); ov_dflt ~justification:zwaar ~decision:true () ];
+          ov_stack ~characteristic:"bergbaar"
+            [ ov_dflt
+                ~exceptions:
+                  (ov_groups
+                     [ [ ov_dflt ~justification:(ov_check "betwist") ~decision:false () ];
+                       [ ov_dflt ~justification:(ov_check "drijfhout") ~decision:false () ] ])
+                ();
+              ov_dflt ~justification:zwaar ~decision:true () ];
+          ov_stack ~unordered:true ~name:"keurbaar bij gewicht" ~characteristic:"keurbaar"
+            [ ov_dflt ~justification:zwaar ~decision:true () ];
+          ov_stack ~unordered:true ~name:"keurbaar bij betwisting" ~characteristic:"keurbaar"
+            [ ov_dflt ~justification:(ov_check "betwist") ~decision:false () ] ]
+      [ ov_type ~complete "Vondst" [ "gewicht"; "wachtpremie" ]
+          [ "betwist"; "drijfhout"; "gemeld"; "beloonbaar"; "vindbaar"; "bergbaar"; "keurbaar" ] ]
+      [ ov_rule ~name:"wachtpremie" ~cond:(ov_check ~negated:true "beloonbaar") "wachtpremie" (Some (ov_lit "3")) ]
+  in
+  List.iter
+    (fun (name, complete, chars, gewicht, bel, wacht, vind, berg, keur, chan) ->
+      ov_frame ~name:("WV-1.5-stack-same-conclusion-characteristic-" ^ name) ~ir:(ir complete)
+        ~case_text:
+          (ov_case (ov_v1 ~chars [ ("gewicht", gewicht) ])
+             [ ov_char_is "beloonbaar" bel; ov_attr_is "wachtpremie" wacht; ov_char_is "vindbaar" vind;
+               ov_char_is "bergbaar" berg; ov_char_is "keurbaar" keur; chan ])
+        ())
+    [ ("betwist-open", [], [ "drijfhout" ], "5", "not", "3", "holds", "not", "open", ov_consistent);
+      ("open-subgroup-no-close", [ "drijfhout" ], [], "5", "open", "open", "holds", "open", "open", ov_consistent);
+      ("root-closes", [ "drijfhout" ], [], "1", "not", "3", "open", "not", "not", ov_consistent);
+      ("unordered-conflict", [ "drijfhout" ], [ "betwist" ], "5", "not", "3", "holds", "not", "not",
+       ov_inconsistent ~code:"EF-027" "Vondst.keurbaar") ]
+
+let () =
+  work @@ fun () ->
+  let zero k = ov_dflt ~justification:(ov_check k) ~consequence:(ov_lit "0") () in
+  let five k = ov_dflt ~justification:(ov_check k) ~consequence:(ov_lit "5") () in
+  let doc ?(first = [ zero "betwist" ]) ?(second = zero "beschadigd") ?(third = []) complete =
+    ov_doc
+      ~defaults:
+        ([ ov_stack ~unordered:true ~name:"bergloon bij betwisting" ~attribute:"bergloon" first;
+           ov_stack ~unordered:true ~name:"bergloon bij schade" ~attribute:"bergloon" [ second ] ]
+        @ List.map (fun d -> ov_stack ~unordered:true ~name:"bergloon bij melding" ~attribute:"bergloon" [ d ]) third)
+      [ ov_type ~complete "Vondst" [ "gewicht"; "bergloon" ] [ "betwist"; "beschadigd"; "gemeld" ] ] []
+  in
+  List.iter
+    (fun (name, ir, chars, gewicht, want, chan) ->
+      ov_frame ~name:("WV-1.5-stack-same-conclusion-unordered-" ^ name) ~ir
+        ~case_text:(ov_case (ov_v1 ~chars [ ("gewicht", gewicht) ]) [ ov_attr_is "bergloon" want; chan ]) ())
+    [ ("same-open", doc [], [ "beschadigd" ], "5", "0", ov_consistent);
+      ("other-open", doc ~second:(five "beschadigd") [], [ "beschadigd" ], "5", "open", ov_consistent);
+      ("chain-open", doc ~first:[ zero "betwist"; ov_dflt ~justification:(ov_gt "gewicht" "2") ~consequence:(ov_lit "5") () ] [],
+       [ "beschadigd" ], "5", "open", ov_consistent);
+      ("chain-gives-way", doc ~first:[ zero "betwist"; ov_dflt ~justification:(ov_gt "gewicht" "2") ~consequence:(ov_lit "5") () ] [],
+       [ "beschadigd" ], "1", "0", ov_consistent);
+      ("three-open", doc ~third:[ five "gemeld" ] [], [ "beschadigd" ], "5", "open", ov_consistent);
+      ("three-stands-not", doc ~third:[ five "gemeld" ] [ "gemeld" ], [ "beschadigd" ], "5", "0", ov_consistent) ]
+
+let () =
+  work @@ fun () ->
+  let zero c = ov_dflt ~justification:c ~consequence:(ov_lit "0") () in
+  let fall_back complete =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"vindloon"
+            [ ov_dflt ~justification:(ov_check "beschadigd") ~consequence:(ov_lit "0")
+                ~exceptions:(ov_groups [ [ zero (ov_compound "all" 0 [ ov_check "betwist"; ov_check "beschadigd" ]) ] ]) ();
+              ov_stack_base ] ]
+      [ ov_type ~complete "Vondst" [ "gewicht"; "vindloon" ] [ "betwist"; "beschadigd" ] ] []
+  in
+  ov_frame ~name:"WV-1.5-stack-same-conclusion-nested-fall-back (open)" ~ir:(fall_back [])
+    ~case_text:(ov_case (ov_v1 ~chars:[ "beschadigd" ] [ ("gewicht", "50") ]) [ ov_attr_is "vindloon" "0"; ov_consistent ]) ();
+  ov_frame ~name:"WV-1.5-stack-same-conclusion-nested-fall-back (gives way)" ~ir:(fall_back [ "beschadigd" ])
+    ~case_text:(ov_case (ov_v1 [ ("gewicht", "50") ]) [ ov_attr_is "vindloon" "100"; ov_consistent ]) ();
+  (* nested conflict below an open constant: EF-027 is dropped while betwist is
+     open and deposited when betwist stands not to hold *)
+  let nested_cfl complete =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"havenloon"
+            [ ov_betwist;
+              ov_dflt ~justification:(ov_check "beschadigd") ~consequence:(ov_lit "7")
+                ~exceptions:
+                  (ov_groups
+                     [ [ ov_dflt ~justification:(ov_gt "gewicht" "2") ~consequence:(ov_lit "0") () ];
+                       [ ov_dflt ~justification:(ov_gt "gewicht" "10") ~consequence:(ov_lit "5") () ] ])
+                ();
+              ov_stack_base ] ]
+      [ ov_type ~complete "Vondst" [ "gewicht"; "havenloon" ] [ "betwist"; "beschadigd" ] ] []
+  in
+  ov_frame ~name:"WV-1.5-stack-same-conclusion-nested-conflict (betwist open)" ~ir:(nested_cfl [])
+    ~case_text:(ov_case (ov_v1 ~chars:[ "beschadigd" ] [ ("gewicht", "50") ]) [ ov_attr_is "havenloon" "open"; ov_consistent ]) ();
+  ov_frame ~name:"WV-1.5-stack-same-conclusion-nested-conflict (betwist stands not)" ~ir:(nested_cfl [ "betwist" ])
+    ~case_text:
+      (ov_case (ov_v1 ~chars:[ "beschadigd" ] [ ("gewicht", "50") ])
+         [ ov_attr_is "havenloon" "leeg"; ov_inconsistent ~code:"EF-027" "Vondst.havenloon/1" ])
+    ()
+
+let () =
+  work @@ fun () ->
+  (* provisional deposit (EF-005), provisional fault in justification and in
+     consequence (EF-011), and provisional encoding limit (CLINGO-034) *)
+  let rekenjaar = Printf.sprintf {|{"node": "ContextValue", "name": "evaluationYear", "type": %s, %s}|} ov_num (ov_src "het Rekenjaar") in
+  let deposit_ir complete =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"meldloon"
+            [ ov_dflt ~justification:(ov_check "betwist") ~consequence:(ov_lit "2") ();
+              ov_dflt ~justification:(ov_test "empty" (ov_bin "dividedBy" (ov_attr "gewicht") (ov_attr "getuigen")))
+                ~consequence:(ov_lit "2") () ] ]
+      [ ov_type ~complete "Vondst" [ "gewicht"; "getuigen"; "meldloon" ] [ "betwist" ] ] []
+  in
+  ov_frame ~name:"WV-1.5-stack-same-conclusion-provisional-deposit (open)" ~ir:(deposit_ir [])
+    ~case_text:(ov_case (ov_v1 [ ("gewicht", "10"); ("getuigen", "0") ]) [ ov_attr_is "meldloon" "2"; ov_consistent ]) ();
+  ov_frame ~name:"WV-1.5-stack-same-conclusion-provisional-deposit (stands not)" ~ir:(deposit_ir [ "betwist" ])
+    ~case_text:
+      (ov_case (ov_v1 [ ("gewicht", "10"); ("getuigen", "0") ])
+         [ ov_attr_is "meldloon" "2"; ov_inconsistent ~code:"EF-005" "Vondst.meldloon" ])
+    ();
+  let fault_just_ir complete =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"meldloon"
+            [ ov_dflt ~justification:(ov_check "betwist") ~consequence:(ov_lit "2") ();
+              ov_dflt ~justification:(ov_cmp "greater" rekenjaar (ov_lit "2025")) ~consequence:(ov_lit "2") () ] ]
+      [ ov_type ~complete "Vondst" [ "meldloon" ] [ "betwist" ] ] []
+  in
+  ov_frame ~name:"WV-1.5-stack-same-conclusion-provisional-fault-just (open)" ~ir:(fault_just_ir [])
+    ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "meldloon" "open"; ov_consistent ]) ();
+  ov_fault_frame ~name:"WV-1.5-stack-same-conclusion-provisional-fault-just (stands not)" ~ir:(fault_just_ir [ "betwist" ])
+    ~case_text:(ov_case (ov_v1 []) [ ov_consistent ]) "EF-011";
+  let fault_val_ir complete =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"werkloon"
+            [ ov_dflt ~justification:(ov_check "betwist") ~consequence:(ov_lit "2") ();
+              ov_dflt ~justification:ov_always ~consequence:(ov_bin "minus" rekenjaar (ov_lit "2023")) () ] ]
+      [ ov_type ~complete "Vondst" [ "werkloon" ] [ "betwist" ] ] []
+  in
+  ov_frame ~name:"WV-1.5-stack-same-conclusion-provisional-fault-value (open)" ~ir:(fault_val_ir [])
+    ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "werkloon" "open"; ov_consistent ]) ();
+  ov_fault_frame ~name:"WV-1.5-stack-same-conclusion-provisional-fault-value (stands not)" ~ir:(fault_val_ir [ "betwist" ])
+    ~case_text:(ov_case (ov_v1 []) [ ov_consistent ]) "EF-011";
+  (* an encoding limit (CLINGO-034) inside a provisionally read default stays
+     visible instead of collapsing into open *)
+  let limit_ir =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"meldloon"
+            [ ov_dflt ~justification:(ov_check "betwist") ~consequence:(ov_lit "2") ();
+              ov_dflt
+                ~justification:(ov_cmp "greater" (ov_bin "times" (ov_attr "taxatie") (ov_attr "taxatie")) (ov_lit "5"))
+                ~consequence:(ov_lit "2") () ] ]
+      [ ov_type "Vondst" [ "taxatie"; "meldloon" ] [ "betwist" ] ] []
+  in
+  let doc, case = load_pair ~ir:limit_ir ~case_text:(ov_case (ov_v1 [ ("taxatie", "100000") ]) [ ov_attr_is "meldloon" "open" ]) in
+  let program, guards = Translate.translate_guarded doc case in
+  check "WV-1.5-stack-same-conclusion-provisional-limit: CLINGO-034"
+    (match Solve.run_clingo program with
+     | _, Unix.WEXITED 20 ->
+         List.for_all (fun w -> match Translate.viol_code guards w with Some (c, _) -> c = "CLINGO-034" | None -> false)
+           (Solve.diagnostic program)
+     | _ -> false)
+
+let () =
+  work @@ fun () ->
+  (* initialisation default under open constant vs rule beside initialisation *)
+  let init_stack complete =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"strandloon"
+            [ ov_dflt ~justification:(ov_check "betwist") ~consequence:(ov_lit "5") ();
+              ov_dflt ~init:true ~consequence:(ov_lit "5") () ] ]
+      [ ov_type ~complete "Vondst" [ "strandloon" ] [ "betwist" ] ] []
+  in
+  ov_frame ~name:"WV-1.5-stack-same-conclusion-init (no input)" ~ir:(init_stack [])
+    ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "strandloon" "5"; ov_consistent ]) ();
+  ov_frame ~name:"WV-1.5-stack-same-conclusion-init (other input)" ~ir:(init_stack [])
+    ~case_text:(ov_case (ov_v1 [ ("strandloon", "7") ]) [ ov_attr_is "strandloon" "open"; ov_consistent ]) ();
+  ov_frame ~name:"WV-1.5-stack-same-conclusion-init (same input stays open)" ~ir:(init_stack [])
+    ~case_text:(ov_case (ov_v1 [ ("strandloon", "5") ]) [ ov_attr_is "strandloon" "open"; ov_consistent ]) ();
+  let rule_init =
+    ov_doc [ ov_vondst [ "strandloon" ] [ "betwist" ] ]
+      [ ov_rule ~name:"strandloon" ~cond:(ov_check "betwist") "strandloon" (Some (ov_lit "5"));
+        ov_rule ~init:true ~name:"strandloon aanvankelijk" "strandloon" (Some (ov_lit "5")) ]
+  in
+  ov_frame ~name:"WV-1.5-initialisation-beside-the-same-value (open)" ~ir:rule_init
+    ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "strandloon" "open"; ov_consistent ]) ();
+  (* write boundary EF-006 on a Literal: not a constant, leaves the stack open *)
+  let dec d u =
+    Printf.sprintf {|{"node": "Number", "whole": false, "decimals": %d, "sign": "unspecified"%s}|} d
+      (match u with None -> "" | Some u -> ", \"unit\": " ^ u)
+  in
+  let lit_dec d u v = Printf.sprintf {|{"node": "Literal", "value": {"number": "%s"}, "type": %s, %s}|} v (dec d u) (ov_src v) in
+  let v_eur u =
+    Printf.sprintf
+      {|{"node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten", "attributes": [{"node": "Attribute", "name": "vindloon", "datatype": %s}], "characteristics": [{"node": "Characteristic", "name": "betwist", "kind": "adjectival"}, {"node": "Characteristic", "name": "beschadigd", "kind": "adjectival"}]}|}
+      (dec 2 u)
+  in
+  let eur_u = {|[{"node": "Unit", "abbreviation": "€", "system": "Valuta", "canonical": "ct", "factorToCanonical": {"num": 100, "den": 1}}]|} in
+  let ct_u = {|[{"node": "Unit", "abbreviation": "ct", "system": "Valuta", "canonical": "ct", "factorToCanonical": {"num": 1, "den": 1}}]|} in
+  let kg_u = {|[{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}}]|} in
+  let write_boundary_ir =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"vindloon"
+            [ ov_dflt ~justification:(ov_check "betwist") ~consequence:(lit_dec 3 None "0.005") ();
+              ov_dflt ~justification:(ov_check "beschadigd") ~consequence:(lit_dec 3 None "0.005") () ] ]
+      [ v_eur None ] []
+  in
+  ov_frame ~verify:false ~name:"WV-1.5-stack-same-conclusion-unit-write-boundary (open)" ~ir:write_boundary_ir
+    ~case_text:(ov_case (ov_v1 ~chars:[ "beschadigd" ] []) [ ov_attr_is "vindloon" "open"; ov_consistent ]) ();
+  (* non-identical units on a strict stack refuse loudly rather than comparing
+     pre-conversion integers *)
+  let unit_doc higher lower =
+    Printf.sprintf
+      {|{"format": "uchar-ir-v1", "inferFromEmpty": false, "model": {"objectTypes": [%s], "factTypes": [], "parameters": [], "domains": [], "unitSystems": [{"node": "UnitSystem", "name": "Valuta", "units": [{"node": "Unit", "abbreviation": "ct", "system": "Valuta", "canonical": "ct", "factorToCanonical": {"num": 1, "den": 1}, "spellings": ["cent", "centen"]}, {"node": "Unit", "abbreviation": "€", "system": "Valuta", "canonical": "ct", "factorToCanonical": {"num": 100, "den": 1}, "spellings": ["euro", "euros"]}]}, {"node": "UnitSystem", "name": "Gewicht", "units": [{"node": "Unit", "abbreviation": "kg", "system": "Gewicht", "canonical": "kg", "factorToCanonical": {"num": 1, "den": 1}, "spellings": ["kilogram", "kilogrammen"]}]}], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": [], "prioritizedDefaults": [%s]}, "diagnostics": []}|}
+      (v_eur (Some eur_u))
+      (ov_stack ~attribute:"vindloon"
+         [ ov_dflt ~justification:(ov_check "betwist") ~consequence:higher ();
+           ov_dflt ~justification:(ov_check "beschadigd") ~consequence:lower () ])
+  in
+  List.iter
+    (fun (name, higher, lower) ->
+      let doc, case = load_pair ~ir:(unit_doc higher lower) ~case_text:(ov_case (ov_v1 ~chars:[ "beschadigd" ] []) [ ov_attr_is "vindloon" "open" ]) in
+      match translate doc case with
+      | _ -> check ("WV-1.5-stack-same-conclusion-unit-" ^ name ^ ": refuses loudly") false
+      | exception Uchar_ref.Value.Fault { text = m; _ } ->
+          check ("WV-1.5-stack-same-conclusion-unit-" ^ name ^ ": refuses loudly (" ^ m ^ ")")
+            (Uchar_ref.Case.contains ~needle:"non-identical units" m))
+    [ ("cent", lit_dec 0 None "1", lit_dec 0 (Some ct_u) "1");
+      ("another-unit", lit_dec 0 (Some kg_u) "1", lit_dec 0 None "1") ]
 
 (* WV-1.5-stack-type-chain: the effective stack of a subtype (ch. 7.10). On
    Strandrecht "de uitkering is zijn grondslag" with the exception "op 99
