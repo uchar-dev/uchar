@@ -7820,9 +7820,10 @@ number. A node with the form anchor there (ch. 3.4a) is read per member too
 and has none either, although its value does not depend on the member (card
 `subselection-reads-subject`, 2026-10-23, B7). The node of a fold over a set
 carries its **contributors** instead: the members of its range whose filter
-holds, and of a quantifier fold the members whose filter is not false, true
-or undetermined (ch. 1.5; a value fold whose filter is undetermined on a
-member is broken off and carries none, **Open values**, above). A member
+holds, and of a quantifier fold the members whose filter is true or
+undetermined, that is, not false (ch. 1.5; a value fold whose filter is
+undetermined on a member is broken off and carries none, **Open values**,
+above). A member
 whose filter is false is no contributor, also where the filter has an open
 part: "die aan alle volgende voorwaarden voldoen: hij is gemerkt, hij is
 drijfhout" is false on a vondst that stands not gemerkt, whatever its
@@ -8036,9 +8037,10 @@ voldoen: hij is gemerkt, hij is drijfhout, groter is dan 10,00", and rule 1
 "een Jutter is nauwgezet indien …" the same with "die aan alle volgende
 voorwaarden voldoen". In each, node 0 is the `QuantifierFold`; the nodes of
 its filter and of its matrix are read per member and have no reading of
-their own. In case 1 V1 is gemerkt and weighs 20, and the case does not name its drijfhout; V2
-weighs 5, stands not drijfhout, and the case does not name its gemerkt; V3
-weighs 30, stands not gemerkt, and the case does not name its drijfhout:
+their own. In case 1 V1 is gemerkt and weighs 20, and the case does not name
+its drijfhout; V2 weighs 5, stands not drijfhout, and the case does not name
+its gemerkt; V3 weighs 30, stands not gemerkt, and the case does not name its
+drijfhout:
 
 | member | gemerkt | drijfhout | gewicht | filter of rule 0 | filter of rule 1 | matrix |
 |----|----|----|----|----|----|----|
@@ -8067,15 +8069,16 @@ The other cases of the fixture each read one more arm, rule 0 in the first
 two. In case 2 V1, gemerkt and of gewicht 5, stops the fold false before V2
 of gewicht 20, whose gemerkt is open: `["V1" false reached; "V2" true
 unreached filter undetermined]`, `FAILS`; V2's filter was read before the
-first matrix. In case 3 V1 has neither a gewicht nor a gemerkt, and V2 is
-gemerkt and weighs 20: `["V1" undetermined reached filter undetermined; "V2"
-true reached]`, `OPEN`. Case 4 has no keurgrens, V1 as in case 3 with a
-gewicht of 20 and V2 with one of 5. Rule 2, grenskeurder, filters by "hij is
-gemerkt" or "zijn gewicht is groter dan de keurgrens": V1's filter reads the
-keurgrens provisionally after its open gemerkt (ch. 1.5) and is
-undetermined, `["V1" true reached filter undetermined; "V2" false reached]`,
-`FAILS`. Rule 3, zwaarkeurder, has the filter of rule 0 and the matrix
-"groter dan de keurgrens": every matrix is read provisionally past V1's
+first matrix. In case 3 the case names neither V1's gewicht nor its gemerkt,
+and V2 is gemerkt and weighs 20: `["V1" undetermined reached filter
+undetermined; "V2" true reached]`, `OPEN`. Case 4 binds no keurgrens, and
+gives V1 of case 3 a gewicht of 20 and V2 one of 5. Rule 2, grenskeurder,
+filters by "hij is gemerkt" or "zijn gewicht is groter dan de keurgrens":
+V1's filter reads the keurgrens provisionally after its open gemerkt
+(ch. 1.5) and is undetermined, `["V1" true reached filter undetermined;
+"V2" false reached]`, `FAILS`. Rule 3, zwaarkeurder, has the filter of rule
+0 and the matrix "groter dan de keurgrens": every matrix is read
+provisionally past V1's
 undetermined filter, and the fault of the unbound parameter (EF-014) leaves
 each member undetermined, `["V1" undetermined reached filter undetermined;
 "V2" undetermined reached]`, `OPEN`. The red case

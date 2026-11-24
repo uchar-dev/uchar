@@ -153,8 +153,8 @@ public record ConditionReading(Object object, String form, Status status, List<N
 
     /**
      * One contributor of a fold over a set on the object (RUNTIME-SEMANTICS ch. 3.4, 3.9a, 5.12): a member of its range
-     * whose filter holds, and of a quantifier fold a member whose filter is not false, true or undetermined (ch. 1.5). A
-     * member whose filter is false is none, also where that filter has an open part. For a quantifier fold every
+     * whose filter holds, and of a quantifier fold a member whose filter is true or undetermined, that is, not false
+     * (ch. 1.5). A member whose filter is false is none, also where that filter has an open part. For a quantifier fold every
      * contributor carries the verdict of the matrix on it, or its fault, after the stop and after a fault as well: the
      * table of ch. 3.9a over the contributors, which ch. 5.12 records, read off the rule that evaluates the matrix per
      * member and deposits nothing here; and whether its filter is undetermined ({@code filterUndetermined}), which the
