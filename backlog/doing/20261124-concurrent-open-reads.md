@@ -63,3 +63,63 @@ of per evaluatie.
 - `NodePositions` krijgt haar preorde aan het eind van het laden (`IrLoader.loadWithPositions`), als onveranderlijke
   lijst; `subtree` bouwt niets meer, en een knoop toevoegen nadat de tabel af is, wordt geweigerd.
 - `TmsTranspiler.pointers` wordt in de constructor gebouwd, uit de defaults die de lader gaf, en is daarna `final`.
+
+## Result
+
+Diagnose bevestigd zoals hierboven: het veld `NodePositions.inOrder` werd bij de eerste `subtree` gezet op de
+ongesorteerde lijst en daarna ter plekke gesorteerd; elke request-thread van de dienst die op hetzelfde exemplaar (het
+document van de uitleg, apart geladen in `DecisionCore`) tegelijk `subtree` vroeg, zocht in die lijst. De toolchain-test
+geeft precies de melding van de werkbank (`de motor liet /rules/rules/2/versions/0 op Vondst open, en haar lezing noemt
+geen open lid`, ook op een default en op een regel van de Jutter).
+
+Commits (uchar, branch `card/concurrent-open-reads`, op `f9919e9e3`):
+
+- `ee2666a9c` en `6be34dc9f`: deze kaart en haar claim;
+- `4720652f6`: `NodePositions.complete()` maakt de preorde als onveranderlijke lijst; `IrLoader.loadWithPositions` roept
+  haar aan voordat het de tabel teruggeeft; `subtree` vóór `complete` en een knoop of versie erna worden geweigerd. De
+  zusterplek `TmsTranspiler.pointers` wordt in de constructor gevuld en is `final`; met de getuige
+  `PositionsAcrossThreadsWitnessTest`.
+
+Toolchain (branch `card/concurrent-open-reads`, op `3bb7941ce`): `3dbdc3e63`, `ConcurrentOpenInputsTest` in `service`:
+per ronde een verse kern van `OpenValuesSource` (strikte Jutterswet-regelset), zestien verzoeken met `openInputs` vanaf
+één `CyclicBarrier`, elk antwoord vergeleken met dat na elkaar; 200 rondes, 2,8 s.
+
+De tests, rondes met een afwijkend antwoord:
+
+| test | vóór het herstel | na het herstel |
+|---|---|---|
+| `PositionsAcrossThreadsWitnessTest` (8 threads, 200 rondes) | 174 van 200 | 0 in 5 runs (1000 rondes) |
+| `ConcurrentOpenInputsTest` op uchar `f9919e9e3` | 36, 45 en 39 van 200 (3 runs) | — |
+| `ConcurrentOpenInputsTest` op uchar `62c393c94` (de pin) | 42 van 200 | — |
+| `ConcurrentOpenInputsTest` op uchar `4720652f6` | — | 0 in 5 runs (1000 rondes), en groen in de reactor |
+
+De zusterplek `pointers` heeft geen rode test: de build vult haar vandaag al (de compositie van elke stapel in `run()`),
+zodat ze in een sessie niet meer leeg is; het herstel haalt alleen het luie vullen weg.
+
+Gates (uchar, elk apart in de worktree):
+
+- 1: `check-self-contained: PASS`
+- 12: `check-drools: PASS`, `played 389`, `DRL-text branch played 389`, `JUnit 2073 tests, floor 1573`
+- 17: `check-readings: PASS (ref traced 1201 golden case files, …; on both branches 390 goldens and 1075 case files
+  compared, 8091 readings, 25857 node lines …)`
+- 15: `check-graph: PASS`
+- 8: `check-red: PASS (101 red cases fault observably in ref and clingo, …)`
+- 13: `check-reftype-derivation: PASS (129 unit annotations twisted over 42 goldens, …; 242 executor replays reproduce
+  the untouched outcome, …)`
+
+Toolchain, stap 1 tot en met 5 van `make gates-no-docker` apart, met de submodule lokaal op `4720652f6` (niet
+gecommit): 1 `pin` rood, zoals verwacht (`de pin 4720652f6 staat niet op uchars main`); 2 `reactor` groen,
+testgevallen per module 212/646/68; 3 `twins` groen (`3 tweelingen, 18 cases via HTTP …`); 5 `manifest` groen (`32
+regels, 29 ok, 3 uitgesloten, 0 mismatch`); 4 `replay` rood op `380 goldens speelden, EXPECTED_REPLAY_PLAYED pint 379`:
+de golden `jutterswet-keurder-strikt` van `f9919e9e3` (fold-order-in-readings) speelt nu door de dienst. Lokaal met
+380 en 1062 in het script (daarna teruggezet): `check-service-replay: PASS`, `380 goldens (pin 380), 1062 cases (pin
+1062)`, rode leg `67 cases met hun foutsoort (pin 67)`.
+
+Open punten:
+
+- De hoofdsessie landt `4720652f6` op uchar-main en bumpt daarna de pin van de toolchain; bij die bump gaan
+  `EXPECTED_REPLAY_PLAYED` naar 380 en `EXPECTED_REPLAY_CASES` naar 1062 in `scripts/check-service-replay.sh` (de golden
+  van fold-order-in-readings, niet van deze kaart), en komt `3dbdc3e63` mee, dat op de huidige pin rood is.
+- Niet aangeraakt, want onschadelijk: `DecisionCore.document()` in de toolchain emitteert het document lui in een
+  `volatile` veld; twee threads kunnen het dubbel emitteren, maar publiceren elk een volledige, onveranderlijke `String`.
+- Niet herhaald met de regelset van de werkbank; de toolchain-test geeft dezelfde fout op een eigen regelset.
