@@ -251,3 +251,11 @@ patch in `werk/contributor-filter-verdict/gates2/quantifier-place-in-every-build
    relatie met twee meervoudige rollen); (c) de lezing haalt de volgorde uit eigen feiten, zodat de bijdragen gelijk
    blijven (een herontwerp in `TmsTranspiler`). Daarna kunnen regels 0–2 van de fixture de golden in.
 
+
+**Landing (hoofdsessie, 2026-11-24).** Vóór de bouw en na elke bouwstap las een extern model (xhigh) het werk; zijn
+punten zijn verwerkt (de lezing vóór de bouw; vier tekstpunten en de tripwire na de eerste stap). Open punt 5 (de volgorde
+van de leden van een vouw staat in Drools alleen in een build met lezingen vast, zodat een strikte golden met een
+ongeordende vouw `ReadingRulesFixpointWitnessTest` rood maakt) gaat naar de eigenaar; het externe model adviseert weg
+(c): de lezing haalt de volgorde uit eigen feiten, zodat productie byte-gelijk blijft, in een eigen kaart, samen met de
+latente identiteit in `FilterFault.sentence` (`SessionDump`). `make gates` op `a396f07df`: alle zeventien gates groen in
+311 s (red=0).
