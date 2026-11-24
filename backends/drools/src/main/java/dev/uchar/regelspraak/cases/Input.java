@@ -53,8 +53,8 @@ public final class Input {
      *  role of the fact type and {@code second} the second. */
     record Link(String factType, Object first, Object second) {}
 
-    /** A characteristic the input states not to hold: {@code characteristic} of {@code bean}, named as the model
-     *  declares it. */
+    /** A characteristic the input states not to hold: {@code characteristic} of {@code bean}, its declared name in any
+     *  spelling that is that name under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}. */
     record Absent(Object bean, String characteristic) {}
 
     /** Adds {@code bean}. */
@@ -97,8 +97,9 @@ public final class Input {
         return this;
     }
 
-    /** States that the characteristic {@code characteristic} of {@code bean}, named as the model declares it, does not
-     *  hold ({@code characteristicsAbsent}, RUNTIME-SEMANTICS ch. 1.5): the bean must not hold it. */
+    /** States that the characteristic {@code characteristic} of {@code bean} does not hold ({@code characteristicsAbsent},
+     *  RUNTIME-SEMANTICS ch. 1.5): the bean must not hold it. {@code characteristic} is its declared name, in any spelling
+     *  that is that name under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}, as a case names it. */
     public Input characteristicAbsent(Object bean, String characteristic) {
         absent.add(new Absent(Objects.requireNonNull(bean, "bean"), Objects.requireNonNull(characteristic, "characteristic")));
         return this;

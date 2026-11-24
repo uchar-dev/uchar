@@ -460,14 +460,17 @@ public final class DroolsBackend {
         for (Input.Absent a : input.absent()) {
             ObjectType t = types.get(a.bean());
             if (t == null) throw absentRefused(a, DroolsCode.INSERT_ABSENT_CHARACTERISTIC.part("not-in-input"));
-            ObjectType declarant = t.chain().stream().filter(c -> c.characteristics.contains(a.characteristic()))
-                    .findFirst().orElse(null);
-            if (declarant == null || declarant.characteristicGranularity.get(a.characteristic()) != null)
+            // the name as the model declares it: the caller may write it in another spelling of the same name (Namen.norm),
+            // as a case does, and the granularity, the bean property and the element key are those of the declaration
+            String declared = CaseRunner.declaredCharacteristic(t, a.characteristic());
+            ObjectType declarant = declared == null ? null
+                    : t.chain().stream().filter(c -> c.characteristics.contains(declared)).findFirst().orElse(null);
+            if (declarant == null || declarant.characteristicGranularity.get(declared) != null)
                 throw absentRefused(a, DroolsCode.INSERT_ABSENT_CHARACTERISTIC.part("undeclared", "objectType", t.name));
-            if (Boolean.TRUE.equals(Accessors.leesEigenschap(a.bean(), a.characteristic())))
+            if (Boolean.TRUE.equals(Accessors.leesEigenschap(a.bean(), Namen.property(declared))))
                 throw absentRefused(a, DroolsCode.INSERT_ABSENT_CHARACTERISTIC.part("holds"));
             absent.computeIfAbsent(a.bean(), k -> new HashSet<>())
-                    .add(ProducerConsumer.elementOf(declarant, a.characteristic(), true));
+                    .add(ProducerConsumer.elementOf(declarant, declared, true));
         }
         OpenableMembers openable = build.execModelTranspiler().openableMembers();
         if (openable.isEmpty()) return null;

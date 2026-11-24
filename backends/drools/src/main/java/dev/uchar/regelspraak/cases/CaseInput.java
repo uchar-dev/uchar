@@ -478,7 +478,7 @@ public final class CaseInput {
                         + ot.name + ": it holds per period, and \"characteristicsAbsent\" states a scalar truth no temporal"
                         + " reader consults");
             reader.ownField(ot, k, true, "sets");
-            if (Boolean.TRUE.equals(dev.uchar.regelspraak.runtime.Accessors.leesEigenschap(bean, k)))
+            if (Boolean.TRUE.equals(dev.uchar.regelspraak.runtime.Accessors.leesEigenschap(bean, Namen.property(k))))
                 throw NameFault.bothStated(label, written.asText());
             absentCharacteristics.add(new Input.Absent(bean, k));
         }
