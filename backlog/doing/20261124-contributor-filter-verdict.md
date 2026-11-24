@@ -91,7 +91,8 @@ het filter op een bijdrager vaststaat, staat er niet in. De uitleg van de toolch
   Nieuw uitgewerkt voorbeeld **"Worked example — the filter of a contributor"** (`WV-5.12-contributor-filter`, Jutterswet:
   keurder "die gemerkt of drijfhout zijn", nauwgezet "die gemerkt en drijfhout zijn", met de tabel per lid en de canonieke
   tekst, plus de uitgangen van casus 2–4 en de rode casus). De alinea's over gate 17 en de grenzen zeggen dat geen golden
-  een bijdrager met een onbepaald filter heeft (zie open punt 1).
+  een bijdrager met een onbepaald filter heeft (zie open punt 1; sinds `1ca3c38b6` noemen ze de golden
+  `jutterswet-zwaarkeurder-strikt`).
 - `090054d6b` ref: `Eval.contribution` krijgt `filter_undetermined`; de kwantorvouw geeft het filteroordeel door aan de
   waarnemer, ook voor de onbereikte leden (`unreached` krijgt nu de paren lid–filteroordeel in plaats van `List.map fst`);
   `Reading.lines` schrijft de aanduiding. Nieuwe fixture `ref/test/fixtures/strict-empty/contributor-filter/` (IR uit
@@ -152,20 +153,86 @@ veranderde; de goldens van gate 17 veranderden niet.
   compared, 8073 readings, 25815 node lines of which 4140 unreached, 1009 with contributors, 1083 with a timeline, 842
   with the object of a read and 621 of a displaced reading, 147 contributors of ref not reached; …; deviations 0,
   end-state deviations 0; 24 comparison rows, 4 tripwire rows, 10 end-state rows; 25 s)`; counted: `… 147 contributors
-  of ref not reached, 0 with an undetermined filter`
+  of ref not reached, 0 with an undetermined filter`; op `1ca3c38b6` (tweede bouwer, hieronder): `… 148 contributors of
+  ref not reached, 4 with an undetermined filter`
 - 7 `check-noop: PASS (1145 cases refute a do-nothing executor; 44 pinned survivors pin defeasible standing)`
 - 8 `check-red: PASS (100 red cases fault observably in ref and clingo, floor 44; 177 ref and clingo code checks …;
   293 pinned parameter checks confirmed, floor 120; 47 fault kinds in RUNTIME-SEMANTICS ch. 5.7b, floor 31)`
 - Geen vloer verhoogd of verlaagd; `make gates` draait de hoofdsessie.
 
+**Tweede bouwer, 2026-11-24** (open punt 1, met mandaat van de eigenaar voor `scripts/`, en vier punten uit de externe
+review; vijf commits na `f0f8ea577` en dit Result, niet gemerged).
+
+- `17c926ad3` clingo-suite: `contributor-filter` in de lijst `plays` van de strikte witnesses. De suite eist dat elke map
+  onder `ref/test/fixtures/strict-empty/` in precies één van haar twee lijsten staat (`present = listed`); de fixture
+  stond in geen (gate 6 was niet gedraaid). clingo speelt haar vier casussen.
+- `3caecb1e1` de golden `jutterswet-keurder-strikt`: het document van de fixture met haar casussen 1–3 uit `scenario.rgs`
+  (byte-gelijk aan de casusbestanden van de fixture), `EXPECTED_PLAYED` 385 → 386, DRL-tekstpin. Casus 4 kan de
+  scenariolaag niet uitdrukken: zij weigert een scenario waarvan een regel een parameter zonder waarde leest ("de regel
+  'grenskeurder' leest de parameter 'keurgrens', die in de situatie van het scenario 'geen keurgrens' geen waarde
+  heeft"). ref, clingo en beide Drools-takken speelden de drie casussen, maar gate 12 viel om (hieronder); vervangen door
+  `1ca3c38b6`.
+- `a7dae658d` de vier punten van de externe review: ch. 5.12 zegt "any other fold over a set" waar het "a value fold"
+  zei; "The four worked examples above" en `WV-5.12-contributor-filter` in "The artifacts"; het kopcommentaar van gate 17
+  noemt dat `filter undetermined` letterlijk vergeleken wordt; `unordered_faults` slaat een regel van ref zonder
+  bijdragers over (`c is not None`), met een tripwire-rij die op de functies van `f0f8ea577` crasht
+  (`AttributeError: 'NoneType' object has no attribute 'values'`, gemeten) en nu slaagt.
+- `7e7e94365` `SessionDump`: een `Undetermined` of `OpenRead` in een feit schrijft de dump als
+  `Undetermined(OpenMember(subject="V2", member=…))`. Hun zin noemt het object met zijn identiteit, die de dump weigert,
+  en de `MemberTest` van een kwantorvouw met een onbepaald filter of matrix draagt er een. Rood gemeten in gate 12 op
+  `a7dae658d`: `BranchDumpsCorpusWitnessTest` en `ReadingRulesFixpointWitnessTest`, "the dump writes no identity: the
+  sentence "undetermined: open Vondst@573662a8 vondst.gemerkt" names Vondst@573662a8, the object "V2" of the session".
+- `1ca3c38b6` de golden heet `jutterswet-zwaarkeurder-strikt` en draagt alleen regel 3 van de fixture (zwaarkeurder:
+  filter "gemerkt of drijfhout", matrix "groter dan de keurgrens") met casussen 1–3; `NOTE.md` met de handberekening per
+  lid en de drie lezingen; `EXPECTED_PLAYED` blijft 386; DRL-tekstpin vervangen; casus 2 in `SURVIVORS` van gate 7 (de
+  afwezigheid van zwaarkeurder is de bewering); ch. 5.12 (voorbeeld en grens), de NOTE van de fixtures en de
+  commentaarregels in `check-drools.sh` en `check-readings.sh` noemen haar. De fixture blijft heel: zij pint drie regels,
+  casus 4 en de rode casus die de golden niet heeft.
+
+**Waarom alleen regel 3.** Na de dumpfix bleef `ReadingRulesFixpointWitnessTest` rood op `jutterswet-keurder-strikt`. In
+een build met lezingen bindt `TmsTranspiler.quantifierContributions` de plaats van een lid dat de vouw open kan laten
+(`placed = ordered || positions != null && (filterEnds.open() || matrixEnds.open())`, sinds `9b1986357`), zonder lezingen
+niet; de witness houdt de productiefeiten van beide builds gelijk (`CLAUDE.md`, gate 12: "whose production build is
+byte-equal to the one without"). Gemeten op de drie casussen, beide takken: alleen de `Contribution`-feiten van keurder,
+nauwgezet en grenskeurder verschillen, en alleen in `MemberTest.place` (`[0]` tegenover `[0, k]`). Zwaarkeurder
+verschilt niet: zijn matrix leest de keurgrens, kan dus falen, en is in elke build geordend. Een prototype dat de plaats
+in elke build bindt (`placed = ordered || filterEnds.open() || matrixEnds.open()`) maakte de golden groen, maar laat de
+productiebuild een strikte kwantorvouw over een relatie met twee meervoudige rollen weigeren (DROOLS-318; gemeten op
+`jutterswet-ketenkwantor` met `inferFromEmpty: false`, die zonder lezingen nu bouwt, met het prototype niet); voor
+waardevouwen zou hetzelfde `OpenReadingsWitnessTest.a_many_to_many_fold_is_refused_with_readings` breken. Niet geland;
+patch in `werk/contributor-filter-verdict/gates2/quantifier-place-in-every-build.patch`. Zie open punt 5.
+
+**Gates** (tweede bouwer, elk apart, na elkaar, op `1ca3c38b6`; logs in `werk/contributor-filter-verdict/gates3/`):
+
+- 1 `check-self-contained: PASS`
+- 2 `check-ir-schema: PASS (… 509 file(s) validate and round-trip, floor 192; 65476 object(s) in 1155 document(s) in the
+  schema's key order, 2 in no subschema)`
+- 4 `check-case-schema: PASS (schema valid; 146 self-test row(s); 1292 case file(s) validate)`
+- 5 `check-oracle: PASS (ref suite 4232 worked examples, floor 489; 1192 cases replayed exactly, floor 427; preservation
+  with complete knowledge: 280 goldens and 785 cases play, floors 279 and 782; … 5 carrying the property already, …
+  jutterswet-zwaarkeurder-strikt …; monotonicity: 807 cases, 2667 runs without one input compared, floor 2652, …)`
+- 6 `check-clingo: PASS (backend suite 4879 checks, floor 4797, its 272 units each once in 32 shards; 1162 cases replay
+  exactly through clingo …; 10 golden(s) in the refusal channel …)`
+- 7 `check-noop: PASS (1147 cases refute a do-nothing executor; 45 pinned survivors pin defeasible standing)`
+- 10 `check-regelspraak: PASS — JUnit suite green (1716 tests, floor 173); 224 rgs golden(s) re-emit byte-identically
+  (floor 80)`
+- 12 `check-drools: PASS`, `played 386`, `DRL-text branch played 386`, `JUnit 2062 tests, floor 1573`
+- 16 `check-scenario: PASS — 51 scenario golden(s) (floor 7) regenerate 169 case file(s) (floor 31) and their ir.json
+  byte-identically`
+- 17 `check-readings: PASS (ref traced 1192 golden case files, …; on both branches 387 goldens and 1066 case files
+  compared, 8076 readings, 25818 node lines of which 4140 unreached, 1012 with contributors, …, 148 contributors of ref
+  not reached; …; deviations 0, end-state deviations 0; 24 comparison rows, 5 tripwire rows, 10 end-state rows; 25 s)`;
+  counted: `… 148 contributors of ref not reached, 4 with an undetermined filter`
+- Geen vloer verhoogd of verlaagd; `EXPECTED_PLAYED` (een gelijkheid) 385 → 386. Niet gedraaid: 3, 8, 9, 11, 13, 14,
+  15 (de verifier is wel los op het nieuwe `ir.json` gedraaid: `verifier: PASS`).
+
 **Open punten.**
 
-1. **Gate 17 vergelijkt de nieuwe tekst op geen golden.** Geen golden met `inferFromEmpty: false` heeft een
-   kwantorvouw, dus gate 17 telt 0 bijdragers met een onbepaald filter en houdt de tekst alleen in zijn eigen rijen.
-   Ref ≡ Drools op de nieuwe tekst houdt `OpenReadingsWitnessTest` (de trace van ref als pin, beide takken, 33 pins met
-   de aanduiding), in de suite van gate 12. Een golden die het in gate 17 brengt, raakt `scripts/check-drools.sh`
-   (`EXPECTED_PLAYED` is een gelijkheid) en de DRL-pins, waarvoor deze kaart geen mandaat had. Voorstel: de fixture
-   `contributor-filter` als golden opnemen in een kaart met dat mandaat, of de huidige dekking aanvaarden.
+1. **Gesloten.** Gate 17 vergelijkt de aanduiding op de golden `jutterswet-zwaarkeurder-strikt`: vier bijdragers met
+   een onbepaald filter, bereikt (casus 1, 3), onbereikt (casus 2) en met filter én matrix onbepaald (casus 3), op ref en
+   beide Drools-takken gelijk. Alleen het geordende pad van Drools (een matrix die kan falen); regels 0–2 van de fixture
+   (het ongeordende pad met plaatsen alleen in een build met lezingen) staan alleen in de fixture en
+   `OpenReadingsWitnessTest`, zie punt 5.
 2. **Toolchain.** `ConditionReading.Contributor` heeft een zesde component; de toolchain gebruikt alleen de accessors
    (`Verbaliser`, `ExplanationFoldMembersTest`), dus zij compileert ongewijzigd tegen deze stand. Het gebruik in de uitleg
    is de kaart `quantifier-filter-in-explanation` (één pin-bump).
@@ -175,4 +242,12 @@ veranderde; de goldens van gate 17 veranderden niet.
 4. Geen rij voor `spec/CONSTRUCTS.md` of `spec/PLAN.md`: de lezing is geen wire, en de semantiek (ch. 1.5, 3.9a)
    veranderde niet. De beschrijving van gate 17 in `CLAUDE.md` ("every reading line is compared verbatim … except the
    position") dekt de aanduiding al.
+5. **Plaatsen van open leden alleen met lezingen (Drools).** Een build met lezingen bindt de plaats van een lid dat een
+   vouw open kan laten, de build zonder niet (kwantorvouw: `MemberTest.place`; vouw over een set: `FoldOpen.place`), zodat
+   `ReadingRulesFixpointWitnessTest` rood wordt op elke strikte golden met zo'n vouw waarvan de matrix niet kan falen of
+   deponeren, of met een open lid van een vouw over een set. Drie wegen, een keuze van de eigenaar: (a) de witness
+   vergelijkt de productiefeiten zonder die plaats (een testwijziging, en de zin van gate 12 in `CLAUDE.md`); (b) de
+   productiebuild bindt de plaats ook (prototype hierboven; kost: DROOLS-318 in productie op een strikte vouw over een
+   relatie met twee meervoudige rollen); (c) de lezing haalt de volgorde uit eigen feiten, zodat de bijdragen gelijk
+   blijven (een herontwerp in `TmsTranspiler`). Daarna kunnen regels 0–2 van de fixture de golden in.
 
