@@ -735,8 +735,8 @@ unlinked = 0  # the node lines with `on none`, reported beside the floor of the 
 displaced_read = 0  # the displaced readings with a node line, reported beside the floor of their node lines
 excluded, seen_errors, seen_deviations, seen_state_deviations, manifest_names = {}, set(), set(), set(), set()
 links = channel_facts = 0  # the end-state lines of the links and the §9.5 facts, reported beside the floors
-# the contributors of ref whose filter is undetermined, reported without a floor: no golden with inferFromEmpty: false
-# has a quantifier fold (2026-11-24), so the count is 0, and the text is held in the rows above
+# the contributors of ref whose filter is undetermined, reported beside the floors; on 2026-11-24 they stand in one
+# golden, jutterswet-keurder-strikt, and the rows above hold the text as well
 filter_undetermined = 0
 for row in open(os.path.join(work, 'manifest'), encoding='utf-8'):
     name, file, status = row.rstrip('\n').split('\t')
