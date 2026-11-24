@@ -120,3 +120,147 @@ varianten van die regelset weer te scheiden (met gelijke uitkomsten als acceptat
   constante (voorlopig gelezen); een initialisatie-default zonder en met afwijkende invoer.
 - ref, clingo en Drools (beide takken) spelen ze gelijk; gate 17 vergelijkt de lezingen; gate 7 en `EXPECTED_PLAYED`
   volgen; `make gates` groen.
+
+## Result stap 1 (spec en ref, met de goldens; 2026-11-24)
+
+Commits (branch `card/same-conclusion-open-variant`, op main `f46796f52`):
+
+- `88e677695`: de kaart geclaimd;
+- `09f323a13`: spec ch. 1.5 en 5.12, ref `eval.ml` en `reading.ml`, de uitgewerkte voorbeelden als tests;
+- `067fa324d`: zeven goldens, een rode casus, de lezingen van ch. 5.12 op twee goldens als tests;
+- dit Result.
+
+**Spec.** Ch. 1.5: in "A stack" beslist een lagere default ook waar elke hogere die open is alleen haar waarde kan
+beslissen; een nieuwe alinea **An open default with a constant** met de vijf uitkomsten (beslist v, conflict, geeft op,
+open met v, open), de tabel van de keten, een default met uitzonderingsgroepen als twee plaatsen in zijn keten, het
+voorlopig lezen onder een default open met v (geen deponering, een fout laat het open), en de theorie: op een kenmerk
+Kleene's sterke tabel (de stapel als formule c ∨ R, ¬c ∧ R, bodem onwaar), op een attribuut de parallelle als-dan-anders
+van Plotkin (1977), met de constante als bewuste afbakening en `IfThenElse` sequentieel. "The initialisation of a stack"
+(ook een voorbeeld met afwijkende invoer), "A stack on a characteristic" (de sluiting aan de wortel, alleen daar),
+"Exception groups and a declared-unordered group" (de regel van de groep, een lid telt met zijn hele keten), "An
+initialisation" (besluit 6: naast een regel geen stapel), en in "The two requirements" één zinsdeel (ook een default
+van een stapel wordt voorlopig gelezen). Ch. 5.12: de rij `DISPLACED`, de alinea **Open values** (onder een default open
+met v zijn de lagere aan de beurt, voorlopig, met hun eigen status tot de default die de uitkomst vastlegt; die
+eronder `DISPLACED`; een voorlopige fout `OPEN` met de fout aan de knopen), het voorbeeld van case 5 van
+`jutterswet-afleiden-uit-leeg` ("10" nu `HOLDS`), en `WV-5.12-same-conclusion` en `-fault`. Buiten de genoemde
+hoofdstukken één zin in ch. 7.3 (de initialisatie-default "below a default that is open"), die anders de nieuwe lezing
+tegensprak.
+
+Een keuze die de kaart niet noemde, gemaakt bij het schrijven van ch. 5.12: onder een default open met v krijgt een
+lagere default die een *andere* waarde beslist ook `HOLDS` (niet meer `DISPLACED`), omdat de sessie haar nu leest; de
+lezing volgt wat de sessie evalueert. Dat verandert de lezingen van bestaande goldens (gate 17, hieronder).
+
+**ref.** `eval.ml`: `chain_result` met `Open_only` en `Open_any`; `in_chain` (de tabel), `reconcile` (de groep),
+`own_outcome ~provisional` (deponeringen niet doorgegeven, `Value.Fault` → `Open_any`), `constant` (kenmerkbesluit of
+`Literal`), aan de wortel `Open_only (Char_dec false)` als `Undecided`. `reading.ml`: dezelfde loop voor de statussen
+(`read_on ?faulted`, zodat een voorlopige fout `OPEN` wordt en een binnen een samengestelde voorwaarde opgevangen fout
+niet).
+
+**Tests van ref.** Nieuw: `WV-1.5-stack-same-conclusion-*` (waarde, andere constante, berekend, ertussen, voorlopig
+met deponering en fout, initialisatie, kenmerk met wortel, ongeordend met keten en drie leden, genest met terugval),
+`WV-1.5-initialisation-beside-the-same-value`, `WV-5.12-same-conclusion` en `-fault`; de scenario's lopen mee in
+`WV-1.5-monotone` en `WV-1.5-preserved`. Veranderd door de nieuwe lezing (besluit 5 en de keuze hierboven), met reden:
+`WV-5.12-afleiden-uit-leeg (betwist open)`: "10" `DISPLACED` → `HOLDS`; `WV-5.12-open-stack (open default)`:
+`defaults/2` `DISPLACED` → `HOLDS`; `(two initialisations below an open default)`: `defaults/1` `DISPLACED` → `HOLDS`,
+`rules/0` `DISPLACED` → `FAILS`. Elk heeft een open default met een constante boven een lagere die een andere waarde
+beslist; de uitkomst blijft open.
+
+**Meting** (`werk/same-conclusion-open-variant/METING.md`). Op een meetdocument met de drie vormen van de kaart en een
+regel met initialisatie lazen ref, clingo en Drools (beide takken) vooraf alle vier open. Een gewone regel met een
+onvoorwaardelijke initialisatie lezen alle drie natief (clingo past de desugaring van ch. 7.7 in een strikt document
+niet toe); dat blijft (besluit 6). Geen golden van het corpus verandert van uitkomst (gate 5 groen); de lezingen van
+twee wel: `jutterswet-afleiden-uit-leeg` (case 1–5, de premie "10" `HOLDS`) en `jutterswet-heffing-strikt` (case 2 en
+3, de stapelheffing "25" `HOLDS`).
+
+**Goldens** (Jutterswet, handberekening in `NOTE.md`; "open" = `attributeOpen`/`characteristicOpen`):
+
+| golden | vorm | casussen | bron |
+|---|---|---|---|
+| `jutterswet-zelfde-conclusie-kenmerk` | kenmerk-stapel, wortelsluiting, open met "wel" | 9: betwist open/waar/niet bij gewicht 5 en 1, drijfhout niet, gemeld waar/niet | `source.rgs`, `scenario.rgs` |
+| `jutterswet-zelfde-conclusie-waarde` | attribuut-stapel; andere constante; berekend; 7 ertussen | 8: betwist open/waar/niet, beschadigd niet, gemeld open/waar | idem |
+| `jutterswet-zelfde-conclusie-ongeordend` | ongeordend {0,0}, {0,5}, {0,0,5} | 6, met twee conflicten | idem |
+| `jutterswet-zelfde-conclusie-genest` | uitzonderingsgroepen {0,0}; open 0 boven terugval 0; keten [0 indien betwist; 5] naast 0 | 5, met een conflict `Vondst.bergloon/0` | idem |
+| `jutterswet-zelfde-conclusie-deponering` | EF-005 onder een open 2 | 3 (open: 2 zonder feit; waar: 2; niet: 2 met feit) | idem |
+| `jutterswet-zelfde-conclusie-fout` | EF-011 onder een open 2 | 2 (open: open, geen fout; waar: 2) | `source.rgs`, casussen met de hand (de scenariolaag eist een peildatum) |
+| `jutterswet-zelfde-conclusie-initialisatie` | initialisatie-default onder open 5, zonder en met invoer 7 en 5; regel + initialisatie (besluit 6) | 7 | `ir.json` met de hand (de frontend schrijft een initialisatie-default alleen onder de opgavemarker) |
+
+Rood: `corpus/red/jutterswet-zelfde-conclusie-fout` (betwist niet: de sessie faalt met EF-011). Elke golden heeft
+casussen met de open invoer weggelaten en gegeven; gate 5 vergelijkt de runs zonder die invoer (monotonie).
+
+**Getallen** (gate 5; geen aparte vóór-run, oud afgeleid): ref-suite 4232 → 4473 werkvoorbeelden (vloer 489);
+gereplayde casussen 1201 → 1241 (vloer 427); goldens met de eigenschap 7 → 14; monotonie 2789 runs zonder één invoer
+(vloer 2652), 856 casussen. Geen vloer veranderd. Gate 2: 521 bestanden; gate 3: 521 golden schoon, 646 negatief; gate
+4: 1343 casusbestanden; gate 7: 1196 casussen, 45 survivors; gate 10: 233 rgs-goldens; gate 16: 59 scenario-goldens, 209
+casusbestanden.
+
+**Gates** (elk apart in de worktree):
+
+```
+check-self-contained: PASS
+check-ir-schema: PASS (schema valid; 79 pattern self-test row(s); 563 shape self-test row(s); 521 file(s) validate and round-trip, floor 192; 66197 object(s) in 1167 document(s) in the schema's key order, 2 in no subschema)
+check-verifier: PASS (…; 521 golden clean; 646 negative rejected for their declared rule, floor 568; …; empty-closures inventory over 521 documents: 839 closure places, floor 823, 428 negation, floor 383, 209 absent-instance, floor 205, 20 kinds, floor 20, 24 witnesses verbatim, floor 24, 1514 pointers resolve)
+check-case-schema: PASS (schema valid; 146 self-test row(s); 1343 case file(s) validate)
+check-oracle: PASS (ref suite 4473 worked examples, floor 489; 1241 cases replayed exactly, floor 427; preservation with complete knowledge: 281 goldens and 787 cases play, floors 279 and 782; …; 14 carrying the property already, …; monotonicity: 856 cases, 2789 runs without one input compared, floor 2652, 83 of a member not open without its value; 0 listed gap(s) of ch. 1.5; …)
+check-noop: PASS (1196 cases refute a do-nothing executor; 45 pinned survivors pin defeasible standing)
+check-regelspraak: PASS — JUnit suite green (1716 tests, floor 173); 233 rgs golden(s) re-emit byte-identically (floor 80)
+check-scenario: PASS — 59 scenario golden(s) (floor 7) regenerate 209 case file(s) (floor 31) and their ir.json byte-identically
+```
+
+Ook gedraaid, voor de rode casus: `check-red: PASS (102 red cases fault observably in ref and clingo, floor 44; …)`,
+Drools-poot `PASS (83 fault-pinned, …)`.
+
+Rood, zoals verwacht, en alleen op deze goldens:
+
+- gate 6 (clingo): 14 casussen van `-kenmerk` (5), `-waarde` (3), `-ongeordend` (3), `-genest`, `-deponering`,
+  `-initialisatie` (elk 1); `-fout` speelt al;
+- gate 12 (Drools): de JUnit-suite, 4 van 2073 tests: `TmsCorpusWitnessTest` en `DrlTextCorpusWitnessTest` (de zes
+  goldens hierboven rekenen verkeerd), `RuleOriginCorpusWitnessTest` (`-genest` en `-ongeordend`: de regel "open …" met
+  rol `RECONCILE_OPEN` wordt door de test niet aan zijn naam herkend; de eerste goldens in het corpus met een
+  verzoening die open kan zijn), `DrlTextPinWitnessTest` (de zeven nieuwe goldens hebben nog geen pin); de replay en
+  `EXPECTED_PLAYED` liep daardoor niet;
+- gate 13: alleen de clingo-poot, 28 regels op dezelfde zes goldens (presentatie- en naampoot: clingo mist de uitkomst
+  al op de onaangeraakte golden);
+- gate 17: de lezingen op `jutterswet-afleiden-uit-leeg` (case 1–5) en `jutterswet-heffing-strikt` (case 2, 3), beide
+  takken, en op de zeven nieuwe goldens (lezingen, en waar de uitkomst verandert de eindtoestand).
+
+**Stap 2, clingo** (`backends/clingo/lib/translate.ml`, strikte tak):
+
+- `translate_chain` (rond 14166–14398): naast `out`/`gw`/`st` een atoom "open met v" per default en per keten; een
+  default is open met v waar hij bereikt is, zijn rechtvaardiging niet vaststaat en zijn besluit een constante is
+  (kenmerkbesluit, `Literal`); bereikbaarheid onder een hogere "open met v" (de tabel van ch. 1.5): de lagere wordt
+  gelezen, beslist v → de keten beslist v, geeft op of is open met v → door, anders open;
+- voorlopig lezen: wat alleen onder zo'n default bereikt wordt, deponeert niets (`deposit_guard`, `inconsistent/2`) en
+  een fout (`viol/2`) maakt de keten open in plaats van de sessie te laten falen;
+- `translate_group` en `stands_beside` (rond 14400–14488): de regel van de groep (een lid open met v naast een lid dat v
+  beslist laat de groep v beslissen; geen beslissing en alle open leden open met v → de groep open met v);
+- `translate_defaults_group` (rond 14757–14907): aan de wortel van een kenmerk sluit "open met niet" tot `nil`; op een
+  attribuut blijft "open met v" open (ook met invoer v); `val`/`has` waar de groep beslist;
+- de regel naast een initialisatie blijft natief (geen desugaring in een strikt document).
+
+**Stap 3, Drools** (`TmsTranspiler`, `Outcome`, `SessionReaders`, beide renderings):
+
+- `simpleForm` (rond 4135): een open default met een constante verdringt de lagere niet; òf zulke stapels naar
+  `generalForm`, òf `simpleForm` krijgt de tabel;
+- `generalForm`/`chainRules` (rond 4170) en `Outcome.Kind`: een uitkomst "open met v"; `noOutcome` laat een hogere
+  "open met v" door; de keten-tabel; onder zo'n uitkomst geen deponering (`depositRule`, ook die van een
+  rechtvaardiging) en een fout (`conditionFaultRule`, een fout in de consequentie) als open;
+- `reconciliation` (rond 4251): `RECONCILE_AGREEMENT` beslist ook naast leden open met dezelfde v; `RECONCILE_OPEN`
+  alleen bij een open lid of een lid open met een andere v; een groep zonder beslissing met alle open leden open met v
+  is open met v; aan de wortel van een kenmerk sluit "open met niet";
+- de lezingen (`SessionReaders` rond 532–619, `readingRule`): onder een default open met v de lagere aan de beurt met
+  hun eigen status (`HOLDS`, `FAILS`, `OPEN`, een voorlopige fout `OPEN`), `DISPLACED` onder de default die de uitkomst
+  vastlegt; dat verandert ook de lezingen van `jutterswet-afleiden-uit-leeg` en `jutterswet-heffing-strikt`;
+- `RuleOriginCorpusWitnessTest`: de rol `RECONCILE_OPEN` bij de naam "open …"; DRL-pins voor de zeven nieuwe goldens
+  (`-Duchar.drlpin`); `EXPECTED_PLAYED` in `scripts/check-drools.sh` +7.
+
+**Open punten.**
+
+- De zin in ch. 7.3 viel buiten de genoemde hoofdstukken van het mandaat; zonder haar spreekt de spec zichzelf tegen.
+- Op een attribuut blijft een stapel open met v open, ook als de casus het doel v geeft (besluit 1 letterlijk: alleen
+  de wortel van een kenmerk sluit); de initialisatie-golden pint het (case 7).
+- Voorstel voor `spec/CONSTRUCTS.md` rij 93 (`inferFromEmpty`), bij de landing: "**Landed (2026-11-24, card
+  `same-conclusion-open-variant`):** a stack reads an open default whose decision is a constant as open with that value
+  (RUNTIME-SEMANTICS ch. 1.5, 'An open default with a constant'): Kleene's table on a characteristic, the parallel
+  choice on an attribute; what stands below it is read provisionally. Goldens `jutterswet-zelfde-conclusie-*`."
+- Toolchain-kaart na deze (besluit 5): de uitleg van de open variant ("staat niet vast, maar kan alleen hetzelfde
+  beslissen") en `openInputs` (`OpenReads.writers` mag de `OPEN`-lezing van zo'n variant niet als schrijver tellen).
