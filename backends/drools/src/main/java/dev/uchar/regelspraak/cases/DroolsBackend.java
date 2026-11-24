@@ -885,8 +885,9 @@ public final class DroolsBackend {
      * the session has no answer, which {@link #fixpointOf} gives; a consumer reads the faults first. How the records
      * are made is {@link TmsTranspiler#readingsOf}.
      *
-     * @throws IllegalStateException a build without readings, and the sessions {@link #fixpointOf} refuses, in its
-     *                               sentences
+     * @throws IllegalStateException a build without readings, the sessions {@link #fixpointOf} refuses, in its
+     *                               sentences, and a session {@link #insert} did not fill whose readings read the
+     *                               members of a fold in the order of the lists of the input
      */
     public static List<ConditionReading> readingsOf(Build build, KieSession session) {
         Objects.requireNonNull(build, "build");

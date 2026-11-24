@@ -1013,7 +1013,9 @@ final class SessionReaders {
      * matrix can fault or deposit, or whose filter can be undetermined, in their order with the stop rule of
      * RUNTIME-SEMANTICS ch. 5.10 replayed over their verdicts; of any other quantifier fold, with its verdict and without an
      * order, the members on which it does not stand by their {@link FoldOpen} facts; of a value
-     * fold, with what it contributes. It refuses the sessions {@link #readOf} refuses, with the same sentences. An
+     * fold, with what it contributes. It refuses the sessions {@link #readOf} refuses, with the same sentences, and a
+     * session {@code DroolsBackend.insert} did not fill where it reads the members of a fold in the order of the lists of
+     * the input, which that call gives the watch ({@link Watch#range}). An
      * evaluation fault that stands means the session has no answer ({@link Fixpoint#faults}); this gives what the
      * readings say all the same, and a consumer reads the faults first. The list is in no particular order.
      */
@@ -1302,12 +1304,10 @@ final class SessionReaders {
             if (hops == null)
                 throw new IllegalStateException("the fold " + key + " has no range noted for its selection " + k);
             List<Object> range = watch.range(subject, hops);
-            // a session DroolsBackend.insert did not fill has no OpenInput either, and its fire fails at the first open
-            // read (ComputeHelpers.input), so no fold of it is open
+            // a session DroolsBackend.insert did not fill has no lists on its watch; it fires to its fixpoint where every
+            // member the rules read is filled, and its readings still need the order of the fold's members
             if (range == null)
-                throw new IllegalStateException("the reading names the first open member of the fold " + key + " in the"
-                        + " order of its lists, which DroolsBackend.insert gives the watch, and this session was not filled"
-                        + " by DroolsBackend.insert");
+                throw new IllegalStateException(DroolsCode.READINGS_WITHOUT_INPUT_LISTS.reason("fold", key).text());
             Map<Object, Integer> out = new IdentityHashMap<>();
             for (int i = 0; i < range.size(); i++) out.put(range.get(i), i);
             return out;

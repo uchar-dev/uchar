@@ -5,17 +5,21 @@ import dev.uchar.regelspraak.transpiler.tms.ConditionReading;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.kie.api.runtime.KieSession;
 
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -197,6 +201,41 @@ class OpenReadingsWitnessTest {
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values())
             assertEquals(DroolsCode.MANY_TO_MANY_FOLD_ORDER,
                     assertThrows(CaseRunner.Excluded.class, () -> DroolsBackend.build(ir, branch, true)).code());
+    }
+
+    /** The readings of a quantifier fold the rules read without the order of its members ({@code jutterswet-keurder-strikt})
+     *  read its members in the order of the lists of the input, which {@code DroolsBackend.insert} gives the session. A
+     *  session whose beans came in without it fires to its fixpoint where every member the folds read is filled, and its
+     *  readings are refused by name, as a contract the caller broke.
+     *
+     *  <p><b>Red</b> on {@code 0b1e18fc8}: the readings broke off with an {@code IllegalStateException} without a code, whose
+     *  sentence spoke of an open member of the fold. */
+    @Test void the_readings_refuse_a_session_insert_did_not_fill() throws Exception {
+        Path ir = GOLDEN.resolve("jutterswet-keurder-strikt").resolve("ir.json");
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+            DroolsBackend.Build b = DroolsBackend.build(ir, branch, true);
+            TmsRepeatedFireWitnessTest.inSession(b, () -> {
+                Object j1 = TmsDocuments.beanObject(b.beanLoader(), "Jutter", Map.of(), List.of());
+                List<Object> beans = new ArrayList<>(List.of(j1));
+                for (String gewicht : List.of("20", "30")) {
+                    Object v = TmsDocuments.beanObject(b.beanLoader(), "Vondst", Map.of("gewicht", gewicht),
+                            List.of("gemerkt", "drijfhout"));
+                    TmsRepeatedFireWitnessTest.setRole(v, "vinder", j1);
+                    beans.add(v);
+                }
+                KieSession session = b.kieBase().newKieSession();
+                try {
+                    session.setGlobal("keurgrens", new BigDecimal("15"));
+                    for (Object bean : beans) session.insert(bean);
+                    assertNull(DroolsBackend.fire(b, session).noFixpoint(), branch + ": the fixpoint");
+                    assertEquals(DroolsCode.READINGS_WITHOUT_INPUT_LISTS.reason("fold", "keurder: vouw 0").text(),
+                            assertThrows(IllegalStateException.class, () -> DroolsBackend.readingsOf(b, session))
+                                    .getMessage(), branch::toString);
+                } finally {
+                    session.dispose();
+                }
+            });
+        }
     }
 
     /** WV-5.12-open-status: a rule is open exactly where the session left its target open; and a status, a judgement and a

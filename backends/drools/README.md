@@ -533,7 +533,9 @@ names the fold on its subject (`OpenMember.ofFold`), so the open member a fold i
 depend on the agenda, and a `FoldOpen` carries the part of its member that does not stand and its selection. The reading
 names the first member of that fold in its order, off the fold's facts, down a fold nested in another: by the part, the
 selection and the place of the member in the range of its selection, which the watch of the session walks over the lists
-`DroolsBackend.insert` gives it (`Watch.range`), or by reading the tests of a quantifier fold again in that order. A
+`DroolsBackend.insert` gives it (`Watch.range`), or by reading the tests of a quantifier fold again in that order. A session
+`DroolsBackend.insert` did not fill has no lists on its watch: it fires to its fixpoint where every member the rules read is
+filled, and `readingsOf` refuses it where the range of such a fold walks a list (`DROOLS-374`). A
 contributor of a quantifier fold whose filter is undetermined says so (`ConditionReading.Contributor.filterUndetermined`,
 read off the judgement of the filter its `MemberTest` carries), and it always has a position: a filter that can be
 undetermined makes the rule that reads the fold read its contributors in their order (`TmsTranspiler.Fold.tested`), and the

@@ -438,6 +438,7 @@ DROOLS-371.undeclared	its type {objectType} declares no characteristic of that n
 DROOLS-371.holds	the bean holds it
 DROOLS-372	what {member} gives the fold {fold} can be open, but a member of its route has no ListPlace under the field '{field}': the input does not state the order of that list, and without it the open member the reading of the fold names cannot be determined (RUNTIME-SEMANTICS ch. 5.12)
 DROOLS-373	the document holds a sum type in a form no executor carries (RUNTIME-SEMANTICS ch. 9.4), so it is refused before anything is built (form: {form})
+DROOLS-374	the readings read the members of the fold {fold} in the order of the lists of the input (RUNTIME-SEMANTICS ch. 5.7a, 5.12), which DroolsBackend.insert gives the session, and this session was not filled by DroolsBackend.insert: open a fresh session with all beans in one Input
 EF-002	role "{role}" on "{label}" links unknown label "{target}"
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
