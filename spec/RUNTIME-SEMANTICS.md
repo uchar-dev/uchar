@@ -7821,9 +7821,9 @@ and has none either, although its value does not depend on the member (card
 `subselection-reads-subject`, 2026-10-23, B7). The node of a fold over a set
 carries its **contributors** instead: the members of its range whose filter
 holds, and of a quantifier fold the members whose filter is true or
-undetermined, that is, not false (ch. 1.5; a value fold whose filter is
-undetermined on a member is broken off and carries none, **Open values**,
-above). A member
+undetermined, that is, not false (ch. 1.5; any other fold over a set whose
+filter is undetermined on a member is broken off and carries none, **Open
+values**, above). A member
 whose filter is false is no contributor, also where the filter has an open
 part: "die aan alle volgende voorwaarden voldoen: hij is gemerkt, hij is
 drijfhout" is false on a vondst that stands not gemerkt, whatever its
@@ -8163,7 +8163,7 @@ canonical text W3 and W4 read, on rules 1 and 5:
 /rules/rules/5/versions/0 "W4" HOLDS
 ```
 
-The three worked examples above read only members of their own subject:
+The four worked examples above read only members of their own subject:
 their lines carry no object.
 
 **Worked example — a displaced default** (absolute; the
@@ -8282,8 +8282,9 @@ and J1 of case 1, for the peilsom, the gap alone:
 ```
 
 **The artifacts.** The `ref/` tests `WV-5.12-ploegaandeel`,
-`WV-5.12-keurgemiddelde` and `WV-5.12-opgave-bedrag` (the three examples
-above),
+`WV-5.12-keurgemiddelde`, `WV-5.12-contributor-filter` and
+`WV-5.12-opgave-bedrag` (the four examples above; the third also the Drools
+backend's `OpenReadingsWitnessTest` on both its branches),
 `WV-5.12-fout-in-een-lezing` (a member that faults: the fault's EF code at
 the member and at the composite, the status `FAULTS`, and the composite on
 the other object stopping before it) and `WV-5.12-fout-in-een-kwantorvouw`

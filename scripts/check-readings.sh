@@ -57,7 +57,9 @@
 # neither, no fault and no deposit shows the order, its session keeps none, and it writes `unordered` in
 # place of the position, which ch. 5.12 admits (ch. 5.11: an invisible order). Per contributor the
 # comparison therefore reads: the member and its verdict, value or fault, verbatim; the position where
-# both write one. A contributor is compared by its member, never by its place in the sorted list.
+# both write one; and `filter undetermined`, which a contributor of a quantifier fold writes after its
+# position where its filter is undetermined, verbatim. A contributor is compared by its member, never by
+# its place in the sorted list.
 #
 # THE TRIPWIRE. Where the backend writes `unordered` for a fold, no contributor of ref may carry a fault: a
 # matrix that faults on a member is one whose order shows, and a backend that keeps none for it has missed
@@ -492,7 +494,7 @@ def unordered_faults(ref_lines, drools_lines):
     out = []
     for l in ref_lines:
         h, c = split(l)
-        if h in unordered and any(v.startswith('fault ') for v, _, _ in c.values()):
+        if h in unordered and c is not None and any(v.startswith('fault ') for v, _, _ in c.values()):
             out.append(l)
     return out
 
@@ -627,6 +629,9 @@ tripwire_rows = [
     ('a fault of ref under unordered trips beside an undetermined filter',
      [P + '0 QuantifierFold false contributors ["W2" fault EF-019 unreached filter undetermined]'],
      [P + '0 QuantifierFold false contributors ["W2" fault EF-019 unordered filter undetermined]'], True),
+    ('a line of ref without contributors under unordered does not trip',
+     [P + '0 QuantifierFold true'],
+     [P + '0 QuantifierFold true contributors ["W1" true unordered]'], False),
 ]
 for name, ref, drools, trips in tripwire_rows:
     if bool(unordered_faults(ref, drools)) != trips:
