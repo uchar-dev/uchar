@@ -397,8 +397,8 @@ public final class TmsTranspiler {
     /** Beside {@link #noted}: the nodes whose reading follows from the outcomes of terms of the rule ({@link Derived},
      *  {@link #noteDerived}), by identity. */
     private Map<Object, Derived> notedDerived;
-    /** Beside {@link #noted}: per node that reads a member over a path, the slot of the object the path reaches
-     *  ({@link #noteObject}), by identity. */
+    /** Beside {@link #noted}: per node that reads a member over a path, the slot of the member, whose reached object the
+     *  reading rule binds ({@link #noteObject}, {@link Reads#objectOf}), by identity. */
     private Map<Object, Integer> notedObjects;
     /** While the rules of a fold are built ({@link #foldFor}): whether the fold's subject is the subject of the form being
      *  lowered, which its rules then bind as {@link #FOLD_SUBJECT}, so that an anchored node reads there. */
@@ -4953,7 +4953,7 @@ public final class TmsTranspiler {
             Map<ObjectType, Fold> fold = folds.get(n);
             Integer object = noted.objects().get(n);
             sites.add(new Site(i, at.kind(), t, noted.units().get(n), fold == null ? null : fold.get(reads.subject),
-                    n instanceof Condition.QuantifierFold q ? q : null, derived, object == null ? -1 : object));
+                    n instanceof Condition.QuantifierFold q ? q : null, derived, object == null ? -1 : reads.objectOf(object)));
         }
         readingRules.add(new ReadingRule(plan, speculative, ruleName, pointer, validity, guarded, condition, periods, value,
                 sites, turn, inputDays));
@@ -5069,7 +5069,9 @@ public final class TmsTranspiler {
      *  any other moment. */
     private void noteObject(Object node, Reads reads, int slot) {
         if (noted == null || memberwise > 0) return;
-        notedObjects.put(node, reads.objectOf(slot));
+        if (!reads.reachesObject(slot))
+            throw new IllegalStateException("slot " + slot + " reads no member over a path with the reached object");
+        notedObjects.put(node, slot);
     }
 
     /** Notes that the reading of {@code node}, a condition, follows from the outcomes of {@code inputs} by
@@ -7892,6 +7894,9 @@ public final class TmsTranspiler {
         private final List<dev.uchar.regelspraak.transpiler.tms.plan.Read> slots = new ArrayList<>();
         /** The values bound off the subject pattern. */
         private final List<Binding> subjectBindings = new ArrayList<>();
+        /** The variables a binding binds for the reading rule alone ({@link #navigated}): the rule of the form, which
+         *  {@link #rulePlan} plans, binds none of them. */
+        private final Set<String> readingOnly = new HashSet<>();
         /** The constraints of the subject pattern on the subject bean, which the form sets ({@link #addSubjectAlpha}). */
         private final List<Alpha> subjectAlpha = new ArrayList<>();
         /** The parameter items of the left-hand side: parameters, the evaluation date, the validity gate, the phase. */
@@ -7905,9 +7910,10 @@ public final class TmsTranspiler {
         /** The onwaar standings outside a narrowing host this rule reads ({@link #narrowed}), by member and subject type. */
         private final Map<String, Outside> outsideHost = new LinkedHashMap<>();
         private final Map<String, PathRead> paths = new LinkedHashMap<>();
-        /** In a build with readings, per slot of a member read over a path, the slot of the object the path reaches
-         *  ({@link #navigated}). */
-        private final Map<Integer, Integer> objects = new HashMap<>();
+        /** In a build with readings, per slot of a member read over a path, the key and the variable of the object the
+         *  path reaches ({@link #navigated}), which the reading rule alone binds, in slots after those of the rule
+         *  ({@link #readingSlots}). */
+        private final Map<Integer, String[]> pathObjects = new LinkedHashMap<>();
         private final Set<String> channelNames = new LinkedHashSet<>();
         /** The indices the expression being compiled reads, or null outside such a compilation. */
         private Set<Integer> use;
@@ -8086,15 +8092,37 @@ public final class TmsTranspiler {
             return rulePlan(name, null, items, consequence);
         }
 
-        /** As {@link #rulePlan(String, List, Gevolg)}, for a rule of the agenda group {@code agendaGroup}. */
+        /** As {@link #rulePlan(String, List, Gevolg)}, for a rule of the agenda group {@code agendaGroup}. Its left-hand
+         *  side binds no variable of the reading rule alone ({@link #readingOnly}), so that a build with readings plans
+         *  the rule as a build without does. */
         RulePlan rulePlan(String name, String agendaGroup, List<LhsItem> items, Consequence consequence) {
             List<LhsItem> lhs = new ArrayList<>(head());
             lhs.add(new Subject(beanClass(subject), SUBJECT, subjectAlpha, subjectJoins, subjectBetaTests,
                     subjectBindings));
             lhs.addAll(rangePlan);
             lhs.addAll(items);
-            return new RulePlan(name, form, agendaGroup, new ReadTable(slots), withoutUnfilledDepositFlag(lhs),
-                    withoutUnfilledDepositFlag(consequence));
+            return new RulePlan(name, form, agendaGroup, new ReadTable(slots),
+                    withoutUnfilledDepositFlag(withoutReadingOnly(lhs)), withoutUnfilledDepositFlag(consequence));
+        }
+
+        /** {@code lhs} without the bindings of {@link #readingOnly}, which stand on the subject pattern, on the pattern of
+         *  {@link #FOLD_SUBJECT} or on a standing pattern. */
+        private List<LhsItem> withoutReadingOnly(List<LhsItem> lhs) {
+            if (readingOnly.isEmpty()) return lhs;
+            List<LhsItem> out = new ArrayList<>(lhs.size());
+            for (LhsItem i : lhs)
+                out.add(switch (i) {
+                    case Subject o -> new Subject(o.beanClass(), o.name(), o.alpha(), o.joins(), o.betaTests(),
+                            production(o.bindings()));
+                    case FactPattern f -> new FactPattern(f.factClass(), f.name(), f.alpha(), f.joins(), f.betaTests(),
+                            f.afterAlpha(), production(f.bindings()));
+                    default -> i;
+                });
+            return out;
+        }
+
+        private List<Binding> production(List<Binding> bindings) {
+            return bindings.stream().filter(b -> !readingOnly.contains(b.target())).toList();
         }
 
         /** The left-hand side of the reading rule after its subject pattern ({@link TmsTranspiler#readingRule}): the
@@ -8122,12 +8150,23 @@ public final class TmsTranspiler {
             lhs.addAll(rangePlan);
             lhs.addAll(items);
             Set<String> declared = declaredVariables(lhs);
+            List<dev.uchar.regelspraak.transpiler.tms.plan.Read> table = readingSlots();
             List<Integer> bound = new ArrayList<>();
-            for (dev.uchar.regelspraak.transpiler.tms.plan.Read l : slots)
+            for (dev.uchar.regelspraak.transpiler.tms.plan.Read l : table)
                 if (l.name() != null && declared.contains(l.name())) bound.add(l.slot());
-            return new RulePlan(name, null, null, new ReadTable(slots), withoutUnfilledDepositFlag(lhs),
-                    new Consequence.Reading(SUBJECT, pointer, bound, slots.size(), Consequence.Insertion.LOGICAL,
+            return new RulePlan(name, null, null, new ReadTable(table), withoutUnfilledDepositFlag(lhs),
+                    new Consequence.Reading(SUBJECT, pointer, bound, table.size(), Consequence.Insertion.LOGICAL,
                             speculative));
+        }
+
+        /** The slots of the reading rule: those of the rule, then one per object a path reaches ({@link #pathObjects}),
+         *  which the rule of the form does not bind, so that its slots are those of a build without readings. */
+        private List<dev.uchar.regelspraak.transpiler.tms.plan.Read> readingSlots() {
+            List<dev.uchar.regelspraak.transpiler.tms.plan.Read> out = new ArrayList<>(slots);
+            for (String[] o : pathObjects.values())
+                out.add(new dev.uchar.regelspraak.transpiler.tms.plan.Read(out.size(), ReadKind.PATH_OBJECT, scoped(o[0]),
+                        o[1]));
+            return out;
         }
 
         /** The name of the variable that binds slot {@code slot}, which an item of the plan names to read it. */
@@ -8753,9 +8792,9 @@ public final class TmsTranspiler {
          *  one of the subject's own, so the read carries the case's input convention, a {@code List<Period>} or an
          *  {@link BucketScalar}; a characteristic on a timeline, which is input only, is bound as its true periods, a
          *  {@code List<Period>} ({@link TmsTranspiler#inputForm}). In a build with readings, in a form's own rule, the
-         *  object the path reaches is bound as well, off the same pattern, in a slot of its own ({@link #objectOf}), null
-         *  where a link is absent: the object a reading names for the node that reads the member (RUNTIME-SEMANTICS
-         *  ch. 5.12). */
+         *  object the path reaches is bound as well for its reading rule, off the same pattern, in a slot of its own
+         *  ({@link #objectOf}), null where a link is absent: the object a reading names for the node that reads the
+         *  member (RUNTIME-SEMANTICS ch. 5.12). The rule of the form does not bind it ({@link #readingOnly}). */
         int navigated(Path path, Member member) {
             String key = "pad " + path.key() + " " + member.key();
             int known = existing(key);
@@ -8765,6 +8804,7 @@ public final class TmsTranspiler {
             // in a form's own rule while its reading is noted: a rule of a fold has no reading of its own, and a
             // binding more there changes the order in which the DRL-text branch fires its contributions
             String reached = noted == null || memberwise > 0 ? null : "$bereikt_" + slots.size();
+            if (reached != null) readingOnly.add(reached);
             ElementKey lk = member.key();
             if (member.time() != null && member.characteristic() && writers.containsKey(lk))
                 throw new Refusal(DroolsCode.TIMELINE_CHARACTERISTIC_WRITTEN.reason("member", member.name(), "objectType", member.declarant().name));
@@ -8795,22 +8835,30 @@ public final class TmsTranspiler {
             return withObject(allocateSlot(ReadKind.INPUT_PATH, key, w), key, reached);
         }
 
-        /** {@code slot}, the slot of a member read over a path under {@code key}, after the slot of the object it reaches
-         *  where {@code reached}, the variable that binds that object, is not null ({@link #objectOf}). The object is the
-         *  reading's ({@link #reserveSlot}): the test of the rule takes the values it takes in a build without
+        /** {@code slot}, the slot of a member read over a path under {@code key}, noting the object it reaches where
+         *  {@code reached}, the variable that binds that object, is not null ({@link #objectOf}). The object is the
+         *  reading rule's ({@link #readingSlots}): the rule of the form has the slots and the values of a build without
          *  readings. */
         private int withObject(int slot, String key, String reached) {
-            if (reached != null) objects.put(slot, reserveSlot(ReadKind.PATH_OBJECT, "object " + key, reached));
+            if (reached != null) pathObjects.put(slot, new String[]{"object " + key, reached});
             return slot;
         }
 
-        /** The slot of the object the path of the member read at slot {@code slot} reaches ({@link #navigated}), in a
-         *  build with readings. Refused loudly where that read binds none: a fault of this class. */
+        /** Whether the member read at slot {@code slot} over a path has the object it reaches noted ({@link #navigated}). */
+        boolean reachesObject(int slot) {
+            return pathObjects.containsKey(slot);
+        }
+
+        /** The slot in the reading rule ({@link #readingSlots}) of the object the path of the member read at slot
+         *  {@code slot} reaches ({@link #navigated}), in a build with readings. Refused loudly where that read binds none:
+         *  a fault of this class. */
         int objectOf(int slot) {
-            Integer o = objects.get(slot);
-            if (o == null)
-                throw new IllegalStateException("slot " + slot + " reads no member over a path with the reached object");
-            return o;
+            int i = 0;
+            for (Integer member : pathObjects.keySet()) {
+                if (member == slot) return slots.size() + i;
+                i++;
+            }
+            throw new IllegalStateException("slot " + slot + " reads no member over a path with the reached object");
         }
 
         /** A parameter, bound off its {@link ParameterState}: no test or consequence names a global itself, since two
