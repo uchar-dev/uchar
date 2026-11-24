@@ -1,0 +1,17 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vondst (mv: Vondsten)
+    is op zee geborgen kenmerk (bijvoeglijk);
+    is half-vergaan kenmerk (bijvoeglijk);
+    is ex-VOC kenmerk (bijvoeglijk);
+    is met foto's vastgelegd kenmerk (bijvoeglijk);
+    is afhaalbaar kenmerk (bijvoeglijk);
+
+Regel afhaalbare vondst
+    geldig altijd
+        Een Vondst is afhaalbaar
+        indien hij aan alle volgende voorwaarden voldoet:
+        - hij is niet op zee geborgen
+        - hij is niet half-vergaan
+        - hij is niet ex-VOC
+        - hij is met foto's vastgelegd.

@@ -1,0 +1,37 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+
+// hij aan alle volgende voorwaarden voldoet: - hij is niet op zee geborgen - hij is niet half-vergaan - hij is niet ex-VOC - hij is met foto's vastgelegd
+function boolean toets_afhaalbareVondst(Object $opZeeGeborgen, Object $halfVergaan, Object $exVoc, Object $metFotoSVastgelegd) {
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 4, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
+    }
+    lezing.read(ComputeHelpers.characteristic($opZeeGeborgen, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
+    }
+    lezing.read(ComputeHelpers.characteristic($halfVergaan, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
+    }
+    lezing.read(ComputeHelpers.characteristic($exVoc, Boolean.FALSE));
+    if (lezing.stands()) {
+        return lezing.verdict();
+    }
+    lezing.read(ComputeHelpers.characteristic($metFotoSVastgelegd, Boolean.TRUE));
+    return lezing.verdict();
+}
+
+rule "afhaalbare vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opZeeGeborgen : (ComputeHelpers.holds(opZeeGeborgen)), $halfVergaan : (ComputeHelpers.holds(halfVergaan)), $exVoc : (ComputeHelpers.holds(exVoc)), $metFotoSVastgelegd : (ComputeHelpers.holds(metFotoSVastgelegd)) )
+    eval( toets_afhaalbareVondst($opZeeGeborgen, $halfVergaan, $exVoc, $metFotoSVastgelegd) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "afhaalbaar", true)));
+end
+

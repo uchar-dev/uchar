@@ -1,0 +1,22 @@
+Scenario niets genoemd
+Gegeven is de volgende situatie:
+een Vondst V1
+- is met foto's vastgelegd
+Met als verwacht resultaat:
+- V1 is niet op zee geborgen
+- V1 is niet half-vergaan
+- V1 is niet ex-VOC
+- V1 is afhaalbaar
+
+Scenario vast niet gegeven
+Gegeven is de volgende situatie:
+een Vondst V1
+- is niet op zee geborgen
+- is niet half-vergaan
+- is niet ex-VOC
+- is met foto's vastgelegd
+Met als verwacht resultaat:
+- V1 is niet op zee geborgen
+- V1 is niet half-vergaan
+- V1 is niet ex-VOC
+- V1 is afhaalbaar

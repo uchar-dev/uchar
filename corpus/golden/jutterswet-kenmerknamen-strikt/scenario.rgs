@@ -1,0 +1,36 @@
+Scenario niets aan de hand
+Gegeven is de volgende situatie:
+een Vondst V1
+- is niet op zee geborgen
+- is niet half-vergaan
+- is niet ex-VOC
+- is met foto's vastgelegd
+Met als verwacht resultaat:
+- V1 is niet op zee geborgen
+- V1 is niet half-vergaan
+- V1 is niet ex-VOC
+- V1 is met foto's vastgelegd
+- V1 is afhaalbaar
+
+Scenario herkomst open
+Gegeven is de volgende situatie:
+een Vondst V1
+- is niet op zee geborgen
+- is niet half-vergaan
+- is met foto's vastgelegd
+Met als verwacht resultaat:
+- V1 is niet op zee geborgen
+- V1 is niet half-vergaan
+- of V1 ex-VOC is, staat niet vast
+- of V1 afhaalbaar is, staat niet vast
+
+Scenario op zee geborgen zonder foto's
+Gegeven is de volgende situatie:
+een Vondst V1
+- is op zee geborgen
+- is niet met foto's vastgelegd
+Met als verwacht resultaat:
+- V1 is op zee geborgen
+- V1 is niet met foto's vastgelegd
+- of V1 half-vergaan is, staat niet vast
+- V1 is niet afhaalbaar

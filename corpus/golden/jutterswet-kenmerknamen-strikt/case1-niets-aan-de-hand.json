@@ -1,0 +1,50 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [
+          "met foto's vastgelegd"
+        ],
+        "characteristicsAbsent": [
+          "op zee geborgen",
+          "half-vergaan",
+          "ex-VOC"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "op zee geborgen"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "half-vergaan"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "ex-VOC"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "met foto's vastgelegd"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "afhaalbaar"
+    }
+  ]
+}

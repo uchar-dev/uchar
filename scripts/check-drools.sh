@@ -1658,7 +1658,10 @@ EXPECTED_CHANNEL=(
 # below it, a stack and a helper attribute, each open over an open taxatie (RUNTIME-SEMANTICS ch. 1.5; PLAYED 3).
 # 386 with jutterswet-zwaarkeurder-strikt: a quantifier fold with a compound filter in a strict document, contributors
 # whose filter is undetermined among them (RUNTIME-SEMANTICS ch. 1.5, 5.12; PLAYED 3).
-EXPECTED_PLAYED=386
+# 388 with jutterswet-kenmerknamen and jutterswet-kenmerknamen-strikt: input characteristics stated not to hold whose
+# names hold a space, a hyphen, a word in capitals and an apostrophe, in an ordinary and in a strict document
+# (RUNTIME-SEMANTICS ch. 1.5; PLAYED 2 and 3).
+EXPECTED_PLAYED=388
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

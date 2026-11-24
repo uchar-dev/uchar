@@ -1,0 +1,47 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.LeftOpen;
+import dev.uchar.regelspraak.transpiler.tms.OpenInput;
+
+global OpenInput open_invoer;
+
+// hij aan alle volgende voorwaarden voldoet: - hij is niet op zee geborgen - hij is niet half-vergaan - hij is niet ex-VOC - hij is met foto's vastgelegd
+function Object oordeel_afhaalbareVondst(Object $opZeeGeborgen, Object open_invoer, Object $onderwerp, Object $halfVergaan, Object $exVoc, Object $metFotoSVastgelegd) {
+    return ComputeHelpers.judge(() -> {
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 4, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
+        }
+        lezing.read(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($opZeeGeborgen, open_invoer, $onderwerp, ElementKey.of("vondst", "op zee geborgen", true)), Boolean.FALSE));
+        if (lezing.stands()) {
+            return lezing.verdict();
+        }
+        lezing.read(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($halfVergaan, open_invoer, $onderwerp, ElementKey.of("vondst", "half-vergaan", true)), Boolean.FALSE));
+        if (lezing.stands()) {
+            return lezing.verdict();
+        }
+        lezing.read(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($exVoc, open_invoer, $onderwerp, ElementKey.of("vondst", "ex-voc", true)), Boolean.FALSE));
+        if (lezing.stands()) {
+            return lezing.verdict();
+        }
+        lezing.read(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($metFotoSVastgelegd, open_invoer, $onderwerp, ElementKey.of("vondst", "met foto's vastgelegd", true)), Boolean.TRUE));
+        return lezing.verdict();
+    }, false);
+}
+
+rule "afhaalbare vondst"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $opZeeGeborgen : (ComputeHelpers.holds(opZeeGeborgen)), $halfVergaan : (ComputeHelpers.holds(halfVergaan)), $exVoc : (ComputeHelpers.holds(exVoc)), $metFotoSVastgelegd : (ComputeHelpers.holds(metFotoSVastgelegd)) )
+    eval( ComputeHelpers.acts(oordeel_afhaalbareVondst($opZeeGeborgen, open_invoer, $onderwerp, $halfVergaan, $exVoc, $metFotoSVastgelegd)) )
+then
+    if (ComputeHelpers.decides(oordeel_afhaalbareVondst($opZeeGeborgen, open_invoer, $onderwerp, $halfVergaan, $exVoc, $metFotoSVastgelegd))) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "afhaalbaar", true)));
+    } else {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "afhaalbaar", true), "afhaalbare vondst"));
+    }
+end
+
