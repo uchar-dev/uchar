@@ -123,3 +123,9 @@ Open punten:
 - Niet aangeraakt, want onschadelijk: `DecisionCore.document()` in de toolchain emitteert het document lui in een
   `volatile` veld; twee threads kunnen het dubbel emitteren, maar publiceren elk een volledige, onveranderlijke `String`.
 - Niet herhaald met de regelset van de werkbank; de toolchain-test geeft dezelfde fout op een eigen regelset.
+
+**Landing (hoofdsessie, 2026-11-24).** Gemeld door de werkbank: één 500 bij vier gelijktijdige verzoeken aan een strikte
+dienst. Een extern model (xhigh) las het herstel: diagnose juist, herstel volledig, geen andere race op het pad van een
+verzoek (`TmsTranspiler.instanceWalks` en de DRL-teksten zijn lui maar `synchronized`); de toolchain publiceert het
+document veilig via `final` velden die bij de start gezet worden. `make gates` op `7f428aad6`: alle zeventien gates groen
+in 318 s (red=0). De toolchain-test `ConcurrentOpenInputsTest` landt met de pin op deze uchar.
