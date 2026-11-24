@@ -1,0 +1,360 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactMinimumFunction exactMin;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.FilterFault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.LeftOpen;
+import dev.uchar.regelspraak.transpiler.tms.ListPlace;
+import dev.uchar.regelspraak.transpiler.tms.MemberTest;
+import dev.uchar.regelspraak.transpiler.tms.OpenInput;
+import dev.uchar.regelspraak.transpiler.tms.ParameterState;
+
+global java.math.BigDecimal keurgrens;
+global OpenInput open_invoer;
+
+// het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - hij is drijfhout groter is dan 10,00
+function Object oordeel_keurder(Object $aantal_vouw_5, Object $vouw_vouw_7) {
+    return ComputeHelpers.judge(() -> ((Boolean) kwantorlezing_keurder($aantal_vouw_5, $vouw_vouw_7)), false);
+}
+
+// het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - hij is drijfhout groter is dan 10,00
+function Object kwantorlezing_keurder(Object $aantal_vouw_5, Object $vouw_vouw_7) {
+    return ComputeHelpers.quantifierReadUnordered($aantal_vouw_5, $vouw_vouw_7, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+rule "keurder"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_2 : Contribution( fold == "keurder: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_6 : value ); $aantal_vouw_5 : count(), $vouw_vouw_7 : collectList($bijdragewaarde_vouw_6) )
+    eval( ComputeHelpers.acts(oordeel_keurder($aantal_vouw_5, $vouw_vouw_7)) )
+then
+    if (ComputeHelpers.decides(oordeel_keurder($aantal_vouw_5, $vouw_vouw_7))) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "keurder", true)));
+    } else {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("jutter", "keurder", true), "keurder"));
+    }
+end
+
+// het gewicht van alle vondsten van de Jutter die aan alle volgende voorwaarden voldoen: - hij is gemerkt - hij is drijfhout groter is dan 10,00
+function Object oordeel_nauwgezet(Object $aantal_vouw_14, Object $vouw_vouw_16) {
+    return ComputeHelpers.judge(() -> ((Boolean) kwantorlezing_nauwgezet($aantal_vouw_14, $vouw_vouw_16)), false);
+}
+
+// het gewicht van alle vondsten van de Jutter die aan alle volgende voorwaarden voldoen: - hij is gemerkt - hij is drijfhout groter is dan 10,00
+function Object kwantorlezing_nauwgezet(Object $aantal_vouw_14, Object $vouw_vouw_16) {
+    return ComputeHelpers.quantifierReadUnordered($aantal_vouw_14, $vouw_vouw_16, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+rule "nauwgezet"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_11 : Contribution( fold == "nauwgezet: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_15 : value ); $aantal_vouw_14 : count(), $vouw_vouw_16 : collectList($bijdragewaarde_vouw_15) )
+    eval( ComputeHelpers.acts(oordeel_nauwgezet($aantal_vouw_14, $vouw_vouw_16)) )
+then
+    if (ComputeHelpers.decides(oordeel_nauwgezet($aantal_vouw_14, $vouw_vouw_16))) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "nauwgezet", true)));
+    } else {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("jutter", "nauwgezet", true), "nauwgezet"));
+    }
+end
+
+// het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn gewicht is groter dan de keurgrens groter is dan 10,00
+function Object oordeel_grenskeurder(Object $aantal_vouw_33, Object $vouw_vouw_35, Object $eerste_filterfout_vouw_40) {
+    return ComputeHelpers.judge(() -> ((Boolean) vouwlezing_grenskeurder($aantal_vouw_33, $vouw_vouw_35, $eerste_filterfout_vouw_40)), true);
+}
+
+// het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn gewicht is groter dan de keurgrens groter is dan 10,00
+function Object vouwlezing_grenskeurder(Object $aantal_vouw_33, Object $vouw_vouw_35, Object $eerste_filterfout_vouw_40) {
+    if ($eerste_filterfout_vouw_40 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_40).fault();
+    }
+    return kwantorlezing_grenskeurder($aantal_vouw_33, $vouw_vouw_35, $eerste_filterfout_vouw_40);
+}
+
+// het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn gewicht is groter dan de keurgrens groter is dan 10,00
+function Object kwantorlezing_grenskeurder(Object $aantal_vouw_33, Object $vouw_vouw_35, Object $eerste_filterfout_vouw_40) {
+    return ComputeHelpers.quantifierReadUnordered($aantal_vouw_33, $vouw_vouw_35, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+rule "grenskeurder"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_30 : Contribution( fold == "grenskeurder: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_34 : value ); $aantal_vouw_33 : count(), $vouw_vouw_35 : collectList($bijdragewaarde_vouw_34) )
+    accumulate( $filterfout_vouw_36 : FilterFault( fold == "grenskeurder: vouw 2", subject == $onderwerp ); $filterfouten_vouw_39 : count(), $eerste_filterfout_vouw_40 : exactMin($filterfout_vouw_36) )
+    eval( ComputeHelpers.acts(oordeel_grenskeurder($aantal_vouw_33, $vouw_vouw_35, $eerste_filterfout_vouw_40)) )
+then
+    if (ComputeHelpers.decides(oordeel_grenskeurder($aantal_vouw_33, $vouw_vouw_35, $eerste_filterfout_vouw_40))) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "grenskeurder", true)));
+    } else {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("jutter", "grenskeurder", true), "grenskeurder"));
+    }
+end
+
+// het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn gewicht is groter dan de keurgrens groter is dan 10,00
+function boolean toets_grenskeurderFoutInDeVoorwaarde(Object $aantal_vouw_45, Object $vouw_vouw_47, Object $eerste_filterfout_vouw_52) {
+    return ComputeHelpers.faulted(() -> ((Boolean) vouwlezing1_grenskeurderFoutInDeVoorwaarde($aantal_vouw_45, $vouw_vouw_47, $eerste_filterfout_vouw_52)));
+}
+
+// het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn gewicht is groter dan de keurgrens groter is dan 10,00
+function Object vouwlezing1_grenskeurderFoutInDeVoorwaarde(Object $aantal_vouw_45, Object $vouw_vouw_47, Object $eerste_filterfout_vouw_52) {
+    if ($eerste_filterfout_vouw_52 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_52).fault();
+    }
+    return kwantorlezing1_grenskeurderFoutInDeVoorwaarde($aantal_vouw_45, $vouw_vouw_47, $eerste_filterfout_vouw_52);
+}
+
+// het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn gewicht is groter dan de keurgrens groter is dan 10,00
+function Object kwantorlezing1_grenskeurderFoutInDeVoorwaarde(Object $aantal_vouw_45, Object $vouw_vouw_47, Object $eerste_filterfout_vouw_52) {
+    return ComputeHelpers.quantifierReadUnordered($aantal_vouw_45, $vouw_vouw_47, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+// het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn gewicht is groter dan de keurgrens groter is dan 10,00
+function Object fout_grenskeurderFoutInDeVoorwaarde(Object $aantal_vouw_45, Object $vouw_vouw_47, Object $eerste_filterfout_vouw_52) {
+    try {
+        boolean uitkomst = ((Boolean) vouwlezing2_grenskeurderFoutInDeVoorwaarde($aantal_vouw_45, $vouw_vouw_47, $eerste_filterfout_vouw_52));
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn gewicht is groter dan de keurgrens groter is dan 10,00
+function Object vouwlezing2_grenskeurderFoutInDeVoorwaarde(Object $aantal_vouw_45, Object $vouw_vouw_47, Object $eerste_filterfout_vouw_52) {
+    if ($eerste_filterfout_vouw_52 != null) {
+        throw ((FilterFault) $eerste_filterfout_vouw_52).fault();
+    }
+    return kwantorlezing2_grenskeurderFoutInDeVoorwaarde($aantal_vouw_45, $vouw_vouw_47, $eerste_filterfout_vouw_52);
+}
+
+// het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn gewicht is groter dan de keurgrens groter is dan 10,00
+function Object kwantorlezing2_grenskeurderFoutInDeVoorwaarde(Object $aantal_vouw_45, Object $vouw_vouw_47, Object $eerste_filterfout_vouw_52) {
+    return ComputeHelpers.quantifierReadUnordered($aantal_vouw_45, $vouw_vouw_47, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0), null);
+}
+
+rule "grenskeurder: fout in de voorwaarde"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_42 : Contribution( fold == "grenskeurder: vouw 2", subject == $onderwerp, $bijdragewaarde_vouw_46 : value ); $aantal_vouw_45 : count(), $vouw_vouw_47 : collectList($bijdragewaarde_vouw_46) )
+    accumulate( $filterfout_vouw_48 : FilterFault( fold == "grenskeurder: vouw 2", subject == $onderwerp ); $filterfouten_vouw_51 : count(), $eerste_filterfout_vouw_52 : exactMin($filterfout_vouw_48) )
+    eval( toets_grenskeurderFoutInDeVoorwaarde($aantal_vouw_45, $vouw_vouw_47, $eerste_filterfout_vouw_52) )
+then
+    Object f = fout_grenskeurderFoutInDeVoorwaarde($aantal_vouw_45, $vouw_vouw_47, $eerste_filterfout_vouw_52);
+    if (!ComputeHelpers.isEvaluationFault(f)) {
+        ComputeHelpers.contractBreach("the condition of \"grenskeurder\" failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new Fault($onderwerp, "grenskeurder", ComputeHelpers.designate(f, "grenskeurder")));
+end
+
+// aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - hij is drijfhout
+function Object oordeel_keurderBijdrageAanVouw0(Object $gemerkt, Object open_invoer, Object $onderwerp, Object $drijfhout) {
+    return ComputeHelpers.judge(() -> {
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
+        }
+        lezing.read(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($gemerkt, open_invoer, $onderwerp, ElementKey.of("vondst", "gemerkt", true)), Boolean.TRUE));
+        if (lezing.stands()) {
+            return lezing.verdict();
+        }
+        lezing.read(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($drijfhout, open_invoer, $onderwerp, ElementKey.of("vondst", "drijfhout", true)), Boolean.TRUE));
+        return lezing.verdict();
+    }, false);
+}
+
+// het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - hij is drijfhout groter is dan 10,00
+function Object lidtoets_keurderBijdrageAanVouw0(Object $gemerkt, Object open_invoer, Object $onderwerp, Object $drijfhout, Object $gewicht) {
+    java.util.List plaats = plaats_keurderBijdrageAanVouw0($onderwerp);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), new java.math.BigDecimal("10"), ">"));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.ended(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_keurderBijdrageAanVouw0(Object $onderwerp) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "keurder: vouw 0", $onderwerp, 0, java.util.Arrays.asList(), java.util.Arrays.asList(), java.util.Arrays.asList());
+}
+
+rule "keurder: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( vinder == $vouwonderwerp, $gemerkt : (ComputeHelpers.holds(gemerkt)), $drijfhout : (ComputeHelpers.holds(drijfhout)), $gewicht : gewicht )
+    eval( ComputeHelpers.acts(oordeel_keurderBijdrageAanVouw0($gemerkt, open_invoer, $onderwerp, $drijfhout)) )
+then
+    insertLogical(new Contribution("keurder: vouw 0", $vouwonderwerp, $onderwerp, ComputeHelpers.filtered(oordeel_keurderBijdrageAanVouw0($gemerkt, open_invoer, $onderwerp, $drijfhout), "keurder: vouw 0", $vouwonderwerp, $onderwerp, lidtoets_keurderBijdrageAanVouw0($gemerkt, open_invoer, $onderwerp, $drijfhout, $gewicht))));
+end
+
+// aan alle volgende voorwaarden voldoen: - hij is gemerkt - hij is drijfhout
+function Object oordeel_nauwgezetBijdrageAanVouw1(Object $gemerkt, Object open_invoer, Object $onderwerp, Object $drijfhout) {
+    return ComputeHelpers.judge(() -> {
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, 0, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
+        }
+        lezing.read(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($gemerkt, open_invoer, $onderwerp, ElementKey.of("vondst", "gemerkt", true)), Boolean.TRUE));
+        if (lezing.stands()) {
+            return lezing.verdict();
+        }
+        lezing.read(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($drijfhout, open_invoer, $onderwerp, ElementKey.of("vondst", "drijfhout", true)), Boolean.TRUE));
+        return lezing.verdict();
+    }, false);
+}
+
+// het gewicht van alle vondsten van de Jutter die aan alle volgende voorwaarden voldoen: - hij is gemerkt - hij is drijfhout groter is dan 10,00
+function Object lidtoets_nauwgezetBijdrageAanVouw1(Object $gemerkt, Object open_invoer, Object $onderwerp, Object $drijfhout, Object $gewicht) {
+    java.util.List plaats = plaats_nauwgezetBijdrageAanVouw1($onderwerp);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), new java.math.BigDecimal("10"), ">"));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.ended(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_nauwgezetBijdrageAanVouw1(Object $onderwerp) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "nauwgezet: vouw 1", $onderwerp, 0, java.util.Arrays.asList(), java.util.Arrays.asList(), java.util.Arrays.asList());
+}
+
+rule "nauwgezet: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( vinder == $vouwonderwerp, $gemerkt : (ComputeHelpers.holds(gemerkt)), $drijfhout : (ComputeHelpers.holds(drijfhout)), $gewicht : gewicht )
+    eval( ComputeHelpers.acts(oordeel_nauwgezetBijdrageAanVouw1($gemerkt, open_invoer, $onderwerp, $drijfhout)) )
+then
+    insertLogical(new Contribution("nauwgezet: vouw 1", $vouwonderwerp, $onderwerp, ComputeHelpers.filtered(oordeel_nauwgezetBijdrageAanVouw1($gemerkt, open_invoer, $onderwerp, $drijfhout), "nauwgezet: vouw 1", $vouwonderwerp, $onderwerp, lidtoets_nauwgezetBijdrageAanVouw1($gemerkt, open_invoer, $onderwerp, $drijfhout, $gewicht))));
+end
+
+// aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn gewicht is groter dan de keurgrens
+function Object oordeel_grenskeurderBijdrageAanVouw2(Object $gemerkt, Object open_invoer, Object $onderwerp, Object $gewicht, Object $keurgrens) {
+    return ComputeHelpers.judge(() -> {
+        var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+        if (lezing.stands()) {
+            return lezing.verdict();
+        }
+        lezing.read(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($gemerkt, open_invoer, $onderwerp, ElementKey.of("vondst", "gemerkt", true)), Boolean.TRUE));
+        if (lezing.stands()) {
+            return lezing.verdict();
+        }
+        lezing.read(() -> RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), ComputeHelpers.required($keurgrens, "parameter \"keurgrens\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">"));
+        return lezing.verdict();
+    }, true);
+}
+
+// het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn gewicht is groter dan de keurgrens groter is dan 10,00
+function Object lidtoets_grenskeurderBijdrageAanVouw2(Object $gemerkt, Object open_invoer, Object $onderwerp, Object $gewicht, Object $keurgrens) {
+    java.util.List plaats = plaats_grenskeurderBijdrageAanVouw2($onderwerp);
+    Boolean waar = null;
+    RuntimeException fout = null;
+    try {
+        waar = Boolean.valueOf(RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), new java.math.BigDecimal("10"), ">"));
+    } catch (RuntimeException e) {
+        fout = ComputeHelpers.ended(e);
+    }
+    return new MemberTest(plaats, waar, fout, ComputeHelpers.reported(null), ComputeHelpers.depositCodes(null));
+}
+
+function java.util.List plaats_grenskeurderBijdrageAanVouw2(Object $onderwerp) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.QUANTIFIER, "grenskeurder: vouw 2", $onderwerp, 0, java.util.Arrays.asList(), java.util.Arrays.asList(), java.util.Arrays.asList());
+}
+
+rule "grenskeurder: bijdrage aan vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( vinder == $vouwonderwerp, $gemerkt : (ComputeHelpers.holds(gemerkt)), $gewicht : gewicht )
+    $parameter_4 : ParameterState( parameter == "keurgrens", $keurgrens : value )
+    eval( ComputeHelpers.acts(oordeel_grenskeurderBijdrageAanVouw2($gemerkt, open_invoer, $onderwerp, $gewicht, $keurgrens)) )
+then
+    insertLogical(new Contribution("grenskeurder: vouw 2", $vouwonderwerp, $onderwerp, ComputeHelpers.filtered(oordeel_grenskeurderBijdrageAanVouw2($gemerkt, open_invoer, $onderwerp, $gewicht, $keurgrens), "grenskeurder: vouw 2", $vouwonderwerp, $onderwerp, lidtoets_grenskeurderBijdrageAanVouw2($gemerkt, open_invoer, $onderwerp, $gewicht, $keurgrens))));
+end
+
+function boolean beta_grenskeurderFilterfoutInVouw2(Object eigen, Object ander) {
+    return ComputeHelpers.placeOf(eigen, ander, java.util.Arrays.asList());
+}
+
+// aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn gewicht is groter dan de keurgrens
+function boolean toets_grenskeurderFilterfoutInVouw2(Object $gemerkt, Object open_invoer, Object $onderwerp, Object $gewicht, Object $keurgrens) {
+    return ComputeHelpers.faulted(() -> samengesteld1_grenskeurderFilterfoutInVouw2($gemerkt, open_invoer, $onderwerp, $gewicht, $keurgrens));
+}
+
+// aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn gewicht is groter dan de keurgrens
+function boolean samengesteld1_grenskeurderFilterfoutInVouw2(Object $gemerkt, Object open_invoer, Object $onderwerp, Object $gewicht, Object $keurgrens) {
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
+    }
+    lezing.read(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($gemerkt, open_invoer, $onderwerp, ElementKey.of("vondst", "gemerkt", true)), Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
+    }
+    lezing.read(() -> RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), ComputeHelpers.required($keurgrens, "parameter \"keurgrens\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">"));
+    return lezing.verdict();
+}
+
+// aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn gewicht is groter dan de keurgrens
+function RuntimeException fout_grenskeurderFilterfoutInVouw2(Object $lijstplaatsen_plaats_24, Object $plaats_plaats_25, Object $gemerkt, Object open_invoer, Object $onderwerp, Object $gewicht, Object $keurgrens) {
+    try {
+        boolean uitkomst = samengesteld2_grenskeurderFilterfoutInVouw2($lijstplaatsen_plaats_24, $plaats_plaats_25, $gemerkt, open_invoer, $onderwerp, $gewicht, $keurgrens);
+        return null;
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+// aan ten minste één van de volgende voorwaarden voldoen: - hij is gemerkt - zijn gewicht is groter dan de keurgrens
+function boolean samengesteld2_grenskeurderFilterfoutInVouw2(Object $lijstplaatsen_plaats_24, Object $plaats_plaats_25, Object $gemerkt, Object open_invoer, Object $onderwerp, Object $gewicht, Object $keurgrens) {
+    var lezing = ComputeHelpers.composite(dev.uchar.regelspraak.ir.Condition.Quantifier.TEN_MINSTE, 1, 2, null);
+    if (lezing.stands()) {
+        return lezing.verdict();
+    }
+    lezing.read(() -> ComputeHelpers.characteristic(ComputeHelpers.readInput($gemerkt, open_invoer, $onderwerp, ElementKey.of("vondst", "gemerkt", true)), Boolean.TRUE));
+    if (lezing.stands()) {
+        return lezing.verdict();
+    }
+    lezing.read(() -> RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($gewicht, open_invoer, $onderwerp, ElementKey.of("vondst", "gewicht", false)), ComputeHelpers.required($keurgrens, "parameter \"keurgrens\" is unbound in this case (binding is fail-fast, ch. 5.7)"), ">"));
+    return lezing.verdict();
+}
+
+function java.util.List plaats_grenskeurderFilterfoutInVouw2(Object $onderwerp, Object $lijstplaatsen_plaats_24, Object $plaats_plaats_25) {
+    return ComputeHelpers.foldPlace(dev.uchar.regelspraak.transpiler.tms.plan.Consequence.PlaceReason.FILTER_FAULT, "grenskeurder: vouw 2", $onderwerp, 0, java.util.Arrays.asList("vinder"), java.util.Arrays.asList($lijstplaatsen_plaats_24), java.util.Arrays.asList($plaats_plaats_25));
+}
+
+rule "grenskeurder: filterfout in vouw 2"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( vinder == $vouwonderwerp, $gemerkt : (ComputeHelpers.holds(gemerkt)), $gewicht : gewicht )
+    accumulate( $lijstplaats_plaats_22 : ListPlace( field == "vinder", beta_grenskeurderFilterfoutInVouw2(this, $onderwerp), $lijstplaatswaarde_plaats_23 : place ); $lijstplaatsen_plaats_24 : count(), $plaats_plaats_25 : exactMin($lijstplaatswaarde_plaats_23) )
+    $parameter_6 : ParameterState( parameter == "keurgrens", $keurgrens : value )
+    eval( toets_grenskeurderFilterfoutInVouw2($gemerkt, open_invoer, $onderwerp, $gewicht, $keurgrens) )
+then
+    RuntimeException f = fout_grenskeurderFilterfoutInVouw2($lijstplaatsen_plaats_24, $plaats_plaats_25, $gemerkt, open_invoer, $onderwerp, $gewicht, $keurgrens);
+    if (f == null) {
+        ComputeHelpers.contractBreach("the filter of grenskeurder: vouw 2 failed in the test and not in the consequence, over the same bound values");
+    }
+    insertLogical(new FilterFault("grenskeurder: vouw 2", $vouwonderwerp, $onderwerp, f, plaats_grenskeurderFilterfoutInVouw2($onderwerp, $lijstplaatsen_plaats_24, $plaats_plaats_25)));
+end
+
+rule "parameterstand keurgrens"
+    dialect "mvel"
+when
+then
+    insertLogical(new ParameterState("keurgrens", keurgrens));
+end
+

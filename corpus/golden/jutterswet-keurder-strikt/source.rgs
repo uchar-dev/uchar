@@ -1,0 +1,39 @@
+Afleiden uit leeg: nee
+
+Parameter de keurgrens : Numeriek (getal met 2 decimalen);
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    is keurder kenmerk (bijvoeglijk);
+    is nauwgezet kenmerk (bijvoeglijk);
+    is grenskeurder kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (getal met 2 decimalen);
+    is gemerkt kenmerk (bijvoeglijk);
+    is drijfhout kenmerk (bijvoeglijk);
+
+Feittype vinding
+    de vinder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
+
+Regel keurder
+    geldig altijd
+        Een Jutter is keurder indien het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen:
+        - hij is gemerkt
+        - hij is drijfhout
+        groter is dan 10,00.
+
+Regel nauwgezet
+    geldig altijd
+        Een Jutter is nauwgezet indien het gewicht van alle vondsten van de Jutter die aan alle volgende voorwaarden voldoen:
+        - hij is gemerkt
+        - hij is drijfhout
+        groter is dan 10,00.
+
+Regel grenskeurder
+    geldig altijd
+        Een Jutter is grenskeurder indien het gewicht van alle vondsten van de Jutter die aan ten minste één van de volgende voorwaarden voldoen:
+        - hij is gemerkt
+        - zijn gewicht is groter dan de keurgrens
+        groter is dan 10,00.

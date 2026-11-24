@@ -1661,7 +1661,10 @@ EXPECTED_CHANNEL=(
 # 388 with jutterswet-kenmerknamen and jutterswet-kenmerknamen-strikt: input characteristics stated not to hold whose
 # names hold a space, a hyphen, a word in capitals and an apostrophe, in an ordinary and in a strict document
 # (RUNTIME-SEMANTICS ch. 1.5; PLAYED 2 and 3).
-EXPECTED_PLAYED=388
+# 389 with jutterswet-keurder-strikt: three quantifier folds with a compound filter in a strict document whose matrix can
+# neither fault nor deposit, read without the order of their members; the readings name it (RUNTIME-SEMANTICS ch. 1.5,
+# 5.12; PLAYED 3).
+EXPECTED_PLAYED=389
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

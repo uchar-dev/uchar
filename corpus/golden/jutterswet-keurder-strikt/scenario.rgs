@@ -1,0 +1,51 @@
+Scenario voorbeeld
+Gegeven is de volgende situatie:
+de parameter de keurgrens is 15,00
+een Jutter J1
+- de vondsten zijn V1, V2 en V3
+een Vondst V1
+- het gewicht is 20,00
+- is gemerkt
+een Vondst V2
+- het gewicht is 5,00
+- is niet drijfhout
+een Vondst V3
+- het gewicht is 30,00
+- is niet gemerkt
+Met als verwacht resultaat:
+- of J1 keurder is, staat niet vast
+- J1 is nauwgezet
+- of J1 grenskeurder is, staat niet vast
+
+Scenario gestopt
+Gegeven is de volgende situatie:
+de parameter de keurgrens is 15,00
+een Jutter J1
+- de vondsten zijn V1 en V2
+een Vondst V1
+- het gewicht is 5,00
+- is gemerkt
+- is niet drijfhout
+een Vondst V2
+- het gewicht is 20,00
+- is niet drijfhout
+Met als verwacht resultaat:
+- J1 is niet keurder
+- J1 is nauwgezet
+- J1 is niet grenskeurder
+
+Scenario filter en toets open
+Gegeven is de volgende situatie:
+de parameter de keurgrens is 15,00
+een Jutter J1
+- de vondsten zijn V1 en V2
+een Vondst V1
+- is niet drijfhout
+een Vondst V2
+- het gewicht is 20,00
+- is gemerkt
+- is niet drijfhout
+Met als verwacht resultaat:
+- of J1 keurder is, staat niet vast
+- J1 is nauwgezet
+- of J1 grenskeurder is, staat niet vast

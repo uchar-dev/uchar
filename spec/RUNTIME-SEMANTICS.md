@@ -8030,9 +8030,10 @@ counts (**A form without a condition**, above).
 `inferFromEmpty: false`, the fixture
 `ref/test/fixtures/strict-empty/contributor-filter`, verbatim in the `ref/`
 test `WV-5.12-contributor-filter`, whose readings the Drools backend's
-`OpenReadingsWitnessTest` holds on both its branches; its rule 3 with cases 1
-to 3 is the golden `jutterswet-zwaarkeurder-strikt`, whose readings gate 17
-compares). Over the vondsten of a
+`OpenReadingsWitnessTest` holds on both its branches; with cases 1 to 3 its
+rules 0 to 2 are the golden `jutterswet-keurder-strikt` and its rule 3 the
+golden `jutterswet-zwaarkeurder-strikt`, whose readings gate 17 compares).
+Over the vondsten of a
 Jutter J1, rule 0 reads "een Jutter is keurder indien het gewicht van alle
 vondsten van de Jutter die aan ten minste één van de volgende voorwaarden
 voldoen: hij is gemerkt, hij is drijfhout, groter is dan 10,00", and rule 1
@@ -8370,15 +8371,14 @@ golden `jutterswet-keurtermijn` (card
 EF-009 unreached` and `"W3" fault EF-009 unreached` on both sides, the
 day-kind walk of a member after the stop. The other kinds stay outside
 it: no golden carries such a fault after the stop. A contributor whose
-filter is undetermined is inside it where the matrix of its fold can fault:
-the golden `jutterswet-zwaarkeurder-strikt`, rule 3 of the example of the
-filter of a contributor (above) with cases 1 to 3, reads one in each case, not
-reached in case 2. Rules 0 to 2 of that example, whose matrix can neither fault
-nor deposit, its case without a keurgrens and its red case stand in the fixture
-only: for such a matrix the Drools backend binds the order of the contributors
-in a build with readings alone, which its witness of that build does not admit
-on a golden. Its `OpenReadingsWitnessTest` holds them on both branches against
-the trace of `ref` (above). The ASP backend raises
+filter is undetermined is inside it: the goldens `jutterswet-keurder-strikt`,
+rules 0 to 2 of the example of the filter of a contributor (above), whose
+matrix can neither fault nor deposit, and `jutterswet-zwaarkeurder-strikt`, its
+rule 3, whose matrix can fault, each with cases 1 to 3, read such contributors,
+not reached in case 2. The case of that example without a keurgrens and its red
+case stand in the fixture only, which the Drools backend's
+`OpenReadingsWitnessTest` holds on both branches against the trace of `ref`
+(above). The ASP backend raises
 the faults of an evaluation date the case does not carry (EF-011) and of an
 `Unresolved` node (EF-019) where the evaluation reaches their node, as ref
 does (card `early-faults-and-sum-reading`, 2026-11-04). Those arms are
