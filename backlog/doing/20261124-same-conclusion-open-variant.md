@@ -223,6 +223,86 @@ Rood, zoals verwacht, en alleen op deze goldens:
 - gate 17: de lezingen op `jutterswet-afleiden-uit-leeg` (case 1–5) en `jutterswet-heffing-strikt` (case 2, 3), beide
   takken, en op de zeven nieuwe goldens (lezingen, en waar de uitkomst verandert de eindtoestand).
 
+**Herstel stap 1** (na de review `werk/neon-review/antwoorden/xhigh-nn-same-conclusion-s1.md`, § 1, 3 en 4;
+2026-11-24). Commits:
+
+- `240d8ba61`: beslissingen van een stapel vergeleken zoals de schrijfstap ze schrijft (ref en ch. 1.5), en ch. 5.12;
+- `6a2e11b90`: ch. 5.12, een voorlopig gelezen default die faalt is `OPEN`, ook in de opsomming van de statussen;
+- `fea88448a`: de goldens `-kenmerk`, `-genest` en `-fout` uitgebreid (en de rode `ir.json` van `-fout` mee);
+- deze bijwerking van het Result.
+
+*Monotonie bij eenheden* (review § 1). `constant` en `equal_dec` in `ref/lib/eval.ml`, en hun spiegel in
+`ref/lib/reading.ml`, vergeleken een `Literal` vóór de omrekening naar het doel: een eenheidloze 1 was gelijk aan 1 ct
+op een doel in €. Nu: `Eval.as_written` (de waarde zoals `World.collapse` haar schrijft, of geen waarde waar het
+schrijven faalt) en `Eval.same_as_written` (gelijk in de eenheid en met de decimalen van het doel; een waarde waarop het
+schrijven faalt is niet gelijk aan een die geschreven wordt; twee waarop het faalt worden vergeleken zoals berekend,
+zodat in een gewoon document een conflict vóór de schrijffout blijft gaan en twee gelijke waarden beslissen en bij het
+schrijven falen). Een `Literal` die de schrijfstap niet kan schrijven (andere eenheid, schrijfgrens) is geen constante: de default
+is open. Ch. 1.5 ("An open default with a constant") zegt het, met het voorbeeld `WV-1.5-stack-same-conclusion-unit-*`.
+De rode test (`ref/test/test_ref.ml`, die rijen, het vindloon in € met twee decimalen) vóór de fix:
+
+```
+FAIL WV-1.5-stack-same-conclusion-unit-cent (got 0.01, want open)
+FAIL WV-1.5-stack-same-conclusion-unit-hundred-cent (got open, want 1)
+FAIL WV-1.5-stack-same-conclusion-unit-another-unit (got 1, want open)
+FAIL WV-1.5-stack-same-conclusion-unit-write-boundary (fault: V1.vindloon: value 1/200 does not fit the declared 2 decimals — an explicit rounding is mandatory (ch. 2.4))
+FAIL WV-1.5-monotone WV-1.5-stack-same-conclusion-unit-cent-betwist-holds without V1 betwist (adds V1.vindloon 0.01)
+5 failure(s)
+```
+
+en erna `test_ref: all 4500 worked examples pass` (4473 → 4500). Geen golden verandert erdoor van uitkomst (gate 5).
+
+*Spec* (review § 3). Ch. 5.12: de status van een voorlopig gelezen default naar voorwaarde en waarde (`HOLDS` waar de
+rechtvaardiging geldt en de waarde vaststaat, ook een vaststaand lege waarde waarop hij opgeeft; `FAILS` waar zij niet
+geldt; `OPEN` waar zij onbepaald is, de waarde open of de evaluatie faalt). `WV-5.12-same-conclusion-fault` noemt nu
+het rekenloon, als de golden.
+
+*Goldens* (review § 4), met handberekening in `NOTE.md`, gelezen door ref:
+
+- `jutterswet-zelfde-conclusie-kenmerk`, twee kenmerken erbij, elk in de negen casussen: `bergbaar`, een groep-default
+  met de uitzonderingsgroepen "niet bergbaar indien hij betwist is" en "… drijfhout is" boven de basis "bergbaar indien
+  zijn gewicht groter is dan 2"; `keurbaar`, een ongeordende groep van "keurbaar indien zijn gewicht groter is dan 2" en
+  "niet keurbaar indien hij betwist is". Case4 (bergbaar) en case1, case4 (keurbaar): open — een groep of lid open met
+  niet toekennen sluit niet, alleen de wortel; zou het sluiten, dan hield het kenmerk. Case5 (keurbaar): de groep is
+  open met niet toekennen, en aan de wortel staat keurbaar niet. Case2: het conflict `Vondst.keurbaar`;
+- `jutterswet-zelfde-conclusie-genest`, het havenloon: "op 0 indien hij betwist is" boven "op 7 indien hij beschadigd
+  is" met de uitzonderingsgroepen "op 0 indien zijn gewicht groter is dan 2" en "op 5 indien … groter is dan 10", boven
+  "zijn gewicht maal 2". Case1 (beschadigd, betwist open): open, geen §9.5-feit (het geneste conflict onder de open 0
+  wordt voorlopig gelezen); case2: 0; case3: leeg met `Vondst.havenloon/1`; case4: open; case5: 100;
+- `jutterswet-zelfde-conclusie-fout`, het werkloon: "op 2 indien hij betwist is" boven "het Rekenjaar min 2023", zonder
+  peildatum: een fout in de waarde van de lagere default. Case1 (betwist open): open, geen fout; case2: 2; de rode
+  casus (betwist niet) faalt met EF-011 als voorheen.
+
+Nieuwe of veranderde verwachtingen: `-kenmerk` 9 casussen (elk twee kenmerken erbij, case2 ook een inconsistentie),
+`-genest` 5 (het havenloon, case3 ook een tweede inconsistentie), `-fout` 2 (het werkloon). Geen nieuwe casusbestanden.
+
+Gates in de worktree, elk apart, na elkaar:
+
+```
+check-self-contained: PASS
+check-ir-schema: PASS (schema valid; 79 pattern self-test row(s); 563 shape self-test row(s); 521 file(s) validate and round-trip, floor 192; 66376 object(s) in 1167 document(s) in the schema's key order, 2 in no subschema)
+check-verifier: PASS (…; 521 golden clean; 646 negative rejected for their declared rule, floor 568; …; empty-closures inventory over 521 documents: 840 closure places, floor 823, 435 negation, floor 383, 209 absent-instance, floor 205, 20 kinds, floor 20, 24 witnesses verbatim, floor 24, 1522 pointers resolve)
+check-case-schema: PASS (schema valid; 146 self-test row(s); 1343 case file(s) validate)
+check-oracle: PASS (ref suite 4500 worked examples, floor 489; 1241 cases replayed exactly, floor 427; preservation with complete knowledge: 281 goldens and 787 cases play, floors 279 and 782; …; 14 carrying the property already, …; monotonicity: 856 cases, 2789 runs without one input compared, floor 2652, 83 of a member not open without its value; 0 listed gap(s) of ch. 1.5; …)
+check-noop: PASS (1196 cases refute a do-nothing executor; 45 pinned survivors pin defeasible standing)
+check-regelspraak: PASS — JUnit suite green (1716 tests, floor 173); 233 rgs golden(s) re-emit byte-identically (floor 80)
+check-scenario: PASS — 59 scenario golden(s) (floor 7) regenerate 209 case file(s) (floor 31) and their ir.json byte-identically
+check-red: PASS (102 red cases fault observably in ref and clingo, floor 44; …); Drools leg PASS (83 fault-pinned, …)
+```
+
+Rood, alleen op de goldens van deze kaart en de twee met veranderde lezingen (logs in
+`werk/same-conclusion-open-variant/logs/herstel/`):
+
+- gate 6 (clingo): 14 casussen, `-kenmerk` case1–5, `-waarde` (3), `-ongeordend` (3), `-genest`, `-deponering`,
+  `-initialisatie` (elk 1); `-fout` speelt, ook het werkloon; in `-kenmerk` zijn bergbaar (case1) en keurbaar (case5)
+  bij de mismatches;
+- gate 12 (Drools): `Tests run: 2073, Failures: 4`: `TmsCorpusWitnessTest` en `DrlTextCorpusWitnessTest` (dezelfde zes
+  goldens), `RuleOriginCorpusWitnessTest` (`-genest`, `-ongeordend`, en nu ook `-kenmerk`: de verzoening van keurbaar
+  heeft de rol `RECONCILE_OPEN`), `DrlTextPinWitnessTest` (zeven goldens zonder pin);
+- gate 13: 28 regels, alleen de clingo-poot (presentatie- en naampoot), op dezelfde zes goldens;
+- gate 17: 74 regels, `jutterswet-afleiden-uit-leeg` case1–5 en `jutterswet-heffing-strikt` case2, 3 op beide takken,
+  en de zeven goldens van deze kaart.
+
 **Stap 2, clingo** (`backends/clingo/lib/translate.ml`, strikte tak):
 
 - `translate_chain` (rond 14166–14398): naast `out`/`gw`/`st` een atoom "open met v" per default en per keten; een
@@ -236,6 +316,26 @@ Rood, zoals verwacht, en alleen op deze goldens:
 - `translate_defaults_group` (rond 14757–14907): aan de wortel van een kenmerk sluit "open met niet" tot `nil`; op een
   attribuut blijft "open met v" open (ook met invoer v); `val`/`has` waar de groep beslist;
 - de regel naast een initialisatie blijft natief (geen desugaring in een strikt document).
+
+Uit review § 5 (`werk/neon-review/antwoorden/xhigh-nn-same-conclusion-s1.md`), nog niet hierboven:
+
+- `stack_atoms` (rond 14159): de waarde van "open met v" (`s_oo(S,V)`) door dezelfde omrekening naar eenheid en schaal
+  van het doel als `s_out` (`fitted`, rond 14312–14318), zodat "open met v" en een beslissing in de eenheid van het doel
+  vergeleken worden (zoals ref sinds de herstelronde, ch. 1.5); een `Literal` die de schrijfgrens of de eenheid van het
+  doel niet haalt, geeft geen `s_oo` (de default is open);
+- bereikbaarheid in twee soorten: echt (`rch`, alle hogere geven op) en voorlopig (onder een hogere "open met v"),
+  allebei meegegeven aan geneste uitzonderingsgroepen (`translate_group`); `ctx.rule_guard` en `ctx.param_reach` op de
+  vereniging, `ctx.member_gate` en `ctx.deposit_guard` op de echte, zodat `emit_viol` (rond 1310–1314) een EF-fout onder
+  voorlopige bereikbaarheid onderdrukt en open maakt, terwijl een limiet via `ctx.limit_gate` zichtbaar blijft;
+- de deponering van EF-027 in `translate_group` (rond 14485) staat buiten `ctx.boundary`: zij moet expliciet op de
+  echte bereikbaarheid van de groep wachten, anders deponeert een conflict van uitzonderingsgroepen onder een hogere
+  "open met v" toch (golden `-genest`, havenloon case1: geen feit);
+- een default met uitzonderingsgroepen en een eigen inhoud (rond 14350–14372): de keten-tabel ook tussen de verzoende
+  groepen en de terugval (de terugval voorlopig bereikt waar de groepen open met v zijn);
+- `stands_beside` (rond 14164): `m.s_st(S)` vervangen door een hulpatoom "staat of is open met v";
+- aan de wortel van een kenmerk leidt alleen de groep "open met niet" `nil` af, niet één lid naast een ander open lid;
+  in een uitzonderingsgroep en een lid van een ongeordende groep sluit niets (golden `-kenmerk`, bergbaar en keurbaar);
+  op een attribuut leidt "open met v" geen `nil` af, zodat ook `inputval` + `nil` (rond 14904–14906) open blijft.
 
 **Stap 3, Drools** (`TmsTranspiler`, `Outcome`, `SessionReaders`, beide renderings):
 
@@ -253,6 +353,30 @@ Rood, zoals verwacht, en alleen op deze goldens:
 - `RuleOriginCorpusWitnessTest`: de rol `RECONCILE_OPEN` bij de naam "open …"; DRL-pins voor de zeven nieuwe goldens
   (`-Duchar.drlpin`); `EXPECTED_PLAYED` in `scripts/check-drools.sh` +7.
 
+Uit review § 5, nog niet hierboven:
+
+- de keuze van de vorm (rond 3978): elke strikte stapel met een default die open met v kan zijn naar `generalForm`,
+  ook een vlakke kenmerk-stapel met een "niet"-default (`simpleForm` zet bij een open default direct `LeftOpen`, rond
+  4153); de DRL-pins van `jutterswet-afleiden-uit-leeg` en `jutterswet-heffing-strikt` en de vloeren van
+  `RuleOriginCorpusWitnessTest` schuiven dan mee;
+- de uitkomst per positie tegenover die van de keten: laat `noOutcome` een hogere "open met v" door, dan staan er meer
+  `Outcome`-feiten in één keten (positie 0 open met 0, positie 1 beslist 100); `reconciliation` (rond 4257–4334) en
+  `SessionReaders.settledInGeneralForm` (rond 557–570, dat nu een `IllegalStateException` gooit bij twee uitkomsten
+  per keten) mogen de lagere beslissing niet als die van de keten lezen; `Outcome` (rond 42–51), `Consequence` (rond
+  789), `StaticFunction` (de vergelijking met "open met v", in de eenheid en met de decimalen van het doel) en beide
+  renderings (`PatternDslRendering`, `DrlRendering`) daarop aanpassen;
+- voorlopig lezen onder een hogere "open met v" in de eigen keten of een voorouderketen, op alle plekken: `depositRule`
+  (rechtvaardiging), `Consequence.Deposit` (consequentie, rond 4479), `conditionFaultRule` (een fout als open, geen
+  `Fault`), `ComputeFault` in `Consequence.Decision` (idem; golden `-fout`, werkloon), en de fouten en deponeringen van
+  een vouw in een voorlopige default (`FOLD_FILTER_FAULT`, `FOLD_MEMBER_FAULT`, `FOLD_FILTER_DEPOSIT`); een conflict
+  van uitzonderingsgroepen onder zo'n default deponeert geen EF-027 (golden `-genest`, havenloon);
+- `SessionReaders.reading(...)` (rond 1154–1164) geeft nu bij een fout in de voorwaarde `FAULTS` en bij een fout in de
+  waarde `HOLDS`; een voorlopig gelezen default moet daar `OPEN` krijgen, met de fout aan de knopen
+  (`WV-5.12-same-conclusion-fault`, en de werkloon van `-fout`);
+- aan de wortel van een kenmerk mag "open met niet" geen `LeftOpen` invoegen, anders zet `openValues` (rond 857–861)
+  het kenmerk alsnog open;
+- `EXPECTED_PLAYED` in `scripts/check-drools.sh` (rond 1667): 389 → 396.
+
 **Open punten.**
 
 - De zin in ch. 7.3 viel buiten de genoemde hoofdstukken van het mandaat; zonder haar spreekt de spec zichzelf tegen.
@@ -263,4 +387,6 @@ Rood, zoals verwacht, en alleen op deze goldens:
   (RUNTIME-SEMANTICS ch. 1.5, 'An open default with a constant'): Kleene's table on a characteristic, the parallel
   choice on an attribute; what stands below it is read provisionally. Goldens `jutterswet-zelfde-conclusie-*`."
 - Toolchain-kaart na deze (besluit 5): de uitleg van de open variant ("staat niet vast, maar kan alleen hetzelfde
-  beslissen") en `openInputs` (`OpenReads.writers` mag de `OPEN`-lezing van zo'n variant niet als schrijver tellen).
+  beslissen") en `openInputs` (`OpenReads.writers` mag de `OPEN`-lezing van zo'n variant niet als schrijver tellen);
+  de `Verbaliser` mag een lagere default die `HOLDS` leest onder een `OPEN` default, waar de uitkomst open blijft, niet
+  als de beslisser tonen (review § 2).
