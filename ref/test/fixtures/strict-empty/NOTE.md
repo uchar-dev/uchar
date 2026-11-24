@@ -33,3 +33,10 @@ initialisation, which gives 3; with the values 7 and 4 in the case they are 7 an
 "op 8 indien hij gemeld is": the exception decides above the input (ch. 7.9), so the stack makes the strandloon derived
 (ch. 1.5, "The three states"). It is 8 where gemeld holds, also with 7 in the case; 5 where gemeld stands not to hold and
 the case gives no strandloon, 7 where it gives 7; and open where gemeld is open, with or without 7 in the case.
+
+`contributor-filter` does not come from `spec/proposals/STRICT-EMPTY.md`: it is the worked example of the filter of a
+contributor in RUNTIME-SEMANTICS ch. 5.12 (`WV-5.12-contributor-filter`), its IR emitted by the RegelSpraak frontend.
+Four quantifier folds `alle` over the vondsten of J1, each with a compound filter: "gemerkt of drijfhout" and "gemerkt en
+drijfhout" over "groter dan 10,00", "gemerkt of een gewicht groter dan de keurgrens" over the same, and "gemerkt of
+drijfhout" over "groter dan de keurgrens". `red1-filterfout-na-open-filter.json` pins the fault of the third filter on V2
+after V1's undetermined one (EF-014); the witness loop reads only the `case*` files, and the readings test reads it.
