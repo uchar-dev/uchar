@@ -54,7 +54,7 @@ final class FormsPlan {
             "ComputeHelpers.isA(this", "ComputeHelpers.classNotIn(this", "ComputeHelpers.inside(date",
             "ComputeHelpers.readProperty(this, \"hoogte\")", "ComputeHelpers.holds(", "ComputeHelpers.periods(", "ComputeHelpers.isSet(",
             "pad1_alleTermen(", "beta_alleTermen(", "samengesteld_alleTermen(", "zonderfout1_alleTermen(",
-            "vouwlezing1_alleTermen(", "kwantorlezing_alleTermen(", "let1_alleTermen(", "binder1_alleTermen(",
+            "vouwlezing1_alleTermen(", "kwantorlezing1_alleTermen(", "kwantorlezing2_alleTermen(", "let1_alleTermen(", "binder1_alleTermen(",
             "lijst_schrijvers(", "deponering_deponeringVanEenToets(",
             "rsDagsoort_Werkdag", "second != null, second == $onderwerp.post", "first == $onderwerp", " >= 1", " < 3",
             "Outcome.Kind.DECIDED", "insert(", "insertLogical(", "ComputeHelpers.depositFlag()", "ComputeHelpers.fail(",
@@ -72,7 +72,7 @@ final class FormsPlan {
             "ComputeHelpers.open($onderwerp, ", "global OpenInput open_invoer;", "ComputeHelpers.readInput($uitkijkbonus, open_invoer, ",
             "ComputeHelpers.input($uitkijkbonus, open_invoer, ", "ComputeHelpers.input(false, open_invoer, ",
             "return ComputeHelpers.judge(() -> ", "return ComputeHelpers.judge(() -> {", "eval( ComputeHelpers.acts(",
-            "if (ComputeHelpers.decides(");
+            "if (ComputeHelpers.decides(", "ComputeHelpers.quantifierRead(", "ComputeHelpers.quantifierReadUnordered(");
 
     private static final String O = "$onderwerp";
 
@@ -864,6 +864,8 @@ final class FormsPlan {
                         "de som van de bijdragen"), number("0"), text("<")), "de som onder 0"),
                 new Term.QuantifierRead(StaticFunction.QUANTIFIER_READ, readOf(8), readOf(15), Condition.Quantifier.TEN_MINSTE, 1, 14,
                         "ten minste één bijdrage"),
+                new Term.QuantifierRead(StaticFunction.QUANTIFIER_READ_UNORDERED, readOf(8), readOf(15),
+                        Condition.Quantifier.ALLE, 0, -1, "alle bijdragen, zonder volgorde"),
                 new Term.WithoutFault(new Term.Call(StaticFunction.KENMERK, List.of(readOf(1), new Term.Const(Boolean.TRUE, null,
                         null)), "hij een gevarenwacht is"), null)), "alle voorwaarden");
         Term value = new Term.Let(12, "a", new Term.Call(StaticFunction.RS_PLUS, List.of(readOf(0), number("1.50")), "a"),
