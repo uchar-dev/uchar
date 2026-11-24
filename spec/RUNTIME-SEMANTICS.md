@@ -7569,7 +7569,8 @@ has there:
 A composite and a quantifier fold read their members until their judgement
 stands (ch. 1.5), and the members after that are not reached. A contributor
 of a quantifier fold carries the truth of the matrix on it, `undetermined`
-among them; a fold over a set that an open read broke off carries no
+among them, and says whether its filter is undetermined (**Folds over a
+set**, below); a fold over a set that an open read broke off carries no
 contributors. The status follows the three outcomes of ch. 1.5: `HOLDS` where
 the condition is true and the value has no open read, a leeg value and a
 value that faults included; `FAILS` where the condition is false; and `OPEN`
@@ -7638,8 +7639,9 @@ reached; "V3" undetermined reached]`; "keurder indien het gewicht van alle
 vondsten van de Jutter die gemerkt zijn groter is dan 10", over a gemerkte V1
 of 20, V2 of 5 whose gemerkt is open and V3 of 30 that stands not gemerkt,
 reads `0 QuantifierFold undetermined open "V2" "gemerkt" contributors ["V1"
-true reached; "V2" false reached]`; and "de som van het gewicht van alle
-vondsten van de Jutter", where V2 has no gewicht, reads `0 Aggregation
+true reached; "V2" false reached filter undetermined]`; and "de som van het
+gewicht van alle vondsten van de Jutter", where V2 has no gewicht, reads `0
+Aggregation
 undetermined open "V2" "gewicht"`, without contributors. Example
 (`WV-5.12-open-stack`): over "het bergloon is zijn opgegeven bergloon", "…
 zijn berekende bergloon" and "… moet geïnitialiseerd worden op 25", without
@@ -7817,27 +7819,48 @@ element of a list (ch. 10.2) has no reading of its own; it keeps its
 number. A node with the form anchor there (ch. 3.4a) is read per member too
 and has none either, although its value does not depend on the member (card
 `subselection-reads-subject`, 2026-10-23, B7). The node of a fold over a set
-carries its **contributors** instead,
-the members of its range that pass its filter: for a count each instance it
-counts, for the filled count (ch. 3.4c) each member whose value is filled;
-for a value fold each member with the value it contributes, where a
-member whose value is leeg contributes nothing (ch. 1.2e); for the sum per
+carries its **contributors** instead: the members of its range whose filter
+holds, and of a quantifier fold the members whose filter is not false, true
+or undetermined (ch. 1.5; a value fold whose filter is undetermined on a
+member is broken off and carries none, **Open values**, above). A member
+whose filter is false is no contributor, also where the filter has an open
+part: "die aan alle volgende voorwaarden voldoen: hij is gemerkt, hij is
+drijfhout" is false on a vondst that stands not gemerkt, whatever its
+drijfhout. A filter with an open part can hold as well: "die aan ten minste
+één van de volgende voorwaarden voldoen: hij is gemerkt, hij is drijfhout"
+holds on a gemerkte vondst whose drijfhout is open, and is not undetermined
+there. For a count each instance it counts, for the filled count (ch. 3.4c)
+each member whose value is filled; for a value fold each member with the
+value it contributes, where a member whose value is leeg contributes nothing
+(ch. 1.2e); for the sum per
 period over a set (ch. 3.5) each member with the timeline it contributes,
 where a member without a timeline contributes nothing; for a quantifier
 fold each member with the verdict of the matrix on it, or its fault — the
 table of ch. 3.9a's `test(m)` over the contributors, evaluated on the
-fixpoint world as a reading evaluates, depositing nothing — and whether the
+fixpoint world as a reading evaluates, depositing nothing — whether the
 evaluation reached it: the contributors after the stop (ch. 5.10 over the
 contributors, in the member order of ch. 5.7a) and after a fault are not
-reached. Their verdict or fault is
+reached — and whether its filter is undetermined. Their verdict or fault is
 the reading's, not the session's: the session raised that fault and made
 that deposit no more than it read the contributor, and the status of the
-reading does not change by it. Where the evaluation of a fold faults before
+reading does not change by it. The position is the matrix's: every filter is
+read before every matrix (ch. 3.9a), so a contributor that the evaluation
+did not reach has its filter read all the same, an undetermined one among
+them. That the filter of a contributor is undetermined is no part of the
+verdict of its matrix, and the fold's judgement rests on both: under `all` a
+contributor whose filter is undetermined is undetermined where its matrix is
+false and true where its matrix is true (ch. 1.5). A filter has no third
+state at a contributor: a filter that faults on any member faults the fold,
+which then carries no contributors (below), and a fault within one compound
+filter, read provisionally after an undetermined part of it, leaves that
+filter undetermined (ch. 1.5). Where the evaluation of a fold faults before
 its contributors are settled — its filter faults, or the value of one of
 its members — the node carries no contributors. An executor whose
 evaluation keeps no order among the contributors of a quantifier fold whose
 matrix can neither fault nor deposit (ch. 5.11: an invisible order) writes
 `unordered` in place of the position; it reports no position for that fold.
+Whether the filter of a contributor is undetermined does not depend on the
+order, and such an executor writes it all the same.
 A quantifier fold read per member or per element (above) has no reading of
 its own: its table is written nowhere, and an executor need not evaluate
 its contributors after the stop. It is the one place where a quantifier
@@ -7897,11 +7920,14 @@ the reading stands at the head of its line (ch. 5.8 rule 4), and neither
 does a node that was not reached, that faulted (card
 `reading-read-objects`, 2026-10-27) or that is undetermined. After the node of a fold over a set
 stand its contributors,
-`contributors [<object> <value|verdict|fault> reached|unreached; …]`,
+`contributors [<object> <value|verdict|fault> reached|unreached[ filter undetermined]; …]`,
 sorted, each found written as at a node, a verdict as its truth (`true`,
-`false`, `undetermined`), and `unordered` in place of the
-position where the executor keeps no order. `runner --trace` prints this
-text for a golden case, each line after `reading `.
+`false`, `undetermined`), `unordered` in place of the position where the
+executor keeps no order, and `filter undetermined` after the position of a
+contributor of a quantifier fold whose filter is undetermined, also after
+`unordered`. A contributor whose filter holds writes nothing there, so a
+document without `inferFromEmpty: false` writes it nowhere. `runner --trace`
+prints this text for a golden case, each line after `reading `.
 
 **Worked example** (absolute; the `jutterswet-ploegaandeel` golden of
 ch. 5.10, verbatim in the `ref/` test `WV-5.12-ploegaandeel`). The rule
@@ -7998,6 +8024,66 @@ text case 3 reads:
 The golden's second rule, `wachttal van een ploeg`, the count of the
 wachten, has no condition: it holds, and the count carries each wacht it
 counts (**A form without a condition**, above).
+
+**Worked example — the filter of a contributor** (absolute; a document with
+`inferFromEmpty: false`, the fixture
+`ref/test/fixtures/strict-empty/contributor-filter`, verbatim in the `ref/`
+test `WV-5.12-contributor-filter`, whose readings the Drools backend's
+`OpenReadingsWitnessTest` holds on both its branches). Over the vondsten of a
+Jutter J1, rule 0 reads "een Jutter is keurder indien het gewicht van alle
+vondsten van de Jutter die aan ten minste één van de volgende voorwaarden
+voldoen: hij is gemerkt, hij is drijfhout, groter is dan 10,00", and rule 1
+"een Jutter is nauwgezet indien …" the same with "die aan alle volgende
+voorwaarden voldoen". In each, node 0 is the `QuantifierFold`; the nodes of
+its filter and of its matrix are read per member and have no reading of
+their own. In case 1 V1 is gemerkt and weighs 20, and the case does not name its drijfhout; V2
+weighs 5, stands not drijfhout, and the case does not name its gemerkt; V3
+weighs 30, stands not gemerkt, and the case does not name its drijfhout:
+
+| member | gemerkt | drijfhout | gewicht | filter of rule 0 | filter of rule 1 | matrix |
+|----|----|----|----|----|----|----|
+| V1 | true | open | 20 | true | undetermined | true |
+| V2 | open | false | 5 | undetermined | false | false |
+| V3 | false | open | 30 | undetermined | false | true |
+
+In rule 0 V1's filter holds, its drijfhout open; V2 and V3 are contributors
+whose filter is undetermined. Under `all` V3 is true whatever its filter,
+since its matrix is true, and V2 is undetermined: gemerkt, its gewicht 5
+would fail the fold, and not gemerkt it would not count. The fold is
+undetermined, with the open read of its first undetermined member, which is
+V2's filter, and keurder is open. In rule 1 the filters of V2 and V3 are
+false, each with an open part, so V1 alone is a contributor, with an
+undetermined filter and a true matrix, and the fold holds. In the canonical
+text:
+
+```
+/rules/rules/0/versions/0 "J1" 0 QuantifierFold undetermined open "V2" "gemerkt" contributors ["V1" true reached; "V2" false reached filter undetermined; "V3" true reached filter undetermined]
+/rules/rules/0/versions/0 "J1" OPEN
+/rules/rules/1/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached filter undetermined]
+/rules/rules/1/versions/0 "J1" HOLDS
+```
+
+The other cases of the fixture each read one more arm, rule 0 in the first
+two. In case 2 V1, gemerkt and of gewicht 5, stops the fold false before V2
+of gewicht 20, whose gemerkt is open: `["V1" false reached; "V2" true
+unreached filter undetermined]`, `FAILS`; V2's filter was read before the
+first matrix. In case 3 V1 has neither a gewicht nor a gemerkt, and V2 is
+gemerkt and weighs 20: `["V1" undetermined reached filter undetermined; "V2"
+true reached]`, `OPEN`. Case 4 has no keurgrens, V1 as in case 3 with a
+gewicht of 20 and V2 with one of 5. Rule 2, grenskeurder, filters by "hij is
+gemerkt" or "zijn gewicht is groter dan de keurgrens": V1's filter reads the
+keurgrens provisionally after its open gemerkt (ch. 1.5) and is
+undetermined, `["V1" true reached filter undetermined; "V2" false reached]`,
+`FAILS`. Rule 3, zwaarkeurder, has the filter of rule 0 and the matrix
+"groter dan de keurgrens": every matrix is read provisionally past V1's
+undetermined filter, and the fault of the unbound parameter (EF-014) leaves
+each member undetermined, `["V1" undetermined reached filter undetermined;
+"V2" undetermined reached]`, `OPEN`. The red case
+`red1-filterfout-na-open-filter` is case 4 with V2 standing not gemerkt:
+V2's filter of rule 2 reads the keurgrens with nothing undetermined before it
+and faults, so the fold faults (EF-014) and its node carries no
+contributors, `0 QuantifierFold fault EF-014`, `FAULTS`, whatever V1's
+filter.
 
 **Worked example — a form without a condition** (absolute; the
 `jutterswet-opgave-bedrag` golden, verbatim in the `ref/` test
@@ -8218,8 +8304,9 @@ them) pins the reading of period arithmetic in `ref/`, and the backend's
 (`scripts/check-readings.sh`) holds the readings of `runner --trace`, per
 golden case file, to those of the Drools backend on both its branches: per
 contributor the member and its verdict, value or fault verbatim, the
-position where both write one; and where the backend writes `unordered`, no
-contributor of the trace may carry a fault. The object of a read stands in
+position where both write one, and `filter undetermined` verbatim; and where
+the backend writes `unordered`, no contributor of the trace may carry a
+fault. The object of a read stands in
 the line of its node, so the gate holds it verbatim. `WV-5.12-kustwacht`
 (the example above) and `WV-5.12-gelezen-objecten` (a member of the
 subject's own; a path of one step in a condition and of two as the value of
@@ -8276,7 +8363,11 @@ golden `jutterswet-keurtermijn` (card
 `clingo-day-kind-walk-after-fold-stop`, 2026-10-21) reads `"W2" fault
 EF-009 unreached` and `"W3" fault EF-009 unreached` on both sides, the
 day-kind walk of a member after the stop. The other kinds stay outside
-it: no golden carries such a fault after the stop. The ASP backend raises
+it: no golden carries such a fault after the stop. A contributor whose
+filter is undetermined stands in no golden either, since no golden with
+`inferFromEmpty: false` has a quantifier fold: gate 17 holds the text in rows
+of its own, and the Drools backend's `OpenReadingsWitnessTest` holds it on
+both branches against the trace of `ref` (above). The ASP backend raises
 the faults of an evaluation date the case does not carry (EF-011) and of an
 `Unresolved` node (EF-019) where the evaluation reaches their node, as ref
 does (card `early-faults-and-sum-reading`, 2026-11-04). Those arms are
