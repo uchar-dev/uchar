@@ -1,0 +1,25 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation undetermined open "K3" "officieel"
+reading /rules/rules/0/versions/0 "J1" OPEN
+reading /rules/rules/1/versions/0 "J1" 0 QuantifierFold undetermined open "K3" "officieel" contributors ["V1" true reached; "V2" false reached filter undetermined]
+reading /rules/rules/1/versions/0 "J1" OPEN
+state attribute "J1" "keurgewicht" open
+state attribute "K1" "score" 8
+state attribute "K2" "score" 3
+state attribute "K3" "score" 2
+state attribute "V1" "gewicht" 20
+state attribute "V2" "gewicht" 5
+state characteristic "J1" "streng" open
+state characteristic "K1" "officieel"
+state characteristic "K2" "officieel" open
+state characteristic "K3" "officieel" open
+state link "keurgang" "gekeurde" "V1" "keuring" "K1"
+state link "keurgang" "gekeurde" "V2" "keuring" "K2"
+state link "keurgang" "gekeurde" "V2" "keuring" "K3"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state object "J1" "Jutter"
+state object "K1" "Keuring"
+state object "K2" "Keuring"
+state object "K3" "Keuring"
+state object "V1" "Vondst"
+state object "V2" "Vondst"

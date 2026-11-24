@@ -72,7 +72,9 @@ class OpenReadingsWitnessTest {
 
     /** WV-5.12-open-quantifier-fold: the witness of the reference interpreter, without a filter and under one that is open; in
      *  the order of its members where the matrix can deposit; and under each quantifier a filter that is open over a matrix
-     *  with a test on leeg or gevuld, one that deposits or faults, the contributors each with the truth of the matrix. */
+     *  with a test on leeg or gevuld, one that deposits or faults, the contributors each with the truth of the matrix; and one
+     *  whose filter can be undetermined in the filter of a sum and of a second such fold, each read without the order of
+     *  its members, the first open member named in the order of both lists. */
     @Test void wv_5_12_open_quantifier_fold() throws Exception {
         pinned("open-quantifier-fold", VALUES.resolve("quantifier-fold"));
         pinned("open-quantifier-fold-in-order", VALUES.resolve("past-undetermined-fold"));
@@ -89,6 +91,7 @@ class OpenReadingsWitnessTest {
         pinned("open-quantifier-fold-filter-faults", VALUES.resolve("quantifier-fold-filter-faults"));
         pinned("open-quantifier-fold-two-routes", VALUES.resolve("quantifier-fold-two-routes"));
         documents("reading-quantifier-filter");
+        documents("reading-nested-quantifier");
     }
 
     /** WV-5.12-contributor-filter: the witness of the reference interpreter, a contributor whose filter is undetermined

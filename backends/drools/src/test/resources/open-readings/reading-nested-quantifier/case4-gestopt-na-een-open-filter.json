@@ -1,0 +1,128 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": [
+            "V2",
+            "V1",
+            "V3"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "5.00"
+          }
+        },
+        "roles": {
+          "keuringen": [
+            "K1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "5.00"
+          }
+        },
+        "roles": {
+          "keuringen": [
+            "K3",
+            "K2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewicht": {
+            "number": "30.00"
+          }
+        },
+        "roles": {
+          "keuringen": [
+            "K4"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "K1",
+        "objectType": "Keuring",
+        "attributes": {
+          "score": {
+            "number": "8"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "officieel"
+        ]
+      },
+      {
+        "label": "K2",
+        "objectType": "Keuring",
+        "attributes": {
+          "score": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K3",
+        "objectType": "Keuring",
+        "attributes": {
+          "score": {
+            "number": "1"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "K4",
+        "objectType": "Keuring",
+        "attributes": {
+          "score": {
+            "number": "9"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "officieel"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "keurgewicht"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J1",
+      "characteristic": "streng"
+    }
+  ]
+}

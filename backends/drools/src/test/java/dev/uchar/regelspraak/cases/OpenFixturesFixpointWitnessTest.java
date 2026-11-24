@@ -35,7 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * {@code FilterFault}), and 25 between the branches without readings, one of them ({@code reading-nested/case3}) in the
  * open member a fold in a filter passed up.
  *
- * <p>Floors, measured 2026-11-24 at card fold-order-in-readings, with its fixture {@code reading-shared-field}: {@value #EXPECTED_MIN_DOCUMENTS}
+ * <p>Floors, measured 2026-11-24 at card fold-order-in-readings, with its fixtures {@code reading-shared-field} and
+ * {@code reading-nested-quantifier}: {@value #EXPECTED_MIN_DOCUMENTS}
  * documents and {@value #EXPECTED_MIN_CASES} cases per branch, and {@value #EXPECTED_MIN_READINGS} reading facts at the
  * fixpoints of those cases per branch.
  */
@@ -44,9 +45,9 @@ class OpenFixturesFixpointWitnessTest {
     private static final Path RESOURCES = Path.of("src", "test", "resources");
     private static final Path STRICT = Path.of("..", "..", "ref", "test", "fixtures", "strict-empty");
 
-    static final int EXPECTED_MIN_DOCUMENTS = 95;
-    static final int EXPECTED_MIN_CASES = 417;
-    static final int EXPECTED_MIN_READINGS = 2451;
+    static final int EXPECTED_MIN_DOCUMENTS = 96;
+    static final int EXPECTED_MIN_CASES = 421;
+    static final int EXPECTED_MIN_READINGS = 2459;
 
     /** The documents the build without readings refuses, with the code of the refusal, per branch: the forms of a document
      *  with {@code inferFromEmpty: false} this backend does not carry (backends/drools/README.md, "UncarriedForms"). */

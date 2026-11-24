@@ -1,0 +1,405 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "keurgewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "streng",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "gewicht",
+            "datatype": {
+              "node": "Number",
+              "whole": false,
+              "decimals": 2,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Keuring",
+        "animate": false,
+        "plural": "Keuringen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "score",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "officieel",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vinding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "keurgang",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "gekeurde",
+            "objectType": "Vondst",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "keuring",
+            "objectType": "Keuring",
+            "plural": "keuringen",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "keurgewicht",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "keurgewicht",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Het keurgewicht van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is goedgekeurd"
+                  }
+                }
+              ],
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "QuantifierFold",
+                    "quantifier": "all",
+                    "elementType": "Keuring",
+                    "filter": {
+                      "node": "Compound",
+                      "quantifier": "the",
+                      "threshold": 0,
+                      "parts": [
+                        {
+                          "node": "CharacteristicCheck",
+                          "characteristic": "officieel",
+                          "negated": false,
+                          "source": {
+                            "snippet": "hij is officieel"
+                          }
+                        }
+                      ],
+                      "source": {
+                        "snippet": "aan de volgende voorwaarde voldoen: hij is officieel"
+                      }
+                    },
+                    "test": {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "score",
+                        "subjectType": "Keuring",
+                        "source": {
+                          "snippet": "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is officieel"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "5"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "5"
+                        }
+                      },
+                      "source": {
+                        "snippet": "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is officieel groter is dan 5"
+                      }
+                    },
+                    "source": {
+                      "snippet": "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is officieel groter is dan 5"
+                    },
+                    "sourceRole": {
+                      "node": "RoleBinding",
+                      "factType": "keurgang",
+                      "role": "keuring"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is goedgekeurd"
+                }
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              },
+              "type": {
+                "node": "Number",
+                "whole": false,
+                "decimals": 2,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is goedgekeurd"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "streng",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "streng",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is streng"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Vondst",
+              "filter": {
+                "node": "Compound",
+                "quantifier": "the",
+                "threshold": 0,
+                "parts": [
+                  {
+                    "node": "QuantifierFold",
+                    "quantifier": "all",
+                    "elementType": "Keuring",
+                    "filter": {
+                      "node": "Compound",
+                      "quantifier": "the",
+                      "threshold": 0,
+                      "parts": [
+                        {
+                          "node": "CharacteristicCheck",
+                          "characteristic": "officieel",
+                          "negated": false,
+                          "source": {
+                            "snippet": "hij is officieel"
+                          }
+                        }
+                      ],
+                      "source": {
+                        "snippet": "aan de volgende voorwaarde voldoen: hij is officieel"
+                      }
+                    },
+                    "test": {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "AttributeReference",
+                        "attribute": "score",
+                        "subjectType": "Keuring",
+                        "source": {
+                          "snippet": "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is officieel"
+                        }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": {
+                          "number": "5"
+                        },
+                        "type": {
+                          "node": "Number",
+                          "whole": true,
+                          "decimals": 0,
+                          "sign": "unspecified"
+                        },
+                        "source": {
+                          "snippet": "5"
+                        }
+                      },
+                      "source": {
+                        "snippet": "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is officieel groter is dan 5"
+                      }
+                    },
+                    "source": {
+                      "snippet": "de score van alle keuringen van de Vondst die aan de volgende voorwaarde voldoen: hij is officieel groter is dan 5"
+                    },
+                    "sourceRole": {
+                      "node": "RoleBinding",
+                      "factType": "keurgang",
+                      "role": "keuring"
+                    }
+                  }
+                ],
+                "source": {
+                  "snippet": "aan de volgende voorwaarde voldoen: hij is goedgekeurd"
+                }
+              },
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "gewicht",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is goedgekeurd"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "10.00"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "10,00"
+                  }
+                },
+                "source": {
+                  "snippet": "het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is goedgekeurd groter is dan 10,00"
+                }
+              },
+              "source": {
+                "snippet": "het gewicht van alle vondsten van de Jutter die aan de volgende voorwaarde voldoen: hij is goedgekeurd groter is dan 10,00"
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "vinding",
+                "role": "vondst"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}
