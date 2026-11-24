@@ -435,3 +435,36 @@ casussen wijkt er 0 af (byte-voor-byte identieke ASP-vertaling); 56 strikte casu
   defaults wijken en wanneer een kenmerkstapel aan de wortel sluit; voorlopig gefaalde defaults zonder open lezing
   staan er niet in. Zonder dit veld kan de toolchain kenmerk-wortelsluiting naast een open supertype-regel of invoer en
   onschadelijke open leden in ongeordende groepen (`havenloon` case 5) niet zonder eigen semantiek onderscheiden.
+
+## Result stap 3 (Drools; 2026-11-24)
+
+- **Vijf-uitkomsten-verlaging (`backends/drools`):**
+  - `Outcome.Kind.OPEN_ONLY`, `Outcome.provisionalFault`, exacte vergelijking (`Breuk`/`BigDecimal`) in `Outcome.equal`;
+  - `DefaultsDecision.open()` (met backwards-compatibele 6-argumentenconstructor) gevuld door `SessionReaders` voor de
+    eenvoudige vorm, de algemene vorm en de vijf-uitkomsten-vorm (`settledInFiveValuedForm`, `evalFiveGroup`,
+    `evalFiveChain`), leeg bij beslisser, conflict, opgeven en kenmerk-wortelsluiting, zonder voorlopig gefaalde defaults
+    en zonder onschadelijke `OPEN_ONLY(v)`-leden naast `DECIDED(v)` in ongeordende groepen;
+  - `plan/Consequence` (`StackFact.OpenOnly`, `StackFact.ProvisionalFault`, `Consequence.ProvisionalDecision` met
+    voorlopige teller-slots zodat elke default precies één `OWN`/`FALLBACK`-regel houdt zonder extra `RuleOrigin.Role`),
+    `StaticFunction.EARLIER_POSITION`, `ComputeHelpers.earlierPosition`, `ClosureRendering`, `PatternDslRendering` en
+    `DrlRendering`;
+  - `TmsTranspiler.fiveValuedForm` voor strikte stapels met minstens één constante default (stap-uitkomsten op
+    `position >= 0`, ketensamenvatting op `position == -1`, groepsverzoening met kenmerk-wortelsluiting op
+    `OPEN_ONLY(false)`, eenheidsomrekening en schrijfgrens op constanten, voorlopig lezen voor voorwaarde- en
+    consequentiefouten en -deponeringen, vouwfilterfouten/-deponeringen en geneste EF-027);
+  - `SessionReaders.reading` herkent voorlopig gelezen defaults via `Outcome(OPEN_ONLY)` en geeft voorlopige evaluatiefouten
+    status `OPEN` met de fout aan de knopen;
+  - gewone documenten blijven volledig onaangeraakt (0 gewone DRL-pins verschoven; alleen `jutterswet-afleiden-uit-leeg.drl`,
+    `jutterswet-heffing-strikt.drl` en de 7 nieuwe `jutterswet-zelfde-conclusie-*.drl`).
+- **Tests, pins en documentatie:**
+  - `SameConclusionWitnessTest` op beide takken (`EXEC_MODEL` en `DRL_TEXT`): eenheidsomrekening en schrijfgrens op
+    constanten, voorlopige vouwfilterdeponering (EF-005) en -fout (EF-011), en `DefaultsDecision.open()` op
+    kenmerk-wortelsluiting naast open supertype-regel en invoer, `havenloon` case 5, `jutterswet-zelfde-conclusie-fout`,
+    echte open lezing onder `OPEN_ONLY` en `jutterswet-zelfde-conclusie-waarde`/`-kenmerk`;
+  - meeschuivende lezing- en casuspinnen (`open-readings/*.trace` identiek aan `ref --trace`,
+    `stack-exception-groups-nested/case4-lid-open.json` verwacht nu `5` zoals `ref`), `FormsPlan`, `RuleOriginCorpusWitnessTest`,
+    `ReadingsCorpusWitnessTest` en `DefaultsDecisionCorpusWitnessTest`;
+  - `scripts/check-drools.sh` (`EXPECTED_PLAYED=389` → `396`), `backends/drools/README.md` en `spec/CONSTRUCTS.md` rij 93.
+- **Volledige `make gates` op het hele pakket (`red=0`, 319s):** alle 17 poorten + 3 builds + `after-run` `rc=0`
+  (o.a. gate 12: 396 gespeeld op beide takken, 2077 JUnit-tests; gate 17: 397 goldens, 1115 casussen op beide takken,
+  0 afwijkingen, 0 eindstandafwijkingen).
