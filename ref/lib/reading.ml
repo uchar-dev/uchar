@@ -339,26 +339,32 @@ let fresh numbered =
    undetermined, or its value has an open read. A consistency ([assertion])
    holds, reports (Fails) or is open as its assertion is. A form without a
    condition, read where it is at its turn, decides as one whose condition
-   holds. *)
-let read_on ?(assertion = false) ?compute ~form ~numbered env world (self : World.instance) ~condition ~value =
+   holds. [faulted], where given, is set where the evaluation of the
+   condition or of the value faults. *)
+let read_on ?(assertion = false) ?compute ?faulted ~form ~numbered env world (self : World.instance) ~condition ~value =
   let nodes = fresh numbered in
+  let fault () = Option.iter (fun f -> f := true) faulted in
   (* the value's fault stands at its nodes, and the form decides *)
   let evaluate () : status Eval.writer_outcome =
     match (compute, value) with
     | Some f, _ ->
-        (try f () with Value.Fault _ -> ());
+        (try f () with Value.Fault _ -> fault ());
         Decides Holds
     | None, Some v -> (
         match Eval.value_outcome ~err:drop (fun err -> Eval.eval_expr env world self ~err v) with
         | Leaves_open -> Leaves_open
         | Decides _ | Fills_nothing -> Decides Holds
-        | exception Value.Fault _ -> Decides Holds)
+        | exception Value.Fault _ ->
+            fault ();
+            Decides Holds)
     | None, None -> Decides Holds
   in
   let status =
     observing nodes (fun () ->
         match Option.map (Eval.judge_cond env world self ~err:drop) condition with
-        | exception Value.Fault _ -> Faults
+        | exception Value.Fault _ ->
+            fault ();
+            Faults
         | judged -> (
             let judged = Option.value judged ~default:(Eval.established true) in
             if assertion then
@@ -838,36 +844,55 @@ let defaults json env ~world0 ~world =
                        ~reach:Timeline.all_time ~path:[] l.defaults)
               | Some true ->
                   let is_char = l.pd_characteristic <> None in
+                  (* the decision of an open default that can decide nothing
+                     else (ch. 1.5): on a characteristic its decision, on an
+                     attribute a Literal *)
+                  let constant env (d : default) =
+                    if is_char then Option.map (fun b -> Value.Bool b) d.default_decision
+                    else
+                      match d.default_consequence with
+                      | Some (Literal _ as e) -> (
+                          match Eval.eval_expr env world self ~err:drop e with Value.Empty -> None | v -> Some v)
+                      | _ -> None
+                  in
                   (* what the default's own justification and consequence do,
                      its reading emitted: it decides, with what it decides (its
                      value, or its decision on a characteristic), it gives way,
-                     or it is open (ch. 1.5) *)
-                  let own env (d : default) =
+                     or it is open, with its decision where that is a constant
+                     (ch. 1.5). Read [provisional]ly, below a default open with
+                     a constant, a fault leaves it open, its status Open *)
+                  let own ~provisional env (d : default) =
                     let input_above = input_above d in
                     let decision () = `Decides (Value.Bool (d.default_decision = Some true)) in
+                    let opened () = match constant env d with Some x -> `Open_only x | None -> `Open_any in
                     match reading_of l d with
                     | Some (form, _, _, _) when input_above ->
                         emit (without ~form Displaced self);
                         `Gives_way
                     | Some (form, condition, value, numbered) -> (
-                        let r = read_on ~form ~numbered env world self ~condition ~value in
-                        emit r;
-                        let filled =
-                          List.find_map
-                            (fun n ->
-                              match (value, n.outcome) with
-                              | Some v, Some (Got x) when same n.site (S_expr v) && x <> Value.Empty -> Some x
-                              | _ -> None)
-                            r.nodes
-                        in
-                        match (r.status, filled) with
-                        | Open, _ -> `Open
-                        | Holds, _ when is_char -> decision ()
-                        | Holds, Some x -> `Decides x
-                        | _ -> `Gives_way)
-                    | None ->
+                        let faulted = ref false in
+                        let r = read_on ~faulted ~form ~numbered env world self ~condition ~value in
+                        if provisional && !faulted then (
+                          emit { r with status = Open };
+                          `Open_any)
+                        else (
+                          emit r;
+                          let filled =
+                            List.find_map
+                              (fun n ->
+                                match (value, n.outcome) with
+                                | Some v, Some (Got x) when same n.site (S_expr v) && x <> Value.Empty -> Some x
+                                | _ -> None)
+                              r.nodes
+                          in
+                          match (r.status, filled) with
+                          | Open, _ -> opened ()
+                          | Holds, _ when is_char -> decision ()
+                          | Holds, Some x -> `Decides x
+                          | _ -> `Gives_way))
+                    | None -> (
                         (* no reading: the decision without one, as the session takes it *)
-                        if
+                        let decides () =
                           (not input_above)
                           && (match d.default_justification with
                              | Some c -> Eval.eval_cond env world self ~err:drop c
@@ -878,69 +903,96 @@ let defaults json env ~world0 ~world =
                             match d.default_consequence with
                             | Some v -> Eval.eval_expr env world self ~err:drop v <> Value.Empty
                             | None -> false
-                        then
-                          if is_char then decision ()
-                          else `Decides (Eval.eval_expr env world self ~err:drop (Option.get d.default_consequence))
-                        else `Gives_way
+                        in
+                        match decides () with
+                        | exception Value.Fault _ when provisional -> `Open_any
+                        | true ->
+                            if is_char then decision ()
+                            else `Decides (Eval.eval_expr env world self ~err:drop (Option.get d.default_consequence))
+                        | false -> `Gives_way)
                   in
                   (* the exception groups of one default, reconciled as the
-                     session reconciles them (ch. 7.2, 7.9): a conflict, or two
-                     that decide differently, settle them; beside one that is
-                     open they are open; else they decide or all give way *)
+                     session reconciles them (ch. 1.5, 7.2, 7.9): a conflict, or
+                     two that decide differently, settle them; beside one that
+                     is open they are open; else they decide where every open
+                     one is open with that decision, are open with a decision
+                     where no one decides and every open one is open with it, or
+                     all give way *)
                   let reconcile results =
                     let decided = List.filter_map (function `Decides x -> Some x | _ -> None) results in
-                    if List.mem `Conflict results then `Conflict
+                    let open_only = List.filter_map (function `Open_only x -> Some x | _ -> None) results in
+                    if List.exists (function `Conflict -> true | _ -> false) results then `Conflict
                     else
                       match decided with
                       | x :: rest when List.exists (fun y -> not (Arith.equal x y)) rest -> `Conflict
-                      | _ when List.mem `Open results -> `Open
-                      | [] -> `Gives_way
-                      | x :: _ -> `Decides x
+                      | _ when List.exists (function `Open_any -> true | _ -> false) results -> `Open_any
+                      | x :: _ -> if List.for_all (Arith.equal x) open_only then `Decides x else `Open_any
+                      | [] -> (
+                          match open_only with
+                          | [] -> `Gives_way
+                          | x :: rest -> if List.for_all (Arith.equal x) rest then `Open_only x else `Open_any)
                   in
-                  (* what the chain [ds] does. Below the default that decides,
-                     settles or is open every default is displaced, the
-                     initialisation default among them (ch. 1.5, 7.3) *)
-                  let rec decide ~env_at (ds : default list) =
-                    let rec go i = function
-                      | [] -> `Gives_way
+                  (* the outcome [res] of a default, or of its exception groups,
+                     above the rest of its chain, which [below] reads where the
+                     table of ch. 1.5 needs it, [above] the decision of an open
+                     default higher in the chain that can decide only it, if
+                     any. Where the outcome is fixed here, [stop] displaces the
+                     rest *)
+                  let in_chain above res ~stop below =
+                    match (above, res) with
+                    | None, ((`Decides _ | `Conflict | `Open_any) as r) -> stop r
+                    | None, `Gives_way -> below None
+                    | None, `Open_only x -> below (Some x)
+                    | Some x, `Decides y -> stop (if Arith.equal x y then res else `Open_any)
+                    | Some x, `Gives_way -> below (Some x)
+                    | Some x, `Open_only y -> if Arith.equal x y then below (Some x) else stop `Open_any
+                    | Some _, (`Conflict | `Open_any) -> stop `Open_any
+                  in
+                  (* what the chain [ds] does. Below the default whose row fixes
+                     the outcome of the chain every default is displaced, the
+                     initialisation default among them; below a default open
+                     with a constant the defaults are read at their turn,
+                     provisionally (ch. 1.5, 5.12) *)
+                  let rec decide ~env_at ~provisional (ds : default list) =
+                    let rec go i above = function
+                      | [] -> ( match above with None -> `Gives_way | Some x -> `Open_only x)
                       | (d : default) :: rest -> (
                           let env = env_at i in
+                          let provisional = provisional || above <> None in
                           let has_content = d.default_decision <> None || d.default_consequence <> None in
-                          let groups =
-                            match d.default_exceptions with
-                            | None -> `Gives_way
-                            | Some egs ->
-                                (* every exception group is walked: they reconcile as equals *)
+                          let stop r =
+                            displace ~env_at ~from:(i + 1) rest;
+                            r
+                          in
+                          let next above = go (i + 1) above rest in
+                          let own above =
+                            in_chain above (own ~provisional:(provisional || above <> None) env d) ~stop next
+                          in
+                          match d.default_exceptions with
+                          | None -> own above
+                          | Some egs ->
+                              (* every exception group is walked: they reconcile as equals *)
+                              let groups =
                                 reconcile
                                   (List.map
-                                     (fun (eg : exception_group) -> decide ~env_at:(fun _ -> env) eg.eg_defaults)
+                                     (fun (eg : exception_group) -> decide ~env_at:(fun _ -> env) ~provisional eg.eg_defaults)
                                      egs.egs_members)
-                          in
-                          match groups with
-                          | (`Decides _ | `Conflict) as settled ->
-                              (* the content of the default, its fall-back,
-                                 is not at its turn *)
-                              read_displaced env d;
-                              displace ~env_at ~from:(i + 1) rest;
-                              settled
-                          | `Open ->
-                              read_displaced env d;
-                              displace ~env_at ~from:(i + 1) rest;
-                              `Open
-                          | `Gives_way when has_content -> (
-                              match own env d with
-                              | (`Decides _ | `Open) as stops ->
-                                  displace ~env_at ~from:(i + 1) rest;
-                                  stops
-                              | `Gives_way -> go (i + 1) rest)
-                          | `Gives_way -> go (i + 1) rest)
+                              in
+                              (* the content of the default, its fall-back, is
+                                 not at its turn where the groups fix the
+                                 outcome *)
+                              let stop r =
+                                read_displaced env d;
+                                stop r
+                              in
+                              in_chain above groups ~stop (if has_content then own else next))
                     in
-                    go 0 ds
+                    go 0 None ds
                   in
                   ignore
                     (decide
                        ~env_at:(fun i -> { env with Eval.subj = Some (List.nth origins i) })
-                       l.defaults))
+                       ~provisional:false l.defaults))
             members;
           List.rev !out)
         (World.of_type ~isa:(fun a b -> norm a = norm b) world owner))

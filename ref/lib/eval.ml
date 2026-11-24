@@ -5298,11 +5298,18 @@ let run_object_creation env ~world0 ~idx ~stratum ~read world (oc : resolved_obj
 (* ch. 7.1/7.9: a defaults-group member's decision, and the reconciled outcome
    of a default chain — [Decided] (the highest deciding default), [Conflict] (a
    differing exception group, keyed by its default-index path, propagating to
-   the root with no write), [Undecided] (nothing decided; fall-through), or
-   [Left_open] (a default that is neither, so nothing below it decides, the
-   initialisation among them; ch. 1.5). *)
+   the root with no write), [Undecided] (nothing decided; fall-through), and in
+   a document with inferFromEmpty false the two open outcomes of ch. 1.5:
+   [Open_only d] (open, and whatever the case adds it decides [d] or nothing,
+   never another value and never a conflict) and [Open_any] (open). *)
 type defaults_decision = Char_dec of bool | Attr_dec of Value.t
-type chain_result = Decided of defaults_decision | Conflict of string | Undecided | Left_open
+
+type chain_result =
+  | Decided of defaults_decision
+  | Conflict of string
+  | Undecided
+  | Open_only of defaults_decision
+  | Open_any
 
 (* --- a defaults group on a timeline target, read per day (RUNTIME-SEMANTICS ch. 7.11) --- *)
 
@@ -5565,17 +5572,37 @@ let run_defaults_group ?only env world ~world0 ~owner
          otherwise the deciding members must agree — equal decisions are one
          decision, differing decisions are a conflict keyed at [path] (no
          write). Members that decide nothing drop out. A member decides only
-         where every other member stands to decide nothing or to decide the
-         same, so beside a member that is open the group is open (ch. 1.5) *)
+         where every other member stands to decide nothing or the same, or can
+         decide only the same: beside a member that is open the group is open,
+         and beside one open with another decision as well (ch. 1.5) *)
       let reconcile ~path (results : chain_result list) : chain_result =
         match List.find_opt (function Conflict _ -> true | _ -> false) results with
         | Some c -> c
         | None -> (
-            match List.filter_map (function Decided d -> Some d | _ -> None) results with
+            let decided = List.filter_map (function Decided d -> Some d | _ -> None) results in
+            let open_only = List.filter_map (function Open_only d -> Some d | _ -> None) results in
+            match decided with
             | d0 :: rest when not (List.for_all (equal_dec d0) rest) -> Conflict (path_key path)
-            | _ when List.mem Left_open results -> Left_open
-            | [] -> Undecided
-            | d0 :: _ -> Decided d0)
+            | _ when List.exists (function Open_any -> true | _ -> false) results -> Open_any
+            | d0 :: _ -> if List.for_all (equal_dec d0) open_only then Decided d0 else Open_any
+            | [] -> (
+                match open_only with
+                | [] -> Undecided
+                | o0 :: rest -> if List.for_all (equal_dec o0) rest then Open_only o0 else Open_any))
+      in
+      (* a default, or exception groups, with the outcome [res] above the rest
+         of a chain ([below], read only where needed), where [above] is the
+         decision of an open default higher in the chain that can decide only
+         it, if any: the table of ch. 1.5, "An open default with a constant" *)
+      let in_chain above res (below : defaults_decision option -> chain_result) : chain_result =
+        match (above, res) with
+        | None, (Decided _ | Conflict _ | Open_any) -> res
+        | None, Undecided -> below None
+        | None, Open_only d -> below (Some d)
+        | Some d, Decided e -> if equal_dec d e then res else Open_any
+        | Some d, Undecided -> below (Some d)
+        | Some d, Open_only e -> if equal_dec d e then below (Some d) else Open_any
+        | Some _, (Conflict _ | Open_any) -> Open_any
       in
       (* one member's decision (ch. 7.1), recursive per ch. 7.9: the
          highest default that decides wins; a default carrying [excepties]
@@ -5619,12 +5646,26 @@ let run_defaults_group ?only env world ~world0 ~owner
               | None -> Value.fault "initialisation default on characteristic defaults")
             else judge_cond env w self ~err (req "default justification" r.default_justification)
           in
+          (* the decision of an open default that can decide nothing else (ch.
+             1.5): on a characteristic its decision, on an attribute a Literal,
+             which reads nothing *)
+          let constant env (r : default) =
+            if is_char then Option.map (fun b -> Char_dec b) r.default_decision
+            else
+              match r.default_consequence with
+              | Some (Literal _ as e) -> (
+                  match eval_expr env w self ~err:ignore e with Value.Empty -> None | v -> Some (Attr_dec v))
+              | _ -> None
+          in
           (* the default's OWN outcome, exception groups aside (a plain default,
              the initialisation default, or a form-a default's fall-back): it
              decides, gives way (falls through), or is open, as a rule does
-             ([outcome_of]); its deposits flush only where it decides *)
-          let own_outcome env (r : default) : defaults_decision writer_outcome =
-            let outcome, flush =
+             ([outcome_of]), and open with its decision where that is a
+             constant; its deposits flush only where it decides. Read
+             [provisional]ly, below a default open with a constant, it deposits
+             nothing and a fault leaves it open (ch. 1.5) *)
+          let own_outcome ~provisional env (r : default) : chain_result =
+            let evaluate () =
               speculate (fun err ->
                   outcome_of (justified env r err) (fun () ->
                       if is_char then Decides (Char_dec (req "default decision" r.default_decision))
@@ -5634,48 +5675,52 @@ let run_defaults_group ?only env world ~world0 ~owner
                           (value_outcome ~err (fun err ->
                                eval_expr env w self ~err (req "default consequence" r.default_consequence)))))
             in
-            (match outcome with Decides _ -> flush () | Fills_nothing | Leaves_open -> ());
-            outcome
+            let outcome =
+              if provisional then match evaluate () with outcome, _ -> Some outcome | exception Value.Fault _ -> None
+              else
+                let outcome, flush = evaluate () in
+                (match outcome with Decides _ -> flush () | Fills_nothing | Leaves_open -> ());
+                Some outcome
+            in
+            match outcome with
+            | Some (Decides d) -> Decided d
+            | Some Fills_nothing -> Undecided
+            | Some Leaves_open -> ( match constant env r with Some d -> Open_only d | None -> Open_any)
+            | None -> Open_any
           in
-          let rec decide ~env_at ~path (defaults : default list) : chain_result =
-            let rec go i = function
-              | [] -> Undecided
+          (* the chain [defaults] read from high to low (ch. 1.5, "An open
+             default with a constant"); [provisional] where it stands below a
+             default open with a constant *)
+          let rec decide ~env_at ~path ~provisional (defaults : default list) : chain_result =
+            let rec go i above = function
+              | [] -> ( match above with None -> Undecided | Some d -> Open_only d)
               | (r : default) :: rest -> (
                   let env = env_at i in
-                  let after = function
-                    | Decides d -> Decided d
-                    | Fills_nothing -> go (i + 1) rest
-                    | Leaves_open -> Left_open
-                  in
-                  let fall_through () =
-                    (* a form-a default falls back to its own decision; a
-                       group-default (no own content) decides nothing (ch. 7.9) *)
-                    let has_content =
-                      r.default_decision <> None || r.default_consequence <> None
-                    in
-                    if has_content then after (own_outcome env r) else go (i + 1) rest
+                  let next above = go (i + 1) above rest in
+                  let own above =
+                    in_chain above (own_outcome ~provisional:(provisional || above <> None) env r) next
                   in
                   match r.default_exceptions with
-                  | Some egs -> (
-                      (* the exception groups go first: reconcile them at this default's
-                         path, then propagate its conflict, adopt its decision,
-                         or fall back when it decides nothing *)
+                  | Some egs ->
+                      (* the exception groups go first: reconcile them at this
+                         default's path, and above the default's own content,
+                         its fall-back; a group-default (no own content) passes
+                         on to the rest of the chain (ch. 7.9) *)
                       let sub_path = path @ [ i ] in
+                      let provisional = provisional || above <> None in
                       let results =
                         List.map
                           (fun (eg : exception_group) ->
-                            decide ~env_at:(fun _ -> env) ~path:sub_path eg.eg_defaults)
+                            decide ~env_at:(fun _ -> env) ~path:sub_path ~provisional eg.eg_defaults)
                           egs.egs_members
                       in
-                      match reconcile ~path:sub_path results with
-                      | (Conflict _ | Decided _) as d -> d
-                      | Undecided -> fall_through ()
-                      | Left_open -> Left_open)
-                  | None -> after (own_outcome env r))
+                      let has_content = r.default_decision <> None || r.default_consequence <> None in
+                      in_chain above (reconcile ~path:sub_path results) (if has_content then own else next)
+                  | None -> own above)
             in
-            go 0 defaults
+            go 0 None defaults
           in
-          decide ~env_at ~path:[] l.defaults
+          decide ~env_at ~path:[] ~provisional:false l.defaults
       in
       (* where the group writes nothing, what it wrote on an earlier state is
          given back (ch. 5.2, 6.1) *)
@@ -5685,10 +5730,14 @@ let run_defaults_group ?only env world ~world0 ~owner
         | None -> World.release w ~form ~label:self.label ~attr:(req "defaults attribute" l0.pd_attribute)
       in
       match reconcile ~path:[] (List.map member_decision members) with
-      | Undecided -> release ()
+      (* at the root of a characteristic, a group that can decide only not to
+         attribute leaves it not holding whatever the case adds, as one that
+         gives way does: Kleene's not-c and false is false (ch. 1.5, "A stack
+         on a characteristic") *)
+      | Undecided | Open_only (Char_dec false) -> release ()
       (* nothing decides and it does not stand that nothing does: the target
          is open (ch. 1.5) *)
-      | Left_open ->
+      | Open_only _ | Open_any ->
           left_open ~label:self.label
             (match l0.pd_characteristic with
             | Some k -> World.characteristic k

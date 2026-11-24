@@ -16381,6 +16381,276 @@ let () =
   | exception Value.Fault { code; params; _ } ->
       check "WV-1.5-stack-timeline-refused" (code = Some "REF-014" && params = [ ("form", "timeline-member") ])
 
+(* WV-1.5-stack-same-conclusion-*: an open default whose decision is a
+   constant can decide that value and nothing else, so a lower default that
+   decides it decides the target (ch. 1.5, "An open default with a
+   constant"). "Het vindloon van een Vondst is zijn gewicht maal 2", with above
+   it "… op 0 indien hij beschadigd is" and above that "… op 0 indien hij
+   betwist is", at gewicht 50. With "… op 5 indien hij beschadigd is" as the
+   middle default, another constant, and with "… op zijn gewicht maal 0
+   indien hij betwist is" as the highest, a computed value, the vindloon is
+   open where beschadigd holds and betwist is not named; with "… op 7 indien
+   hij gemeld is" between the two defaults of 0 it is 0 there where gemeld
+   stands not to hold, and open where gemeld holds or is not named *)
+let ov_same_conclusion_stack ?(highest = ov_betwist) ?(between = []) ?(middle = "0") () =
+  ov_doc
+    ~defaults:
+      [ ov_stack ~attribute:"vindloon"
+          ((highest :: between) @ [ ov_dflt ~justification:(ov_check "beschadigd") ~consequence:(ov_lit middle) (); ov_base ]) ]
+    [ ov_vondst [ "gewicht"; "vindloon" ] [ "betwist"; "beschadigd"; "gemeld" ] ] []
+
+let () =
+  let row name ?(complete = []) ?(doc = ov_same_conclusion_stack ()) chars want =
+    let id = "stack-same-conclusion-" ^ name in
+    ov_row ("WV-1.5-" ^ id)
+      (fun () -> ov_run id (ov_complete complete doc) (ov_v1 ~chars [ ("gewicht", "50") ]))
+      (fun w -> ov_attr w "V1" "vindloon")
+      want
+  in
+  row "betwist-open" [ "beschadigd" ] "0";
+  row "betwist-holds" [ "beschadigd"; "betwist" ] "0";
+  row "betwist-stands-not" ~complete:[ "betwist" ] [ "beschadigd" ] "0";
+  row "open" ~complete:[ "beschadigd" ] [] "open";
+  row "open-betwist-holds" ~complete:[ "beschadigd" ] [ "betwist" ] "0";
+  row "open-betwist-stands-not" ~complete:[ "beschadigd"; "betwist" ] [] "100";
+  let other = ov_same_conclusion_stack ~middle:"5" () in
+  row "another-constant" ~doc:other [ "beschadigd" ] "open";
+  row "another-constant-betwist-holds" ~doc:other [ "beschadigd"; "betwist" ] "0";
+  row "another-constant-betwist-stands-not" ~doc:other ~complete:[ "betwist" ] [ "beschadigd" ] "5";
+  let computed =
+    ov_same_conclusion_stack
+      ~highest:(ov_dflt ~justification:(ov_check "betwist") ~consequence:(ov_bin Times (ov_ref "gewicht") (ov_lit "0")) ())
+      ()
+  in
+  row "computed" ~doc:computed [ "beschadigd" ] "open";
+  row "computed-betwist-holds" ~doc:computed [ "beschadigd"; "betwist" ] "0";
+  row "computed-betwist-stands-not" ~doc:computed ~complete:[ "betwist" ] [ "beschadigd" ] "0";
+  let between = ov_same_conclusion_stack ~between:[ ov_dflt ~justification:(ov_check "gemeld") ~consequence:(ov_lit "7") () ] () in
+  row "between-gives-way" ~doc:between ~complete:[ "gemeld" ] [ "beschadigd" ] "0";
+  row "between-decides" ~doc:between [ "beschadigd"; "gemeld" ] "open";
+  row "between-open" ~doc:between [ "beschadigd" ] "open";
+  row "between-decides-betwist-holds" ~doc:between [ "beschadigd"; "gemeld"; "betwist" ] "0";
+  row "between-decides-betwist-stands-not" ~doc:between ~complete:[ "betwist" ] [ "beschadigd"; "gemeld" ] "7"
+
+(* WV-1.5-stack-same-conclusion-provisional-*: below a default open with a
+   constant a default is read provisionally: what it deposits is dropped, and a
+   fault leaves it open. "Het meldloon van een Vondst is 2 indien zijn gewicht
+   gedeeld door zijn getuigen leeg is", with above it "… op 2 indien hij
+   betwist is", at gewicht 10 and getuigen 0; with "… op 2 indien het
+   Rekenjaar groter is dan 2025" as the lower default, in a session without an
+   evaluation date *)
+let ov_meldloon_stack lower =
+  ov_doc
+    ~defaults:
+      [ ov_stack ~attribute:"meldloon"
+          [ ov_dflt ~justification:(ov_check "betwist") ~consequence:(ov_lit "2") ();
+            ov_dflt ~justification:lower ~consequence:(ov_lit "2") () ] ]
+    [ ov_vondst [ "gewicht"; "getuigen"; "meldloon" ] [ "betwist" ] ] []
+
+let () =
+  let quotient_leeg : Ir_v0.Ast.condition_expr =
+    Predicate
+      { variety = Empty_predicate; operand = Some (ov_bin Divided_by (ov_ref "gewicht") (ov_ref "getuigen"));
+        day_kind = None; negation = false; digit_chars = 0; time_period = None; source_name = None }
+  in
+  let doc = ov_meldloon_stack quotient_leeg in
+  let row name ?(complete = []) chars want =
+    let id = "stack-same-conclusion-provisional-" ^ name in
+    ov_row ("WV-1.5-" ^ id)
+      (fun () -> ov_run id (ov_complete complete doc) (ov_v1 ~chars [ ("gewicht", "10"); ("getuigen", "0") ]))
+      (fun w -> String.concat " " (ov_attr w "V1" "meldloon" :: ov_channel w))
+      want
+  in
+  row "deposit-betwist-open" [] "2";
+  row "deposit-betwist-stands-not" ~complete:[ "betwist" ] [] "2 Vondst.meldloon V1 EF-005";
+  row "deposit-betwist-holds" [ "betwist" ] "2";
+  let doc = ov_meldloon_stack ov_rekenjaar_greater in
+  let id = "WV-1.5-stack-same-conclusion-provisional-fault" in
+  (* not registered either: with every input member complete betwist stands
+     not to hold, and the session faults *)
+  ov_row (id ^ "-betwist-open") (fun () -> ov_eval doc (ov_v1 [])) (fun w -> ov_attr w "V1" "meldloon") "open";
+  ov_row (id ^ "-betwist-holds")
+    (fun () -> ov_run (id ^ "-betwist-holds") doc (ov_v1 ~chars:[ "betwist" ] []))
+    (fun w -> ov_attr w "V1" "meldloon")
+    "2";
+  (* not registered: a run that faults has no outcomes to compare *)
+  ov_expect (id ^ "-betwist-stands-not") (ov_fault_of (fun () -> ov_eval (ov_complete [ "betwist" ] doc) (ov_v1 []))) "EF-011"
+
+(* WV-1.5-stack-same-conclusion-initialisation: "het strandloon van een Vondst
+   moet geïnitialiseerd worden op 5" below "… op 5 indien hij betwist is", in
+   one stack: 5 where the case gives no strandloon; with a value in the case
+   the initialisation gives way, and the stack is open with 5: open where
+   betwist is not named, also with 5 in the case *)
+let () =
+  let doc =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"strandloon"
+            [ ov_dflt ~justification:(ov_check "betwist") ~consequence:(ov_lit "5") ();
+              ov_dflt ~init:true ~consequence:(ov_lit "5") () ] ]
+      [ ov_vondst [ "strandloon" ] [ "betwist" ] ] []
+  in
+  let row name ?(complete = []) ?(chars = []) attrs want =
+    let id = "stack-same-conclusion-initialisation-" ^ name in
+    ov_row ("WV-1.5-" ^ id)
+      (fun () -> ov_run id (ov_complete complete doc) (ov_v1 ~chars attrs))
+      (fun w -> ov_attr w "V1" "strandloon")
+      want
+  in
+  row "betwist-open" [] "5";
+  row "betwist-holds" ~chars:[ "betwist" ] [] "5";
+  row "betwist-stands-not" ~complete:[ "betwist" ] [] "5";
+  row "input-betwist-open" [ ("strandloon", "7") ] "open";
+  row "input-betwist-holds" ~chars:[ "betwist" ] [ ("strandloon", "7") ] "5";
+  row "input-betwist-stands-not" ~complete:[ "betwist" ] [ ("strandloon", "7") ] "7";
+  row "same-input-betwist-open" [ ("strandloon", "5") ] "open";
+  row "same-input-betwist-stands-not" ~complete:[ "betwist" ] [ ("strandloon", "5") ] "5"
+
+(* WV-1.5-initialisation-beside-the-same-value: beside a rule the
+   initialisation is no default of a stack: "het strandloon van een Vondst
+   moet gesteld worden op 5 indien hij betwist is" and "… moet geïnitialiseerd
+   worden op 5" leave the strandloon open where betwist is not named *)
+let () =
+  let doc =
+    ov_doc [ ov_vondst [ "strandloon" ] [ "betwist" ] ]
+      [ ov_calc ~cond:(ov_check "betwist") "strandloon" (ov_lit "5");
+        rr "strandloon aanvankelijk" Initialisation (Some (ov_ref "strandloon")) (Some (ov_lit "5")) None ]
+  in
+  let row name ?(complete = []) chars want =
+    let id = "initialisation-beside-the-same-value-" ^ name in
+    ov_row ("WV-1.5-" ^ id)
+      (fun () -> ov_run id (ov_complete complete doc) (ov_v1 ~chars []))
+      (fun w -> ov_attr w "V1" "strandloon")
+      want
+  in
+  row "betwist-open" [] "open";
+  row "betwist-holds" [ "betwist" ] "5";
+  row "betwist-stands-not" ~complete:[ "betwist" ] [] "5"
+
+(* WV-1.5-stack-same-conclusion-characteristic-*: "een Vondst is beloonbaar
+   indien zijn gewicht groter is dan 2", with above it "niet beloonbaar indien
+   hij drijfhout is" and above that "niet beloonbaar indien hij betwist is",
+   and "de wachtpremie is 3 indien hij niet beloonbaar is". At the root of a
+   characteristic a stack open with not attributing stands not to hold. "Een
+   Vondst is vindbaar indien hij gemeld is", above "vindbaar indien zijn
+   gewicht groter is dan 2" *)
+let () =
+  let zwaar = ov_cmp Greater "gewicht" "2" in
+  let doc =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~characteristic:"beloonbaar"
+            [ ov_dflt ~justification:(ov_check "betwist") ~decision:false ();
+              ov_dflt ~justification:(ov_check "drijfhout") ~decision:false ();
+              ov_dflt ~justification:zwaar ~decision:true () ];
+          ov_stack ~characteristic:"vindbaar"
+            [ ov_dflt ~justification:(ov_check "gemeld") ~decision:true (); ov_dflt ~justification:zwaar ~decision:true () ] ]
+      [ ov_vondst [ "gewicht"; "wachtpremie" ] [ "betwist"; "drijfhout"; "beloonbaar"; "gemeld"; "vindbaar" ] ]
+      [ ov_calc ~cond:(ov_check ~negation:true "beloonbaar") "wachtpremie" (ov_lit "3") ]
+  in
+  let row name ?(complete = []) ?(chars = []) gewicht want =
+    let id = "stack-same-conclusion-characteristic-" ^ name in
+    ov_row ("WV-1.5-" ^ id)
+      (fun () -> ov_run id (ov_complete complete doc) (ov_v1 ~chars [ ("gewicht", gewicht) ]))
+      (fun w -> String.concat " " [ ov_char w "V1" "beloonbaar"; ov_attr w "V1" "wachtpremie"; ov_char w "V1" "vindbaar" ])
+      want
+  in
+  row "betwist-open" ~chars:[ "drijfhout" ] "5" "not 3 holds";
+  row "betwist-holds" ~chars:[ "drijfhout"; "betwist" ] "5" "not 3 holds";
+  row "betwist-stands-not" ~complete:[ "betwist" ] ~chars:[ "drijfhout" ] "5" "not 3 holds";
+  row "open" ~complete:[ "drijfhout" ] "5" "open open holds";
+  row "root" ~complete:[ "drijfhout" ] "1" "not 3 open";
+  row "root-betwist-holds" ~complete:[ "drijfhout" ] ~chars:[ "betwist" ] "1" "not 3 open";
+  row "root-betwist-stands-not" ~complete:[ "drijfhout"; "betwist" ] "1" "not 3 open";
+  row "attributing" ~complete:[ "drijfhout"; "betwist" ] "5" "holds leeg holds";
+  row "attributing-gemeld-holds" ~complete:[ "drijfhout"; "betwist" ] ~chars:[ "gemeld" ] "1" "not 3 holds";
+  row "attributing-gemeld-stands-not" ~complete:[ "drijfhout"; "betwist"; "gemeld" ] "1" "not 3 not"
+
+(* WV-1.5-stack-same-conclusion-unordered-*: "het bergloon van een Vondst is
+   0 indien hij betwist is" and "… 0 indien hij beschadigd is", a
+   declared-unordered group of two groups: a member open with 0 cannot make a
+   conflict beside one that decides 0. With "… 5 indien hij beschadigd is" as
+   the second it can; with "… 5 indien zijn gewicht groter is dan 2" below "0
+   indien hij betwist is" in the first group the first member is open at
+   gewicht 5, its whole chain counted; with a third group, "… 5 indien hij
+   gemeld is", the group is open where gemeld is not named *)
+let () =
+  let member ?name defaults = ov_stack ~unordered:true ?name ~attribute:"bergloon" defaults in
+  let zero k = ov_dflt ~justification:(ov_check k) ~consequence:(ov_lit "0") () in
+  let doc ?(first = [ zero "betwist" ]) ?(second = zero "beschadigd") ?(third = []) () =
+    ov_doc
+      ~defaults:
+        ([ member ~name:"bergloon bij betwisting" first; member ~name:"bergloon bij schade" [ second ] ]
+        @ List.map (fun d -> member ~name:"bergloon bij melding" [ d ]) third)
+      [ ov_vondst [ "gewicht"; "bergloon" ] [ "betwist"; "beschadigd"; "gemeld" ] ] []
+  in
+  let row name ?(complete = []) ?(chars = []) ?(gewicht = "5") doc want =
+    let id = "stack-same-conclusion-unordered-" ^ name in
+    ov_row ("WV-1.5-" ^ id)
+      (fun () -> ov_run id (ov_complete complete doc) (ov_v1 ~chars [ ("gewicht", gewicht) ]))
+      (fun w -> String.concat " " (ov_attr w "V1" "bergloon" :: ov_channel w))
+      want
+  in
+  row "betwist-open" ~chars:[ "beschadigd" ] (doc ()) "0";
+  row "betwist-holds" ~chars:[ "beschadigd"; "betwist" ] (doc ()) "0";
+  row "betwist-stands-not" ~complete:[ "betwist" ] ~chars:[ "beschadigd" ] (doc ()) "0";
+  row "open" ~complete:[ "beschadigd" ] (doc ()) "open";
+  let other = doc ~second:(ov_dflt ~justification:(ov_check "beschadigd") ~consequence:(ov_lit "5") ()) () in
+  row "another-constant" ~chars:[ "beschadigd" ] other "open";
+  row "another-constant-betwist-holds" ~chars:[ "beschadigd"; "betwist" ] other "leeg Vondst.bergloon V1 EF-027";
+  row "another-constant-betwist-stands-not" ~complete:[ "betwist" ] ~chars:[ "beschadigd" ] other "5";
+  let chain = doc ~first:[ zero "betwist"; ov_dflt ~justification:(ov_cmp Greater "gewicht" "2") ~consequence:(ov_lit "5") () ] () in
+  row "chain-open" ~chars:[ "beschadigd" ] chain "open";
+  row "chain-gives-way" ~chars:[ "beschadigd" ] ~gewicht:"1" chain "0";
+  row "chain-betwist-stands-not" ~complete:[ "betwist" ] ~chars:[ "beschadigd" ] chain "leeg Vondst.bergloon V1 EF-027";
+  let three = doc ~third:[ ov_dflt ~justification:(ov_check "gemeld") ~consequence:(ov_lit "5") () ] () in
+  row "three-open" ~chars:[ "beschadigd" ] three "open";
+  row "three-gemeld-stands-not" ~complete:[ "gemeld" ] ~chars:[ "beschadigd" ] three "0";
+  row "three-gemeld-holds" ~chars:[ "beschadigd"; "gemeld" ] three "leeg Vondst.bergloon V1 EF-027"
+
+(* WV-1.5-stack-same-conclusion-nested-*: the vindloon "zijn gewicht maal 2"
+   with the exception groups "op 0 indien hij betwist is" and "op 0 indien hij
+   beschadigd is", at gewicht 50; and above "zijn gewicht maal 2" the default
+   "… op 0 indien hij beschadigd is" with the exception group "… op 0 indien
+   hij betwist en beschadigd is", open with 0 above its fall-back *)
+let () =
+  let zero c = ov_dflt ~justification:c ~consequence:(ov_lit "0") () in
+  let groups =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"vindloon"
+            [ ov_dflt ~justification:ov_always ~consequence:(ov_bin Times (ov_ref "gewicht") (ov_lit "2"))
+                ~exceptions:(ov_groups [ [ zero (ov_check "betwist") ]; [ zero (ov_check "beschadigd") ] ])
+                () ] ]
+      [ ov_vondst [ "gewicht"; "vindloon" ] [ "betwist"; "beschadigd" ] ] []
+  in
+  let fall_back =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"vindloon"
+            [ ov_dflt ~justification:(ov_check "beschadigd") ~consequence:(ov_lit "0")
+                ~exceptions:
+                  (ov_groups ~unordered:false [ [ zero (ov_compound All 0 [ ov_check "betwist"; ov_check "beschadigd" ]) ] ])
+                ();
+              ov_base ] ]
+      [ ov_vondst [ "gewicht"; "vindloon" ] [ "betwist"; "beschadigd" ] ] []
+  in
+  let row name ?(complete = []) doc chars want =
+    let id = "stack-same-conclusion-nested-" ^ name in
+    ov_row ("WV-1.5-" ^ id)
+      (fun () -> ov_run id (ov_complete complete doc) (ov_v1 ~chars [ ("gewicht", "50") ]))
+      (fun w -> ov_attr w "V1" "vindloon")
+      want
+  in
+  row "betwist-open" groups [ "beschadigd" ] "0";
+  row "betwist-holds" groups [ "beschadigd"; "betwist" ] "0";
+  row "betwist-stands-not" ~complete:[ "betwist" ] groups [ "beschadigd" ] "0";
+  row "open" ~complete:[ "beschadigd" ] groups [] "open";
+  row "fall-back" fall_back [ "beschadigd" ] "0";
+  row "fall-back-betwist-holds" fall_back [ "beschadigd"; "betwist" ] "0";
+  row "fall-back-betwist-stands-not" ~complete:[ "betwist" ] fall_back [ "beschadigd" ] "0";
+  row "fall-back-gives-way" ~complete:[ "beschadigd" ] fall_back [] "100"
+
 (* --- the creations (ch. 1.5, 5.5) ------------------------------------------
    "Een Jutter heeft een proefvondst met …": an object creation that makes a
    Vondst for a Jutter, linked to it over vinding as one of its vondsten; the
@@ -17375,9 +17645,10 @@ let ov_readings (doc : Ir_v0.Ast.document) input =
    reads kostbaar open; the leeg test of ongetaxeerd is undetermined over the
    open taxatie, and the rule leaves ongetaxeerd open. Without a gewicht
    the sum of the vindloon is broken off. Where betwist is not named the
-   exception of the premie is open, and the default below it, which is not at
-   its turn, is read as displaced; where betwist stands not to hold the
-   exception gives way and the default decides *)
+   exception of the premie is open with 0, so the default below it is read at
+   its turn, provisionally, and holds with 10: another value, and the premie
+   is open; where betwist stands not to hold the exception gives way and the
+   default decides *)
 let () =
   let golden = "corpus/golden/jutterswet-afleiden-uit-leeg/" in
   let read case forms = readings_named (corpus_file (golden ^ "ir.json")) (corpus_file (golden ^ case)) forms in
@@ -17397,7 +17668,7 @@ let () =
   lines_equal "WV-5.12-afleiden-uit-leeg (betwist open)"
     (read "case5-uitzondering-open.json" [ default_form 0; default_form 1 ])
     (on_object (default_form 0) "V1" [ "0 CharacteristicCheck undetermined open \"V1\" \"betwist\""; "1 Literal unreached"; "OPEN" ]
-    @ on_object (default_form 1) "V1" [ "0 Compound true"; "1 Literal 10"; "DISPLACED" ]);
+    @ on_object (default_form 1) "V1" [ "0 Compound true"; "1 Literal 10"; "HOLDS" ]);
   lines_equal "WV-5.12-afleiden-uit-leeg (betwist given)"
     (read "case6-uitzondering-staat-niet.json" [ default_form 0; default_form 1 ])
     (on_object (default_form 0) "V1" [ "0 CharacteristicCheck false"; "1 Literal unreached"; "FAILS" ]
@@ -17592,13 +17863,17 @@ let () =
     @ on_object (rule_form 2) "J1" [ "0 Aggregation undetermined open \"V2\" \"zwaar\""; "3 Literal unreached"; "OPEN" ])
 
 (* WV-5.12-open-stack: below a default that is open every default is
-   displaced, the initialisation default among them, read as at its turn. The
-   fixture defaults-stack, with betwist not named: the second default is open,
-   the two below it displaced. The fixture input-above-computation-open, whose
+   displaced, the initialisation default among them, read as at its turn;
+   below one open with a constant the defaults are read at their turn,
+   provisionally, down to the one that fixes the outcome of the chain. The
+   fixture defaults-stack, with betwist not named: the second default is open
+   with 0, the third holds with another value, which leaves the chain open, and
+   the fourth is displaced. The fixture input-above-computation-open, whose
    opgave is not declared complete, without an opgave: the opgave is open, and
    the computation and the initialisation default below it are displaced. The
    document of WV-1.5-stack-two-initialisations at gewicht 5, betwist not named:
-   below the open default both initialisations are displaced. The fixture
+   below the default open with 0 the inherited initialisation fails and the own
+   one holds with 5, another value. The fixture
    defaults-initialisation-only without values: the initialisation default of
    the strandloon, open input, is displaced without nodes, and that of the
    meldloon, declared complete, holds *)
@@ -17607,7 +17882,7 @@ let () =
   let statuses lines = List.filter (fun l -> List.exists (fun s -> String.ends_with ~suffix:s l) [ " OPEN"; " DISPLACED"; " HOLDS"; " FAILS" ]) lines in
   lines_equal "WV-5.12-open-stack (open default)"
     (statuses (readings_named (fixture ^ "ir.json") (fixture ^ "case4-betwist-onbepaald.json") (List.map default_form [ 0; 1; 2; 3 ])))
-    [ default_form 0 ^ " \"V1\" FAILS"; default_form 1 ^ " \"V1\" OPEN"; default_form 2 ^ " \"V1\" DISPLACED";
+    [ default_form 0 ^ " \"V1\" FAILS"; default_form 1 ^ " \"V1\" OPEN"; default_form 2 ^ " \"V1\" HOLDS";
       default_form 3 ^ " \"V1\" DISPLACED" ];
   let fixture = strict_fixture "input-above-computation-open" in
   lines_equal "WV-5.12-open-stack (the initialisation below an open default)"
@@ -17617,7 +17892,7 @@ let () =
     @ on_object (default_form 2) "V1" [ "0 Literal 25"; "DISPLACED" ]);
   lines_equal "WV-5.12-open-stack (two initialisations below an open default)"
     (statuses (ov_readings ov_two_initialisations (ov_w1 [ ("gewicht", "5") ])))
-    [ default_form 0 ^ " \"W1\" OPEN"; default_form 1 ^ " \"W1\" DISPLACED"; rule_form 0 ^ " \"W1\" DISPLACED" ];
+    [ default_form 0 ^ " \"W1\" OPEN"; default_form 1 ^ " \"W1\" HOLDS"; rule_form 0 ^ " \"W1\" FAILS" ];
   let fixture = strict_fixture "defaults-initialisation-only" in
   let meldloon = "/rules/prioritizedDefaults/1/defaults/0" in
   lines_equal "WV-5.12-open-stack (an initialisation default over open input)"

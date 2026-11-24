@@ -668,7 +668,15 @@ van een Vondst moet geïnitialiseerd worden op 5": with vangst 4 and gemeld
 named the strandloon is 8; where the case does not name gemeld the rule leaves
 it open, and it is open; with gemeld declared complete and not named it is 5.
 With "… op 5 indien zijn vangst groter is dan 1" and gemeld complete it is 5
-at vangst 4 and open without a vangst. An initialisation makes no member
+at vangst 4 and open without a vangst. Beside a rule the initialisation is
+read so, not as the lowest default of a stack (ch. 7.7): a rule that leaves
+the target open keeps it from its turn also where the rule can decide only
+the value of the initialisation, which in a stack decides the target
+(**An open default with a constant**, below). Example
+(WV-1.5-initialisation-beside-the-same-value): "het strandloon van een Vondst
+moet gesteld worden op 5 indien hij betwist is" and "… moet geïnitialiseerd
+worden op 5": where the case does not name betwist the strandloon is open; it
+is 5 where betwist holds and where it stands not to hold. An initialisation makes no member
 derived: a member that only an initialisation writes is an input member with a
 default value, open where the case gives it no value, unless its input is
 declared complete; then it is settled leeg above the initialisation, which
@@ -787,8 +795,9 @@ value is filled; it gives way where its justification is established false, or
 where it holds with a settled leeg value (the fall-through of ch. 7.1); and it
 is open otherwise. The stack is read from high to low: the first default that
 decides decides the target, a lower default decides only where it stands of
-every higher one that it gives way, and at the first default that is open the
-target is open. Example (WV-1.5-stack-first-decides): "het vindloon van een
+every higher one that it gives way or can decide nothing but what the lower
+one decides (**An open default with a constant**, below), and at the first
+default that is open otherwise the target is open. Example (WV-1.5-stack-first-decides): "het vindloon van een
 Vondst is zijn gewicht maal 2", with above it "… op 0 indien hij betwist is":
 at gewicht 50 the vindloon is 100 where betwist stands not to hold, 0 where it
 holds, and open where the case does not name it; without a gewicht it is 0
@@ -801,10 +810,90 @@ groter is dan 100" and the vindloon of the card: a gemelde Vondst of gewicht
 default gives way, the target is settled leeg (WV-1.5-stack-settled-leeg):
 that bergloon where gemeld stands not to hold.
 
+**An open default with a constant.** An open default whose decision is a
+constant — on a characteristic its decision, to attribute or not to
+attribute, and on an attribute a `Literal` — can decide that value and nothing
+else: whatever the case adds, it decides that value or it gives way. An open
+default with another consequence, a computation, a read of a member or a
+parameter among them, can decide any value. A default, a chain of defaults
+and a group of chains (**Exception groups and a declared-unordered group**,
+below) therefore has one of five outcomes: it *decides v*; it *conflicts*
+(ch. 7.2, 7.9); it *gives way*; it is *open with v* — open, and whatever the
+case adds it decides v or gives way, never another value and never a
+conflict; or it is *open*. An open default whose decision is the constant v
+is open with v, and every other open default is open. A chain is read from
+high to low, each default against the rest of the chain below it, which is
+read in the same way; a chain without defaults gives way:
+
+| the default | the rest below it | the chain |
+|---|---|---|
+| decides v, conflicts, or is open | — | as the default |
+| gives way | *r* | *r* |
+| open with v | decides v | decides v |
+| open with v | gives way, or is open with v | open with v |
+| open with v | decides another value, conflicts, is open with another value, or is open | open |
+
+A default with exception groups (ch. 7.9) stands in its chain as two places:
+its exception groups, reconciled into one outcome (below), above its own
+content, the fall-back, where it has one. The rest below a default is read
+only where the row of the default needs it: below a default that decides,
+conflicts or is open, nothing is read. Below a default that is open with v the
+next one is read, and so on until a row fixes the outcome. Whether a default
+below an open one is at its turn does not stand, so it is read
+provisionally, as a member of a composite after an undetermined one is
+(**The judgement of a condition**): its outcome counts, what it deposits in
+the §9.5 channel is dropped, and a fault of it does not end the evaluation but
+leaves it open. This keeps the §9.5 facts and the faults monotone: a value
+given to the open read can make the default above decide, and the one below
+is then not read. The stack decides v where its chain decides v, it stands
+that it fills nothing where its chain gives way, and its target is open where
+its chain is open with v or open, but at the root of a stack on a
+characteristic (below).
+
+On a characteristic the stack is a formula of Kleene's strong table: a
+default that attributes where c, above the rest R, is c ∨ R; a default that
+does not attribute where c is ¬c ∧ R; and where every default gives way the
+characteristic does not hold: false. Where c is undetermined, c ∨ R is true
+where R is true, and ¬c ∧ R false where R is false, as a composite is
+established past an undetermined member. On an attribute the stack is a
+nested choice, if c then v else R, and the reading is the parallel choice of
+Plotkin ("LCF considered as a programming language", 1977): where both
+branches have the value v, the choice has v whatever c. The value v is taken
+from a constant alone, a bound chosen for simplicity: the parallel choice
+holds as well for a computed value that stands, but telling that it stands
+would read an arbitrary expression provisionally, above every default below
+it. An IfThenElse in a value keeps the sequential choice (**An IfThenElse in a
+value**, below): "10 als hij betwist is, anders 10" is open where betwist is
+open. A rule beside an initialisation is no stack (**An initialisation**,
+above).
+
+Example (WV-1.5-stack-same-conclusion-*): "het vindloon van een Vondst is
+zijn gewicht maal 2", with above it "… op 0 indien hij beschadigd is" and above
+that "… op 0 indien hij betwist is", at gewicht 50: where the case names
+beschadigd and not betwist the vindloon is 0, as it is where betwist holds and
+where it stands not to hold; where beschadigd stands not to hold and betwist is
+not named it is open, 0 or 100. With "… op 5 indien hij beschadigd is" as the
+middle default it is open where beschadigd holds and betwist is not named, 0 or
+5 (`-another-constant`); with "… op zijn gewicht maal 0 indien hij betwist is"
+as the highest, a computed value, it is open there as well (`-computed`). With
+"… op 7 indien hij gemeld is" between the two defaults of 0, where beschadigd
+holds and betwist is not named, the vindloon is 0 where gemeld stands not to
+hold, and open where gemeld holds or is not named (`-between-*`). Example
+(WV-1.5-stack-same-conclusion-provisional-*): "het meldloon van een Vondst is
+2 indien zijn gewicht gedeeld door zijn getuigen leeg is", with above it "… op
+2 indien hij betwist is", at gewicht 10 and getuigen 0: where betwist is not
+named the meldloon is 2, without the EF-005 fact of the division; where
+betwist stands not to hold it is 2 with the fact, and where betwist holds 2
+without it. With "… op 2 indien het Rekenjaar groter is dan 2025" as the
+lower default, in a session without an evaluation date: where betwist is not
+named the meldloon is open and nothing faults, where betwist holds it is 2,
+and where it stands not to hold the session faults with EF-011 (ch. 8.2).
+
 **The initialisation of a stack** (ch. 7.3) is its lowest default and is read
 as any default: it decides where it stands of every default above it that it
-gives way, and below a default that is open the target is open. A value the
-case gives the target stands above it. Example (WV-1.5-stack-initialisation):
+gives way, or that it can decide only the value the initialisation decides;
+below a default that is open with another value, or open, the target is open.
+A value the case gives the target stands above it. Example (WV-1.5-stack-initialisation):
 "het vindloon van een Vondst is zijn gewicht maal 2 indien zijn gewicht groter
 is dan 10", with above it "… op 0 indien hij betwist is" and below it "… moet
 geïnitialiseerd worden op 5": at gewicht 5 the vindloon is 5 where betwist
@@ -833,6 +922,15 @@ Example (WV-1.5-stack-initialisation-exception): with that stack and the
 exception "… op 8 indien hij gemeld is", the strandloon is 8 where gemeld
 holds, also with 7 in the case; 5 where gemeld stands not to hold and the case
 gives no strandloon, 7 where it gives 7; and open where gemeld is open.
+Example (WV-1.5-stack-same-conclusion-initialisation): "het strandloon van een
+Vondst moet geïnitialiseerd worden op 5" below "… op 5 indien hij betwist is",
+in one stack: where the case gives no strandloon it is 5 whether betwist holds,
+stands not to hold or is not named.
+With 7 in the case it is 5 where betwist holds, 7 where it stands not to hold,
+and open where it is not named: the value the case gives stands above the
+initialisation, which gives way, and the stack is open with 5. So it is with
+5 in the case: the case value is no default of the stack, and on an attribute
+a stack open with 5 leaves its target open.
 
 **An opgave** — a stack whose highest default is the value the case may give
 for its target, "het bergloon (mag opgegeven worden)" — reads as any default
@@ -847,23 +945,49 @@ it is 20 without one, also above that initialisation, and 30 with an opgave of
 30.
 
 **A stack on a characteristic** decides to attribute or not to attribute
-(ch. 7.1). Where a default decides not to attribute, or every default gives
-way, it stands that the characteristic does not hold, unless the case names
-it; where the first default that does not give way is open, the
-characteristic is open. Example (WV-1.5-stack-characteristic): "een Vondst is
+(ch. 7.1). Where the stack decides not to attribute, or gives way, it stands
+that the characteristic does not hold, unless the case names it; where it is
+open, or open with attributing, the characteristic is open. Where it is open
+with not attributing, the characteristic stands not to hold as well: whatever
+the case adds, the stack decides not to attribute or gives way, and both leave
+it not holding (¬c ∧ R is false where R is false). This closing is the
+root's: in an exception group, and for a member of a declared-unordered group,
+giving way and not attributing differ — the one leaves the fall-back its turn,
+the other can conflict with a member that attributes — so there a member open
+with not attributing stays so. Example (WV-1.5-stack-characteristic): "een Vondst is
 beloonbaar indien zijn gewicht groter is dan 2", with above it "niet
 beloonbaar indien hij betwist is en zijn gewicht groter is dan 2", "de premie
 is 10 indien hij beloonbaar is" and "de wachtpremie is 3 indien hij niet
 beloonbaar is": at gewicht 5 beloonbaar holds and the premie is 10 where
 betwist stands not to hold; it stands not to hold and the wachtpremie is 3
 where betwist holds; it is open, and both premies with it, where betwist is
-not named. At gewicht 1 it stands not to hold.
+not named. At gewicht 1 it stands not to hold. Example
+(WV-1.5-stack-same-conclusion-characteristic-*): "een Vondst is beloonbaar
+indien zijn gewicht groter is dan 2", with above it "niet beloonbaar indien
+hij drijfhout is" and above that "niet beloonbaar indien hij betwist is", and
+"de wachtpremie is 3 indien hij niet beloonbaar is": at gewicht 5, where the
+case names drijfhout and not betwist, beloonbaar stands not to hold and the
+wachtpremie is 3, as where betwist holds or stands not to hold; where
+drijfhout stands not to hold and betwist is not named, beloonbaar is open,
+and so is the wachtpremie. At gewicht 1, where drijfhout stands not to hold
+and betwist is not named, it stands not to hold: every default below the open
+one gives way, and the stack is open with not attributing (`-root`). "Een
+Vondst is vindbaar indien hij gemeld is", above "vindbaar indien zijn gewicht
+groter is dan 2", holds at gewicht 5 where gemeld is not named, and is open at
+gewicht 1 (`-attributing`).
 
 **Exception groups and a declared-unordered group** (ch. 7.9, 7.2) read each
-member with the three outcomes. A member decides only where it stands of every
-other member that it gives way or decides the same: two members that decide
-differently are the conflict of ch. 7.2, and beside a member that is open the
-group is open. Example (WV-1.5-stack-exception-groups): the vindloon "zijn
+member, a chain, with the five outcomes. A member decides only where it stands
+of every other member that it gives way or decides the same, or that it can
+decide only the same: a member open with v cannot make a conflict beside a
+member that decides v. The group conflicts where a member conflicts (its key
+passes on) or two members decide differently (the conflict of ch. 7.2);
+otherwise it is open where a member is open; otherwise, where a member decides
+v, it decides v if every open member is open with v, and is open if not; and
+where no member decides, it gives way if every member gives way, it is open
+with v if every open member is open with v, and it is open if not. A member
+counts with its whole chain: "0 indien hij betwist is" above "5" is open, not
+open with 0. Example (WV-1.5-stack-exception-groups): the vindloon "zijn
 gewicht maal 2" with the exception groups "op 0 indien hij betwist is" and
 "op 5 indien hij beschadigd is", at gewicht 50, is 100 where neither holds, 0
 where betwist holds and beschadigd stands not to hold, open where betwist is
@@ -871,7 +995,26 @@ not named, open where betwist holds and beschadigd is not named, and without
 a value beside the fact `Vondst.vindloon/0` where both hold. The two as a
 declared-unordered group of two groups (WV-1.5-stack-unordered) give 0, open,
 settled leeg where neither holds, and the fact `Vondst.vindloon` where both
-hold. The effective stack of a subtype (ch. 7.10) reads in the same way
+hold. Example (WV-1.5-stack-same-conclusion-unordered-*): "het bergloon van
+een Vondst is 0 indien hij betwist is" and "… 0 indien hij beschadigd is", a
+declared-unordered group of two groups: where beschadigd holds and betwist is
+not named the bergloon is 0, as where betwist holds or stands not to hold;
+where beschadigd stands not to hold it is open, 0 or settled leeg. With "… 5
+indien hij beschadigd is" as the second it is open where beschadigd holds and
+betwist is not named, 0 or the conflict (`-another-constant`). With "… 5
+indien zijn gewicht groter is dan 2" below "0 indien hij betwist is" in the
+first group, where beschadigd holds and betwist is not named, the bergloon is
+open at gewicht 5 and 0 at gewicht 1 (`-chain-*`). With a third group, "… 5
+indien hij gemeld is", where beschadigd holds and neither betwist nor gemeld is
+named, it is open, and 0 where gemeld stands not to hold (`-three-*`). Example
+(WV-1.5-stack-same-conclusion-nested-*): the vindloon "zijn gewicht maal 2"
+with the exception groups "op 0 indien hij betwist is" and "op 0 indien hij
+beschadigd is", at gewicht 50, is 0 where beschadigd holds and betwist is not
+named, and open where beschadigd stands not to hold, 0 or 100. Above "zijn
+gewicht maal 2", the default "… op 0 indien hij beschadigd is" with the
+exception group "… op 0 indien hij betwist en beschadigd is" gives 0 where
+beschadigd holds and betwist is not named: the exception group is open with 0
+above the fall-back, which decides 0 (`-fall-back`). The effective stack of a subtype (ch. 7.10) reads in the same way
 (WV-1.5-stack-type-chain): with "de uitkering van een Strandrecht is zijn
 grondslag", the exception "… op 99 indien hij betwist is", and for a
 Wrakrecht "… zijn grondslag maal 2" with the exception "… op 55 indien zijn
@@ -1084,8 +1227,8 @@ settled leeg. The requirement is over the input members of the objects of a
 case: its links are complete (but where a creation could still lay one), and
 adding a link or an object is not giving a member a value. It holds where both
 sessions end: an input given can make a session fault that ended without it,
-where an evaluation then reaches a fault, or a member that faults is no longer
-read provisionally. *Preservation with complete knowledge*: where nothing is
+where an evaluation then reaches a fault, or a member of a composite or a
+default of a stack that faults is no longer read provisionally. *Preservation with complete knowledge*: where nothing is
 open, every input member given or complete, the outcomes are those of ch.
 1.2–1.4. Example (WV-1.5-monotone, WV-1.5-preserved): every example of this
 section, run once with each open input member it gives left out, and once with
@@ -7351,7 +7494,7 @@ allocation, a creation — has none: there is nothing to read.
 | `FAILS` | the condition does not hold | the nodes of the condition |
 | `FAULTS` | the evaluation of the condition faults (ch. 5.7) | the nodes, the fault at those it reached |
 | `FAULTS` | the form has a dated validity and the session no evaluation date (ch. 8.1) | none |
-| `DISPLACED` | the form is a default that is not at its turn because a higher default of its chain decided or settled (ch. 7.1, 7.9): a default below the one that decides, at the root or in an exception group, and every default inside its exception groups; the content of a default whose exception groups settled; an ordinary rule that ch. 7.10 folds into a stack, below the default that decides; the initialisation default below the default that decides, where the input leaves its target empty; on a timeline target, a default at its turn on no day (ch. 7.11); below a default that is open, every default, the initialisation default among them, and the content of a default whose exception groups are open (**Open values**, below) | the nodes of the condition, and of the value where the condition holds, as at its turn (**A displaced default is read**, below) |
+| `DISPLACED` | the form is a default that is not at its turn because a higher default of its chain decided or settled (ch. 7.1, 7.9): a default below the one that decides, at the root or in an exception group, and every default inside its exception groups; the content of a default whose exception groups settled; an ordinary rule that ch. 7.10 folds into a stack, below the default that decides; the initialisation default below the default that decides, where the input leaves its target empty; on a timeline target, a default at its turn on no day (ch. 7.11); below a default that is open, every default, the initialisation default among them, and the content of a default whose exception groups are open; below a default, or exception groups, open with a value (ch. 1.5), every default below the one that fixes the outcome of the chain (**Open values**, below) | the nodes of the condition, and of the value where the condition holds, as at its turn (**A displaced default is read**, below) |
 | `DISPLACED` | the target of an initialisation — a rule's, a folded one's in a stack, or the initialisation default's — holds a value of the input or of another writer (ch. 5.4, 7.3), on a timeline target on every day; in a document with `inferFromEmpty: false`, the target of an initialisation rule is an open input member, or a writer above it leaves the target open, or the target of an initialisation default is an open input member (ch. 1.5); the subject of an object creation of the 1:1 shape is linked in the input (ch. 5.5) | none |
 | `OUTSIDE_VALIDITY` | the validity window of the form does not admit the evaluation date (ch. 8.2) | none |
 | `OPEN` | in a document with `inferFromEmpty: false`, the form leaves its target open, or a consistency's assertion is undetermined (ch. 1.5; **Open values**, below, which says where `HOLDS` and `FAILS` stand there) | the nodes of the condition, and of the value where the condition is true |
@@ -7576,9 +7719,21 @@ the condition is true and the value has no open read, a leeg value and a
 value that faults included; `FAILS` where the condition is false; and `OPEN`
 where the form leaves its target open, its condition undetermined or its
 value open. A consistency is `HOLDS`, `FAILS` or `OPEN` as its assertion is
-true, false or undetermined. In a stack, below a default that is `OPEN` every
+true, false or undetermined. In a stack, below a default that is open (ch.
+1.5, **An open default with a constant**: it can decide any value) every
 default is `DISPLACED` and read as at its turn, the initialisation default
 among them; so is the content of a default whose exception groups are open.
+Below a default that is open with a value, and below exception groups open
+with a value, the chain is read on as ch. 1.5 reads it: each default is at
+its turn, read provisionally, with its own status — `HOLDS` where it decides,
+`FAILS` where it gives way, `OPEN` where it is open — down to the one whose
+row fixes the outcome of the chain, and every default below that one is
+`DISPLACED`. Where a lower default decides the value of the open one above
+it, it is the default that decides the target, `HOLDS` with its justification
+and its value, and the one above is `OPEN`. A default read so whose
+evaluation faults is open (ch. 1.5): `OPEN`, the fault at its nodes. An
+initialisation default read so whose target the input fills is `DISPLACED`
+without nodes, as elsewhere.
 An initialisation rule whose target is an open input member, or which a
 writer above it leaves open, is not at its turn and `DISPLACED` without
 nodes (ch. 1.5), and so is an initialisation default whose target is an open
@@ -7611,8 +7766,9 @@ In case 3, without a gewicht, the vindloon "zijn gewicht plus 10" reads `0
 Binary undetermined open "V1" "gewicht"` and `2 Literal unreached`, `OPEN`. In
 case 5, where betwist is not named, the exception of the premie, "0 indien hij
 betwist is", reads `0 CharacteristicCheck undetermined open "V1" "betwist"`,
-`OPEN`, and the default below it, "10", is not at its turn and reads `0
-Compound true`, `1 Literal 10`, `DISPLACED`; in case 6, where it stands that
+`OPEN`; it is open with 0, so the default below it, "10", is read at its
+turn, provisionally, and reads `0 Compound true`, `1 Literal 10`, `HOLDS`:
+another value than 0, and the premie is open. In case 6, where it stands that
 V1 is not betwist, the exception `FAILS` and the default `HOLDS`.
 
 Example (`WV-5.12-open-composite`): "een Vondst is opvallend indien ten
@@ -7652,7 +7808,34 @@ default below it are `DISPLACED`, the latter reading `0 Literal 25`. With
 geïnitialiseerd worden op 3" each the one default of a stack, the meldloon
 declared complete and neither given, the initialisation default of the
 strandloon is `DISPLACED` without nodes, and that of the meldloon reads
-`0 Literal 3`, `HOLDS`. Example
+`0 Literal 3`, `HOLDS`. Example (`WV-5.12-same-conclusion`, the golden
+`jutterswet-zelfde-conclusie-waarde`): the vindloon of ch. 1.5, "zijn gewicht
+maal 2" below "… op 0 indien hij beschadigd is" below "… op 0 indien hij
+betwist is", at gewicht 50 with beschadigd named and betwist not:
+
+```
+/rules/prioritizedDefaults/0/defaults/0 "V1" 0 CharacteristicCheck undetermined open "V1" "betwist"
+/rules/prioritizedDefaults/0/defaults/0 "V1" 1 Literal unreached
+/rules/prioritizedDefaults/0/defaults/0 "V1" OPEN
+/rules/prioritizedDefaults/0/defaults/1 "V1" 0 CharacteristicCheck true
+/rules/prioritizedDefaults/0/defaults/1 "V1" 1 Literal 0
+/rules/prioritizedDefaults/0/defaults/1 "V1" HOLDS
+/rules/prioritizedDefaults/0/defaults/2 "V1" 0 Compound true
+/rules/prioritizedDefaults/0/defaults/2 "V1" 1 Binary 100
+/rules/prioritizedDefaults/0/defaults/2 "V1" 2 AttributeReference 50
+/rules/prioritizedDefaults/0/defaults/2 "V1" 3 Literal 2
+/rules/prioritizedDefaults/0/defaults/2 "V1" DISPLACED
+```
+
+The default of 0 for beschadigd decides the vindloon. Where beschadigd stands
+not to hold, it reads `0 CharacteristicCheck false`, `1 Literal unreached`,
+`FAILS`, and the computation reads `HOLDS` with its nodes as above: it decides
+100, another value than the open default's, so the chain is open and the
+vindloon with it. On "het meldloon is 2 indien het Rekenjaar groter is dan
+2025" below "… op 2 indien hij betwist is", in a session without an
+evaluation date and betwist not named, the lower default reads `0 Comparison
+fault EF-011`, `1 ContextValue fault EF-011`, `2 Literal unreached`, `3
+Literal unreached`, `OPEN` (`WV-5.12-same-conclusion-fault`). Example
 (`WV-5.12-open-creation`, `WV-5.12-open-path`): the creation of a
 proefvondst "indien hij niet ervaren is", for a Jutter without an ervaring,
 reads `0 CharacteristicCheck undetermined open "J1" "ervaren"`, `OPEN`, and a
@@ -9718,8 +9901,10 @@ the *justification* from mechanism (a guard) to declaration (the
 lowest default), so the Drools lowering derives the guard instead of
 embodying it. In a document with `inferFromEmpty: false` the initialisation
 default is read as any default (ch. 1.5): it decides where it stands of every
-default above it that it gives way, and below a default that is open the
-target is open (WV-1.5-stack-initialisation). A stack whose one default is the
+default above it that it gives way, or that it can decide only the value the
+initialisation decides, and below a default that is open with another value,
+or open, the target is open (WV-1.5-stack-initialisation,
+WV-1.5-stack-same-conclusion-initialisation). A stack whose one default is the
 initialisation, without an exception group, makes no member derived: the
 member is input, and where it is open the initialisation default is not at its
 turn, and the target is open (WV-1.5-stack-initialisation-alone); with an
