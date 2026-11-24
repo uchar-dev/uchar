@@ -231,7 +231,13 @@ Open punten:
 
 1. De dump schrijft elke `OpenMember` nu met `fold=empty` (een component meer); geen pin bevat er een.
 2. Toolchain: `ConditionReading` en de publieke API veranderden niet; `OpenMember` kreeg een component, `Watch.op` een
-   argument (de lijsten). De toolchain gebruikt `DroolsBackend.insert`, dus haar lezingen krijgen de lijsten; of zij
-   `OpenMember` of `Watch.op` zelf aanroept, is bij de pin-bump na te gaan. Een directe beller die de beans zelf in de
+   argument (de lijsten). De toolchain gebruikt `DroolsBackend.insert`, dus haar lezingen krijgen de lijsten, en zij roept
+   `OpenMember` en `Watch.op` nergens zelf aan (nagekeken door de hoofdsessie en de review). Een directe beller die de beans zelf in de
    sessie zet, krijgt bij zo'n vouw nu `DROOLS-374`.
 3. Geen rij voor `spec/CONSTRUCTS.md` of `spec/PLAN.md`: geen wire en geen semantiek veranderde.
+
+**Landing (hoofdsessie, 2026-11-24).** Vóór de bouw las een extern model (xhigh) de kaart en daarna het ontwerp van de
+bouwer; na de bouw vond het geen semantische fout, wel twee punten (een lezing van een sessie die `insert` niet vulde,
+faalde zonder registercode, en een geneste ongeordende kwantorvouw had geen fixture), die de herstelronde oploste
+(`DROOLS-374`, `open-readings/reading-nested-quantifier`); na de herstelronde: akkoord. `make gates` op `1226fd6b0`: alle
+zeventien gates groen in 363 s (red=0).
