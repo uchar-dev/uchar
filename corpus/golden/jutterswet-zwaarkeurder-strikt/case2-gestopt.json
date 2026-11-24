@@ -18,9 +18,15 @@
       {
         "label": "V1",
         "objectType": "Vondst",
-        "attributes": {},
+        "attributes": {
+          "gewicht": {
+            "number": "5.00"
+          }
+        },
         "roles": {},
-        "characteristics": [],
+        "characteristics": [
+          "gemerkt"
+        ],
         "characteristicsAbsent": [
           "drijfhout"
         ]
@@ -34,9 +40,7 @@
           }
         },
         "roles": {},
-        "characteristics": [
-          "gemerkt"
-        ],
+        "characteristics": [],
         "characteristicsAbsent": [
           "drijfhout"
         ]
@@ -50,22 +54,7 @@
   },
   "expected": [
     {
-      "kind": "characteristicOpen",
-      "label": "J1",
-      "characteristic": "keurder"
-    },
-    {
-      "kind": "characteristicPresent",
-      "label": "J1",
-      "characteristic": "nauwgezet"
-    },
-    {
-      "kind": "characteristicOpen",
-      "label": "J1",
-      "characteristic": "grenskeurder"
-    },
-    {
-      "kind": "characteristicOpen",
+      "kind": "characteristicAbsent",
       "label": "J1",
       "characteristic": "zwaarkeurder"
     }

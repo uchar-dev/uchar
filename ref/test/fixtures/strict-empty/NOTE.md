@@ -40,6 +40,6 @@ Four quantifier folds `alle` over the vondsten of J1, each with a compound filte
 drijfhout" over "groter dan 10,00", "gemerkt of een gewicht groter dan de keurgrens" over the same, and "gemerkt of
 drijfhout" over "groter dan de keurgrens". `red1-filterfout-na-open-filter.json` pins the fault of the third filter on V2
 after V1's undetermined one (EF-014); the witness loop reads only the `case*` files, and the readings test reads it.
-Its document and its cases 1 to 3 are also the golden `corpus/golden/jutterswet-keurder-strikt`, whose readings gate 17
-compares; case 4 binds no keurgrens, which the scenario layer does not express, and the red case faults, so both stand
-here only.
+Its rule 3 (zwaarkeurder) with cases 1 to 3 is also the golden `corpus/golden/jutterswet-zwaarkeurder-strikt`, whose
+readings gate 17 compares. The other three rules have a matrix that can neither fault nor deposit, case 4 binds no
+keurgrens, which the scenario layer does not express, and the red case faults; those stand here only.

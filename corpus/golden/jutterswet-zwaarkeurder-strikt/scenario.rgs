@@ -13,9 +13,6 @@ een Vondst V3
 - het gewicht is 30,00
 - is niet gemerkt
 Met als verwacht resultaat:
-- of J1 keurder is, staat niet vast
-- J1 is nauwgezet
-- of J1 grenskeurder is, staat niet vast
 - of J1 zwaarkeurder is, staat niet vast
 
 Scenario gestopt
@@ -31,9 +28,6 @@ een Vondst V2
 - het gewicht is 20,00
 - is niet drijfhout
 Met als verwacht resultaat:
-- J1 is niet keurder
-- J1 is nauwgezet
-- J1 is niet grenskeurder
 - J1 is niet zwaarkeurder
 
 Scenario filter en toets open
@@ -48,7 +42,4 @@ een Vondst V2
 - is gemerkt
 - is niet drijfhout
 Met als verwacht resultaat:
-- of J1 keurder is, staat niet vast
-- J1 is nauwgezet
-- of J1 grenskeurder is, staat niet vast
 - of J1 zwaarkeurder is, staat niet vast

@@ -1656,7 +1656,7 @@ EXPECTED_CHANNEL=(
 # characteristic (RUNTIME-SEMANTICS ch. 3.4, 3.11; PLAYED 3).
 # 385 with jutterswet-heffing-strikt: one choice in three forms in a strict document, a rule with an initialisation
 # below it, a stack and a helper attribute, each open over an open taxatie (RUNTIME-SEMANTICS ch. 1.5; PLAYED 3).
-# 386 with jutterswet-keurder-strikt: four quantifier folds with a compound filter in a strict document, contributors
+# 386 with jutterswet-zwaarkeurder-strikt: a quantifier fold with a compound filter in a strict document, contributors
 # whose filter is undetermined among them (RUNTIME-SEMANTICS ch. 1.5, 5.12; PLAYED 3).
 EXPECTED_PLAYED=386
 

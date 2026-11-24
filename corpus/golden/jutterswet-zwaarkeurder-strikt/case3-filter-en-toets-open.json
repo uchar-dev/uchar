@@ -10,14 +10,23 @@
         "roles": {
           "vondsten": [
             "V1",
-            "V2",
-            "V3"
+            "V2"
           ]
         },
         "characteristics": []
       },
       {
         "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "characteristics": [],
+        "characteristicsAbsent": [
+          "drijfhout"
+        ]
+      },
+      {
+        "label": "V2",
         "objectType": "Vondst",
         "attributes": {
           "gewicht": {
@@ -27,34 +36,9 @@
         "roles": {},
         "characteristics": [
           "gemerkt"
-        ]
-      },
-      {
-        "label": "V2",
-        "objectType": "Vondst",
-        "attributes": {
-          "gewicht": {
-            "number": "5.00"
-          }
-        },
-        "roles": {},
-        "characteristics": [],
+        ],
         "characteristicsAbsent": [
           "drijfhout"
-        ]
-      },
-      {
-        "label": "V3",
-        "objectType": "Vondst",
-        "attributes": {
-          "gewicht": {
-            "number": "30.00"
-          }
-        },
-        "roles": {},
-        "characteristics": [],
-        "characteristicsAbsent": [
-          "gemerkt"
         ]
       }
     ],
@@ -65,21 +49,6 @@
     }
   },
   "expected": [
-    {
-      "kind": "characteristicOpen",
-      "label": "J1",
-      "characteristic": "keurder"
-    },
-    {
-      "kind": "characteristicPresent",
-      "label": "J1",
-      "characteristic": "nauwgezet"
-    },
-    {
-      "kind": "characteristicOpen",
-      "label": "J1",
-      "characteristic": "grenskeurder"
-    },
     {
       "kind": "characteristicOpen",
       "label": "J1",
