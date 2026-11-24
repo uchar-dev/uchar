@@ -846,7 +846,9 @@ let defaults json env ~world0 ~world =
                   let is_char = l.pd_characteristic <> None in
                   (* the declaration the write step writes the target by (ch. 2.4) *)
                   let decl = Option.bind l.pd_attribute (fun a -> Eval.attr_decl env ~otype:owner ~attr:a) in
-                  let same_value = Eval.same_as_written decl in
+                  (* compared as the session compares them: as written in a
+                     document with inferFromEmpty false, as computed otherwise *)
+                  let same_value = if doc.infer_from_empty then Arith.equal else Eval.same_as_written decl in
                   (* the decision of an open default that can decide nothing
                      else (ch. 1.5): on a characteristic its decision, on an
                      attribute a Literal the write step can write, as it

@@ -16481,6 +16481,37 @@ let () =
     (fun w -> ov_attr w "V1" "vindloon")
     "open"
 
+(* the comparison as written is the strict reading's: in an ordinary document
+   two decisions of a declared-unordered group (ch. 7.2) are compared as
+   computed, so "… op 1 indien hij betwist is" beside "… op 1 ct indien hij
+   beschadigd is" on the vindloon in € agree where both hold, and the first
+   member's value is written: 1 €, or 0,01 € with the two the other way round *)
+let () =
+  let in_eur : Ir_v0.Ast.datatype =
+    Number { whole_part = false; decimal_places = 2; sign_char = None; measure_unit = Some eur }
+  in
+  let doc first second =
+    ov_doc ~strict:false
+      ~defaults:
+        (List.map
+           (fun (name, check, value) ->
+             ov_stack ~unordered:true ~name ~attribute:"vindloon"
+               [ ov_dflt ~justification:(ov_check check) ~consequence:value () ])
+           [ first; second ])
+      [ ot "Vondst" [ ("vindloon", Some in_eur) ] [ "betwist"; "beschadigd" ] ] []
+  in
+  let one = ("vindloon bij betwisting", "betwist", ov_lit "1")
+  and cent = ("vindloon bij schade", "beschadigd", litv "1" (Number { whole_part = false; decimal_places = 2; sign_char = None; measure_unit = Some cent })) in
+  let row name doc want =
+    let id = "WV-1.5-stack-same-conclusion-unit-ordinary-" ^ name in
+    ov_row id
+      (fun () -> ov_eval doc (ov_v1 ~chars:[ "betwist"; "beschadigd" ] []))
+      (fun w -> String.concat " " (ov_attr w "V1" "vindloon" :: ov_channel w))
+      want
+  in
+  row "unitless-first" (doc one cent) "1";
+  row "cent-first" (doc cent one) "0.01"
+
 (* WV-1.5-stack-same-conclusion-provisional-*: below a default open with a
    constant a default is read provisionally: what it deposits is dropped, and a
    fault leaves it open. "Het meldloon van een Vondst is 2 indien zijn gewicht

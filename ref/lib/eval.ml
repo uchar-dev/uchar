@@ -5573,10 +5573,14 @@ let run_defaults_group ?only env world ~world0 ~owner
         let r = f (fun m -> buf := m :: !buf) in
         (r, fun () -> List.iter cond_err (List.rev !buf))
       in
+      (* in a document with inferFromEmpty false two decisions are compared as
+         the write step writes them (ch. 1.5); an ordinary document compares
+         them as computed, the reading of ch. 7.2 *)
       let equal_dec a b =
         match (a, b) with
         | Char_dec x, Char_dec y -> x = y
-        | Attr_dec x, Attr_dec y -> same_as_written decl x y
+        | Attr_dec x, Attr_dec y ->
+            if env.doc.infer_from_empty then Arith.equal x y else same_as_written decl x y
         | _ -> false
       in
       (* the §9.5 conflict key (ch. 7.2/7.9): the bare target form for a
