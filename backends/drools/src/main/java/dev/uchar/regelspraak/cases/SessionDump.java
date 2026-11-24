@@ -14,6 +14,8 @@ import dev.uchar.regelspraak.transpiler.tms.OpenSegmentFault;
 import dev.uchar.regelspraak.transpiler.tms.CharacteristicPeriodsFault;
 import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
 import dev.uchar.regelspraak.transpiler.tms.MemberTest;
+import dev.uchar.regelspraak.transpiler.tms.OpenRead;
+import dev.uchar.regelspraak.transpiler.tms.Undetermined;
 import dev.uchar.regelspraak.transpiler.tms.WritersConflict;
 
 import org.kie.api.definition.KiePackage;
@@ -427,6 +429,11 @@ final class SessionDump {
             if (o instanceof Enum<?> e) return e.getDeclaringClass().getSimpleName() + "." + e.name();
             if (o instanceof ElementKey k)
                 return quote(k.objectType()) + "." + quote(k.name()) + (k.characteristic() ? " (characteristic)" : "");
+            // the sentence of an open read and of an undetermined judgement names its object by its identity
+            // (OpenMember), and a member test of a fold whose filter or matrix is undetermined holds one: the dump
+            // writes the open member they carry, its object by its name
+            if (o instanceof Undetermined u) return "Undetermined(" + render(u.read()) + ")";
+            if (o instanceof OpenRead r) return "OpenRead(" + render(r.member()) + ")";
             if (o instanceof Throwable e) return fault(e);
             if (o instanceof List<?> l) {
                 // a list of member tests is what an accumulate collected over the contributions of a quantifier fold, in
