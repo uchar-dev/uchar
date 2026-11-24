@@ -67,9 +67,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       below hold for them as well; a displaced form that is no default has no nodes, and of the defaults only an
  *       initialisation, a default or a rule the fold of ch. 7.10 took in, whose target the input fills; a form outside
  *       its validity has no nodes;</li>
- *   <li>the stop of every composite follows from the verdicts of its members (RUNTIME-SEMANTICS ch. 5.10): a member is
- *       reached exactly where the stop rule did not settle the verdict before it, and the composite's verdict is the
- *       stop rule's;</li>
+ *   <li>the stop of every composite follows from the verdicts of its members (RUNTIME-SEMANTICS ch. 5.10, and where a
+ *       member is undetermined Kleene's table of ch. 1.5, which reads on past it): a member is reached exactly where the
+ *       stop rule did not settle the verdict before it, and the composite's verdict is the stop rule's, undetermined
+ *       included;</li>
  *   <li>every node of a reading is the node of the document its number names, of the kind it says.</li>
  * </ul>
  *
@@ -305,8 +306,9 @@ class ReadingsCorpusWitnessTest {
                 if (!x.reached() || x.fault() != null || x.node() >= form.nodes().size()) continue;
                 if (!(form.nodes().get(x.node()) instanceof Condition.Compound s)) continue;
                 // a composite the evaluation reads over a timeline, the clip of a temporal total, has the periods in
-                // which it holds and no verdict: it reads every member over the timeline (ch. 3.6), and has no stop
-                if (!(x.value() instanceof Boolean)) continue;
+                // which it holds and no verdict: it reads every member over the timeline (ch. 3.6), and has no stop;
+                // an undetermined composite has no value and a stop all the same (ch. 1.5)
+                if (!(x.value() instanceof Boolean) && !x.undetermined()) continue;
                 String difference = stop(s, x, form.nodes(), byNumber);
                 if (difference != null) differences.add(at + ": samenstelling " + x.node() + " " + difference);
                 n.compounds++;
@@ -378,7 +380,8 @@ class ReadingsCorpusWitnessTest {
         else {
             ConditionReading.NodeReading root = byNumber.get(0);
             if (root == null || !root.reached()) return "las de wortel van zijn voorwaarde niet";
-            if (root.fault() != null) holds = false;
+            // the value is read where the condition is true (ch. 5.12), so not where it is undetermined (ch. 1.5)
+            if (root.fault() != null || root.undetermined()) holds = false;
             else if (root.value() instanceof Boolean b) holds = b;
             // a condition read over a timeline has periods and no verdict
             else return null;
@@ -595,17 +598,19 @@ class ReadingsCorpusWitnessTest {
                 + expected;
     }
 
-    /** Whether the stop of composite {@code s}, read as {@code x}, follows from its members' verdicts. */
+    /** Whether the stop of composite {@code s}, read as {@code x}, follows from its members' verdicts, by Kleene's
+     *  strong table (RUNTIME-SEMANTICS ch. 1.5): an undetermined member is neither true nor false, and the composite
+     *  reads on past it; where every member is true or false this is the stop rule of ch. 5.10. */
     private static String stop(Condition.Compound s, ConditionReading.NodeReading x, List<Object> nodes,
                                Map<Integer, ConditionReading.NodeReading> byNumber) {
-        int touch = 0, m = s.components().size();
+        int touch = 0, fails = 0, m = s.components().size();
         Boolean verdict = null;
         for (int i = 0; i < m; i++) {
             int number = indexOf(nodes, s.components().get(i));
             ConditionReading.NodeReading member = byNumber.get(number);
             if (member == null) return "mist lid " + number;
             Boolean fixed = verdict != null ? verdict
-                    : ComputeHelpers.established(s.quantifier(), s.threshold(), touch, i, m - i);
+                    : ComputeHelpers.established(s.quantifier(), s.threshold(), touch, touch + fails, m - touch - fails);
             if (fixed != null) {
                 verdict = fixed;
                 if (member.reached()) return "bereikte lid " + number + " na de stop";
@@ -614,9 +619,16 @@ class ReadingsCorpusWitnessTest {
             if (!member.reached()) return "bereikte lid " + number + " niet, waar de stop nog niet vaststond";
             if (member.fault() != null) return null;
             if (Boolean.TRUE.equals(member.value())) touch++;
+            else if (Boolean.FALSE.equals(member.value())) fails++;
+            else if (!member.undetermined())
+                return "lid " + number + " is bereikt zonder fout, en is noch waar, noch onwaar, noch onbepaald: "
+                        + member.value();
         }
-        if (verdict == null) verdict = ComputeHelpers.endVerdict(s.quantifier(), s.threshold(), touch, m);
-        return verdict.equals(x.value()) ? null : "geeft " + x.value() + ", en de stopregel " + verdict;
+        if (verdict == null)
+            verdict = ComputeHelpers.established(s.quantifier(), s.threshold(), touch, touch + fails, m - touch - fails);
+        boolean agrees = verdict == null ? x.undetermined() : verdict.equals(x.value());
+        return agrees ? null : "geeft " + (x.undetermined() ? "onbepaald" : x.value()) + ", en de stopregel "
+                + (verdict == null ? "onbepaald" : verdict);
     }
 
     private static int indexOf(List<Object> nodes, Object node) {
