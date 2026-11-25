@@ -15782,31 +15782,30 @@ let case_only_attributes (doc : document) =
     (List.sort_uniq compare (List.concat_map (fun (_, ot) -> attributes ot) doc.object_types))
 
 (* the standing states of the input members of [i] (ch. 1.5): an attribute the
-   case gives no value is settled leeg where its declaration says that its input
-   is complete (IR-SPEC ch. 2.2; the effective type carries an inherited
-   member with its field) or the session treats every input member as complete,
-   and open otherwise; a characteristic the case does not name stands not to
-   hold where the case names it in characteristicsAbsent, where it is declared
-   complete or the session treats it so, and is open otherwise. A derived member
-   follows its writers ([member_states]). An attribute that only an
-   initialisation writes is input with a default value: without a value, and
-   not complete, it is open (iopen/2), and the initialisation is not at its
-   turn there; otherwise it follows the initialisation as a derived member does *)
+   case gives no value is settled leeg where the case names it in
+   attributesEmpty, where its declaration says that its input is complete
+   (IR-SPEC ch. 2.2; the effective type carries an inherited member with its
+   field) or where the session treats every input member as complete, and open
+   otherwise; a characteristic the case does not name stands not to hold where
+   the case names it in characteristicsAbsent, where it is declared complete or
+   the session treats it so, and is open otherwise. A derived member follows its
+   writers ([member_states]). An attribute that only an initialisation writes is
+   input with a default value: without a value, not in attributesEmpty and not
+   complete, it is open (iopen/2), and the initialisation is not at its turn
+   there; otherwise it follows the initialisation as a derived member does *)
 let input_states ctx (i : Uchar_ref.World.instance) =
   let ot = object_type ctx i.otype in
   let input ~characteristic m = not (written_on ctx ~otype:i.otype ~characteristic m) in
   List.iter
     (fun (a, _) ->
       let filled = Uchar_ref.World.attr i a <> Value.Empty || Uchar_ref.World.timeline i a <> None in
-      let settled =
-        (not filled) && input ~characteristic:false a && (ctx.closed_inputs || List.mem a ot.attribute_complete)
+      let complete =
+        ctx.closed_inputs || List.mem a ot.attribute_complete
+        || Uchar_ref.World.Key.mem (i.label, norm a) ctx.case.world.stated_empty
       in
+      let settled = (not filled) && input ~characteristic:false a && complete in
       if settled then emit ctx "settled(%s,%s)." (str_raw i.label) (str a);
-      if
-        (not filled)
-        && (not (input ~characteristic:false a))
-        && (not (derived_on ctx ~otype:i.otype a))
-        && not (ctx.closed_inputs || List.mem a ot.attribute_complete)
+      if (not filled) && (not (input ~characteristic:false a)) && (not (derived_on ctx ~otype:i.otype a)) && not complete
       then emit ctx "iopen(%s,%s)." (str_raw i.label) (str a);
       if (filled || settled) && List.mem (norm a) ctx.case_only then emit ctx "given(%s,%s)." (str_raw i.label) (str a))
     ot.attributes;

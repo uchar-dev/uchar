@@ -466,17 +466,19 @@ spec bug.
   (`val/3`, `has/2`), settled leeg (`settled/2`, `hasnot/2`) or open,
   which is the absence of all of them. Settled leeg is derived
   positively: for an input member from the case (a member whose
-  declaration says `complete`, `characteristicsAbsent`, and every input
-  member where the session treats it as complete, the runner's
-  `--closed-inputs`); for a member a rule or a defaults group writes, per
+  declaration says `complete`, `attributesEmpty`, `characteristicsAbsent`,
+  and every input member where the session treats it as complete, the
+  runner's `--closed-inputs`); for a member a rule or a defaults group
+  writes, per
   concrete type, from its writers, each of which states where it fills
   nothing (`wnil<i>/1`, `grp<g>_nil/1`: its condition is false, its
   value is settled leeg, or the date lies outside its window). The case's
   value of such a member stands where each computing rule fills nothing
   (`wnila/2`). An attribute that only an initialisation writes, a rule
   or the one default of a defaults group without an exception group, is
-  an input member with a default value: where the case gives it no value
-  and it is not complete, it is open (`iopen/2`). An exception group of
+  an input member with a default value: where the case gives it no value,
+  does not name it in `attributesEmpty`, and it is not complete, it is
+  open (`iopen/2`). An exception group of
   the initialisation default decides above the input, so such a group
   makes the attribute derived. A read asks whether the attribute
   stands (`stands/2`). An attribute whose state the case alone decides

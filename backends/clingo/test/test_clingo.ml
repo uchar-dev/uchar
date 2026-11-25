@@ -20132,13 +20132,15 @@ let ov_stack ?(subject = "Vondst") ?(unordered = false) ?name ?characteristic ?a
     (if unordered then {|, "unordered": true|} else "")
     (String.concat ", " defaults)
 
-(* an object of the case: its attributes (number lexemes), the characteristics
-   it names, those it names in characteristicsAbsent, and its links *)
-let ov_obj ?(ty = "Vondst") ?(chars = []) ?(absent = []) ?(roles = []) label attrs =
+(* an object of the case: its attributes (number lexemes), those it names in
+   attributesEmpty, the characteristics it names, those it names in
+   characteristicsAbsent, and its links *)
+let ov_obj ?(ty = "Vondst") ?(empty = []) ?(chars = []) ?(absent = []) ?(roles = []) label attrs =
   Printf.sprintf
-    {|{"label": "%s", "objectType": "%s", "attributes": {%s}, "roles": {%s}, "characteristics": [%s]%s}|}
+    {|{"label": "%s", "objectType": "%s", "attributes": {%s}%s, "roles": {%s}, "characteristics": [%s]%s}|}
     label ty
     (String.concat ", " (List.map (fun (a, v) -> Printf.sprintf {|"%s": {"number": "%s"}|} a v) attrs))
+    (if empty = [] then "" else Printf.sprintf {|, "attributesEmpty": [%s]|} (String.concat ", " (List.map (Printf.sprintf "%S") empty)))
     (String.concat ", " (List.map (fun (r, ls) -> Printf.sprintf {|"%s": [%s]|} r (String.concat ", " (List.map (Printf.sprintf "%S") ls))) roles))
     (String.concat ", " (List.map (Printf.sprintf "%S") chars))
     (if absent = [] then "" else Printf.sprintf {|, "characteristicsAbsent": [%s]|} (String.concat ", " (List.map (Printf.sprintf "%S") absent)))
@@ -20222,7 +20224,7 @@ let ov_fault_frame ~name ~ir ~case_text code =
      | _ -> false)
 
 let ov_vondst attrs chars = ov_type "Vondst" attrs chars
-let ov_v1 ?chars ?absent attrs = [ ov_obj ?chars ?absent "V1" attrs ]
+let ov_v1 ?empty ?chars ?absent attrs = [ ov_obj ?empty ?chars ?absent "V1" attrs ]
 
 (* "het vindloon van een Vondst is 10 indien zijn taxatie groter is dan 1000"
    and "de uitbetaling van een Vondst is zijn vindloon plus zijn bergloon" *)
@@ -20513,7 +20515,177 @@ let () =
     (fun (attrs, want) ->
       ov_frame ~name:("WV-1.5-case-characteristics-absent (kostbaar " ^ want ^ ")") ~ir
         ~case_text:(ov_case (ov_v1 ~absent:[ "kostbaar" ] attrs) [ ov_char_is "kostbaar" want ]) ())
-    [ ([], "open"); ([ ("taxatie", "50") ], "not"); ([ ("taxatie", "2000") ], "holds") ]
+    [ ([], "open"); ([ ("taxatie", "50") ], "not"); ([ ("taxatie", "2000") ], "holds") ];
+  (* WV-1.5-case-attributes-empty: scalar, non-time-dependent, undimensioned
+     attributes in attributesEmpty (RUNTIME-SEMANTICS ch. 1.5, S20):
+     - case-only input ophaalwens: omitted -> open; in attributesEmpty ->
+       settled leeg (gevuld exception gives way to default 30, leeg rule holds);
+       filled 14 -> exception 14; ordinary document unchanged;
+     - Datum in dagen input "gewenste aanvangsdatum" with name normalisation
+       ("  GEWENSTE   aanvangsdatum ") and duplicate item;
+     - subtype-only writer (Strandvondst writes vindloon, supertype Vondst does
+       not, so vindloon is NOT in ctx.case_only and takes settled/2 directly);
+     - derived attribute (vindloon of the card) in attributesEmpty beside open,
+       non-firing and firing writer;
+     - initialisation-only attribute (unconditional rule, conditional rule with
+       true / false / open condition, and single-default initialisation stack);
+     - complete: true attribute in attributesEmpty;
+     - case-reader refusals: EF-048 (both attributes and attributesEmpty, also
+       under name normalisation), EF-040 (undeclared), time-dependent and
+       dimensioned attributes refused at case load. *)
+  let opslag_ir strict =
+    ov_doc ~strict
+      ~defaults:
+        [ ov_stack ~attribute:"opslagtermijn"
+            [ ov_dflt ~justification:(ov_test "filled" (ov_attr "ophaalwens")) ~consequence:(ov_attr "ophaalwens") ();
+              ov_dflt ~justification:ov_always ~consequence:(ov_lit "30") () ] ]
+      [ ov_vondst [ "ophaalwens"; "opslagtermijn" ] [ "direct vrijgegeven" ] ]
+      [ ov_rule ~name:"direct vrijgegeven" ~cond:(ov_test "empty" (ov_attr "ophaalwens")) "direct vrijgegeven" None ]
+  in
+  ov_frame ~name:"WV-1.5-case-attributes-empty (omitted: open)" ~ir:(opslag_ir true)
+    ~case_text:
+      (ov_case (ov_v1 [])
+         [ ov_attr_is "ophaalwens" "open"; ov_attr_is "opslagtermijn" "open"; ov_char_is "direct vrijgegeven" "open" ]) ();
+  ov_frame ~name:"WV-1.5-case-attributes-empty (stated: gevuld gives way, leeg holds)" ~ir:(opslag_ir true)
+    ~case_text:
+      (ov_case (ov_v1 ~empty:[ "ophaalwens" ] [])
+         [ ov_attr_is "ophaalwens" "leeg"; ov_attr_is "opslagtermijn" "30"; ov_char_is "direct vrijgegeven" "holds" ]) ();
+  ov_frame ~name:"WV-1.5-case-attributes-empty (duplicate item + normalisation)" ~ir:(opslag_ir true)
+    ~case_text:
+      (ov_case (ov_v1 ~empty:[ "ophaalwens"; "  OPHAALWENS " ] [])
+         [ ov_attr_is "ophaalwens" "leeg"; ov_attr_is "opslagtermijn" "30"; ov_char_is "direct vrijgegeven" "holds" ]) ();
+  ov_frame ~name:"WV-1.5-case-attributes-empty (filled: exception decides)" ~ir:(opslag_ir true)
+    ~case_text:
+      (ov_case (ov_v1 [ ("ophaalwens", "14") ])
+         [ ov_attr_is "ophaalwens" "14"; ov_attr_is "opslagtermijn" "14"; ov_char_is "direct vrijgegeven" "not" ]) ();
+  ov_frame ~name:"WV-1.5-case-attributes-empty (without the property, stated)" ~ir:(opslag_ir false)
+    ~case_text:
+      (ov_case (ov_v1 ~empty:[ "ophaalwens" ] [])
+         [ ov_attr_is "ophaalwens" "leeg"; ov_attr_is "opslagtermijn" "30"; ov_char_is "direct vrijgegeven" "holds" ]) ();
+  ov_frame ~name:"WV-1.5-case-attributes-empty (without the property, omitted)" ~ir:(opslag_ir false)
+    ~case_text:
+      (ov_case (ov_v1 [])
+         [ ov_attr_is "ophaalwens" "leeg"; ov_attr_is "opslagtermijn" "30"; ov_char_is "direct vrijgegeven" "holds" ]) ();
+  (* Datum in dagen attribute with spaces/capitals normalisation *)
+  let dt_day = {|{"node": "Date", "precision": "day"}|} in
+  let date_ir =
+    ov_doc
+      ~defaults:
+        [ ov_stack ~attribute:"ingangsdatum"
+            [ ov_dflt ~justification:(ov_test "filled" (ov_attr "gewenste aanvangsdatum"))
+                ~consequence:(ov_attr "gewenste aanvangsdatum") ();
+              ov_dflt ~justification:ov_always
+                ~consequence:(Printf.sprintf {|{"node": "Literal", "value": {"date": "2026-04-01"}, "type": %s, %s}|} dt_day (ov_src "01-04-2026"))
+                () ] ]
+      [ Printf.sprintf {|{"node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten", "attributes": [{"node": "Attribute", "name": "gewenste aanvangsdatum", "datatype": %s}, {"node": "Attribute", "name": "ingangsdatum", "datatype": %s}], "characteristics": []}|} dt_day dt_day ]
+      []
+  in
+  ov_frame ~name:"WV-1.5-case-attributes-empty (date omitted: open)" ~ir:date_ir
+    ~case_text:(ov_case (ov_v1 []) [ ov_attr_is "gewenste aanvangsdatum" "open"; ov_attr_is "ingangsdatum" "open" ]) ();
+  ov_frame ~name:"WV-1.5-case-attributes-empty (date stated normalised: fallback)" ~ir:date_ir
+    ~case_text:
+      (ov_case (ov_v1 ~empty:[ "  GEWENSTE   aanvangsdatum " ] [])
+         [ ov_attr_is "gewenste aanvangsdatum" "leeg";
+           {|{"kind": "attributeValue", "label": "V1", "attribute": "ingangsdatum", "value": {"date": "2026-04-01"}}|} ]) ();
+  (* non-case-only unwritten input attribute (written on subtype Strandvondst only) *)
+  let subtype_ir =
+    ov_doc
+      [ ov_vondst [ "taxatie"; "vindloon"; "bergloon"; "uitbetaling" ] []; ov_type ~supertype:"Vondst" "Strandvondst" [] [] ]
+      [ ov_rule ~ty:"Strandvondst" ~name:"vindloon" ~cond:(ov_cmp "greater" (ov_attr ~ty:"Strandvondst" "taxatie") (ov_lit "1000")) "vindloon" (Some (ov_lit "10"));
+        ov_uitbetaling ]
+  in
+  ov_frame ~name:"WV-1.5-case-attributes-empty (supertype unwritten vs subtype open)" ~ir:subtype_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~empty:[ "vindloon" ] "V1" [ ("bergloon", "3") ];
+           ov_obj ~ty:"Strandvondst" ~empty:[ "vindloon" ] "S1" [ ("bergloon", "3") ] ]
+         [ ov_attr_is "vindloon" "leeg"; ov_attr_is "uitbetaling" "3";
+           ov_attr_is ~label:"S1" "vindloon" "open"; ov_attr_is ~label:"S1" "uitbetaling" "open" ]) ();
+  (* derived attribute in attributesEmpty beside open / non-firing / firing writer *)
+  let derived_ir = ov_doc [ ov_vondst [ "taxatie"; "vindloon"; "bergloon"; "uitbetaling" ] [] ] [ ov_vindloon; ov_uitbetaling ] in
+  List.iter
+    (fun (label_suffix, attrs, want_v, want_u) ->
+      ov_frame ~name:("WV-1.5-case-attributes-empty (derived " ^ label_suffix ^ ")") ~ir:derived_ir
+        ~case_text:
+          (ov_case (ov_v1 ~empty:[ "vindloon" ] (("bergloon", "3") :: attrs))
+             [ ov_attr_is "vindloon" want_v; ov_attr_is "uitbetaling" want_u ]) ())
+    [ ("writer open", [], "open", "open");
+      ("writer fills nothing", [ ("taxatie", "50") ], "leeg", "3");
+      ("writer decides", [ ("taxatie", "2000") ], "10", "13") ];
+  (* initialisation-only attribute in attributesEmpty: unconditional rule, conditional rule, stack *)
+  let init_rule_ir ?cond () =
+    ov_doc [ ov_vondst [ "vangst"; "strandloon" ] [] ]
+      [ ov_rule ~init:true ?cond ~name:"strandloon initialisatie" "strandloon" (Some (ov_lit "5")) ]
+  in
+  ov_frame ~name:"WV-1.5-case-attributes-empty (init rule unconditional)" ~ir:(init_rule_ir ())
+    ~case_text:(ov_case (ov_v1 ~empty:[ "strandloon" ] []) [ ov_attr_is "strandloon" "5" ]) ();
+  List.iter
+    (fun (suffix, attrs, want) ->
+      ov_frame ~name:("WV-1.5-case-attributes-empty (init rule conditional: " ^ suffix ^ ")")
+        ~ir:(init_rule_ir ~cond:(ov_gt "vangst" "1") ())
+        ~case_text:(ov_case (ov_v1 ~empty:[ "strandloon" ] attrs) [ ov_attr_is "strandloon" want ]) ())
+    [ ("true", [ ("vangst", "4") ], "5"); ("false", [ ("vangst", "0") ], "leeg"); ("open", [], "open") ];
+  let init_stack_ir =
+    ov_doc
+      ~defaults:[ ov_stack ~attribute:"strandloon" [ ov_dflt ~init:true ~consequence:(ov_lit "5") () ] ]
+      [ ov_vondst [ "strandloon" ] [] ] []
+  in
+  ov_frame ~name:"WV-1.5-case-attributes-empty (init stack alone)" ~ir:init_stack_ir
+    ~case_text:(ov_case (ov_v1 ~empty:[ "strandloon" ] []) [ ov_attr_is "strandloon" "5" ]) ();
+  (* complete attribute in attributesEmpty *)
+  let complete_ir =
+    ov_doc
+      [ ov_type ~complete:[ "vindloon" ] "Vondst" [ "vindloon"; "bergloon"; "uitbetaling" ] [] ]
+      [ ov_uitbetaling ]
+  in
+  ov_frame ~name:"WV-1.5-case-attributes-empty (complete attribute)" ~ir:complete_ir
+    ~case_text:(ov_case (ov_v1 ~empty:[ "vindloon" ] [ ("bergloon", "3") ]) [ ov_attr_is "vindloon" "leeg"; ov_attr_is "uitbetaling" "3" ]) ();
+  (* case-reader refusals for attributesEmpty *)
+  let check_case_refusal name ~ir ~case_text want =
+    let irf = write_temp ".ir.json" ir in
+    let casef = write_temp ".case.json" case_text in
+    let got =
+      Fun.protect
+        ~finally:(fun () ->
+          (try Sys.remove irf with _ -> ());
+          try Sys.remove casef with _ -> ())
+        (fun () ->
+          let doc = Ir_v0.Loader.load_file irf in
+          try
+            ignore (Uchar_ref.Case.load_file doc casef);
+            Error "loaded"
+          with Uchar_ref.Case.Error { code; params; text } -> Ok (code, params, text))
+    in
+    match got with
+    | Error s -> check (name ^ " (" ^ s ^ ")") false
+    | Ok (code, params, text) -> check (name ^ " (got: " ^ text ^ ")") (want code params text)
+  in
+  check_case_refusal "WV-1.5-case-attributes-empty-refused (EF-048)"
+    ~ir:(opslag_ir true)
+    ~case_text:(ov_case (ov_v1 ~empty:[ "ophaalwens" ] [ ("ophaalwens", "14") ]) [ ov_consistent ])
+    (fun c p _ -> (c, p) = (Some "EF-048", [ ("label", "V1"); ("attribute", "ophaalwens") ]));
+  check_case_refusal "WV-1.5-case-attributes-empty-refused (EF-048 normalised)"
+    ~ir:(opslag_ir true)
+    ~case_text:(ov_case (ov_v1 ~empty:[ "  OPHAALWENS " ] [ ("ophaalwens", "14") ]) [ ov_consistent ])
+    (fun c p _ -> (c, p) = (Some "EF-048", [ ("label", "V1"); ("attribute", "  OPHAALWENS ") ]));
+  check_case_refusal "WV-1.5-case-attributes-empty-refused (EF-040)"
+    ~ir:(opslag_ir true)
+    ~case_text:(ov_case (ov_v1 ~empty:[ "ophaalwenz" ] []) [ ov_consistent ])
+    (fun c p _ -> (c, p) = (Some "EF-040", [ ("label", "V1"); ("name", "ophaalwenz") ]));
+  let temporal_ir =
+    {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters", "attributes": [{"node": "Attribute", "name": "vergoeding", "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}, "timeline": {"node": "TimelineFacet", "granularity": "month", "count": 1}}], "characteristics": []}], "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []}, "rules": {"rules": [], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []}, "diagnostics": []}|}
+  in
+  check_case_refusal "WV-5.7-clingo-refuses-attributesEmpty-on-time-dependent"
+    ~ir:temporal_ir
+    ~case_text:(ov_case ~as_of:{|"2026-01-01"|} [ ov_obj ~ty:"Jutter" ~empty:[ "vergoeding" ] "J1" [] ] [ ov_consistent ])
+    (fun c p t -> c = None && p = [] && Uchar_ref.Case.contains ~needle:"declared time-dependent" t);
+  let dim_ir =
+    {|{"format": "uchar-ir-v1", "model": {"objectTypes": [{"node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters", "attributes": [{"node": "Attribute", "name": "seizoenloon", "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}, "dimensions": ["seizoen"]}], "characteristics": []}], "factTypes": [], "parameters": [], "domains": [], "unitSystems": [], "dimensions": [{"node": "Dimension", "name": "seizoen", "plural": "seizoenen", "preposition": "in", "labels": ["voorjaar", "najaar"]}], "timelines": [], "dayKinds": []}, "rules": {"rules": [], "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []}, "diagnostics": []}|}
+  in
+  check_case_refusal "WV-5.7-clingo-refuses-attributesEmpty-on-dimensioned"
+    ~ir:dim_ir
+    ~case_text:(ov_case [ ov_obj ~ty:"Jutter" ~empty:[ "seizoenloon" ] "J1" [] ] [ ov_consistent ])
+    (fun c p t -> c = None && p = [] && Uchar_ref.Case.contains ~needle:"is dimensioned" t)
 
 (* WV-1.5-filled-test-*, WV-1.5-filled-guard, WV-1.5-negated-filled-test:
    "getaxeerd indien zijn taxatie gevuld is", "ongetaxeerd indien zijn taxatie
