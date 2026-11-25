@@ -1,0 +1,179 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Decides;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+// zijn gewenste afhaal-dag leeg is
+function boolean toets_directeVrijgave(Object $gewensteAfhaalDag) {
+    return ComputeHelpers.emptyTest($gewensteAfhaalDag, Boolean.TRUE);
+}
+
+rule "directe vrijgave"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewensteAfhaalDag : gewensteAfhaalDag )
+    eval( toets_directeVrijgave($gewensteAfhaalDag) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "direct vrijgegeven", true)));
+end
+
+// zijn taxatie groter is dan 1000
+function boolean toets_vindloon(Object $taxatie) {
+    return RegelSpraakRuntime.rsAggVergelijk($taxatie, new java.math.BigDecimal("1000"), ">");
+}
+
+// 10
+function Object waarde_vindloon() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("10"), Integer.valueOf(0), "vindloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vindloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatie : taxatie )
+    eval( toets_vindloon($taxatie) )
+then
+    Object v = waarde_vindloon();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vindloon", ComputeHelpers.designate(v, "vindloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vindloon", false), v, "vindloon"));
+        }
+    }
+end
+
+// zijn taxatie groter is dan 1000
+function boolean toets_bergpremie(Object $taxatie) {
+    return RegelSpraakRuntime.rsAggVergelijk($taxatie, new java.math.BigDecimal("1000"), ">");
+}
+
+// 20
+function Object waarde_bergpremie() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("20"), Integer.valueOf(0), "bergpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "bergpremie"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatie : taxatie )
+    eval( toets_bergpremie($taxatie) )
+then
+    Object v = waarde_bergpremie();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bergpremie", ComputeHelpers.designate(v, "bergpremie")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bergpremie", false), v, "bergpremie"));
+        }
+    }
+end
+
+// 4
+function Object waarde_startpremie() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("4"), Integer.valueOf(0), "bergpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "startpremie"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( bergpremie == null )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("vondst", "bergpremie", false) && writer != "startpremie", subject == $onderwerp ) )
+then
+    Object v = waarde_startpremie();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "startpremie", ComputeHelpers.designate(v, "startpremie")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bergpremie", false), v, "startpremie"));
+        }
+    }
+end
+
+// 5
+function Object waarde_standaardStrandloon() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("5"), Integer.valueOf(0), "strandloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "standaard strandloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( strandloon == null )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("vondst", "strandloon", false) && writer != "standaard strandloon", subject == $onderwerp ) )
+then
+    Object v = waarde_standaardStrandloon();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "standaard strandloon", ComputeHelpers.designate(v, "standaard strandloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "strandloon", false), v, "standaard strandloon"));
+        }
+    }
+end
+
+// zijn gewenste afhaal-dag gevuld is
+function boolean toets_defaultsAVondstOpslagtermijnDefault0(Object $gewensteAfhaalDag) {
+    return ComputeHelpers.emptyTest($gewensteAfhaalDag, Boolean.FALSE);
+}
+
+rule "defaults A:Vondst.opslagtermijn: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $gewensteAfhaalDag : gewensteAfhaalDag )
+    eval( toets_defaultsAVondstOpslagtermijnDefault0($gewensteAfhaalDag) )
+then
+    // zijn gewenste afhaal-dag
+    Object v = $gewensteAfhaalDag;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "opslagtermijn");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.opslagtermijn", ComputeHelpers.designate(passend, "defaults A:Vondst.opslagtermijn")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.opslagtermijn", 0));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "opslagtermijn", false), passend, "defaults A:Vondst.opslagtermijn"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.opslagtermijn", 0));
+        }
+    }
+end
+
+rule "defaults A:Vondst.opslagtermijn: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    not( $hoger_12 : Decides( stack == "defaults A:Vondst.opslagtermijn" && index < 1, subject == $onderwerp ) )
+then
+    // 30
+    Object v = new java.math.BigDecimal("30");
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "opslagtermijn");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.opslagtermijn", ComputeHelpers.designate(passend, "defaults A:Vondst.opslagtermijn")));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.opslagtermijn", 1));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "opslagtermijn", false), passend, "defaults A:Vondst.opslagtermijn"));
+            insertLogical(new Decides($onderwerp, "defaults A:Vondst.opslagtermijn", 1));
+        }
+    }
+end
+

@@ -1668,7 +1668,10 @@ EXPECTED_CHANNEL=(
 # default with a constant in a strict document (RUNTIME-SEMANTICS ch. 1.5, "An open default with a constant", ch. 5.12):
 # waarde (PLAYED 6), kenmerk (PLAYED 9), ongeordend (PLAYED 6), genest (PLAYED 5), deponering (PLAYED 3), fout (PLAYED 2)
 # and initialisatie (PLAYED 9).
-EXPECTED_PLAYED=396
+# 398 with jutterswet-invoer-leeg and jutterswet-invoer-leeg-strikt (card settled-empty-input, 2026-11-25): scalar
+# attributes stated to have no value (attributesEmpty, RUNTIME-SEMANTICS ch. 1.5), in an ordinary and in a strict
+# document (PLAYED 3 and 5).
+EXPECTED_PLAYED=398
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

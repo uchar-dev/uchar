@@ -1,0 +1,108 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "attributesEmpty": [
+          "gewenste afhaal-dag",
+          "vindloon",
+          "bergpremie",
+          "strandloon"
+        ],
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "50"
+          }
+        },
+        "attributesEmpty": [
+          "gewenste afhaal-dag",
+          "vindloon",
+          "bergpremie",
+          "strandloon"
+        ],
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "taxatie": {
+            "number": "2000"
+          }
+        },
+        "attributesEmpty": [
+          "gewenste afhaal-dag",
+          "vindloon",
+          "bergpremie",
+          "strandloon"
+        ],
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "bergpremie"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "strandloon",
+      "value": {
+        "number": "5"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V2",
+      "attribute": "vindloon"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "bergpremie",
+      "value": {
+        "number": "4"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "vindloon",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "bergpremie",
+      "value": {
+        "number": "20"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

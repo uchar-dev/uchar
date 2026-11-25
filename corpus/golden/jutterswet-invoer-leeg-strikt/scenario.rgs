@@ -1,0 +1,94 @@
+Situatie leeg gelaten:
+een Vondst V1
+- de gewenste afhaal-dag is leeg
+- het strandloon is leeg
+- de taxatie is 50
+
+Situatie met opgave:
+een Vondst V1
+- de gewenste afhaal-dag is 14
+- het strandloon is 8
+- de taxatie is 50
+
+Scenario invoer weggelaten
+Gegeven is de volgende situatie:
+een Vondst V1
+- de taxatie is 50
+Met als verwacht resultaat:
+- de gewenste afhaal-dag van V1 staat niet vast
+- de opslagtermijn van V1 staat niet vast
+- of V1 direct vrijgegeven is, staat niet vast
+- het vindloon van V1 is leeg
+- de bergpremie van V1 is 4
+- het strandloon van V1 staat niet vast
+- de gegevens zijn consistent
+
+Scenario invoer vaststaand leeg
+gebaseerd op de situatie leeg gelaten
+Met als verwacht resultaat:
+- de gewenste afhaal-dag van V1 is leeg
+- de opslagtermijn van V1 is 30
+- V1 is direct vrijgegeven
+- het vindloon van V1 is leeg
+- de bergpremie van V1 is 4
+- het strandloon van V1 is 5
+- de gegevens zijn consistent
+
+Scenario leeg vervangen door waarde
+gebaseerd op de situatie leeg gelaten
+Gegeven is de volgende situatie:
+een Vondst V1
+- de gewenste afhaal-dag is 14
+- het strandloon is 8
+Met als verwacht resultaat:
+- de gewenste afhaal-dag van V1 is 14
+- de opslagtermijn van V1 is 14
+- V1 is niet direct vrijgegeven
+- het vindloon van V1 is leeg
+- de bergpremie van V1 is 4
+- het strandloon van V1 is 8
+- de gegevens zijn consistent
+
+Scenario waarde vervangen door leeg
+gebaseerd op de situatie met opgave
+Gegeven is de volgende situatie:
+een Vondst V1
+- de gewenste afhaal-dag is leeg
+- het strandloon is leeg
+Met als verwacht resultaat:
+- de gewenste afhaal-dag van V1 is leeg
+- de opslagtermijn van V1 is 30
+- V1 is direct vrijgegeven
+- het vindloon van V1 is leeg
+- de bergpremie van V1 is 4
+- het strandloon van V1 is 5
+- de gegevens zijn consistent
+
+Scenario afgeleid met is leeg
+Gegeven is de volgende situatie:
+een Vondst V1
+- de gewenste afhaal-dag is leeg
+- het vindloon is leeg
+- de bergpremie is leeg
+- het strandloon is leeg
+een Vondst V2
+- de gewenste afhaal-dag is leeg
+- de taxatie is 50
+- het vindloon is leeg
+- de bergpremie is leeg
+- het strandloon is leeg
+een Vondst V3
+- de gewenste afhaal-dag is leeg
+- de taxatie is 2000
+- het vindloon is leeg
+- de bergpremie is leeg
+- het strandloon is leeg
+Met als verwacht resultaat:
+- het vindloon van V1 staat niet vast
+- de bergpremie van V1 staat niet vast
+- het strandloon van V1 is 5
+- het vindloon van V2 is leeg
+- de bergpremie van V2 is 4
+- het vindloon van V3 is 10
+- de bergpremie van V3 is 20
+- de gegevens zijn consistent

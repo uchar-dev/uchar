@@ -1,0 +1,226 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.LeftOpen;
+import dev.uchar.regelspraak.transpiler.tms.OpenInput;
+import dev.uchar.regelspraak.transpiler.tms.Outcome;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+global OpenInput open_invoer;
+
+// zijn gewenste afhaal-dag leeg is
+function Object oordeel_directeVrijgave(Object $gewensteAfhaalDag, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.emptyTest(ComputeHelpers.readInput($gewensteAfhaalDag, open_invoer, $onderwerp, ElementKey.of("vondst", "gewenste afhaal-dag", false)), Boolean.TRUE), false);
+}
+
+rule "directe vrijgave"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $gewensteAfhaalDag : gewensteAfhaalDag )
+    eval( ComputeHelpers.acts(oordeel_directeVrijgave($gewensteAfhaalDag, open_invoer, $onderwerp)) )
+then
+    if (ComputeHelpers.decides(oordeel_directeVrijgave($gewensteAfhaalDag, open_invoer, $onderwerp))) {
+        insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "direct vrijgegeven", true)));
+    } else {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "direct vrijgegeven", true), "directe vrijgave"));
+    }
+end
+
+// zijn taxatie groter is dan 1000
+function Object oordeel_vindloon(Object $taxatie, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($taxatie, open_invoer, $onderwerp, ElementKey.of("vondst", "taxatie", false)), new java.math.BigDecimal("1000"), ">"), false);
+}
+
+// 10
+function Object waarde_vindloon(Object $taxatie, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.decided(oordeel_vindloon($taxatie, open_invoer, $onderwerp), () -> ComputeHelpers.fitTarget(new java.math.BigDecimal("10"), Integer.valueOf(0), "vindloon", null), null);
+}
+
+rule "vindloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatie : taxatie )
+    eval( ComputeHelpers.acts(oordeel_vindloon($taxatie, open_invoer, $onderwerp)) )
+then
+    Object v = waarde_vindloon($taxatie, open_invoer, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vindloon", ComputeHelpers.designate(v, "vindloon")));
+    } else if (ComputeHelpers.isOpen(v)) {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "vindloon", false), "vindloon"));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vindloon", false), v, "vindloon"));
+        }
+    }
+end
+
+// zijn taxatie groter is dan 1000
+function Object oordeel_bergpremie(Object $taxatie, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> RegelSpraakRuntime.rsAggVergelijk(ComputeHelpers.readInput($taxatie, open_invoer, $onderwerp, ElementKey.of("vondst", "taxatie", false)), new java.math.BigDecimal("1000"), ">"), false);
+}
+
+// 20
+function Object waarde_bergpremie(Object $taxatie, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.decided(oordeel_bergpremie($taxatie, open_invoer, $onderwerp), () -> ComputeHelpers.fitTarget(new java.math.BigDecimal("20"), Integer.valueOf(0), "bergpremie", null), null);
+}
+
+rule "bergpremie"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $taxatie : taxatie )
+    eval( ComputeHelpers.acts(oordeel_bergpremie($taxatie, open_invoer, $onderwerp)) )
+then
+    Object v = waarde_bergpremie($taxatie, open_invoer, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "bergpremie", ComputeHelpers.designate(v, "bergpremie")));
+    } else if (ComputeHelpers.isOpen(v)) {
+        insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "bergpremie", false), "bergpremie"));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bergpremie", false), v, "bergpremie"));
+        }
+    }
+end
+
+// 4
+function Object waarde_startpremie() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("4"), Integer.valueOf(0), "bergpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "startpremie"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( bergpremie == null )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("vondst", "bergpremie", false) && writer != "startpremie", subject == $onderwerp ) )
+    not( $andere_opengelaten : LeftOpen( member == ElementKey.of("vondst", "bergpremie", false) && writer != "startpremie", subject == $onderwerp ) )
+then
+    Object v = waarde_startpremie();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "startpremie", ComputeHelpers.designate(v, "startpremie")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "bergpremie", false), v, "startpremie"));
+        }
+    }
+end
+
+function boolean toets_standaardStrandloon(Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.not(ComputeHelpers.incompleteInput(open_invoer, $onderwerp, ElementKey.of("vondst", "strandloon", false)));
+}
+
+// 5
+function Object waarde_standaardStrandloon() {
+    try {
+        return ComputeHelpers.fitTarget(new java.math.BigDecimal("5"), Integer.valueOf(0), "strandloon", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "standaard strandloon"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( strandloon == null )
+    not( $andere_schrijver : Value( attribute == ElementKey.of("vondst", "strandloon", false) && writer != "standaard strandloon", subject == $onderwerp ) )
+    eval( toets_standaardStrandloon(open_invoer, $onderwerp) )
+then
+    Object v = waarde_standaardStrandloon();
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "standaard strandloon", ComputeHelpers.designate(v, "standaard strandloon")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "strandloon", false), v, "standaard strandloon"));
+        }
+    }
+end
+
+// zijn gewenste afhaal-dag gevuld is
+function Object oordeel_defaultsAVondstOpslagtermijnDefault0(Object $gewensteAfhaalDag, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.judge(() -> ComputeHelpers.emptyTest(ComputeHelpers.readInput($gewensteAfhaalDag, open_invoer, $onderwerp, ElementKey.of("vondst", "gewenste afhaal-dag", false)), Boolean.FALSE), false);
+}
+
+// zijn gewenste afhaal-dag
+function Object afloop_defaultsAVondstOpslagtermijnDefault0(Object $gewensteAfhaalDag, Object open_invoer, Object $onderwerp) {
+    return ComputeHelpers.decided(oordeel_defaultsAVondstOpslagtermijnDefault0($gewensteAfhaalDag, open_invoer, $onderwerp), () -> ComputeHelpers.readInput($gewensteAfhaalDag, open_invoer, $onderwerp, ElementKey.of("vondst", "gewenste afhaal-dag", false)), null);
+}
+
+rule "defaults A:Vondst.opslagtermijn: default 0"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst"), $gewensteAfhaalDag : gewensteAfhaalDag )
+    eval( ComputeHelpers.acts(oordeel_defaultsAVondstOpslagtermijnDefault0($gewensteAfhaalDag, open_invoer, $onderwerp)) )
+then
+    Object v = afloop_defaultsAVondstOpslagtermijnDefault0($gewensteAfhaalDag, open_invoer, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "defaults A:Vondst.opslagtermijn", ComputeHelpers.designate(v, "defaults A:Vondst.opslagtermijn")));
+    } else if (ComputeHelpers.isOpen(v)) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.opslagtermijn", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+    } else if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.opslagtermijn", 0, 0, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Vondst.opslagtermijn: default 1"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( ComputeHelpers.classIs(this, "dev.uchar.regelspraak.facts.Vondst") )
+    not( $hoger_15 : Outcome( stack == "defaults A:Vondst.opslagtermijn" && chain == 0 && position >= 0 && position < 1, subject == $onderwerp ) )
+then
+    // 30
+    Object v = new java.math.BigDecimal("30");
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.opslagtermijn", 0, 1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Vondst.opslagtermijn: eens keten 0"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.opslagtermijn" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        insertLogical(new Outcome($onderwerp, "defaults A:Vondst.opslagtermijn", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED, v, null));
+    }
+end
+
+rule "defaults A:Vondst.opslagtermijn: open keten 0"
+    dialect "mvel"
+when
+    $open_19 : Outcome( stack == "defaults A:Vondst.opslagtermijn" && chain == 0 && position >= 0 && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, $onderwerp : subject )
+then
+    insertLogical(new Outcome($onderwerp, "defaults A:Vondst.opslagtermijn", 0, -1, dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN, null, null));
+end
+
+rule "defaults A:Vondst.opslagtermijn: eens wortel"
+    dialect "mvel"
+when
+    $besluit : Outcome( stack == "defaults A:Vondst.opslagtermijn" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.DECIDED && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject, $waarde : value )
+then
+    Object v = $waarde;
+    if (v != null) {
+        Object passend = ComputeHelpers.fitted(v, Integer.valueOf(0), "opslagtermijn");
+        if (ComputeHelpers.isEvaluationFault(passend)) {
+            insertLogical(new Fault($onderwerp, "defaults A:Vondst.opslagtermijn", ComputeHelpers.designate(passend, "defaults A:Vondst.opslagtermijn")));
+        } else {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "opslagtermijn", false), passend, "defaults A:Vondst.opslagtermijn"));
+        }
+    }
+end
+
+rule "defaults A:Vondst.opslagtermijn: open wortel"
+    dialect "mvel"
+when
+    $open_21 : Outcome( stack == "defaults A:Vondst.opslagtermijn" && kind == dev.uchar.regelspraak.transpiler.tms.Outcome.Kind.OPEN && chain >= 0 && chain < 1 && position == -1, $onderwerp : subject )
+then
+    insertLogical(new LeftOpen($onderwerp, ElementKey.of("vondst", "opslagtermijn", false), "defaults A:Vondst.opslagtermijn"));
+end
+

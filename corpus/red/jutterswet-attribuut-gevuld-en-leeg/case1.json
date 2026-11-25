@@ -1,0 +1,30 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "gewenste afhaal-dag": {
+            "number": "14"
+          }
+        },
+        "attributesEmpty": [
+          "gewenste afhaal-dag"
+        ],
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expectedFault": {
+    "code": "EF-048",
+    "params": {
+      "label": "V1",
+      "attribute": "gewenste afhaal-dag"
+    }
+  }
+}

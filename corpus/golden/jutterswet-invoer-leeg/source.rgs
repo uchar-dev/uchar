@@ -1,0 +1,40 @@
+Objecttype de Vondst (mv: Vondsten)
+    de gewenste afhaal-dag Numeriek (geheel getal);
+    de opslagtermijn Numeriek (geheel getal);
+    is direct vrijgegeven kenmerk (bijvoeglijk);
+    de taxatie Numeriek (geheel getal);
+    het vindloon Numeriek (geheel getal);
+    de bergpremie Numeriek (geheel getal);
+    het strandloon Numeriek (geheel getal);
+
+Regel opslagtermijn
+    geldig altijd
+        De opslagtermijn van een Vondst moet gesteld worden op 30.
+
+Afwijking van opslagtermijn: gewenste afhaal-dag opgegeven
+    geldig altijd
+        De opslagtermijn van een Vondst moet gesteld worden op zijn gewenste afhaal-dag
+        indien zijn gewenste afhaal-dag gevuld is.
+
+Regel directe vrijgave
+    geldig altijd
+        Een Vondst is direct vrijgegeven
+        indien zijn gewenste afhaal-dag leeg is.
+
+Regel vindloon
+    geldig altijd
+        Het vindloon van een Vondst moet gesteld worden op 10
+        indien zijn taxatie groter is dan 1000.
+
+Regel bergpremie
+    geldig altijd
+        De bergpremie van een Vondst moet gesteld worden op 20
+        indien zijn taxatie groter is dan 1000.
+
+Regel startpremie
+    geldig altijd
+        De bergpremie van een Vondst moet geïnitialiseerd worden op 4.
+
+Regel standaard strandloon
+    geldig altijd
+        Het strandloon van een Vondst moet geïnitialiseerd worden op 5.
