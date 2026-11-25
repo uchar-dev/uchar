@@ -497,8 +497,9 @@ stands). An input member — an attribute or a characteristic that nothing but
 an initialisation writes on the object's type: no rule other than an
 initialisation, and no defaults group with a default other than its
 initialisation default or with an exception group — is open where the case
-gives it no value or does not name it, unless its declaration says that its
-input is complete (below). An initialisation — a rule, or the initialisation
+gives it no value and does not state that it has none, or does not name the
+characteristic as holding or as not holding, unless its declaration says that
+its input is complete (**Complete input**, **The case**, below). An initialisation — a rule, or the initialisation
 default of a stack — is the lowest writer of its target, below the input, and
 makes no member derived (below); an exception group of the initialisation
 default decides above the input (ch. 7.9), so a stack with one makes its member
@@ -679,11 +680,13 @@ worden op 5": where the case does not name betwist the strandloon is open; it
 is 5 where betwist holds and where it stands not to hold. An initialisation makes no member
 derived: a member that only an initialisation writes is an input member with a
 default value, open where the case gives it no value, unless its input is
-declared complete; then it is settled leeg above the initialisation, which
+declared complete or the case states that it has no value (**The case**,
+below); then it is settled leeg above the initialisation, which
 gives its value. Example (WV-1.5-initialisation-input): with "het strandloon
 van een Vondst moet geïnitialiseerd worden op 5" alone the strandloon is open
 where the case gives it no value, 7 where the case gives 7, and 5 where it is
-declared complete and the case gives it none.
+declared complete and the case gives it none, or where the case names it in
+`attributesEmpty`.
 
 **A derived member** — one a rule other than an initialisation, or a defaults
 group with a default other than its initialisation default or with an
@@ -932,7 +935,7 @@ initialisation** above. Example (WV-1.5-stack-initialisation-alone): with
 "het strandloon van een Vondst moet geïnitialiseerd worden op 5" as the one
 default of a stack, the strandloon is open where the case gives it no value,
 7 where the case gives 7, and 5 where it is declared complete and the case
-gives it none. An initialisation default with an exception group makes the
+gives it none, or where the case names it in `attributesEmpty`. An initialisation default with an exception group makes the
 member derived, since the exceptions decide above the input (ch. 7.9).
 Example (WV-1.5-stack-initialisation-exception): with that stack and the
 exception "… op 8 indien hij gemeld is", the strandloon is 8 where gemeld
@@ -1213,29 +1216,62 @@ the vindloon of a Vondst that is no Strandvondst is settled leeg without a
 value, and that of a Strandvondst without a taxatie is open. In the document
 without the property the uitbetaling is 3 with the field and without it.
 
-**The case.** Beside the characteristics that hold, the input of an object
-can name the characteristics that stand not to hold (`characteristicsAbsent`,
-ch. 5.7). Such a characteristic is not open, but beside a rule that writes
-it and leaves it open, where it is open as an input value is (above). An expectation `attributeEmpty` holds where the attribute is
-settled leeg, `characteristicAbsent` where the characteristic stands not to
-hold, and `attributeOpen` and `characteristicOpen` where the member is open.
+**The case.** Beside the attributes that have a value (`attributes`) and the
+characteristics that hold (`characteristics`), the input of an object can name
+the scalar, non-time-dependent, undimensioned attributes that stand to have no
+value (`attributesEmpty`, ch. 5.7) and the characteristics that stand not to
+hold (`characteristicsAbsent`, ch. 5.7). Where the member is an unwritten input
+member, an attribute in `attributesEmpty` is settled `leeg` and a
+characteristic in `characteristicsAbsent` stands not to hold, instead of being
+open; where its declaration already says that its input is complete, the field
+changes nothing. Where only an initialisation writes an attribute — an
+initialisation rule, or the one default of a stack without an exception group —
+naming it in `attributesEmpty` settles the input above the initialisation as
+`leeg`, so the initialisation is at its turn, as under `complete` (**An
+initialisation**, **The initialisation of a stack**, above). Beside a writer
+that derives the member, `attributesEmpty` and `characteristicsAbsent` behave
+like any input: the member is settled `leeg` (or stands not to hold) where it
+stands of every writer that it fills nothing, takes its initialisation's value
+where one stands below them, stays open while a writer leaves it open, and
+takes the writer's value (or holds) where a writer decides. An expectation
+`attributeEmpty` holds where the attribute is settled `leeg`,
+`characteristicAbsent` where the characteristic stands not to hold, and
+`attributeOpen` and `characteristicOpen` where the member is open.
 In a document without the property nothing is open: the first two read as
-ch. 1.2 does, the last two hold nowhere, and `characteristicsAbsent` changes
-no outcome. On the input before any rule is evaluated nothing is open either.
+ch. 1.2 does, the last two hold nowhere, and `attributesEmpty` and
+`characteristicsAbsent` change no outcome. On the input before any rule is
+evaluated nothing is open either.
 Example (WV-1.5-case-*): with the vindloon of the examples above and no
 taxatie, `attributeOpen` holds for the vindloon and `attributeEmpty` does
 not; with taxatie 50 the reverse, and so without the property and without a
-taxatie. "De drijftoeslag is 2 indien hij niet drijfhout is" is 2 where the
-case names drijfhout in `characteristicsAbsent` and open where it names it
-nowhere; without the property it is 2 either way. Kostbaar in
-`characteristicsAbsent` is open without a taxatie, stands not to hold at
-taxatie 50, and holds at taxatie 2000. The golden `jutterswet-afleiden-uit-leeg` has a case per
-state.
+taxatie. With "de opslagtermijn van een Vondst moet standaard gesteld worden op
+30", its exception "… op zijn ophaalwens indien zijn ophaalwens gevuld is", and
+"een Vondst is direct vrijgegeven indien zijn ophaalwens leeg is" over an input
+ophaalwens: where the case leaves ophaalwens out, ophaalwens, opslagtermijn and
+direct vrijgegeven are open; where it names ophaalwens in `attributesEmpty`,
+ophaalwens is settled `leeg`, the `gevuld` exception gives way, opslagtermijn
+is 30 and direct vrijgegeven holds; at ophaalwens 14 opslagtermijn is 14 and
+direct vrijgegeven stands not to hold; without the property opslagtermijn is 30
+and direct vrijgegeven holds whether ophaalwens is named in `attributesEmpty`
+or left out. The vindloon of the card named in `attributesEmpty`, with bergloon
+3 on the uitbetaling, is open without a taxatie (and so is the uitbetaling),
+settled `leeg` with uitbetaling 3 at taxatie 50, and 10 with uitbetaling 13 at
+taxatie 2000; the strandloon initialised to 5 named in `attributesEmpty` is 5,
+and with "… op 5 indien zijn vangst groter is dan 1" 5 at vangst 4, settled
+`leeg` at vangst 0 and open without a vangst; the vindloon declared complete on
+the uitbetaling of the first example is settled `leeg` with uitbetaling 3
+whether `attributesEmpty` names it or not. "De drijftoeslag is 2 indien hij
+niet drijfhout is" is 2 where the case names drijfhout in
+`characteristicsAbsent` and open where it names it nowhere; without the
+property it is 2 either way. Kostbaar in `characteristicsAbsent` is open
+without a taxatie, stands not to hold at taxatie 50, and holds at taxatie 2000.
+The golden `jutterswet-afleiden-uit-leeg` has a case per state.
 
-**The two requirements.** *Monotonicity*: giving an open input member a value
-adds outcomes and changes none — an outcome being a value, a settled leeg
-attribute, a characteristic that holds or stands not to hold, or a §9.5 fact —
-without exception. A member declared complete is not open: without a value it
+**The two requirements.** *Monotonicity*: giving an open input member a value —
+or stating in the case that it has no value (`attributesEmpty`) or does not
+hold (`characteristicsAbsent`) — adds outcomes and changes none — an outcome
+being a value, a settled leeg attribute, a characteristic that holds or stands
+not to hold, or a §9.5 fact — without exception. A member declared complete is not open: without a value it
 is settled leeg, and a value the case gives it can change an outcome; that is
 the author's closing at the edge. A value the case gives a derived member is
 no input member's: where every writer fills nothing it stands in place of
@@ -5741,14 +5777,19 @@ cell of the attribute (EF-034) and where the input names one cell twice
 (EF-035), and a scalar or a timeline on a dimensioned attribute is a case
 error (ch. 5.8c). A characteristic the input names as holding
 (`characteristics`) and as not holding (`characteristicsAbsent`, ch. 1.5) is
-refused, since the case states both (EF-047). An `attributeValue`,
-`attributeEmpty` or `attributeOpen` expectation on a time-dependent
-attribute, and a `characteristicPresent`, `characteristicAbsent` or
-`characteristicOpen` expectation or a `characteristicsAbsent` entry on a
-time-dependent characteristic, is a case error without a code: the member has
-a value per period and none of its own, so the case does not fit the
-document's declarations, and a timeline is expected with `attributeTimeline`
-(witnesses `WV-5.7-case-reader-refuses-…` in `ref/test/`).
+refused, since the case states both (EF-047). An attribute the input gives a
+value (`attributes`) and names as having none (`attributesEmpty`, ch. 1.5) is
+refused for the same reason (EF-048); naming one item twice within
+`attributesEmpty` or within `characteristicsAbsent` states the same absence and
+is idempotent. An `attributeValue`, `attributeEmpty` or `attributeOpen`
+expectation or an `attributesEmpty` entry on a time-dependent attribute, an
+`attributesEmpty` entry on a dimensioned attribute, and a
+`characteristicPresent`, `characteristicAbsent` or `characteristicOpen`
+expectation or a `characteristicsAbsent` entry on a time-dependent
+characteristic, is a case error without a code: the member has a value per
+period or per cell and none of its own, so the case does not fit the document's
+declarations, and a timeline is expected with `attributeTimeline` (witnesses
+`WV-5.7-case-reader-refuses-…` in `ref/test/`).
 
 **Divergence by two writers of one target.** Two rules that write one
 attribute and whose conditions both hold on one instance demand, by
@@ -6202,6 +6243,7 @@ parameters, the clause that defines it and its witnesses.
 | EF-045 | a square root or a power with a fractional exponent has an irrational value and no rounding follows | fault | — | ch. 2.2 | `corpus/red/irrational-power-without-rounding` |
 | EF-046 | a part of a date construction is no whole number | fault | — | ch. 3.8 | `corpus/red/date-part-not-whole` |
 | EF-047 | the case input names a characteristic as holding and as not holding | case input | `label`, `characteristic` | ch. 1.5; ch. 5.7 step 3 | `corpus/red/jutterswet-kenmerk-wel-en-niet` |
+| EF-048 | the case input gives an attribute a value and states that it has none | case input | `label`, `attribute` | ch. 1.5; ch. 5.7 step 3 | `corpus/red/jutterswet-attribuut-gevuld-en-leeg` |
 
 The four declined kinds are static properties of the document. Each ends
 as a WF rule (its witness moves to `corpus/negative`) or as a specified

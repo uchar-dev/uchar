@@ -292,14 +292,22 @@ for ref_, doc, want_ok, why in CELL_ROWS:
         sys.stderr.write("FAIL: cell self-test, %r: schema %s it, expected %s\n  %s\n"
                          % (doc, "accepts" if got_ok else "refuses", "accept" if want_ok else "refuse", why))
 # The states of a member in a document with inferFromEmpty false (RUNTIME-SEMANTICS ch. 1.5; card open-values-in-ref,
-# 2026-11-21): the input field that states a characteristic does not hold, and the two expectations of an open member.
-# Only the strict golden carries them, so the shape is held HERE as well, through the same validator; that the names
-# are declared and that no characteristic stands in both input lists are the case readers' (EF-040, EF-047).
+# 2026-11-21; card settled-empty-input, 2026-11-25): the input fields that state an attribute has no value or a
+# characteristic does not hold, and the two expectations of an open member. Only the strict goldens carry them, so the
+# shape is held HERE as well, through the same validator; that the names are declared and that no member stands in both
+# input fields are the case readers' (EF-040, EF-047, EF-048).
 def _v1(**extra):
     inst = {"label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": []}
     inst.update(extra)
     return inst
 STATE_ROWS = [
+    ("#/$defs/instance", _v1(attributesEmpty=["aanvangsdatum"]), True,
+     "an attribute the case states has no value"),
+    ("#/$defs/instance", _v1(attributesEmpty=[]), True, "an empty list states nothing"),
+    ("#/$defs/instance", _v1(attributesEmpty=[""]), False, "an attribute is named"),
+    ("#/$defs/instance", _v1(attributesEmpty="aanvangsdatum"), False, "a list, never a single name"),
+    ("#/$defs/instance", _v1(attributesEmpty={"aanvangsdatum": None}), False,
+     "a list of names, never an object of nulls"),
     ("#/$defs/instance", _v1(characteristicsAbsent=["gemeld"]), True,
      "a characteristic the case states does not hold"),
     ("#/$defs/instance", _v1(characteristicsAbsent=[]), True, "an empty list states nothing, as 'characteristics' may"),

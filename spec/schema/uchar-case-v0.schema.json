@@ -61,9 +61,14 @@
         },
         "objectType": { "type": "string", "minLength": 1 },
         "attributes": {
-          "description": "Attribute name (as declared) to value, in the attribute's declared unit. Absence means empty (leeg), and in a document with inferFromEmpty false, for an attribute no rule writes on the instance's type, open (RUNTIME-SEMANTICS ch. 1.5); an input never carries an explicit empty. A temporal attribute carries either the asOfDate-bucket scalar or its full timeline (the timeline variant) — never both meanings at once. A dimensioned attribute carries its cells (the cells variant) and nothing else; which attributes are dimensioned is the IR's, so the case readers hold that rule (RUNTIME-SEMANTICS ch. 5.8c).",
+          "description": "Attribute name (as declared) to value, in the attribute's declared unit. Absence means empty (leeg), and in a document with inferFromEmpty false, for an attribute nothing but an initialisation writes on the instance's type, open unless 'attributesEmpty' names it or its declaration marks it complete (RUNTIME-SEMANTICS ch. 1.5); an entry here always carries a filled value, while settled empty input is stated in 'attributesEmpty'. A temporal attribute carries either the asOfDate-bucket scalar or its full timeline (the timeline variant) — never both meanings at once. A dimensioned attribute carries its cells (the cells variant) and nothing else; which attributes are dimensioned is the IR's, so the case readers hold that rule (RUNTIME-SEMANTICS ch. 5.8c).",
           "type": "object",
           "additionalProperties": { "oneOf": [ { "$ref": "#/$defs/value" }, { "$ref": "#/$defs/timelineValue" }, { "$ref": "#/$defs/cellsValue" } ] }
+        },
+        "attributesEmpty": {
+          "description": "Scalar, undimensioned attributes the case states have no value (RUNTIME-SEMANTICS ch. 1.5): in a document with inferFromEmpty false such an attribute is settled leeg instead of open (and beside a writer follows the rules for an input value; where only an initialisation writes it, the initialisation is at its turn); in a document without the property the field changes no outcome. Optional. An attribute named here and given a value in 'attributes' (EF-048), one the object type does not declare (EF-040), a time-dependent one and a dimensioned one are refused by the case readers, which see the IR.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
         },
         "roles": {
           "description": "Role name (as declared) to the labels of the linked instances; a to-one role carries exactly one label.",

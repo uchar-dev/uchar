@@ -3595,13 +3595,16 @@ of matching kind or `prioritized_defaults` declared on a supertype of
 on a supertype of `otype`):
 
 - **Unwritten input attribute** (`not (written_on ...)`): when the case
-  gives no value and either `ctx.closed_inputs` holds or the attribute
-  carries `complete: true` on `i.otype`'s effective type
-  (`ot.attribute_complete`), emits `settled(label,a).`; otherwise emits
+  gives no value and `ctx.closed_inputs` holds, the attribute carries
+  `complete: true` on `i.otype`'s effective type
+  (`ot.attribute_complete`), or `attributesEmpty`
+  (`case.world.stated_empty`) names it, emits `settled(label,a).` (and
+  `given(label,a).` where `a` belongs to `ctx.case_only`); otherwise emits
   nothing (open).
 - **Initialisation-only attribute** (`written_on` and
-  `not (derived_on ...)`): when the case gives no value and neither
-  `ctx.closed_inputs` nor `complete` holds, emits `iopen(label,a).`.
+  `not (derived_on ...)`): when the case gives no value and none of
+  `ctx.closed_inputs`, `complete` or `attributesEmpty`
+  (`case.world.stated_empty`) holds, emits `iopen(label,a).`.
 - **Unwritten input characteristic**: when absent from `i.chars` and
   `ctx.closed_inputs`, `ot.characteristic_complete` (`complete: true`),
   or `characteristicsAbsent` (`case.world.stated_absent`) names it, emits
