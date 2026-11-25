@@ -12722,22 +12722,29 @@ let () =
 let () =
   let jutter =
     let ident, o =
-      ot "Jutter" [ ("vergoeding", Some num0); ("loon", Some num0) ] [ "actief"; "erkend" ]
+      ot "Jutter" [ ("vergoeding", Some num0); ("loon", Some num0); ("seizoenloon", Some num0) ] [ "actief"; "erkend" ]
     in
     ( ident,
       { o with
         attribute_granularity = [ ("vergoeding", Some Ir_v0.Ast.Month) ];
+        attribute_dimensions = [ ("seizoenloon", [ Some "seizoen" ]) ];
         characteristic_granularity = [ ("actief", Some Ir_v0.Ast.Month) ] } )
   in
-  let doc = { empty_doc with object_types = [ jutter ] } in
-  let load ?(absent = "") expected =
+  let seizoen =
+    ( "seizoen",
+      { Ir_v0.Ast.dim_name = Some "seizoen"; dim_name_plural = Some "seizoenen"; preposition = Some "in";
+        dim_values = [ Some "voorjaar"; Some "najaar" ] } )
+  in
+  let doc = { empty_doc with object_types = [ jutter ]; dimensions = [ seizoen ] } in
+  let load ?(empty = "") ?(absent = "") expected =
     let f = Filename.temp_file "ref-time-dependent" ".json" in
     let oc = open_out f in
     Printf.fprintf oc
       {|{ "format": "uchar-case-v0", "asOfDate": "2026-01-01",
-  "input": { "instances": [ { "label": "j1", "objectType": "Jutter", "attributes": {},
+  "input": { "instances": [ { "label": "j1", "objectType": "Jutter", "attributes": {}%s,
     "roles": {}, "characteristics": []%s } ], "parameters": {} },
   "expected": [ %s ] }|}
+      (if empty = "" then "" else Printf.sprintf {|, "attributesEmpty": [ %s ]|} empty)
       (if absent = "" then "" else Printf.sprintf {|, "characteristicsAbsent": [ %s ]|} absent)
       expected;
     close_out oc;
@@ -12747,8 +12754,8 @@ let () =
     Sys.remove f;
     r
   in
-  let refused ?absent ident expected ~text =
-    match load ?absent expected with
+  let refused ?empty ?absent ident expected ~text =
+    match load ?empty ?absent expected with
     | Error (c, p, t) -> check (ident ^ " (got: " ^ t ^ ")") (c = None && p = [] && t = text)
     | Ok _ -> check (ident ^ " (loaded)") false
   in
@@ -12786,6 +12793,16 @@ let () =
     ~text:
       "j1.actief: characteristic \"actief\" is declared time-dependent on \"Jutter\": it holds per period, and \
        \"characteristicsAbsent\" states a scalar truth no temporal reader consults";
+  refused "WV-5.7-case-reader-refuses-attributesEmpty-on-time-dependent" ~empty:{|"vergoeding"|}
+    {|{ "kind": "consistent" }|}
+    ~text:
+      "j1.vergoeding: attribute \"vergoeding\" is declared time-dependent on \"Jutter\": it has a value per period, and \
+       \"attributesEmpty\" states a scalar empty no temporal reader consults";
+  refused "WV-5.7-case-reader-refuses-attributesEmpty-on-dimensioned" ~empty:{|"seizoenloon"|}
+    {|{ "kind": "consistent" }|}
+    ~text:
+      "j1.seizoenloon: attribute \"seizoenloon\" is dimensioned on \"Jutter\": its values are per cell, and \
+       \"attributesEmpty\" states a scalar empty";
   refused "WV-5.7-case-reader-refuses-attributeOpen-on-time-dependent"
     {|{ "kind": "attributeOpen", "label": "j1", "attribute": "vergoeding" }|}
     ~text:attribute_sentence;
@@ -14746,20 +14763,31 @@ type ov_input = {
   ov_links : (string * string list) list; (* role key, linked labels *)
 }
 
-type ov_scenario = { sc_name : string; sc_doc : Ir_v0.Ast.document; sc_input : ov_input list }
+type ov_scenario = {
+  sc_name : string;
+  sc_doc : Ir_v0.Ast.document;
+  sc_input : ov_input list;
+  sc_empty : (string * string) list;
+}
 
 let ov_registered : ov_scenario list ref = ref []
 
-let ov_world (doc : Ir_v0.Ast.document) input =
-  List.fold_left
-    (fun w i ->
-      World.add_instance w
-        { (inst i.ov_label i.ov_type (List.map (fun (a, v) -> (a, n v)) i.ov_attrs)) with
-          chars = List.map Ir_v0.Checks.norm i.ov_chars;
-          left_side = case_links doc ~otype:i.ov_type i.ov_links })
-    World.empty input
+let ov_world ?(empty = []) (doc : Ir_v0.Ast.document) input =
+  let w =
+    List.fold_left
+      (fun w i ->
+        World.add_instance w
+          { (inst i.ov_label i.ov_type (List.map (fun (a, v) -> (a, n v)) i.ov_attrs)) with
+            chars = List.map Ir_v0.Checks.norm i.ov_chars;
+            left_side = case_links doc ~otype:i.ov_type i.ov_links })
+      World.empty input
+  in
+  { w with
+    stated_empty =
+      List.fold_left (fun acc (l, a) -> World.Key.add (l, Ir_v0.Checks.norm a) () acc) w.stated_empty empty }
 
-let ov_eval ?(closed_inputs = false) doc input = Eval.evaluate ~closed_inputs (env_of doc) (ov_world doc input)
+let ov_eval ?(closed_inputs = false) ?(empty = []) doc input =
+  Eval.evaluate ~closed_inputs (env_of doc) (ov_world ~empty doc input)
 
 (* the state of an attribute and of a characteristic, as the header says *)
 let ov_attr w label a =
@@ -14796,9 +14824,10 @@ let ov_outcomes (doc : Ir_v0.Ast.document) w =
   @ List.map (fun c -> "channel " ^ c) (ov_channel w)
 
 (* run a scenario, and register it where its document has the property *)
-let ov_run name (doc : Ir_v0.Ast.document) input =
-  if not doc.infer_from_empty then ov_registered := !ov_registered @ [ { sc_name = name; sc_doc = doc; sc_input = input } ];
-  ov_eval doc input
+let ov_run ?(empty = []) name (doc : Ir_v0.Ast.document) input =
+  if not doc.infer_from_empty then
+    ov_registered := !ov_registered @ [ { sc_name = name; sc_doc = doc; sc_input = input; sc_empty = empty } ];
+  ov_eval ~empty doc input
 
 let ov_expect name got want =
   if got = want then check name true else check (Printf.sprintf "%s (got %s, want %s)" name got want) false
@@ -15375,7 +15404,9 @@ let () =
   ov_expect "WV-1.5-initialisation-input (a value)"
     (strandloon "initialisation-input-given" alone (ov_v1 [ ("strandloon", "7") ])) "7";
   ov_expect "WV-1.5-initialisation-input (complete)"
-    (strandloon "initialisation-input-complete" (ov_complete [ "strandloon" ] alone) (ov_v1 [])) "5"
+    (strandloon "initialisation-input-complete" (ov_complete [ "strandloon" ] alone) (ov_v1 [])) "5";
+  ov_expect "WV-1.5-initialisation-input (attributesEmpty)"
+    (ov_attr (ov_run ~empty:[ ("V1", "strandloon") ] "initialisation-input-empty" alone (ov_v1 [])) "V1" "strandloon") "5"
 
 (* WV-1.5-input-per-object: whether a member is input is asked per object.
    "Het vindloon van een Strandvondst is 10 indien zijn taxatie groter is dan
@@ -16141,7 +16172,11 @@ let () =
   in
   row "no-value" (ov_v1 []) "open";
   row "a-value" (ov_v1 [ ("strandloon", "7") ]) "7";
-  row "complete" ~complete:[ "strandloon" ] (ov_v1 []) "5"
+  row "complete" ~complete:[ "strandloon" ] (ov_v1 []) "5";
+  ov_row "WV-1.5-stack-initialisation-alone-attributesEmpty"
+    (fun () -> ov_run ~empty:[ ("V1", "strandloon") ] "stack-initialisation-alone-empty" doc (ov_v1 []))
+    (fun w -> ov_attr w "V1" "strandloon")
+    "5"
 
 (* WV-1.5-stack-initialisation-exception: an initialisation default that
    carries an exception group makes the member derived: its exceptions decide
@@ -17604,8 +17639,10 @@ let () =
   in
   let holds id got = check (id ^ " (got: " ^ String.concat "; " got ^ ")") (got = []) in
   let fails id want got = check (id ^ " (got: " ^ String.concat "; " got ^ ")") (got = [ want ]) in
-  let input ?(absent = "") ?(chars = "") attrs =
-    Printf.sprintf {|"attributes": { %s }, "roles": {}, "characteristics": [ %s ]%s|} attrs chars
+  let input ?(empty = "") ?(absent = "") ?(chars = "") attrs =
+    Printf.sprintf {|"attributes": { %s }%s, "roles": {}, "characteristics": [ %s ]%s|} attrs
+      (if empty = "" then "" else Printf.sprintf {|, "attributesEmpty": [ %s ]|} empty)
+      chars
       (if absent = "" then "" else Printf.sprintf {|, "characteristicsAbsent": [ %s ]|} absent)
   in
   let none = input "" and taxatie v = input (Printf.sprintf {|"taxatie": { "number": "%s" }|} v) in
@@ -17674,6 +17711,157 @@ let () =
   refused "WV-1.5-case-characteristics-absent-refused (undeclared)"
     (Some "EF-040", [ ("label", "V1"); ("name", "drijfhoud") ])
     (input ~absent:{|"drijfhoud"|} "");
+  (* WV-1.5-case-attributes-empty: the symmetric input field for scalar,
+     non-time-dependent, undimensioned attributes (RUNTIME-SEMANTICS ch. 1.5,
+     "The case"). On Vondst:
+     - "de opslagtermijn van een Vondst moet standaard gesteld worden op 30",
+       exception "… op zijn ophaalwens indien zijn ophaalwens gevuld is", and
+       "een Vondst is direct vrijgegeven indien zijn ophaalwens leeg is" over
+       an input ophaalwens;
+     - a Datum in dagen input "gewenste aanvangsdatum", stack "ingangsdatum"
+       default 2026-04-01 with exception "… op zijn gewenste aanvangsdatum
+       indien zijn gewenste aanvangsdatum gevuld is";
+     - the derived vindloon of the card beside uitbetaling = vindloon + bergloon;
+     - an initialisation-only strandloon (unconditional, conditional, and as the
+       sole default of a stack);
+     - a complete vindloon on uitbetaling = vindloon + bergloon;
+     - a writer on a subtype Strandvondst alone;
+     - name normalisation (spaces and capitals) and idempotent duplicate items;
+     - case refusals EF-048 (both attributes and attributesEmpty, also under
+       name normalisation) and EF-040 (undeclared). *)
+  let opslag_doc strict =
+    ov_doc ~strict
+      ~defaults:
+        [ ov_stack ~attribute:"opslagtermijn"
+            [ ov_dflt ~justification:(ov_test Filled "ophaalwens") ~consequence:(ov_ref "ophaalwens") ();
+              ov_dflt ~justification:ov_always ~consequence:(ov_lit "30") () ] ]
+      [ ov_vondst [ "ophaalwens"; "opslagtermijn" ] [ "direct vrijgegeven" ] ]
+      [ ov_attribution "direct vrijgegeven" (ov_test Empty_predicate "ophaalwens") ]
+  in
+  let run_doc ?(strict = true) mk instance expected =
+    let d = mk strict in
+    match load d instance expected with
+    | Error (_, _, text) -> [ "CASE ERROR: " ^ text ]
+    | Ok c -> Case.check c (Eval.evaluate (env_of d) c.world)
+  in
+  let attr_exp a = function
+    | "leeg" -> Printf.sprintf {|{ "kind": "attributeEmpty", "label": "V1", "attribute": "%s" }|} a
+    | "open" -> Printf.sprintf {|{ "kind": "attributeOpen", "label": "V1", "attribute": "%s" }|} a
+    | v -> Printf.sprintf {|{ "kind": "attributeValue", "label": "V1", "attribute": "%s", "value": { "number": "%s" } }|} a v
+  in
+  (* also register the strict ophaalwens scenarios in !ov_registered so
+     WV-1.5-monotone and WV-1.5-preserved exercise sc_empty *)
+  let w_open = ov_run "case-attributes-empty-omitted" (opslag_doc true) (ov_v1 []) in
+  ov_expect "WV-1.5-case-attributes-empty (registered omitted)"
+    (String.concat " " [ ov_attr w_open "V1" "ophaalwens"; ov_attr w_open "V1" "opslagtermijn"; ov_char w_open "V1" "direct vrijgegeven" ])
+    "open open open";
+  let w_settled = ov_run ~empty:[ ("V1", "ophaalwens") ] "case-attributes-empty-stated" (opslag_doc true) (ov_v1 []) in
+  ov_expect "WV-1.5-case-attributes-empty (registered stated)"
+    (String.concat " " [ ov_attr w_settled "V1" "ophaalwens"; ov_attr w_settled "V1" "opslagtermijn"; ov_char w_settled "V1" "direct vrijgegeven" ])
+    "leeg 30 holds";
+  let w_filled = ov_run "case-attributes-empty-filled" (opslag_doc true) (ov_v1 [ ("ophaalwens", "14") ]) in
+  ov_expect "WV-1.5-case-attributes-empty (registered filled)"
+    (String.concat " " [ ov_attr w_filled "V1" "ophaalwens"; ov_attr w_filled "V1" "opslagtermijn"; ov_char w_filled "V1" "direct vrijgegeven" ])
+    "14 14 not";
+  holds "WV-1.5-case-attributes-empty (not named: open)"
+    (run_doc opslag_doc none
+       (String.concat ", " [ attr_exp "ophaalwens" "open"; attr_exp "opslagtermijn" "open"; characteristic ~c:"direct vrijgegeven" "characteristicOpen" ]));
+  holds "WV-1.5-case-attributes-empty (stated: gevuld gives way, leeg holds)"
+    (run_doc opslag_doc (input ~empty:{|"ophaalwens"|} "")
+       (String.concat ", " [ attr_exp "ophaalwens" "leeg"; attr_exp "opslagtermijn" "30"; characteristic ~c:"direct vrijgegeven" "characteristicPresent" ]));
+  fails "WV-1.5-case-attributes-empty (stated, not open)"
+    "V1.ophaalwens = leeg, expected open"
+    (run_doc opslag_doc (input ~empty:{|"ophaalwens"|} "") (attr_exp "ophaalwens" "open"));
+  holds "WV-1.5-case-attributes-empty (filled: exception decides)"
+    (run_doc opslag_doc (input {|"ophaalwens": { "number": "14" }|})
+       (String.concat ", " [ attr_exp "ophaalwens" "14"; attr_exp "opslagtermijn" "14"; characteristic ~c:"direct vrijgegeven" "characteristicAbsent" ]));
+  holds "WV-1.5-case-attributes-empty (without the property, stated)"
+    (run_doc ~strict:false opslag_doc (input ~empty:{|"ophaalwens"|} "")
+       (String.concat ", " [ attr_exp "ophaalwens" "leeg"; attr_exp "opslagtermijn" "30"; characteristic ~c:"direct vrijgegeven" "characteristicPresent" ]));
+  holds "WV-1.5-case-attributes-empty (without the property, not named)"
+    (run_doc ~strict:false opslag_doc none
+       (String.concat ", " [ attr_exp "ophaalwens" "leeg"; attr_exp "opslagtermijn" "30"; characteristic ~c:"direct vrijgegeven" "characteristicPresent" ]));
+  (* optional date input: gewenste aanvangsdatum (spaces + capitals normalisation) *)
+  let date_doc strict =
+    ov_doc ~strict
+      ~defaults:
+        [ ov_stack ~attribute:"ingangsdatum"
+            [ ov_dflt ~justification:(ov_test Filled "gewenste aanvangsdatum") ~consequence:(ov_ref "gewenste aanvangsdatum") ();
+              ov_dflt ~justification:ov_always ~consequence:(litv "2026-04-01" Date_in_days) () ] ]
+      [ ot "Vondst" [ ("gewenste aanvangsdatum", Some Date_in_days); ("ingangsdatum", Some Date_in_days) ] [] ]
+      []
+  in
+  let date_exp a d = Printf.sprintf {|{ "kind": "attributeValue", "label": "V1", "attribute": "%s", "value": { "date": "%s" } }|} a d in
+  holds "WV-1.5-case-attributes-empty (date omitted: open)"
+    (run_doc date_doc none (String.concat ", " [ attr_exp "gewenste aanvangsdatum" "open"; attr_exp "ingangsdatum" "open" ]));
+  holds "WV-1.5-case-attributes-empty (date stated with spaces/capitals: fallback decides)"
+    (run_doc date_doc (input ~empty:{|"  GEWENSTE   aanvangsdatum "|} "")
+       (String.concat ", " [ attr_exp "gewenste aanvangsdatum" "leeg"; date_exp "ingangsdatum" "2026-04-01" ]));
+  holds "WV-1.5-case-attributes-empty (date filled: exception decides)"
+    (run_doc date_doc (input {|"gewenste aanvangsdatum": { "date": "2026-03-15" }|})
+       (date_exp "ingangsdatum" "2026-03-15"));
+  holds "WV-1.5-case-attributes-empty (duplicate item idempotent)"
+    (run_doc opslag_doc (input ~empty:{|"ophaalwens", "OPHAALWENS"|} "")
+       (String.concat ", " [ attr_exp "ophaalwens" "leeg"; attr_exp "opslagtermijn" "30" ]));
+  (* derived attribute in attributesEmpty beside open / non-firing / firing writer *)
+  let derived_doc strict =
+    ov_doc ~strict [ ov_vondst [ "taxatie"; "vindloon"; "bergloon"; "uitbetaling" ] [] ] [ ov_vindloon; ov_uitbetaling ]
+  in
+  holds "WV-1.5-case-attributes-empty (beside a writer that leaves it open)"
+    (run_doc derived_doc (input ~empty:{|"vindloon"|} {|"bergloon": { "number": "3" }|})
+       (String.concat ", " [ attr_exp "vindloon" "open"; attr_exp "uitbetaling" "open" ]));
+  holds "WV-1.5-case-attributes-empty (beside a writer that fills nothing)"
+    (run_doc derived_doc (input ~empty:{|"vindloon"|} {|"taxatie": { "number": "50" }, "bergloon": { "number": "3" }|})
+       (String.concat ", " [ attr_exp "vindloon" "leeg"; attr_exp "uitbetaling" "3" ]));
+  holds "WV-1.5-case-attributes-empty (beside a writer that decides)"
+    (run_doc derived_doc (input ~empty:{|"vindloon"|} {|"taxatie": { "number": "2000" }, "bergloon": { "number": "3" }|})
+       (String.concat ", " [ attr_exp "vindloon" "10"; attr_exp "uitbetaling" "13" ]));
+  (* initialisation-only attribute in attributesEmpty: unconditional, conditional, and stack *)
+  let init_doc cond strict =
+    ov_doc ~strict [ ov_vondst [ "vangst"; "strandloon" ] [] ]
+      [ rr "strandloon initialisatie" Initialisation (Some (ov_ref "strandloon")) (Some (ov_lit "5")) cond ]
+  in
+  holds "WV-1.5-case-attributes-empty (initialisation rule: at its turn)"
+    (run_doc (init_doc None) (input ~empty:{|"strandloon"|} "") (attr_exp "strandloon" "5"));
+  holds "WV-1.5-case-attributes-empty (conditional initialisation: condition true)"
+    (run_doc (init_doc (Some (ov_cmp Greater "vangst" "1")))
+       (input ~empty:{|"strandloon"|} {|"vangst": { "number": "4" }|}) (attr_exp "strandloon" "5"));
+  holds "WV-1.5-case-attributes-empty (conditional initialisation: condition false -> settled leeg)"
+    (run_doc (init_doc (Some (ov_cmp Greater "vangst" "1")))
+       (input ~empty:{|"strandloon"|} {|"vangst": { "number": "0" }|}) (attr_exp "strandloon" "leeg"));
+  holds "WV-1.5-case-attributes-empty (conditional initialisation: condition open -> open)"
+    (run_doc (init_doc (Some (ov_cmp Greater "vangst" "1")))
+       (input ~empty:{|"strandloon"|} "") (attr_exp "strandloon" "open"));
+  let init_stack_doc strict =
+    ov_doc ~strict
+      ~defaults:[ ov_stack ~attribute:"strandloon" [ ov_dflt ~init:true ~consequence:(ov_lit "5") () ] ]
+      [ ov_vondst [ "strandloon" ] [] ] []
+  in
+  holds "WV-1.5-case-attributes-empty (stack initialisation alone: at its turn)"
+    (run_doc init_stack_doc (input ~empty:{|"strandloon"|} "") (attr_exp "strandloon" "5"));
+  (* complete attribute in attributesEmpty: unchanged *)
+  let complete_doc strict =
+    ov_complete [ "vindloon" ]
+      (ov_doc ~strict [ ov_vondst [ "vindloon"; "bergloon"; "uitbetaling" ] [] ] [ ov_uitbetaling ])
+  in
+  holds "WV-1.5-case-attributes-empty (complete attribute: settled leeg with uitbetaling 3)"
+    (run_doc complete_doc (input ~empty:{|"vindloon"|} {|"bergloon": { "number": "3" }|})
+       (String.concat ", " [ attr_exp "vindloon" "leeg"; attr_exp "uitbetaling" "3" ]));
+  (* refusals EF-048 and EF-040 on attributesEmpty *)
+  let refused_attr id want instance =
+    match load (opslag_doc true) instance (attr_exp "ophaalwens" "leeg") with
+    | Ok _ -> check (id ^ " (loaded)") false
+    | Error (code, params, text) -> check (id ^ " (got: " ^ text ^ ")") ((code, params) = want)
+  in
+  refused_attr "WV-1.5-case-attributes-empty-refused (both fields)"
+    (Some "EF-048", [ ("label", "V1"); ("attribute", "ophaalwens") ])
+    (input ~empty:{|"ophaalwens"|} {|"ophaalwens": { "number": "14" }|});
+  refused_attr "WV-1.5-case-attributes-empty-refused (both fields, normalised)"
+    (Some "EF-048", [ ("label", "V1"); ("attribute", "  OPHAALWENS ") ])
+    (input ~empty:{|"  OPHAALWENS "|} {|"ophaalwens": { "number": "14" }|});
+  refused_attr "WV-1.5-case-attributes-empty-refused (undeclared)"
+    (Some "EF-040", [ ("label", "V1"); ("name", "ophaalwenz") ])
+    (input ~empty:{|"ophaalwenz"|} "");
   (* WV-1.5-case-raw-input *)
   fails "WV-1.5-case-raw-input (attributeOpen)" "V1.vindloon = leeg, expected open"
     (run ~raw:true none (attribute "attributeOpen"));
@@ -17706,16 +17894,41 @@ let on_object form subject cells = List.map (fun c -> Printf.sprintf "%s \"%s\" 
 
 (* The readings of a document built here, written to the wire and read back, so
    that its forms carry their pointers, on the input of its objects *)
-let ov_readings (doc : Ir_v0.Ast.document) input =
+let ov_readings ?(empty = []) (doc : Ir_v0.Ast.document) input =
   let module Emit = Ir_v0.Emit.Make (struct
     let producer = "ref suite"
   end) in
   let json = Emit.document doc in
   let doc = Ir_v0.Loader.document ~reader:Ir_v0.Loader.Executor json in
   let env = env_of doc in
-  let world0 = ov_world doc input in
+  let world0 = ov_world ~empty doc input in
   let final = Eval.evaluate env world0 in
   Reading.lines env ~world:final (Reading.readings json env ~world0 ~world:final)
+
+(* WV-5.12-attributes-empty: readings and end state when an input or
+   initialisation-only attribute stands in attributesEmpty (ch. 1.5, 5.12,
+   5.12a) *)
+let () =
+  let init_doc =
+    ov_doc [ ov_vondst [ "strandloon" ] [] ]
+      [ rr "strandloon initialisatie" Initialisation (Some (ov_ref "strandloon")) (Some (ov_lit "5")) None ]
+  in
+  lines_equal "WV-5.12-attributes-empty (init rule omitted: DISPLACED)"
+    (ov_readings init_doc (ov_v1 []))
+    (on_object (rule_form 0) "V1" [ "DISPLACED" ]);
+  lines_equal "WV-5.12-attributes-empty (init rule in attributesEmpty: HOLDS)"
+    (ov_readings ~empty:[ ("V1", "strandloon") ] init_doc (ov_v1 []))
+    (on_object (rule_form 0) "V1" [ "0 Literal 5"; "HOLDS" ]);
+  let end_state ?(empty = []) doc =
+    let env = env_of doc in
+    End_state.lines env ~world:(Eval.evaluate env (ov_world ~empty doc (ov_v1 [])))
+  in
+  lines_equal "WV-5.12a-attributes-empty (init rule omitted)"
+    (end_state init_doc)
+    [ "object \"V1\" \"Vondst\""; "attribute \"V1\" \"strandloon\" open" ];
+  lines_equal "WV-5.12a-attributes-empty (init rule in attributesEmpty)"
+    (end_state ~empty:[ ("V1", "strandloon") ] init_doc)
+    [ "object \"V1\" \"Vondst\""; "attribute \"V1\" \"strandloon\" 5" ]
 
 (* WV-5.12-afleiden-uit-leeg: the chapter's worked example of open values, the
    golden of ch. 1.5. Without a taxatie the comparison of kostbaar is
@@ -18157,12 +18370,12 @@ let () =
   let compared = ref 0 in
   List.iter
     (fun sc ->
-      let full = ov_outcomes sc.sc_doc (ov_eval sc.sc_doc sc.sc_input) in
+      let full = ov_outcomes sc.sc_doc (ov_eval ~empty:sc.sc_empty sc.sc_doc sc.sc_input) in
       List.iter
         (fun (i : ov_input) ->
-          let without what input =
+          let without ?(empty = sc.sc_empty) what input =
             incr compared;
-            let reduced = ov_outcomes sc.sc_doc (ov_eval sc.sc_doc input) in
+            let reduced = ov_outcomes sc.sc_doc (ov_eval ~empty sc.sc_doc input) in
             let added = List.sort compare (List.filter (fun l -> not (List.mem l full)) reduced) in
             let id = Printf.sprintf "WV-1.5-monotone %s without %s" sc.sc_name what in
             if added = [] then check id true else check (id ^ " (adds " ^ String.concat "; " added ^ ")") false
@@ -18178,6 +18391,11 @@ let () =
                   ({ i with ov_attrs = List.filter (fun (a', v') -> (a', v') <> (a, v)) i.ov_attrs } :: others))
             i.ov_attrs;
           List.iter
+            (fun (l, a) ->
+              if l = i.ov_label && open_input ~characteristic:false a then
+                without ~empty:(List.filter (( <> ) (l, a)) sc.sc_empty) (l ^ "." ^ a ^ " (attributesEmpty)") sc.sc_input)
+            sc.sc_empty;
+          List.iter
             (fun k ->
               if open_input ~characteristic:true k then
                 without (i.ov_label ^ " " ^ k) ({ i with ov_chars = List.filter (( <> ) k) i.ov_chars } :: others))
@@ -18192,9 +18410,9 @@ let () =
 let () =
   List.iter
     (fun sc ->
-      let strict = ov_outcomes sc.sc_doc (ov_eval ~closed_inputs:true sc.sc_doc sc.sc_input) in
+      let strict = ov_outcomes sc.sc_doc (ov_eval ~closed_inputs:true ~empty:sc.sc_empty sc.sc_doc sc.sc_input) in
       let ordinary_doc = { sc.sc_doc with infer_from_empty = true } in
-      let ordinary = ov_outcomes ordinary_doc (ov_eval ordinary_doc sc.sc_input) in
+      let ordinary = ov_outcomes ordinary_doc (ov_eval ~empty:sc.sc_empty ordinary_doc sc.sc_input) in
       check ("WV-1.5-preserved " ^ sc.sc_name) (strict = ordinary))
     !ov_registered
 

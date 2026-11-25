@@ -144,6 +144,12 @@ type t = {
   opened : unit Member.t;
       (* the members a standing outcome leaves open: the union of their
          [opened] *)
+  stated_empty : unit Key.t;
+      (* by (label, norm attribute): the attributes the case states have no
+         value (`attributesEmpty`), set by the case reader. The case settles
+         their input as `leeg`: none of them is open input ([open_input_attr]),
+         and beside a writer that leaves it open it is open as an input value
+         is ([attr_open]) *)
   stated_absent : unit Key.t;
       (* by (label, norm characteristic): the characteristics the case states
          do not hold (`characteristicsAbsent`), set by the case reader. The
@@ -154,7 +160,8 @@ type t = {
 let empty =
   { instances = SMap.empty; order = []; channel = []; outcomes = []; evaluating = []; owners = Key.empty;
     holders = Key.empty; mints = SMap.empty; written = Key.empty; char_writes = Key.empty; parts = Key.empty;
-    open_input = Member.empty; opening = []; opened = Member.empty; stated_absent = Key.empty }
+    open_input = Member.empty; opening = []; opened = Member.empty; stated_empty = Key.empty;
+    stated_absent = Key.empty }
 
 let add_instance w inst =
   if SMap.mem inst.label w.instances then
@@ -202,6 +209,12 @@ let timeline i name = SMap.find_opt (norm name) i.tls
    judgement or one value ends (Eval) *)
 exception Open_read of { label : string; member : member }
 
+(* whether the attribute [attr] of [label] is open input: then the input, the
+   writer above every initialisation of it, does not stand to fill nothing
+   (ch. 1.5); naming it in `attributesEmpty` settles the input as `leeg` *)
+let open_input_attr w ~label ~attr =
+  Member.mem (label, attribute attr) w.open_input && not (Key.mem (label, norm attr) w.stated_empty)
+
 (* The state of a member, the one place a read and the end check of a case get
    it. An attribute without a value is open where it is open input or a
    standing outcome leaves it open, and settled leeg otherwise. One with a
@@ -212,7 +225,7 @@ exception Open_read of { label : string; member : member }
    A value counts as present with a timeline as well *)
 let attr_open w (i : instance) name =
   let m = (i.label, attribute name) in
-  if attr i name = Value.Empty && timeline i name = None then Member.mem m w.open_input || Member.mem m w.opened
+  if attr i name = Value.Empty && timeline i name = None then open_input_attr w ~label:i.label ~attr:name || Member.mem m w.opened
   else Member.mem m w.opened && not (Key.mem (i.label, norm name) w.owners)
 
 (* A characteristic that holds is never open: a writer can only grant it. One
@@ -724,11 +737,6 @@ let close_evaluation w ~form ~at =
    deposited and left open is gone *)
 let fault_evaluation w ~form ~at fault =
   set_outcome w ~form ~at ~deposits:[] ~fault:(Some fault) ~opened:[]
-
-(* whether the attribute [attr] of [label] is open input: then the input, the
-   writer above every initialisation of it, does not stand to fill nothing
-   (ch. 1.5) *)
-let open_input_attr w ~label ~attr = Member.mem (label, attribute attr) w.open_input
 
 (* whether the attribute [attr] of [label] is open beside the initialisation
    [form]: open input, or left open by the standing outcome of another form.

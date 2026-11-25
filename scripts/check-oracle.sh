@@ -295,11 +295,12 @@ PYEOF
     status=1
 fi
 
-# check 6: monotonicity (RUNTIME-SEMANTICS ch. 1.5, "The two requirements"): giving an open input member a value adds
-# outcomes and changes none, without exception. Per golden that check 5 carries (every case of its strict copy plays)
-# and per golden that carries the property itself, per case file and per input the case gives (an attribute value, a
-# characteristic in `characteristics` or in `characteristicsAbsent`), the case without that input runs beside the case
-# as it is, both with `runner --end-state`: the end state of ch. 5.12a with its open members. The run without the input
+# check 6: monotonicity (RUNTIME-SEMANTICS ch. 1.5, "The two requirements"): giving an open input member a value — or
+# stating that it has no value (`attributesEmpty`) or does not hold (`characteristicsAbsent`) — adds outcomes and
+# changes none, without exception. Per golden that check 5 carries (every case of its strict copy plays) and per golden
+# that carries the property itself, per case file and per input the case gives (an attribute in `attributes` or in
+# `attributesEmpty`, a characteristic in `characteristics` or in `characteristicsAbsent`), the case without that input
+# runs beside the case as it is, both with `runner --end-state`: the end state of ch. 5.12a with its open members. The run without the input
 # keeps every outcome of its end state in the other: each of its lines that is not open stands there; a member it has
 # no line for (settled leeg, or standing not to hold) has none there either; a link or an object the other adds lies on
 # a relation it has open. What the member left out is without its value is read off the document, not off ref's end
@@ -336,6 +337,46 @@ for line in open(os.path.join(work, "tasks.tsv"), encoding="utf-8"):
     entry = closed.setdefault(name, [copy_path, True])
     entry[1] = entry[1] and ok
 strict = [l.strip() for l in open(os.path.join(work, "strict.txt"), encoding="utf-8") if l.strip()]
+def drop_inputs(case):
+    out = []
+    for i, inst in enumerate(case["input"]["instances"]):
+        label = inst["label"]
+        for a in (inst.get("attributes") or {}):
+            out.append(("attribute", label, a,
+                        lambda c, i=i, a=a: c["input"]["instances"][i]["attributes"].pop(a)))
+        for a in (inst.get("attributesEmpty") or []):
+            out.append(("attribute", label, a,
+                        lambda c, i=i, a=a: c["input"]["instances"][i]["attributesEmpty"].remove(a)))
+        for field in ("characteristics", "characteristicsAbsent"):
+            for k in (inst.get(field) or []):
+                out.append(("characteristic", label, k,
+                            lambda c, i=i, field=field, k=k: c["input"]["instances"][i][field].remove(k)))
+    return out
+
+
+sample_case = {"input": {"instances": [{"label": "V1", "objectType": "Vondst",
+                                        "attributes": {"gewicht": {"number": "10"}},
+                                        "attributesEmpty": ["ophaalwens"], "roles": {},
+                                        "characteristics": ["gemeld"],
+                                        "characteristicsAbsent": ["drijfhout"]}]}}
+got_drops = []
+for kind, label, member, drop in drop_inputs(sample_case):
+    sample_copy = copy.deepcopy(sample_case)
+    drop(sample_copy)
+    inst0 = sample_copy["input"]["instances"][0]
+    got_drops.append((kind, label, member, list(inst0["attributes"]), list(inst0["attributesEmpty"]),
+                      list(inst0["characteristics"]), list(inst0["characteristicsAbsent"])))
+want_drops = [
+    ("attribute", "V1", "gewicht", [], ["ophaalwens"], ["gemeld"], ["drijfhout"]),
+    ("attribute", "V1", "ophaalwens", ["gewicht"], [], ["gemeld"], ["drijfhout"]),
+    ("characteristic", "V1", "gemeld", ["gewicht"], ["ophaalwens"], [], ["drijfhout"]),
+    ("characteristic", "V1", "drijfhout", ["gewicht"], ["ophaalwens"], ["gemeld"], []),
+]
+if got_drops != want_drops:
+    sys.stderr.write("check-oracle: FAIL (monotonicity) — drop_inputs self-test got %r, want %r\n"
+                     % (got_drops, want_drops))
+    sys.exit(1)
+
 os.makedirs(os.path.join(work, "mono", "cases"))
 with open(os.path.join(work, "mono", "tasks.tsv"), "w", encoding="utf-8") as tasks:
     for n, (golden, cases) in enumerate(by_golden.items(), 1):
@@ -351,23 +392,14 @@ with open(os.path.join(work, "mono", "tasks.tsv"), "w", encoding="utf-8") as tas
             tasks.write("f%d.%d\t%s\t%s\t-\t%s\t%s\n" % (n, m, name, case_file, doc, case_path))
             with open(case_path, encoding="utf-8") as f:
                 case = json.load(f, object_pairs_hook=collections.OrderedDict)
-            j = 0
-            for i, inst in enumerate(case["input"]["instances"]):
-                left_out = [("attribute", a, lambda c, i=i, a=a: c["input"]["instances"][i]["attributes"].pop(a))
-                            for a in (inst.get("attributes") or {})]
-                for field in ("characteristics", "characteristicsAbsent"):
-                    left_out += [("characteristic", k,
-                                  lambda c, i=i, field=field, k=k: c["input"]["instances"][i][field].remove(k))
-                                 for k in (inst.get(field) or [])]
-                for kind, member, drop in left_out:
-                    j += 1
-                    reduced = copy.deepcopy(case)
-                    drop(reduced)
-                    path = os.path.join(work, "mono", "cases", "%d.%d.%d.json" % (n, m, j))
-                    with open(path, "w", encoding="utf-8") as f:
-                        json.dump(reduced, f, ensure_ascii=False)
-                    tasks.write("v%d.%d.%d\t%s\t%s\t%s|%s|%s\t%s\t%s\n"
-                                % (n, m, j, name, case_file, kind, inst["label"], member, doc, path))
+            for j, (kind, label, member, drop) in enumerate(drop_inputs(case), 1):
+                reduced = copy.deepcopy(case)
+                drop(reduced)
+                path = os.path.join(work, "mono", "cases", "%d.%d.%d.json" % (n, m, j))
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump(reduced, f, ensure_ascii=False)
+                tasks.write("v%d.%d.%d\t%s\t%s\t%s|%s|%s\t%s\t%s\n"
+                            % (n, m, j, name, case_file, kind, label, member, doc, path))
 PYEOF
 then
     echo 'check-oracle: FAIL (monotonicity: the cases without one input could not be written)' >&2
@@ -462,12 +494,16 @@ V = 'attribute "V1" '
 rows = [
     ("equal states keep everything", ['object "V1" "Vondst"', V + '"vindloon" 10'], ['object "V1" "Vondst"', V + '"vindloon" 10'], True),
     ("an open member may become a value", ['object "V1" "Vondst"', V + '"vindloon" open'], ['object "V1" "Vondst"', V + '"vindloon" 10'], True),
+    ("an open member may become settled leeg", ['object "V1" "Vondst"', V + '"vindloon" open'], ['object "V1" "Vondst"'], True),
+    ("settled leeg, then open", ['object "V1" "Vondst"'], ['object "V1" "Vondst"', V + '"vindloon" open'], False),
     ("a value lost", ['object "V1" "Vondst"', V + '"vindloon" 10'], ['object "V1" "Vondst"', V + '"vindloon" open'], False),
     ("a value changed", ['object "V1" "Vondst"', V + '"vindloon" 10'], ['object "V1" "Vondst"', V + '"vindloon" 5'], False),
     ("settled leeg, then a value", ['object "V1" "Vondst"'], ['object "V1" "Vondst"', V + '"vindloon" 10'], False),
     ("stands not to hold, then holds", ['object "V1" "Vondst"'], ['object "V1" "Vondst"', 'characteristic "V1" "kostbaar"'], False),
     ("an open characteristic may hold", ['object "V1" "Vondst"', 'characteristic "V1" "kostbaar" open'],
      ['object "V1" "Vondst"', 'characteristic "V1" "kostbaar"'], True),
+    ("an open characteristic may stand not to hold", ['object "V1" "Vondst"', 'characteristic "V1" "kostbaar" open'],
+     ['object "V1" "Vondst"'], True),
     ("a fact lost", ['channel "r" "V1" EF-005'], [], False),
     ("a fact added", [], ['channel "r" "V1" EF-005'], True),
     ("a link on an open relation", ['object "J1" "Jutter"', 'link "vangst" "jutter" "J1" "vondst" open'],

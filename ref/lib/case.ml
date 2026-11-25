@@ -525,7 +525,7 @@ let cells_of_json (doc : document) ~label ~attr ~(dims : string list) (decl : da
        [] cells);
   cells
 
-let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance * string list =
+let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance * string list * string list =
   let kvs = obj ~at j in
   let label = str_field ~at kvs "label" in
   (* the schema asks minLength 1, and every later position of this instance
@@ -592,6 +592,36 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance * st
         | None -> undeclared name "attribute %S is not declared on %S" name otype_name)
       (SMap.empty, SMap.empty)
       (obj_field ~at:label kvs "attributes")
+  in
+  (* the attributes the case states have no value (RUNTIME-SEMANTICS ch. 1.5):
+     declared, scalar and undimensioned, and never also in "attributes", which
+     would state that one attribute has a value and has none *)
+  let empty_attrs =
+    match List.assoc_opt "attributesEmpty" kvs with
+    | None -> []
+    | Some j ->
+        List.mapi
+          (fun i aj ->
+            let a = str ~at:(Printf.sprintf "%s.attributesEmpty[%d]" label i) aj in
+            if not (Ir_v0.Checks.has_attr ot a) then
+              undeclared a "attribute %S is not declared on %S" a otype_name;
+            if Ir_v0.Checks.attr_dimensions ot a <> None then
+              fail
+                "%s.%s: attribute %S is dimensioned on %S: its values are per cell, and \
+                 \"attributesEmpty\" states a scalar empty"
+                label a a otype_name;
+            if Ir_v0.Checks.find_ci ot.attribute_granularity a <> None then
+              fail
+                "%s.%s: attribute %S is declared time-dependent on %S: it has a value per period, and \
+                 \"attributesEmpty\" states a scalar empty no temporal reader consults"
+                label a a otype_name;
+            if SMap.mem (norm a) attrs || SMap.mem (norm a) tls then
+              failc ~params:[ ("label", label); ("attribute", a) ] "EF-048"
+                "%s: attribute %S is named in \"attributes\" and in \"attributesEmpty\": the \
+                 case gives it a value and states that it has none"
+                label a;
+            norm a)
+          (list_ ~at:(child label "attributesEmpty") j)
   in
   let chars =
     List.mapi
@@ -733,7 +763,7 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance * st
           SMap.empty
           (obj ~at:(child label "characteristicTimelines") j)
   in
-  ({ label; otype = otype_name; attrs; chars; left_side; tls; ctls }, absent)
+  ({ label; otype = otype_name; attrs; chars; left_side; tls; ctls }, empty_attrs, absent)
 
 (* ch. 5.7a: a supplied role link ESTABLISHES the relation instance, and
    BOTH roles read it — a relation is symmetric, so the reader arriving
@@ -1194,7 +1224,7 @@ let load_file (doc : document) path : t =
   let world =
     List.fold_left
       (fun (w : World.t) (n, ij) ->
-        let i, absent = load_instance doc ~at:(Printf.sprintf "input.instances[%d]" n) ij in
+        let i, empty_attrs, absent = load_instance doc ~at:(Printf.sprintf "input.instances[%d]" n) ij in
         (* label uniqueness is this loader's cross-check (see the header);
            left to the world's own guard it surfaced as an evaluation
            fault, exit 1, from a case that never got to evaluation *)
@@ -1203,6 +1233,7 @@ let load_file (doc : document) path : t =
         let w = World.add_instance w i in
         {
           w with
+          stated_empty = List.fold_left (fun acc a -> World.Key.add (i.label, a) () acc) w.stated_empty empty_attrs;
           stated_absent = List.fold_left (fun acc c -> World.Key.add (i.label, c) () acc) w.stated_absent absent;
         })
       World.empty
