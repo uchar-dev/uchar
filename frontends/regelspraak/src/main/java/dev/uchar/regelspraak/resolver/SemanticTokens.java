@@ -1310,7 +1310,7 @@ public final class SemanticTokens {
         ObjectType ot = objectTypeOf(inst);
         for (ToewijzingContext t : inst.toewijzing()) {
             if (t instanceof AttribuutLeegToewijzingContext a) {
-                if (!DefinitionResolver.recovered(a)) member(range(a.toewijzingNaam()), Kind.ATTRIBUTE, ot);
+                member(range(a.toewijzingNaam()), Kind.ATTRIBUTE, ot);
             } else if (t instanceof AttribuutToewijzingContext a) {
                 member(range(a.toewijzingNaam()), Kind.ATTRIBUTE, ot);
             }

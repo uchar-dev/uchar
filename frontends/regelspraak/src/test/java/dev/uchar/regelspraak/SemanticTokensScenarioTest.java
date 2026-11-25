@@ -339,19 +339,19 @@ class SemanticTokensScenarioTest {
 
                 Objecttype de Vondst (mv: Vondsten)
                     de afhaaldatum Datum in dagen;
-                    het leeg gewicht Numeriek (geheel getal);
+                    het bruto gewicht Numeriek (geheel getal);
                     het bergloon Numeriek (geheel getal) (mag opgegeven worden);
 
                 Regel bergloon
                     geldig altijd
-                        Het bergloon van een Vondst moet berekend worden als zijn leeg gewicht maal 2.
+                        Het bergloon van een Vondst moet berekend worden als zijn bruto gewicht maal 2.
                 """;
         String test = """
                 Scenario leeg in situatie
                 Gegeven is de volgende situatie:
                 een Vondst V1
                 - de afhaaldatum is leeg
-                - het leeg gewicht is leeg
+                - het bruto gewicht is leeg
                 - het opgegeven bergloon is leeg
                 Met als verwacht resultaat:
                 - de gegevens zijn consistent
@@ -371,7 +371,7 @@ class SemanticTokensScenarioTest {
         }
         assertEquals(List.of("- punctuation", "de keyword", "afhaaldatum attribute 4", "is keyword", "leeg keyword"),
                 lines.get(4));
-        assertEquals(List.of("- punctuation", "het keyword", "leeg gewicht attribute 5", "is keyword", "leeg keyword"),
+        assertEquals(List.of("- punctuation", "het keyword", "bruto gewicht attribute 5", "is keyword", "leeg keyword"),
                 lines.get(5));
         assertEquals(List.of("- punctuation", "het keyword", "opgegeven bergloon attribute 6", "is keyword",
                 "leeg keyword"), lines.get(6));

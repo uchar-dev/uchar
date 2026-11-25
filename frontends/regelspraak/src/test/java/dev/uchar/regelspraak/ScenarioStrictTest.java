@@ -1098,7 +1098,7 @@ class ScenarioStrictTest {
         }
     }
 
-    @Test void attributesEmpty_stands_between_attributes_and_roles_and_names_with_leeg_parse_clean() {
+    @Test void attributesEmpty_stands_between_attributes_and_roles() {
         String keyOrder = NEE + MODEL + """
                 Objecttype de Jutter (mv: Jutters) (bezield)
 
@@ -1131,30 +1131,5 @@ class ScenarioStrictTest {
             assertTrue(pos > prev, () -> key + " out of order in:\n" + v1Slice);
             prev = pos;
         }
-
-        String leegInName = NEE + """
-                Objecttype de Vondst (mv: Vondsten)
-                    het leeg gewicht Numeriek (geheel getal);
-                    is vrijgesteld kenmerk (bijvoeglijk);
-
-                Regel vrijstelling
-                    geldig altijd
-                        Een Vondst is vrijgesteld indien zijn leeg gewicht leeg is.
-
-                Scenario leeg in naam
-                Gegeven is de volgende situatie:
-                een Vondst V1
-                - het leeg gewicht is 10
-                een Vondst V2
-                - het leeg gewicht is leeg
-                Met als verwacht resultaat:
-                - het leeg gewicht van V1 is 10
-                - V1 is niet vrijgesteld
-                - het leeg gewicht van V2 is leeg
-                - V2 is vrijgesteld
-                """;
-        String leegCase = CaseEmitter.emit(only(leegInName));
-        assertTrue(leegCase.contains("\"leeg gewicht\": {\n            \"number\": \"10\"\n          }"), leegCase);
-        assertTrue(leegCase.contains("\"attributesEmpty\": [\n          \"leeg gewicht\"\n        ]"), leegCase);
     }
 }

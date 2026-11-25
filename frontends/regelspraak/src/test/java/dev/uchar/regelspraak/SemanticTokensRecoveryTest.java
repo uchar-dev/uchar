@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -193,6 +194,12 @@ class SemanticTokensRecoveryTest {
             assertTrue(d.diagnostics().stream().anyMatch(x -> "RGS-216".equals(x.code())),
                     () -> broken + ": the syntax error is in the output: " + d.diagnostics());
             SemanticTokensCheck.check(files, d);
+            if (broken.contains("is leeg")) {
+                SemanticTokens.Span attr = d.files().get(1).spans().stream()
+                        .filter(s -> s.text().equals("afhaaldatum")).findFirst().orElseThrow();
+                assertEquals(SemanticTokens.Kind.ATTRIBUTE, attr.kind(), broken);
+                assertNotNull(attr.declaredAt(), broken);
+            }
             if (broken.endsWith("onbekend")) {
                 SemanticTokens.Span last = d.files().get(1).spans().stream()
                         .filter(s -> s.text().equals("onbekend")).findFirst().orElseThrow();

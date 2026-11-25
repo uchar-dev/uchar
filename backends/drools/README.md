@@ -86,8 +86,9 @@ consumer does.
    where the order of a to-many list is not the order of the beans, `role` being the role the holder plays, the name
    of the reference field each member holds toward it, and `link(factType, first, second)` for every link of a relation
    both of whose roles are to-many, which no bean holds, `first` filling the role the fact type declares first, and
-   `characteristicAbsent(bean, characteristic)` for a characteristic the input states not to hold
-   (`characteristicsAbsent`, ch. 1.5), which the truth value on a bean cannot tell from one the input does not name;
+   `attributeEmpty(bean, attribute)` for a scalar attribute the input states to have no value (`attributesEmpty`,
+   ch. 1.5), and `characteristicAbsent(bean, characteristic)` for a characteristic the input states not to hold
+   (`characteristicsAbsent`, ch. 1.5), neither of which a bean field can tell from a member the input does not name;
    `closedInputs()` treats every input member of the session as complete. `insert` states the facts the branch reads
    from these (`BucketInput`, `ListPlace`, `RelationLink` of phase 0), and in a document in which a member can be open
    it sets the global `open_invoer`, an `OpenInput`, so a consumer states no fact class of the branch itself.

@@ -563,11 +563,12 @@ public final class CaseInput {
         return out;
     }
 
-    /** An instance label the case input carries twice (EF-039), or a name the input writes that the document does not
-     *  declare, the object type of an instance, an attribute, a characteristic or a role key (EF-040), RUNTIME-SEMANTICS
-     *  ch. 5.7b: a fault kind of the case input, with the label of the instance and, for EF-040, the name as the case
-     *  writes it. Public, as {@link CellFault} is, so that a caller that hands this reader a case can name the fault kind
-     *  by its type. */
+    /** An instance label the case input carries twice (EF-039), a name the input writes that the document does not
+     *  declare, the object type of an instance, an attribute, a characteristic or a role key (EF-040), a characteristic
+     *  named in both {@code characteristics} and {@code characteristicsAbsent} (EF-047), or an attribute given a value and
+     *  also named in {@code attributesEmpty} (EF-048), RUNTIME-SEMANTICS ch. 5.7b: a fault kind of the case input, with
+     *  its parameters as the case writes them. Public, as {@link CellFault} is, so that a caller that hands this reader a
+     *  case can name the fault kind by its type. */
     public static final class NameFault extends IllegalArgumentException {
         private static final long serialVersionUID = 1L;
 

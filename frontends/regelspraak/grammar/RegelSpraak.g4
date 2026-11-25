@@ -167,7 +167,7 @@ regelReferentie : regelReferentieWoord+ ;
 regelReferentieWoord
     : LOWER_ID | UPPER_ID | NUMBER | PERCENT_SIGN | AANTAL_WORD
     | VAN | OP | IN | VOOR | OVER | BIJ | TOT | TOT_EN_MET | PER | MET | OF | DAN | NIET
-    | DE | HET | EEN | ZIJN | VANAF | GELDIG | ZELF
+    | DE | HET | EEN | ZIJN | VANAF | GELDIG | ZELF | LEEG | GEVULD
     | IS | HEEFT | HEBBEN | WORDT_VERDEELD_OVER
     | EEN_TELWOORD | TWEE_TELWOORD | DRIE_TELWOORD | VIER_TELWOORD
     | JAAR | MAAND | DAG | WEEK | KWARTAAL | UUR | MINUUT | SECONDE | MILLISECONDE
@@ -204,8 +204,8 @@ situatieOnderdeel
 // UPPER_ID (V1, Tom); the resolver checks its uniqueness and non-collision with a type.
 instantie : EEN objectTypeNaam UPPER_ID toewijzing* ;
 toewijzing
-    : bullet bepaaldLidwoord toewijzingNaam IS LEEG periode?                 DOT? # attribuutLeegToewijzing // de/het <attr> is leeg
-    | bullet bepaaldLidwoord toewijzingNaam IS situatieWaarde periode?       DOT? # attribuutToewijzing     // de/het <attr> is <waarde> [van <d> tot <d>]
+    : bullet bepaaldLidwoord toewijzingNaam IS situatieWaarde periode?       DOT? # attribuutToewijzing     // de/het <attr> is <waarde> [van <d> tot <d>]
+    | bullet bepaaldLidwoord toewijzingNaam IS LEEG periode?                 DOT? # attribuutLeegToewijzing // de/het <attr> is leeg
     | bullet bepaaldLidwoord toewijzingNaam IS UPPER_ID                      DOT? # rolToOneToewijzing      // de/het <rol> is <LABEL>
     | bullet bepaaldLidwoord toewijzingNaam ZIJN UPPER_ID ( ( COMMA | EN ) UPPER_ID )* DOT? # rolToManyToewijzing // de/het <rol> zijn <LABEL>, <LABEL> en <LABEL>
     | bullet ( IS | HEEFT ) lidwoord? kaleNaam periode?        DOT? # kenmerkToewijzing       // is/heeft [lidw] <kenmerk> [van <d> tot <d>] | is niet/heeft geen <kenmerk>
@@ -373,7 +373,7 @@ benaming : BENAMING_START BENAMING_TEKST? ( BENAMING_EINDE | BENAMING_ONAF ) ;
 naamWoordLower
     : LOWER_ID | NUMBER | PERCENT_SIGN | AANTAL_WORD
     | VAN | OP | IN | VOOR | OVER | BIJ | TOT | TOT_EN_MET | PER | MET
-    | DE | HET | OF | DAN | ALS | NIET | GELDIG | LEEG
+    | DE | HET | OF | DAN | ALS | NIET | GELDIG
     | EEN_TELWOORD | TWEE_TELWOORD | DRIE_TELWOORD | VIER_TELWOORD
     | JAAR | MAAND | DAG | WEEK | KWARTAAL | UUR | MINUUT | SECONDE | MILLISECONDE
     | PERIODE | DAGEN | WEKEN | MAANDEN | KWARTALEN | JAREN
@@ -396,7 +396,7 @@ lowerNaam : naamWoordLower+ ;
 // (':' , 'geldig', 'heeft tijdvakken van', ';'), so the set is broad: it admits
 // capitals plus 'een'/'vanaf'/'zijn', which the spec's own timeline name
 // "periode van een kwartaal vanaf de geboortedatum" (§3.8) contains.
-naamWoordAny : naamWoordLower | UPPER_ID | EEN | VANAF | ZIJN ;
+naamWoordAny : naamWoordLower | UPPER_ID | EEN | VANAF | ZIJN | LEEG | GEVULD ;
 vrijeNaam : naamWoordAny+ ;
 
 // Capitalised name (objecttype / domein), per the capitalisation convention.
@@ -720,7 +720,7 @@ dagsoortDefinition // §13.3.10.1
 kaleNaamWoord
     : LOWER_ID | UPPER_ID | NUMBER | PERCENT_SIGN | AANTAL_WORD
     | OP | IN | VOOR | OVER | BIJ | TOT | TOT_EN_MET | PER | MET | OF | DAN | NIET
-    | DE | HET | GELDIG | LEEG
+    | DE | HET | GELDIG
     | EEN_TELWOORD | TWEE_TELWOORD | DRIE_TELWOORD | VIER_TELWOORD
     | JAAR | MAAND | DAG | WEEK | KWARTAAL | UUR | MINUUT | SECONDE | MILLISECONDE
     | PERIODE | DAGEN | WEKEN | MAANDEN | KWARTALEN | JAREN
