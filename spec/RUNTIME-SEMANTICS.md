@@ -1228,12 +1228,15 @@ changes nothing. Where only an initialisation writes an attribute — an
 initialisation rule, or the one default of a stack without an exception group —
 naming it in `attributesEmpty` settles the input above the initialisation as
 `leeg`, so the initialisation is at its turn, as under `complete` (**An
-initialisation**, **The initialisation of a stack**, above). Beside a writer
-that derives the member, `attributesEmpty` and `characteristicsAbsent` behave
-like any input: the member is settled `leeg` (or stands not to hold) where it
-stands of every writer that it fills nothing, takes its initialisation's value
-where one stands below them, stays open while a writer leaves it open, and
-takes the writer's value (or holds) where a writer decides. An expectation
+initialisation**, **The initialisation of a stack**, above). On an object where
+a rule other than an initialisation, or a defaults group with a default other
+than its initialisation default or with an exception group, writes the member,
+the member follows its writers — an initialisation below them included — and
+`attributesEmpty` and `characteristicsAbsent` change nothing, as under
+`complete`: it is settled `leeg` (or stands not to hold) where it stands of
+every writer that it fills nothing, takes its initialisation's value where one
+stands below them, stays open while a writer leaves it open, and takes the
+writer's value (or holds) where a writer decides. An expectation
 `attributeEmpty` holds where the attribute is settled `leeg`,
 `characteristicAbsent` where the characteristic stands not to hold, and
 `attributeOpen` and `characteristicOpen` where the member is open.

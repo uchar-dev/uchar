@@ -337,6 +337,15 @@ for line in open(os.path.join(work, "tasks.tsv"), encoding="utf-8"):
     entry = closed.setdefault(name, [copy_path, True])
     entry[1] = entry[1] and ok
 strict = [l.strip() for l in open(os.path.join(work, "strict.txt"), encoding="utf-8") if l.strip()]
+def norm(s):
+    return " ".join(s.split()).lower()
+
+
+def drop_list_member(c, i, field, target):
+    inst = c["input"]["instances"][i]
+    inst[field] = [x for x in inst[field] if norm(x) != target]
+
+
 def drop_inputs(case):
     out = []
     for i, inst in enumerate(case["input"]["instances"]):
@@ -344,21 +353,31 @@ def drop_inputs(case):
         for a in (inst.get("attributes") or {}):
             out.append(("attribute", label, a,
                         lambda c, i=i, a=a: c["input"]["instances"][i]["attributes"].pop(a)))
+        seen_empty = set()
         for a in (inst.get("attributesEmpty") or []):
+            na = norm(a)
+            if na in seen_empty:
+                continue
+            seen_empty.add(na)
             out.append(("attribute", label, a,
-                        lambda c, i=i, a=a: c["input"]["instances"][i]["attributesEmpty"].remove(a)))
+                        lambda c, i=i, na=na: drop_list_member(c, i, "attributesEmpty", na)))
         for field in ("characteristics", "characteristicsAbsent"):
+            seen = set()
             for k in (inst.get(field) or []):
+                nk = norm(k)
+                if nk in seen:
+                    continue
+                seen.add(nk)
                 out.append(("characteristic", label, k,
-                            lambda c, i=i, field=field, k=k: c["input"]["instances"][i][field].remove(k)))
+                            lambda c, i=i, field=field, nk=nk: drop_list_member(c, i, field, nk)))
     return out
 
 
 sample_case = {"input": {"instances": [{"label": "V1", "objectType": "Vondst",
                                         "attributes": {"gewicht": {"number": "10"}},
-                                        "attributesEmpty": ["ophaalwens"], "roles": {},
+                                        "attributesEmpty": ["ophaalwens", "Ophaalwens"], "roles": {},
                                         "characteristics": ["gemeld"],
-                                        "characteristicsAbsent": ["drijfhout"]}]}}
+                                        "characteristicsAbsent": ["drijfhout", "Drijfhout"]}]}}
 got_drops = []
 for kind, label, member, drop in drop_inputs(sample_case):
     sample_copy = copy.deepcopy(sample_case)
@@ -367,10 +386,10 @@ for kind, label, member, drop in drop_inputs(sample_case):
     got_drops.append((kind, label, member, list(inst0["attributes"]), list(inst0["attributesEmpty"]),
                       list(inst0["characteristics"]), list(inst0["characteristicsAbsent"])))
 want_drops = [
-    ("attribute", "V1", "gewicht", [], ["ophaalwens"], ["gemeld"], ["drijfhout"]),
-    ("attribute", "V1", "ophaalwens", ["gewicht"], [], ["gemeld"], ["drijfhout"]),
-    ("characteristic", "V1", "gemeld", ["gewicht"], ["ophaalwens"], [], ["drijfhout"]),
-    ("characteristic", "V1", "drijfhout", ["gewicht"], ["ophaalwens"], ["gemeld"], []),
+    ("attribute", "V1", "gewicht", [], ["ophaalwens", "Ophaalwens"], ["gemeld"], ["drijfhout", "Drijfhout"]),
+    ("attribute", "V1", "ophaalwens", ["gewicht"], [], ["gemeld"], ["drijfhout", "Drijfhout"]),
+    ("characteristic", "V1", "gemeld", ["gewicht"], ["ophaalwens", "Ophaalwens"], [], ["drijfhout", "Drijfhout"]),
+    ("characteristic", "V1", "drijfhout", ["gewicht"], ["ophaalwens", "Ophaalwens"], ["gemeld"], []),
 ]
 if got_drops != want_drops:
     sys.stderr.write("check-oracle: FAIL (monotonicity) — drop_inputs self-test got %r, want %r\n"

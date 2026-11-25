@@ -66,7 +66,7 @@
           "additionalProperties": { "oneOf": [ { "$ref": "#/$defs/value" }, { "$ref": "#/$defs/timelineValue" }, { "$ref": "#/$defs/cellsValue" } ] }
         },
         "attributesEmpty": {
-          "description": "Scalar, undimensioned attributes the case states have no value (RUNTIME-SEMANTICS ch. 1.5): in a document with inferFromEmpty false such an attribute is settled leeg instead of open (and beside a writer follows the rules for an input value; where only an initialisation writes it, the initialisation is at its turn); in a document without the property the field changes no outcome. Optional. An attribute named here and given a value in 'attributes' (EF-048), one the object type does not declare (EF-040), a time-dependent one and a dimensioned one are refused by the case readers, which see the IR.",
+          "description": "Scalar, undimensioned attributes the case states have no value (RUNTIME-SEMANTICS ch. 1.5): in a document with inferFromEmpty false such an attribute is settled leeg instead of open (where only an initialisation writes it, the initialisation is at its turn; on an object where a writer other than an initialisation derives it, the attribute follows its writers, an initialisation below them included, and the field changes nothing); in a document without the property the field changes no outcome. Optional. An attribute named here and given a value in 'attributes' (EF-048), one the object type does not declare (EF-040), a time-dependent one and a dimensioned one are refused by the case readers, which see the IR.",
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
         },
