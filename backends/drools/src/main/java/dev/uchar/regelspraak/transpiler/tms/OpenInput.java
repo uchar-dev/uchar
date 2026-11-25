@@ -13,8 +13,9 @@ import java.util.Set;
  * hold, the member is open on that object, not settled leeg. The value of a global ({@code plan.Consequence.OPEN_INPUT}),
  * set beside the beans by
  * {@code DroolsBackend.insert} in a document in which a member can be open ({@link OpenableMembers}), for the members the
- * analysis finds ({@link OpenableMembers#incompleteInput}); a characteristic the case states not to hold
- * ({@code characteristicsAbsent}) is not among them, and a session that treats every input member as complete has none.
+ * analysis finds ({@link OpenableMembers#incompleteInput}); an attribute the case states to have no value
+ * ({@code attributesEmpty}) and a characteristic it states not to hold ({@code characteristicsAbsent}) are not among
+ * them, and a session that treats every input member as complete has none.
  * An object it does not name, one a creation made, has no such member.
  *
  * <p>The read of such a member takes it beside the bean's value ({@link ComputeHelpers#readInput}): it says only which

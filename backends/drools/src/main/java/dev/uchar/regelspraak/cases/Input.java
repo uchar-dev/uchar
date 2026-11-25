@@ -25,6 +25,11 @@ import java.util.Objects;
  *   <li>{@link #link}: a link of a relation both of whose roles are to-many. The bean model stores a relation in the
  *       reference field of its one side, and such a relation has none, so the branch reads its links as facts of their
  *       own, as it reads the links of a relation a form creates.</li>
+ *   <li>{@link #attributeEmpty}: a scalar, non-time-dependent, undimensioned attribute the input states to have no
+ *       value ({@code attributesEmpty}, RUNTIME-SEMANTICS ch. 1.5). A bean field without a value is null, which cannot
+ *       tell "not given" from "settled empty"; in a document with {@code inferFromEmpty: false} an input attribute
+ *       that is not given is open, and one stated here is settled empty (so an initialisation is at its turn). In any
+ *       other document it changes no outcome.</li>
  *   <li>{@link #characteristicAbsent}: a characteristic the input states not to hold ({@code characteristicsAbsent},
  *       RUNTIME-SEMANTICS ch. 1.5). A characteristic on a bean is a truth value, which cannot tell "not named" from
  *       "does not hold"; in a document with {@code inferFromEmpty: false} an input characteristic that is not
@@ -39,6 +44,7 @@ public final class Input {
     private final List<Bucket> buckets = new ArrayList<>();
     private final List<ToManyList> lists = new ArrayList<>();
     private final List<Link> links = new ArrayList<>();
+    private final List<Empty> empty = new ArrayList<>();
     private final List<Absent> absent = new ArrayList<>();
     private boolean closedInputs;
 
@@ -52,6 +58,10 @@ public final class Input {
     /** A link of the relation {@code factType}, both of whose roles are to-many: {@code first} fills the first declared
      *  role of the fact type and {@code second} the second. */
     record Link(String factType, Object first, Object second) {}
+
+    /** An attribute the input states to have no value: {@code attribute} of {@code bean}, its declared name in any
+     *  spelling that is that name under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}. */
+    record Empty(Object bean, String attribute) {}
 
     /** A characteristic the input states not to hold: {@code characteristic} of {@code bean}, its declared name in any
      *  spelling that is that name under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}. */
@@ -97,6 +107,14 @@ public final class Input {
         return this;
     }
 
+    /** States that the attribute {@code attribute} of {@code bean} has no value ({@code attributesEmpty},
+     *  RUNTIME-SEMANTICS ch. 1.5): the bean must hold no value for it. {@code attribute} is its declared name, in any
+     *  spelling that is that name under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}, as a case names it. */
+    public Input attributeEmpty(Object bean, String attribute) {
+        empty.add(new Empty(Objects.requireNonNull(bean, "bean"), Objects.requireNonNull(attribute, "attribute")));
+        return this;
+    }
+
     /** States that the characteristic {@code characteristic} of {@code bean} does not hold ({@code characteristicsAbsent},
      *  RUNTIME-SEMANTICS ch. 1.5): the bean must not hold it. {@code characteristic} is its declared name, in any spelling
      *  that is that name under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}, as a case names it. */
@@ -126,6 +144,10 @@ public final class Input {
 
     List<Link> links() {
         return List.copyOf(links);
+    }
+
+    List<Empty> empty() {
+        return List.copyOf(empty);
     }
 
     List<Absent> absent() {

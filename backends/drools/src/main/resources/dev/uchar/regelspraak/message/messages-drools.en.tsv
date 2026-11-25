@@ -439,6 +439,12 @@ DROOLS-371.holds	the bean holds it
 DROOLS-372	what {member} gives the fold {fold} can be open, but a member of its route has no ListPlace under the field '{field}': the input does not state the order of that list, and without it the open member the reading of the fold names cannot be determined (RUNTIME-SEMANTICS ch. 5.12)
 DROOLS-373	the document holds a sum type in a form no executor carries (RUNTIME-SEMANTICS ch. 9.4), so it is refused before anything is built (form: {form})
 DROOLS-374	the readings read the members of the fold {fold} in the order of the lists of the input (RUNTIME-SEMANTICS ch. 5.7a, 5.12), which DroolsBackend.insert gives the session, and this session was not filled by DroolsBackend.insert: open a fresh session with all beans in one Input
+DROOLS-375	insert: the input states that the attribute "{attribute}" of {bean} has no value, and {reason}
+DROOLS-375.not-in-input	that bean is no bean of the input
+DROOLS-375.undeclared	its type {objectType} declares no attribute of that name
+DROOLS-375.dimensioned	it is dimensioned on {objectType} and holds a value per cell
+DROOLS-375.time-dependent	it is time-dependent on {objectType} and holds a value per period
+DROOLS-375.filled	the bean holds a value for it
 EF-002	role "{role}" on "{label}" links unknown label "{target}"
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
@@ -482,6 +488,7 @@ EF-040.characteristic	instance "{label}": the characteristic "{name}" is not dec
 EF-040.object-type	instance "{label}": the object type "{name}" is not declared
 EF-040.role	instance "{label}": the role key "{name}" names no declared role
 EF-047	instance "{label}": the characteristic "{characteristic}" is named in "characteristics" and in "characteristicsAbsent": the case states that it holds and that it does not
+EF-048	instance "{label}": the attribute "{attribute}" is named in "attributes" and in "attributesEmpty": the case gives it a value and states that it has none
 FRAME.case-reads	{sentence}; the case reads it
 FRAME.case-sets	{sentence}; the case sets it
 FRAME.contract	contract: {sentence}

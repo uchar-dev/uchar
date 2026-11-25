@@ -139,6 +139,7 @@ EF_PLACES = {
     "EF-015": {"creation", "stratum", "depth", "type", "parentDepth"},
     "EF-016": {"count", "enumeration", "attribute", "object"}, "EF-017": {"role", "label"},
     "EF-019.expression": set(), "EF-019.condition": set(),
+    "EF-048": {"label", "attribute"},
 }
 # key: the reason a Dutch entry with a word is equal to its English sister (owner's decision 3, 2026-10-19)
 _READ = "the sentence of a fault kind that the runtime writes and ComputeFault reads back by its words (code(), params()), and tests pin it"

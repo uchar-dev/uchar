@@ -439,6 +439,12 @@ DROOLS-371.holds	de bean heeft het
 DROOLS-372	wat {member} de vouw {fold} geeft, kan open zijn, maar een lid van zijn route heeft geen Lijstplaats onder het veld '{field}': de invoer stelt de volgorde van die lijst niet, en zonder haar is niet te bepalen welk open lid de lezing van de vouw noemt (RUNTIME-SEMANTICS ch. 5.12)
 DROOLS-373	het document bevat een sum type in een vorm die geen uitvoerder draagt (RUNTIME-SEMANTICS ch. 9.4), dus het wordt geweigerd voordat er iets gebouwd wordt (vorm: {form})
 DROOLS-374	de lezingen lezen de leden van de vouw {fold} in de volgorde van de lijsten van de invoer (RUNTIME-SEMANTICS ch. 5.7a, 5.12), die DroolsBackend.insert de sessie geeft, en deze sessie is niet met DroolsBackend.insert gevuld: open een verse sessie met alle beans in één Input
+DROOLS-375	insert: de invoer zegt dat het attribuut "{attribute}" van {bean} geen waarde heeft, en {reason}
+DROOLS-375.not-in-input	die bean is geen bean van de invoer
+DROOLS-375.undeclared	zijn type {objectType} declareert geen attribuut met die naam
+DROOLS-375.dimensioned	het is op {objectType} gedimensioneerd en heeft een waarde per cel
+DROOLS-375.time-dependent	het is op {objectType} tijdsafhankelijk en heeft een waarde per periode
+DROOLS-375.filled	de bean heeft er een waarde voor
 EF-002	de rol "{role}" van "{label}" verwijst naar het onbekende label "{target}"
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
@@ -482,6 +488,7 @@ EF-040.characteristic	instantie "{label}": het kenmerk "{name}" is niet gedeclar
 EF-040.object-type	instantie "{label}": het objecttype "{name}" is niet gedeclareerd
 EF-040.role	instantie "{label}": de rolsleutel "{name}" noemt geen gedeclareerde rol
 EF-047	instantie "{label}": het kenmerk "{characteristic}" staat in "characteristics" en in "characteristicsAbsent": de case zegt dat het geldt en dat het niet geldt
+EF-048	instantie "{label}": het attribuut "{attribute}" staat in "attributes" en in "attributesEmpty": de case geeft het een waarde en zegt dat het er geen heeft
 FRAME.case-reads	{sentence}; de case leest het
 FRAME.case-sets	{sentence}; de case zet het
 FRAME.contract	contract: {sentence}

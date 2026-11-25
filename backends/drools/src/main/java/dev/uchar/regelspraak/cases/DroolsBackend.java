@@ -454,16 +454,35 @@ public final class DroolsBackend {
     }
 
     /**
-     * The {@link OpenInput} of the input (RUNTIME-SEMANTICS ch. 1.5, "The three states", "Complete input"), in a document
-     * in which a member can be open ({@code OpenableMembers}), and else null: per bean of {@code beans} the members
-     * that are input on an object of its type and not complete, as the analysis finds them, less the characteristics the
-     * input states not to hold; none at all in a session that treats every input member as complete. A read takes it
-     * beside the bean: the member is open where the bean holds no value for it. Refused, in any document: a
+     * The {@link OpenInput} of the input (RUNTIME-SEMANTICS ch. 1.5, "The three states", "Complete input", "The case"),
+     * in a document in which a member can be open ({@code OpenableMembers}), and else null: per bean of {@code beans}
+     * the members that are input on an object of its type and not complete, as the analysis finds them, less the
+     * attributes the input states to have no value and the characteristics it states not to hold; none at all in a
+     * session that treats every input member as complete. A read takes it beside the bean: the member is open where the
+     * bean holds no value for it. Refused, in any document: an attribute stated to have no value that the bean's type
+     * does not declare, that is dimensioned or lies on a timeline, or for which the bean holds a value; and a
      * characteristic stated not to hold that the bean's type does not declare, that lies on a timeline, or that the bean
      * holds.
      */
     private static OpenInput openInput(Build build, List<Object> beans, Map<Object, ObjectType> types, Input input) {
-        Map<Object, Set<ProducerConsumer.ElementKey>> absent = new IdentityHashMap<>();
+        Map<Object, Set<ProducerConsumer.ElementKey>> closed = new IdentityHashMap<>();
+        for (Input.Empty e : input.empty()) {
+            ObjectType t = types.get(e.bean());
+            if (t == null) throw emptyRefused(e, DroolsCode.INSERT_EMPTY_ATTRIBUTE.part("not-in-input"));
+            String declared = CaseRunner.declaredAttribute(t, e.attribute());
+            ObjectType declarant = declared == null ? null
+                    : t.chain().stream().filter(c -> c.attributes.containsKey(declared)).findFirst().orElse(null);
+            if (declarant == null)
+                throw emptyRefused(e, DroolsCode.INSERT_EMPTY_ATTRIBUTE.part("undeclared", "objectType", t.name));
+            if (!t.dimensionsOf(declared).isEmpty())
+                throw emptyRefused(e, DroolsCode.INSERT_EMPTY_ATTRIBUTE.part("dimensioned", "objectType", t.name));
+            if (Namen.containsName(t.granularityMembers(), declared))
+                throw emptyRefused(e, DroolsCode.INSERT_EMPTY_ATTRIBUTE.part("time-dependent", "objectType", t.name));
+            if (Accessors.leesEigenschap(e.bean(), Namen.property(declared)) != null)
+                throw emptyRefused(e, DroolsCode.INSERT_EMPTY_ATTRIBUTE.part("filled"));
+            closed.computeIfAbsent(e.bean(), k -> new HashSet<>())
+                    .add(ProducerConsumer.elementOf(declarant, declared, false));
+        }
         for (Input.Absent a : input.absent()) {
             ObjectType t = types.get(a.bean());
             if (t == null) throw absentRefused(a, DroolsCode.INSERT_ABSENT_CHARACTERISTIC.part("not-in-input"));
@@ -476,7 +495,7 @@ public final class DroolsBackend {
                 throw absentRefused(a, DroolsCode.INSERT_ABSENT_CHARACTERISTIC.part("undeclared", "objectType", t.name));
             if (Boolean.TRUE.equals(Accessors.leesEigenschap(a.bean(), Namen.property(declared))))
                 throw absentRefused(a, DroolsCode.INSERT_ABSENT_CHARACTERISTIC.part("holds"));
-            absent.computeIfAbsent(a.bean(), k -> new HashSet<>())
+            closed.computeIfAbsent(a.bean(), k -> new HashSet<>())
                     .add(ProducerConsumer.elementOf(declarant, declared, true));
         }
         OpenableMembers openable = build.execModelTranspiler().openableMembers();
@@ -485,13 +504,19 @@ public final class DroolsBackend {
         if (!input.closed())
             for (Object bean : beans) {
                 Set<ProducerConsumer.ElementKey> incomplete = openable.incompleteInput(types.get(bean));
-                if (absent.containsKey(bean)) {
+                if (closed.containsKey(bean)) {
                     incomplete = new HashSet<>(incomplete);
-                    incomplete.removeAll(absent.get(bean));
+                    incomplete.removeAll(closed.get(bean));
                 }
                 members.put(bean, incomplete);
             }
         return new OpenInput(members);
+    }
+
+    /** The refusal of the statement that an attribute has no value, for {@code reason}. */
+    private static IllegalArgumentException emptyRefused(Input.Empty e, Msg reason) {
+        return new IllegalArgumentException(DroolsCode.INSERT_EMPTY_ATTRIBUTE.reason("bean", name(e.bean()),
+                "attribute", e.attribute(), "reason", reason).text());
     }
 
     /** The refusal of the statement that a characteristic does not hold, for {@code reason}. */

@@ -206,6 +206,9 @@ public final class CaseInput {
      *  {@link #bucketInput} lays on the bean as one segment: what {@link #inputData()} names as bucket scalars
      *  ({@link Input#bucketScalar}). */
     private final List<Input.Bucket> bucketScalars = new ArrayList<>();
+    /** The attributes the case states to have no value ({@code attributesEmpty}, RUNTIME-SEMANTICS ch. 1.5), in the
+     *  order of the case: what {@link #inputData()} names as such ({@link Input#attributeEmpty}). */
+    private final List<Input.Empty> emptyAttributes = new ArrayList<>();
     /** The characteristics the case states not to hold ({@code characteristicsAbsent}, RUNTIME-SEMANTICS ch. 1.5), in the
      *  order of the case: what {@link #inputData()} names as such ({@link Input#characteristicAbsent}). */
     private final List<Input.Absent> absentCharacteristics = new ArrayList<>();
@@ -287,6 +290,7 @@ public final class CaseInput {
         Input inputData = new Input().beans(labelToBean.values());
         for (Input.Bucket e : bucketScalars) inputData.bucketScalar(e.bean(), e.attribute());
         for (Input.Link k : links) inputData.link(k.factType(), k.first(), k.second());
+        for (Input.Empty e : emptyAttributes) inputData.attributeEmpty(e.bean(), e.attribute());
         for (Input.Absent a : absentCharacteristics) inputData.characteristicAbsent(a.bean(), a.characteristic());
         for (Map.Entry<Object, Map<String, ToManyList>> perHolder : lists.entrySet())
             for (ToManyList l : perHolder.getValue().values()) {
@@ -368,15 +372,15 @@ public final class CaseInput {
         for (String section : new String[]{"attributes", "roles", "characteristicTimelines"})
             if (i.has(section) && !i.get(section).isObject())
                 throw new IllegalArgumentException(label + "." + section + ": expected an object, got " + i.get(section));
-        for (String section : new String[]{"characteristics", "characteristicsAbsent"}) {
-            JsonNode characteristics = i.get(section);
-            if (characteristics == null) continue;
-            if (!characteristics.isArray())
-                throw new IllegalArgumentException(label + "." + section + ": expected a list, got " + characteristics);
-            for (int k = 0; k < characteristics.size(); k++)
-                if (!characteristics.get(k).isTextual())
+        for (String section : new String[]{"attributesEmpty", "characteristics", "characteristicsAbsent"}) {
+            JsonNode list = i.get(section);
+            if (list == null) continue;
+            if (!list.isArray())
+                throw new IllegalArgumentException(label + "." + section + ": expected a list, got " + list);
+            for (int k = 0; k < list.size(); k++)
+                if (!list.get(k).isTextual())
                     throw new IllegalArgumentException(label + "." + section + "[" + k + "]: expected a string, got "
-                            + characteristics.get(k));
+                            + list.get(k));
         }
         if (i.has("roles")) for (Map.Entry<String, JsonNode> role : i.get("roles").properties()) {
             String place = label + ".roles." + role.getKey();
@@ -445,6 +449,26 @@ public final class CaseInput {
                 continue;
             }
             CaseRunner.call(bean, Namen.setter(name), CaseRunner.argType(dt), reader.valueToArg(w, name));
+        }
+        // the attributes the case states have no value (RUNTIME-SEMANTICS ch. 1.5): declared, scalar and undimensioned,
+        // and never also given a value in "attributes", which would state that one attribute has a value and has none
+        // (EF-048)
+        JsonNode empty = i.get("attributesEmpty");
+        if (empty != null) for (JsonNode written : empty) {
+            String label = i.get("label").asText();
+            String a = CaseRunner.declaredAttribute(ot, written.asText());
+            if (a == null) throw NameFault.undeclared("attribute", label, written.asText(), ot.name);
+            if (reader.dimensioned(ot, a))
+                throw new IllegalArgumentException(label + "." + a + ": the attribute is dimensioned on "
+                        + ot.name + ": its values are per cell, and \"attributesEmpty\" states a scalar empty");
+            if (reader.temporal(ot, a))
+                throw new IllegalArgumentException(label + "." + a + ": the attribute is declared time-dependent on "
+                        + ot.name + ": it has a value per period, and \"attributesEmpty\" states a scalar empty no"
+                        + " temporal reader consults");
+            reader.ownField(ot, a, false, "sets");
+            if (dev.uchar.regelspraak.runtime.Accessors.leesEigenschap(bean, Namen.property(a)) != null)
+                throw NameFault.attributeFilledAndEmpty(label, written.asText());
+            emptyAttributes.add(new Input.Empty(bean, a));
         }
         JsonNode characteristics = i.get("characteristics");
         if (characteristics != null) for (JsonNode written : characteristics) {
@@ -552,6 +576,8 @@ public final class CaseInput {
         private final String name;
         /** For EF-047, the characteristic the case names in both lists. */
         private String characteristic;
+        /** For EF-048, the attribute the case gives a value and states has none. */
+        private String attribute;
 
         private NameFault(String code, String label, String name, dev.uchar.regelspraak.message.Msg message) {
             super(message.text());
@@ -573,6 +599,16 @@ public final class CaseInput {
             return f;
         }
 
+        /** An attribute {@code attribute} the instance {@code label} gives a value in {@code attributes} and names in
+         *  {@code attributesEmpty} (EF-048, RUNTIME-SEMANTICS ch. 1.5), as the case writes it in
+         *  {@code attributesEmpty}. */
+        static NameFault attributeFilledAndEmpty(String label, String attribute) {
+            NameFault f = new NameFault("EF-048", label, null, dev.uchar.regelspraak.message.Msg.drools("EF-048",
+                    "label", label, "attribute", attribute));
+            f.attribute = attribute;
+            return f;
+        }
+
         /** {@code what} is the part of the sentence: {@code object-type}, {@code attribute}, {@code characteristic} or
          *  {@code role}; {@code objectType} the type of the instance, which the sentence of an attribute and of a
          *  characteristic names. */
@@ -587,13 +623,14 @@ public final class CaseInput {
             return code;
         }
 
-        /** The parameters of the kind (ch. 5.7b): the label of the instance, for EF-040 the name, and for EF-047 the
-         *  characteristic. */
+        /** The parameters of the kind (ch. 5.7b): the label of the instance, for EF-040 the name, for EF-047 the
+         *  characteristic, and for EF-048 the attribute. */
         public Map<String, String> params() {
             Map<String, String> out = new LinkedHashMap<>();
             out.put("label", label);
             if (name != null) out.put("name", name);
             if (characteristic != null) out.put("characteristic", characteristic);
+            if (attribute != null) out.put("attribute", attribute);
             return out;
         }
     }

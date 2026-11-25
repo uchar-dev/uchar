@@ -395,7 +395,8 @@ public enum DroolsCode {
     INSERT_ABSENT_CHARACTERISTIC("DROOLS-371", Kind.CONTRACT, "insert-absent-characteristic", "bean,characteristic,reason", null),
     LIST_PLACE_MISSING_OPEN_MEMBER("DROOLS-372", Kind.RETIRED, "list-place-missing-open-member", "fold,member,field", null),
     SUM_TYPE_FORM_NOT_CARRIED("DROOLS-373", Kind.REFUSAL, "sum-type-form-not-carried", "form", null),
-    READINGS_WITHOUT_INPUT_LISTS("DROOLS-374", Kind.CONTRACT, "readings-without-input-lists", "fold", null);
+    READINGS_WITHOUT_INPUT_LISTS("DROOLS-374", Kind.CONTRACT, "readings-without-input-lists", "fold", null),
+    INSERT_EMPTY_ATTRIBUTE("DROOLS-375", Kind.CONTRACT, "insert-empty-attribute", "bean,attribute,reason", null);
 
     /** Why the backend refuses; {@code RETIRED} for a code it no longer raises, which stays here so that its number is
      *  never reused ({@code spec/proposals/MESSAGE-CODES.md} §3.2). */
