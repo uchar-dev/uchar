@@ -173,6 +173,34 @@ class SemanticTokensRecoveryTest {
         }
     }
 
+    @Test void an_attribute_bullet_the_recovery_cut_short_gives_its_tokens() {
+        String model = """
+                Afleiden uit leeg: nee
+
+                Objecttype de Vondst (mv: Vondsten)
+                    de afhaaldatum Datum in dagen;
+                """;
+        for (String broken : List.of("- de", "- de afhaaldatum", "- de afhaaldatum is",
+                "- de afhaaldatum is onbekend", "- de afhaaldatum is leeg van")) {
+            String scenario = """
+                    Scenario afgebroken
+                    Gegeven is de volgende situatie:
+                    een Vondst V1
+                    """ + broken + "\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n";
+            List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("model.rgs", model),
+                    new SemanticTokens.SourceFile("toets.rgs", scenario));
+            SemanticTokens.Document d = Resolver.tokens(files);
+            assertTrue(d.diagnostics().stream().anyMatch(x -> "RGS-216".equals(x.code())),
+                    () -> broken + ": the syntax error is in the output: " + d.diagnostics());
+            SemanticTokensCheck.check(files, d);
+            if (broken.endsWith("onbekend")) {
+                SemanticTokens.Span last = d.files().get(1).spans().stream()
+                        .filter(s -> s.text().equals("onbekend")).findFirst().orElseThrow();
+                assertEquals(SemanticTokens.Kind.WORD, last.kind());
+            }
+        }
+    }
+
     /** Floors, measured at the build (card semantic-tokens, 2026-10-22): the cut sources read, and how many of them
      *  carry a syntax error, so the sweep keeps reaching the recovery. */
     private static final int MIN_RUNS = 7620;

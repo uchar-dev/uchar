@@ -333,6 +333,55 @@ class SemanticTokensScenarioTest {
                 "heeft keyword", "staat keyword", "niet keyword", "vast keyword"), lines.get(11));
     }
 
+    @Test void attribute_is_leeg_marks_leeg_as_keyword_and_binds_declared_and_generated_attributes() {
+        String model = """
+                Afleiden uit leeg: nee
+
+                Objecttype de Vondst (mv: Vondsten)
+                    de afhaaldatum Datum in dagen;
+                    het leeg gewicht Numeriek (geheel getal);
+                    het bergloon Numeriek (geheel getal) (mag opgegeven worden);
+
+                Regel bergloon
+                    geldig altijd
+                        Het bergloon van een Vondst moet berekend worden als zijn leeg gewicht maal 2.
+                """;
+        String test = """
+                Scenario leeg in situatie
+                Gegeven is de volgende situatie:
+                een Vondst V1
+                - de afhaaldatum is leeg
+                - het leeg gewicht is leeg
+                - het opgegeven bergloon is leeg
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("model.rgs", model),
+                new SemanticTokens.SourceFile("toets.rgs", test));
+        SemanticTokens.Document d = Resolver.tokens(files);
+        assertTrue(d.diagnostics().isEmpty(), () -> "no diagnostic: " + d.diagnostics());
+        SemanticTokensCheck.check(files, d);
+        java.util.Map<Integer, List<String>> lines = new java.util.TreeMap<>();
+        for (Span s : d.files().get(1).spans()) {
+            assertFalse(SemanticTokensCheck.unlinked(s), () -> "a reference without its declaration: " + s);
+            assertNotEquals(Kind.WORD, s.kind(), () -> "a word outside every name: " + s);
+            SemanticTokens.Location target = s.declaredAt() != null ? s.declaredAt() : s.generatedFrom();
+            lines.computeIfAbsent(s.line(), x -> new ArrayList<>()).add(s.text() + " " + s.kind().wire()
+                    + (target == null ? "" : " " + target.line()));
+        }
+        assertEquals(List.of("- punctuation", "de keyword", "afhaaldatum attribute 4", "is keyword", "leeg keyword"),
+                lines.get(4));
+        assertEquals(List.of("- punctuation", "het keyword", "leeg gewicht attribute 5", "is keyword", "leeg keyword"),
+                lines.get(5));
+        assertEquals(List.of("- punctuation", "het keyword", "opgegeven bergloon attribute 6", "is keyword",
+                "leeg keyword"), lines.get(6));
+        Span generated = d.files().get(1).spans().stream().filter(s -> s.text().equals("opgegeven bergloon"))
+                .findFirst().orElseThrow();
+        assertNull(generated.declaredAt());
+        assertNotNull(generated.generatedFrom());
+        assertEquals(6, generated.generatedFrom().line());
+    }
+
     /** A characteristic declared with a leading "niet" binds its own declaration where its whole name is written, in
      *  a situation and in an expectation, as the scenario route reads it; beside it, "geen drijfhout" is the negation
      *  of "drijfhout". Each line as its spans, a name with the line of the declaration it points at. Measured on the

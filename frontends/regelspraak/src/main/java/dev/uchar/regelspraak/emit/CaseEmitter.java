@@ -98,13 +98,23 @@ public final class CaseEmitter {
         w.key("label").value(i.label());
         w.key("objectType").value(i.objectType().name);
         w.key("attributes").beginObject();
+        List<String> empty = new ArrayList<>();
         for (AttributeValue a : i.attributes()) {
+            if (a.isEmpty()) {
+                empty.add(a.attribute());
+                continue;
+            }
             w.key(a.attribute());
             if (a.timeline() != null) timelineValue(w, a.timeline());
             else if (a.cells() != null) cellsValue(w, a.cells());
             else value(w, a.value());
         }
         w.endObject();
+        if (!empty.isEmpty()) {
+            w.key("attributesEmpty").beginArray();
+            for (String a : empty) w.value(a);
+            w.endArray();
+        }
         w.key("roles").beginObject();
         for (RoleValue r : i.roles()) {
             w.key(r.key()).beginArray();

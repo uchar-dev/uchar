@@ -843,4 +843,318 @@ class ScenarioStrictTest {
                 }
                 """, CaseEmitter.emit(only(text)));
     }
+
+    // ---------------- settled-empty attributes in a situation ----------------
+
+    private static final String EMPTY_ATTRIBUTES = """
+            Scenario lege attributen
+            Gegeven is de volgende situatie:
+            een Vondst V1
+            - de afhaaldatum is leeg
+            - het gewicht is leeg.
+            een Vondst V2
+            - het gewicht is 12
+            Met als verwacht resultaat:
+            - de gegevens zijn consistent
+            """;
+
+    private static final String EMPTY_ATTRIBUTES_CASE = """
+            {
+              "format": "uchar-case-v0",
+              "asOfDate": null,
+              "input": {
+                "instances": [
+                  {
+                    "label": "V1",
+                    "objectType": "Vondst",
+                    "attributes": {},
+                    "attributesEmpty": [
+                      "afhaaldatum",
+                      "gewicht"
+                    ],
+                    "roles": {},
+                    "characteristics": []
+                  },
+                  {
+                    "label": "V2",
+                    "objectType": "Vondst",
+                    "attributes": {
+                      "gewicht": {
+                        "number": "12"
+                      }
+                    },
+                    "roles": {},
+                    "characteristics": []
+                  }
+                ],
+                "parameters": {}
+              },
+              "expected": [
+                {
+                  "kind": "consistent"
+                }
+              ]
+            }
+            """;
+
+    @Test void attribute_is_leeg_writes_attributesEmpty_in_strict_and_ordinary_documents() {
+        assertEquals(EMPTY_ATTRIBUTES_CASE, CaseEmitter.emit(only(NEE + MODEL + EMPTY_ATTRIBUTES)));
+        assertEquals(EMPTY_ATTRIBUTES_CASE, CaseEmitter.emit(only(MODEL + EMPTY_ATTRIBUTES)));
+        assertEquals(List.of(), warnings(ScenarioResolver.resolve(NEE + MODEL + EMPTY_ATTRIBUTES)));
+    }
+
+    @Test void attribute_is_leeg_warns_in_an_ordinary_document_unless_it_replaces_an_inherited_value() {
+        String plain = MODEL + EMPTY_ATTRIBUTES;
+        ScenarioBundle b = ScenarioResolver.resolve(plain);
+        assertTrue(b.isOk(), () -> b.model().errors().toString());
+        List<String> expected = List.of(
+                ScenarioFixture.lineOf(plain, "- de afhaaldatum is leeg") + " RGS-473 {written=de afhaaldatum is leeg}",
+                ScenarioFixture.lineOf(plain, "- het gewicht is leeg.") + " RGS-473 {written=het gewicht is leeg}");
+        assertEquals(expected, warnings(b));
+        assertTrue(b.model().diagnostics.stream().noneMatch(d -> "RGS-473".equals(d.code())));
+        assertEquals(IrEmitter.emit(Resolver.resolve(MODEL)), IrEmitter.emit(b.model()));
+        assertEquals("scenario: 'de afhaaldatum is leeg' verandert in een document zonder 'Afleiden uit leeg: nee' "
+                        + "niets: daar is een attribuut dat de situatie niet noemt al leeg; de zin telt alleen in een "
+                        + "document met 'Afleiden uit leeg: nee'",
+                b.warnings().get(0).message());
+        List<String> tokens = new ArrayList<>();
+        for (SemanticTokens.FileDiagnostic d : Resolver.tokens(List.of(new SemanticTokens.SourceFile("t.rgs", plain))).diagnostics())
+            if (d.severity() == Severity.WARNING) tokens.add(d.line() + " " + d.code() + " " + new TreeMap<>(d.params()));
+        assertEquals(expected, tokens);
+
+        String replacing = MODEL + """
+                Situatie gewogen:
+                een Vondst V1
+                - het gewicht is 15
+
+                Situatie ongewogen gebaseerd op de situatie gewogen:
+                een Vondst V1
+                - het gewicht is leeg
+
+                Scenario intrekken
+                gebaseerd op de situatie gewogen
+                Gegeven is de volgende situatie:
+                een Vondst V1
+                - het gewicht is leeg - de afhaaldatum is leeg
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        ScenarioBundle rb = ScenarioResolver.resolve(replacing);
+        assertTrue(rb.isOk(), () -> rb.model().errors().toString());
+        assertEquals(List.of(ScenarioFixture.lineOf(replacing, "- het gewicht is leeg - de afhaaldatum is leeg")
+                + " RGS-473 {written=de afhaaldatum is leeg}"), warnings(rb));
+    }
+
+    @Test void an_attribute_filled_and_empty_in_one_block_is_refused() {
+        String filledThenEmpty = NEE + MODEL + """
+                Scenario tegenspraak
+                Gegeven is de volgende situatie:
+                een Vondst V1
+                - het gewicht is 10
+                - het gewicht is leeg
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        assertEquals(List.of("RGS-470 {attribute=gewicht, label=V1}"), errorsOn(filledThenEmpty, "- het gewicht is leeg"));
+
+        String emptyThenFilled = NEE + MODEL + """
+                Scenario tegenspraak
+                Gegeven is de volgende situatie:
+                een Vondst V1
+                - het gewicht is leeg
+                - het gewicht is 10
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        assertEquals(List.of("RGS-470 {attribute=gewicht, label=V1}"), errorsOn(emptyThenFilled, "- het gewicht is 10"));
+
+        String twoOpeners = NEE + MODEL + """
+                Situatie tweemaal V1:
+                een Vondst V1
+                - de afhaaldatum is leeg
+                een Vondst V1
+                - de afhaaldatum is 01-06-2025
+
+                Scenario tegenspraak
+                gebaseerd op de situatie tweemaal V1
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        assertEquals(List.of("RGS-470 {attribute=afhaaldatum, label=V1}"),
+                errorsOn(twoOpeners, "- de afhaaldatum is 01-06-2025"));
+    }
+
+    @Test void based_on_replaces_attribute_values_and_is_leeg_in_both_directions() {
+        String text = NEE + MODEL + """
+                Situatie met gewicht:
+                een Vondst V1
+                - het gewicht is 10
+                - de afhaaldatum is 01-06-2025
+
+                Situatie zonder gewicht:
+                een Vondst V1
+                - het gewicht is leeg
+                - de afhaaldatum is 01-06-2025
+
+                Situatie gewicht weg gebaseerd op de situatie met gewicht:
+                een Vondst V1
+                - het gewicht is leeg
+
+                Situatie gewicht terug gebaseerd op de situatie zonder gewicht:
+                een Vondst V1
+                - het gewicht is 25
+
+                Scenario keten weg
+                gebaseerd op de situatie gewicht weg
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+
+                Scenario keten terug
+                gebaseerd op de situatie gewicht terug
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+
+                Scenario twee bases weg
+                gebaseerd op de situatie met gewicht
+                gebaseerd op de situatie zonder gewicht
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+
+                Scenario twee bases terug
+                gebaseerd op de situatie zonder gewicht
+                gebaseerd op de situatie met gewicht
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        List<ResolvedScenario> s = scenarios(text);
+        assertEquals(4, s.size());
+        String gone = """
+                {
+                  "format": "uchar-case-v0",
+                  "asOfDate": null,
+                  "input": {
+                    "instances": [
+                      {
+                        "label": "V1",
+                        "objectType": "Vondst",
+                        "attributes": {
+                          "afhaaldatum": {
+                            "date": "2025-06-01"
+                          }
+                        },
+                        "attributesEmpty": [
+                          "gewicht"
+                        ],
+                        "roles": {},
+                        "characteristics": []
+                      }
+                    ],
+                    "parameters": {}
+                  },
+                  "expected": [
+                    {
+                      "kind": "consistent"
+                    }
+                  ]
+                }
+                """;
+        assertEquals(gone, CaseEmitter.emit(s.get(0)));
+        assertEquals(gone, CaseEmitter.emit(s.get(2)));
+        assertTrue(CaseEmitter.emit(s.get(1)).contains("\"number\": \"25\"")
+                && !CaseEmitter.emit(s.get(1)).contains("attributesEmpty"));
+        assertTrue(CaseEmitter.emit(s.get(3)).contains("\"number\": \"10\"")
+                && !CaseEmitter.emit(s.get(3)).contains("attributesEmpty"));
+    }
+
+    @Test void attribute_is_leeg_refuses_unknown_period_timeline_and_dimensioned_attributes() {
+        String bullets = """
+                Scenario geweigerd
+                Gegeven is de volgende situatie:
+                een Vondst V1
+                - de onzin is leeg
+                - de afhaaldatum is leeg van 01-01-2025 tot 01-02-2025
+                - de opslagkosten is leeg
+                - het gewicht is leeg
+                een Vondst V2
+                - de opslagkosten is leeg van 01-01-2025 tot 01-02-2025
+                - het seizoensgewicht is leeg
+                - het seizoensgewicht in voorjaar is leeg
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        for (String scenario : List.of(NEE + MODEL + bullets, MODEL + bullets)) {
+            assertEquals(List.of("RGS-236 {attribute=onzin, objectType=Vondst}"),
+                    errorsOn(scenario, "- de onzin is leeg"));
+            assertEquals(List.of("RGS-471 {attribute=afhaaldatum}"),
+                    errorsOn(scenario, "afhaaldatum is leeg van"));
+            assertEquals(List.of("RGS-471 {attribute=opslagkosten}"),
+                    errorsOn(scenario, "- de opslagkosten is leeg"));
+            assertEquals(List.of("RGS-471 {attribute=opslagkosten}"),
+                    errorsOn(scenario, "opslagkosten is leeg van"));
+            assertEquals(List.of("RGS-472 {attribute=seizoensgewicht, written=seizoensgewicht}"),
+                    errorsOn(scenario, "- het seizoensgewicht is leeg"));
+            assertEquals(List.of("RGS-472 {attribute=seizoensgewicht, written=seizoensgewicht in voorjaar}"),
+                    errorsOn(scenario, "seizoensgewicht in voorjaar is leeg"));
+        }
+    }
+
+    @Test void attributesEmpty_stands_between_attributes_and_roles_and_names_with_leeg_parse_clean() {
+        String keyOrder = NEE + MODEL + """
+                Objecttype de Jutter (mv: Jutters) (bezield)
+
+                Feittype vondstmelding
+                    de melder Jutter
+                    de vondst (mv: vondsten) Vondst
+                Eén melder heeft meerdere vondsten
+
+                Scenario sleutelvolgorde
+                Gegeven is de volgende situatie:
+                een Jutter J1
+                een Vondst V1
+                - is aangespoeld van 01-01-2025 tot 01-02-2025
+                - is niet drijfhout
+                - is afhaalbaar
+                - de melder is J1
+                - de afhaaldatum is leeg
+                - het gewicht is 7
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        String emitted = CaseEmitter.emit(only(keyOrder));
+        int v1At = emitted.indexOf("\"label\": \"V1\"");
+        String v1Slice = emitted.substring(v1At);
+        List<String> keys = List.of("\"label\"", "\"objectType\"", "\"attributes\"", "\"attributesEmpty\"",
+                "\"roles\"", "\"characteristics\"", "\"characteristicsAbsent\"", "\"characteristicTimelines\"");
+        int prev = -1;
+        for (String key : keys) {
+            int pos = v1Slice.indexOf(key);
+            assertTrue(pos > prev, () -> key + " out of order in:\n" + v1Slice);
+            prev = pos;
+        }
+
+        String leegInName = NEE + """
+                Objecttype de Vondst (mv: Vondsten)
+                    het leeg gewicht Numeriek (geheel getal);
+                    is vrijgesteld kenmerk (bijvoeglijk);
+
+                Regel vrijstelling
+                    geldig altijd
+                        Een Vondst is vrijgesteld indien zijn leeg gewicht leeg is.
+
+                Scenario leeg in naam
+                Gegeven is de volgende situatie:
+                een Vondst V1
+                - het leeg gewicht is 10
+                een Vondst V2
+                - het leeg gewicht is leeg
+                Met als verwacht resultaat:
+                - het leeg gewicht van V1 is 10
+                - V1 is niet vrijgesteld
+                - het leeg gewicht van V2 is leeg
+                - V2 is vrijgesteld
+                """;
+        String leegCase = CaseEmitter.emit(only(leegInName));
+        assertTrue(leegCase.contains("\"leeg gewicht\": {\n            \"number\": \"10\"\n          }"), leegCase);
+        assertTrue(leegCase.contains("\"attributesEmpty\": [\n          \"leeg gewicht\"\n        ]"), leegCase);
+    }
 }

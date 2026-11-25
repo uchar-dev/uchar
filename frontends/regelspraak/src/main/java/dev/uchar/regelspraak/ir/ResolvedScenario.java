@@ -61,9 +61,12 @@ public record ResolvedScenario(String name, Scope scope, LocalDate asOfDate, Sit
 
     /** An attribute assignment under its declared name: a scalar {@code value}, for a time-dependent attribute a
      *  {@code timeline} of segments in written order, or for a dimensioned attribute its {@code cells} in first-seen
-     *  order. Exactly one of the three is non-null. */
+     *  order; all three are null where the situation states that the attribute has no value ("de/het X is leeg"), the
+     *  case file's {@code attributesEmpty}. At most one of the three is non-null. */
     public record AttributeValue(String attribute, ScenarioValue value, List<Segment> timeline, List<Cell> cells,
-                                 int line) {}
+                                 int line) {
+        public boolean isEmpty() { return value == null && timeline == null && cells == null; }
+    }
 
     /** One cell of a dimensioned attribute: one label of each dimension, in the declared order of the attribute's
      *  dimensions as the case file carries them (RUNTIME-SEMANTICS ch. 5.8c), and its value. */

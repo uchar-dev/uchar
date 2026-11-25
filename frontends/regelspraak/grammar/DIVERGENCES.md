@@ -3198,6 +3198,7 @@ holds, in any order, instances and parameter values:
 een Jutter J
 - de naam is "Aukje"
 - het vondstgewicht is 1,5 t
+- de wachtbonus is leeg
 - de borgdagen is 4 van 01-01-2024 tot 01-02-2024
 - de vondsten zijn V1, V2 en V3
 - is borgplichtig van 01-01-2024 tot 15-01-2024
@@ -3209,6 +3210,7 @@ de parameter het penningbedrag is 7 van 01-01-2024 tot 01-01-2025
 
 An instance opens with `een <objecttype> <LABEL>` (one capitalised word)
 and carries bullets: an attribute value (`de|het <attribuut> is <waarde>`),
+an attribute stated to have no value (`de|het <attribuut> is leeg`),
 a to-one role (`de|het <rol> is <LABEL>`), a to-many role (`de|het <rol>
 zijn <LABEL>, <LABEL> en <LABEL>`), a characteristic (`is|heeft
 [een|de|het] <kenmerk>`) and a characteristic that does not hold (`is niet
@@ -3402,7 +3404,19 @@ scenario blocks then resolve against that model (`ScenarioResolver`):
   cell: a later assignment of the same cell replaces the earlier one in place,
   and the other cells of the attribute stay. A cell carries one value, in the
   input and in an expectation, so it takes no period and no timeline
-  expectation (a dimensioned attribute has no timeline, WF-125).
+  expectation (a dimensioned attribute has no timeline, WF-125). An attribute
+  stated to have no value (`de|het <attribuut> is leeg`) is the case file's
+  `attributesEmpty` (RUNTIME-SEMANTICS ch. 1.5), a scalar attribute without
+  dimensions and without a timeline: on a dimensioned attribute, with a cell or
+  without, it is refused (RGS-472, before RGS-364), and with a period or on a
+  time-dependent attribute it is refused (RGS-471). Within one situation block
+  an attribute is given a value or `is leeg` (RGS-470), also over two openers of
+  one label; a block merged later replaces it in place either way, so a case
+  never gives an attribute a value and names it in `attributesEmpty` (EF-048).
+  In a document without `Afleiden uit leeg: nee` an attribute the situation does
+  not name is empty already, so there the bullet counts only where it replaces a
+  filled value from a block merged before it; elsewhere the lowering writes it
+  all the same, with a WARNING (RGS-473) beside the model.
 - **Roles** resolve as the case readers resolve a role key: the written name
   names the other role of a fact type in which the instance's type fills a
   role, by its declared name or its declared plural. The verb follows the
@@ -3467,14 +3481,16 @@ serialiser, so a case file and an IR document share one shape.
 
 - `asOfDate` is the peildatum, or null. The instances come in first-seen
   order with their attributes, roles and characteristics in first-seen
-  order. An instance writes `characteristics`, then `characteristicsAbsent`
-  where a characteristic does not hold, then `characteristicTimelines` where a
-  time-dependent characteristic holds somewhere, the last two only when they
-  are not empty: the `properties` order of the case schema, and gate 16 holds
-  every case file it writes for a golden byte for byte to the one pinned
-  beside the golden. An expectation `staat niet vast` is an `attributeOpen` with its
-  label and attribute, or a `characteristicOpen` with its label and
-  characteristic.
+  order. An instance writes `attributes`, `attributesEmpty` where an attribute
+  is stated to have no value, `roles`, `characteristics`, then
+  `characteristicsAbsent` where a characteristic does not hold, then
+  `characteristicTimelines` where a time-dependent characteristic holds
+  somewhere, `attributesEmpty`, `characteristicsAbsent` and
+  `characteristicTimelines` only when they are not empty: the `properties` order
+  of the case schema, and gate 16 holds every case file it writes for a golden
+  byte for byte to the one pinned beside the golden. An expectation `staat niet
+  vast` is an `attributeOpen` with its label and attribute, or a
+  `characteristicOpen` with its label and characteristic.
 - The cells of one attribute are its `cells`, in first-seen order, each with
   its labels and its value; an expected cell is a `cellValue` or a `cellEmpty`
   with its labels (RUNTIME-SEMANTICS ch. 5.8c).
@@ -3630,6 +3646,20 @@ prefix `scenario: `, placeholders in angle brackets:
   tijdlijn als niet geldend, zonder periode (characteristicsAbsent), en een
   tijdsafhankelijk kenmerk geldt buiten de perioden die de situatie geeft
   niet` (RGS-466)
+- `het attribuut '<a>' van <l> heeft in één situatieblok zowel een waarde als
+  'is leeg'; binnen een blok krijgt een attribuut een waarde of is het leeg, en
+  een geërfd attribuut wordt alleen vervangen door een later blok: een volgende
+  situatie waarop het scenario of de situatie gebaseerd is, of het eigen blok
+  van het scenario of de situatie` (RGS-470)
+- `het attribuut '<a>' is met 'is leeg' gegeven, maar met een periode of als
+  tijdsafhankelijk attribuut; een casebestand levert alleen een attribuut zonder
+  tijdlijn als vaststaand leeg, zonder periode (attributesEmpty), en een
+  tijdsafhankelijk attribuut is buiten de perioden die de situatie geeft leeg`
+  (RGS-471)
+- `'<naam>' is het gedimensioneerde attribuut '<a>' of een cel ervan en is met
+  'is leeg' gegeven, maar een casebestand levert alleen een attribuut zonder
+  dimensies als vaststaand leeg (attributesEmpty), en een cel die de situatie
+  niet noemt is leeg` (RGS-472)
 - `de rol '<r>' vanaf het objecttype '<t>' is niet eenduidig: meer dan één
   feittype kent haar`
 - `de rol '<r>' is een naar-veel-rol; schrijf de 'zijn'-lijstvorm ('de <r>
@@ -3714,16 +3744,17 @@ a whole timeline written by hand, the exclusive end, and each refusal of
 the parameter set on its line), `ScenarioCellTest` (each form of a cell as
 an input and as an expectation, the merge per cell, a case file with cells
 written by hand, each refusal of a cell, and the semantic tokens of a cell)
-and `ScenarioStrictTest` (the three forms of a
-characteristic that does not hold and both forms of `staat niet vast` in
-case files written by hand, the same input in a document without `Afleiden
-uit leeg: nee`, a scenario or a situation based on another and a scenario
-with two bases that turn a characteristic either way, the key order beside
-`characteristicTimelines`, a characteristic declared as `niet drijfhout`,
-each refusal on its line, and names with `staat`, `vast`, `of` and `niet`),
-and `ScenarioRecoveryTest` (a test document whose scenario layer the
-recovery cut short, an expectation `staat niet vast` among them: the syntax
-error is the one finding). The corpus: 49 goldens carry a `scenario.rgs` beside their
+and `ScenarioStrictTest` (an attribute stated to have no value with `is leeg`,
+the three forms of a characteristic that does not hold and both forms of `staat
+niet vast` in case files written by hand, the same input in a document without
+`Afleiden uit leeg: nee` with its warnings RGS-469 and RGS-473, a scenario or a
+situation based on another and a scenario with two bases that turn an attribute
+or a characteristic either way, the key order of `attributesEmpty` and
+`characteristicsAbsent`, an attribute named with `leeg` and a characteristic
+declared as `niet drijfhout`, each refusal on its line, and names with `staat`,
+`vast`, `of` and `niet`), and `ScenarioRecoveryTest` (a test document whose
+scenario layer the recovery cut short, an attribute bullet and an expectation
+`staat niet vast` among them: the syntax error is the one finding). The corpus: 49 goldens carry a `scenario.rgs` beside their
 `source.rgs` (counted 2026-11-23) whose lowering reproduces their pinned
 case files, and whose scenario route reproduces their `ir.json`, byte for
 byte — the handwritten expectations are the anchor —, among them

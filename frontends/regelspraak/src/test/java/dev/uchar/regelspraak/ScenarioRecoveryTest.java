@@ -96,6 +96,19 @@ class ScenarioRecoveryTest {
                         () -> bullet + " in\n" + model);
     }
 
+    @Test void an_attribute_bullet_the_recovery_cut_short_gives_no_false_secondary_error() {
+        for (String model : List.of("Afleiden uit leeg: nee\n\n" + MODEL, MODEL))
+            for (String bullet : List.of("- de", "- de taxatie", "- de taxatie is",
+                    "- de taxatie is leeg van", "- de taxatie is leeg van 01-01-2025")) {
+                ScenarioBundle b = ScenarioResolver.resolve(model + SCENARIO.replace("- de taxatie is 3", bullet));
+                assertFalse(b.isOk());
+                assertEquals(List.of("RGS-216"), codes(b.model().errors()), () -> bullet + " in\n" + model);
+                assertEquals(List.of(), codes(b.warnings()), () -> "no warning on " + bullet);
+                SemanticTokens.Document d = tokens(model, SCENARIO.replace("- de taxatie is 3", bullet));
+                assertTrue(d.diagnostics().stream().anyMatch(x -> "RGS-216".equals(x.code()) && "toets.rgs".equals(x.file())));
+            }
+    }
+
     /** Both routes return on {@code scenario} and report a syntax error; returns the codes of the ERRORs of
      *  {@code --cases}. */
     private static List<String> syntaxErrorOnBothRoutes(String scenario) {

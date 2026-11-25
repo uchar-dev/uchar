@@ -204,10 +204,11 @@ situatieOnderdeel
 // UPPER_ID (V1, Tom); the resolver checks its uniqueness and non-collision with a type.
 instantie : EEN objectTypeNaam UPPER_ID toewijzing* ;
 toewijzing
-    : bullet bepaaldLidwoord toewijzingNaam IS situatieWaarde periode?     DOT? # attribuutToewijzing   // de/het <attr> is <waarde> [van <d> tot <d>]
-    | bullet bepaaldLidwoord toewijzingNaam IS UPPER_ID                    DOT? # rolToOneToewijzing    // de/het <rol> is <LABEL>
+    : bullet bepaaldLidwoord toewijzingNaam IS LEEG periode?                 DOT? # attribuutLeegToewijzing // de/het <attr> is leeg
+    | bullet bepaaldLidwoord toewijzingNaam IS situatieWaarde periode?       DOT? # attribuutToewijzing     // de/het <attr> is <waarde> [van <d> tot <d>]
+    | bullet bepaaldLidwoord toewijzingNaam IS UPPER_ID                      DOT? # rolToOneToewijzing      // de/het <rol> is <LABEL>
     | bullet bepaaldLidwoord toewijzingNaam ZIJN UPPER_ID ( ( COMMA | EN ) UPPER_ID )* DOT? # rolToManyToewijzing // de/het <rol> zijn <LABEL>, <LABEL> en <LABEL>
-    | bullet ( IS | HEEFT ) lidwoord? kaleNaam periode?      DOT? # kenmerkToewijzing     // is/heeft [lidw] <kenmerk> [van <d> tot <d>] | is niet/heeft geen <kenmerk>
+    | bullet ( IS | HEEFT ) lidwoord? kaleNaam periode?        DOT? # kenmerkToewijzing       // is/heeft [lidw] <kenmerk> [van <d> tot <d>] | is niet/heeft geen <kenmerk>
     ;
 // One period of a timeline, from inclusive to exclusive, the case format's [from, to): a
 // segment of a time-dependent attribute or parameter, or a period in which a time-dependent
@@ -231,9 +232,10 @@ toewijzingNaam : begrensdeNaam ;
 parameterWaarde : DE_PARAMETER parameterNaam IS situatieWaarde periode? DOT? ;
 
 // A situatie/verwachting value: the existing literal tokens (nothing new). A bare
-// `NUMBER` unit run reuses getalWaarde. `leeg` is NOT a situatieWaarde — only a
-// verwachting states `… is leeg` (its own `verwachtAttribuutLeeg` alternative), so a
-// situatie assignment always carries a concrete value.
+// `NUMBER` unit run reuses getalWaarde. `leeg` is NOT a situatieWaarde — a situatie
+// bullet and a verwachting state `… is leeg` through their own alternatives
+// (`attribuutLeegToewijzing`, `verwachtAttribuutLeeg`), so `situatieWaarde` always
+// carries a concrete value.
 situatieWaarde
     : getalWaarde       # getalSituatieWaarde
     | datumWaarde       # datumSituatieWaarde
@@ -371,7 +373,7 @@ benaming : BENAMING_START BENAMING_TEKST? ( BENAMING_EINDE | BENAMING_ONAF ) ;
 naamWoordLower
     : LOWER_ID | NUMBER | PERCENT_SIGN | AANTAL_WORD
     | VAN | OP | IN | VOOR | OVER | BIJ | TOT | TOT_EN_MET | PER | MET
-    | DE | HET | OF | DAN | ALS | NIET | GELDIG
+    | DE | HET | OF | DAN | ALS | NIET | GELDIG | LEEG
     | EEN_TELWOORD | TWEE_TELWOORD | DRIE_TELWOORD | VIER_TELWOORD
     | JAAR | MAAND | DAG | WEEK | KWARTAAL | UUR | MINUUT | SECONDE | MILLISECONDE
     | PERIODE | DAGEN | WEKEN | MAANDEN | KWARTALEN | JAREN
@@ -718,7 +720,7 @@ dagsoortDefinition // §13.3.10.1
 kaleNaamWoord
     : LOWER_ID | UPPER_ID | NUMBER | PERCENT_SIGN | AANTAL_WORD
     | OP | IN | VOOR | OVER | BIJ | TOT | TOT_EN_MET | PER | MET | OF | DAN | NIET
-    | DE | HET | GELDIG
+    | DE | HET | GELDIG | LEEG
     | EEN_TELWOORD | TWEE_TELWOORD | DRIE_TELWOORD | VIER_TELWOORD
     | JAAR | MAAND | DAG | WEEK | KWARTAAL | UUR | MINUUT | SECONDE | MILLISECONDE
     | PERIODE | DAGEN | WEKEN | MAANDEN | KWARTALEN | JAREN

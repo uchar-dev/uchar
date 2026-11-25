@@ -71,13 +71,13 @@ public final class ScenarioResolver {
 
     private final RegelSpraakModel model;
     private final TestDocumentContext test;
-    /** In a document without 'Afleiden uit leeg: nee': each bullet that gives a characteristic as not holding, with
-     *  what it writes after the bullet; and those that replace, in the expansion of some situation or the merge of some
-     *  scenario, the characteristic as holding from a block merged before them. Keyed on the bullet itself, because
-     *  one line can carry two. */
-    private record AbsentBullet(CharacteristicValue value, String written) {}
-    private final List<AbsentBullet> absentBullets = new ArrayList<>();
-    private final Set<CharacteristicValue> replacesHolding = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+    /** In a document without 'Afleiden uit leeg: nee': each bullet that gives an attribute with 'is leeg' (RGS-473) or
+     *  a characteristic as not holding (RGS-469), and those that replace, in the expansion of some situation or the
+     *  merge of some scenario, a filled value or a holding characteristic from a block merged before them. Keyed on the
+     *  bullet's own value record, because one line can carry two. */
+    private record IdleBullet(Object value, Typing.Coded warning, int line) {}
+    private final List<IdleBullet> idleBullets = new ArrayList<>();
+    private final Set<Object> replaces = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
     private final List<Diagnostic> warnings = new ArrayList<>();
     /** Situation definitions by normalised name, the first declaration of a name. */
     private final Map<String, SituatieDefinitieContext> situations = new LinkedHashMap<>();
@@ -173,13 +173,12 @@ public final class ScenarioResolver {
         for (ParseTree kind : children)
             if (kind instanceof ScenarioContext sc) { result.add(resolveScenario(sc)); contexts.add(sc); }
         oneIrDocument(result, contexts);
-        // there characteristicsAbsent changes no outcome (RUNTIME-SEMANTICS ch. 1.5, "The case"): a characteristic
-        // the situation does not name does not hold, so the bullet counts only where it replaces one inherited as
-        // holding
-        for (AbsentBullet b : absentBullets)
-            if (!replacesHolding.contains(b.value()))
-                warnings.add(new Typing.Coded("RGS-469", params("written", b.written())).frame("scenario")
-                        .at(Severity.WARNING, b.value().line()));
+        // there attributesEmpty and characteristicsAbsent change no outcome (RUNTIME-SEMANTICS ch. 1.5, "The case"):
+        // an attribute or characteristic the situation does not name is empty or does not hold already, so the bullet
+        // counts only where it replaces one inherited as filled or holding
+        for (IdleBullet b : idleBullets)
+            if (!replaces.contains(b.value()))
+                warnings.add(b.warning().frame("scenario").at(Severity.WARNING, b.line()));
         return result;
     }
 
@@ -730,7 +729,17 @@ public final class ScenarioResolver {
                 if (pw != null) parameters.add(pw);
             }
         }
-        // within one block a characteristic holds or does not; only a block merged later replaces what it inherits
+        // within one block an attribute is given a value or 'is leeg', and a characteristic holds or does not; only a
+        // block merged later replaces what it inherits
+        Map<String, Map<String, Boolean>> filled = new HashMap<>();
+        for (InstanceFragment f : instances)
+            for (AttributeValue a : f.attributes()) {
+                boolean hasValue = !a.isEmpty();
+                Boolean earlier = filled.computeIfAbsent(f.label(), x -> new HashMap<>())
+                        .putIfAbsent(norm(a.attribute()), hasValue);
+                if (earlier != null && earlier != hasValue)
+                    error(a.line(), "RGS-470", params("attribute", a.attribute(), "label", f.label()));
+            }
         Map<String, Map<String, Boolean>> given = new HashMap<>();
         for (InstanceFragment f : instances)
             for (CharacteristicValue k : f.characteristics()) {
@@ -762,7 +771,8 @@ public final class ScenarioResolver {
         List<CharacteristicValue> characteristics = new ArrayList<>();
         Map<String, List<TimeWindow>> periods = new LinkedHashMap<>();
         for (ToewijzingContext t : inst.toewijzing()) {
-            if (t instanceof AttribuutToewijzingContext a) attribute(a, ot, attributes, timelines, cells, fixed);
+            if (t instanceof AttribuutLeegToewijzingContext a) attributeEmpty(a, ot, attributes);
+            else if (t instanceof AttribuutToewijzingContext a) attribute(a, ot, attributes, timelines, cells, fixed);
             else if (t instanceof RolToOneToewijzingContext r)
                 role(ot, src(r.toewijzingNaam()), List.of(r.UPPER_ID().getText()), false, r.getStart().getLine(), roles);
             else if (t instanceof RolToManyToewijzingContext r) {
@@ -772,6 +782,34 @@ public final class ScenarioResolver {
             } else if (t instanceof KenmerkToewijzingContext k) characteristic(k, ot, characteristics, periods);
         }
         return new InstanceFragment(label, ot, attributes, roles, characteristics, line);
+    }
+
+    private void attributeEmpty(AttribuutLeegToewijzingContext a, ObjectType ot, List<AttributeValue> attributes) {
+        if (DefinitionResolver.recovered(a)) return;
+        int line = a.getStart().getLine();
+        String written = withoutArticle(src(a.toewijzingNaam()));
+        if (ot == null) return;
+        String dimensioned = dimensionedAttribute(ot, written);
+        if (dimensioned != null) {
+            error(line, "RGS-472", params("written", written, "attribute", dimensioned));
+            return;
+        }
+        Named named = member(ot, written, line);
+        if (named == null) return;
+        String attr = named.attribute();
+        if (ot.granularityOf(attr) != null || a.periode() != null) {
+            error(line, "RGS-471", params("attribute", attr));
+            return;
+        }
+        AttributeValue empty = new AttributeValue(attr, null, null, null, line);
+        attributes.add(empty);
+        if (model.inferFromEmpty()) {
+            String snippet = a.getStart().getInputStream()
+                    .getText(org.antlr.v4.runtime.misc.Interval.of(a.bepaaldLidwoord().getStart().getStartIndex(),
+                            a.LEEG().getSymbol().getStopIndex()))
+                    .replaceAll("\\s+", " ").trim();
+            idleBullets.add(new IdleBullet(empty, new Typing.Coded("RGS-473", params("written", snippet)), line));
+        }
     }
 
     private void attribute(AttribuutToewijzingContext a, ObjectType ot, List<AttributeValue> attributes,
@@ -903,9 +941,10 @@ public final class ScenarioResolver {
             characteristics.add(absent);
             if (model.inferFromEmpty()) {
                 Token verb = (possessive ? k.HEEFT() : k.IS()).getSymbol();
-                absentBullets.add(new AbsentBullet(absent, k.getStart().getInputStream()
+                String snippet = k.getStart().getInputStream()
                         .getText(org.antlr.v4.runtime.misc.Interval.of(verb.getStartIndex(), k.kaleNaam().getStop().getStopIndex()))
-                        .replaceAll("\\s+", " ").trim()));
+                        .replaceAll("\\s+", " ").trim();
+                idleBullets.add(new IdleBullet(absent, new Typing.Coded("RGS-469", params("written", snippet)), line));
             }
             return;
         }
@@ -1322,19 +1361,27 @@ public final class ScenarioResolver {
         return new Situation(result, new ArrayList<>(parameters.values()));
     }
 
-    /** Notes each bullet of {@code sources} that gives as not holding a characteristic which a block before it gives
-     *  as holding on the same label: merged in this order, it replaces that characteristic. Keyed as {@link #merge}
-     *  keys an instance and a characteristic; unlike the merge it reports no defect, so it also runs on the expansion
-     *  of a situation no scenario uses without reporting that situation's defects twice. */
+    /** Notes each bullet of {@code sources} that gives with 'is leeg' an attribute or as not holding a characteristic
+     *  which a block before it gives as filled or holding on the same label: merged in this order, it replaces that
+     *  earlier assignment. Keyed as {@link #merge} keys an instance and its members; unlike the merge it reports no
+     *  defect, so it also runs on the expansion of a situation no scenario uses without reporting that situation's
+     *  defects twice. */
     private void noteReplacements(List<BlockResult> sources) {
+        Map<String, Map<String, Boolean>> filled = new HashMap<>();
         Map<String, Map<String, Boolean>> holds = new HashMap<>();
         for (BlockResult block : sources)
-            for (InstanceFragment frag : block.instances())
+            for (InstanceFragment frag : block.instances()) {
+                for (AttributeValue a : frag.attributes()) {
+                    Boolean earlier = filled.computeIfAbsent(frag.label(), x -> new HashMap<>())
+                            .put(norm(a.attribute()), !a.isEmpty());
+                    if (a.isEmpty() && Boolean.TRUE.equals(earlier)) replaces.add(a);
+                }
                 for (CharacteristicValue k : frag.characteristics()) {
                     Boolean earlier = holds.computeIfAbsent(frag.label(), x -> new HashMap<>())
                             .put(norm(k.characteristic()), k.holds());
-                    if (!k.holds() && Boolean.TRUE.equals(earlier)) replacesHolding.add(k);
+                    if (!k.holds() && Boolean.TRUE.equals(earlier)) replaces.add(k);
                 }
+            }
     }
 
     /** After the merge: every role target names a label of the merged situation whose type fills the role — a
@@ -1623,7 +1670,12 @@ public final class ScenarioResolver {
     private String dimensionedAttribute(String label, String written, Situation situation) {
         Instance i = situation.instance(label);
         if (i == null || i.objectType() == null) return null;
-        ObjectType ot = i.objectType();
+        return dimensionedAttribute(i.objectType(), written);
+    }
+
+    /** The dimensioned attribute {@code written} names on {@code ot}, alone or as one of its cells ({@link #member});
+     *  null where it names none, and where {@link #member} refuses the bullet as fitting two cells (RGS-365). */
+    private String dimensionedAttribute(ObjectType ot, String written) {
         String attr = ot.attributeName(written);
         if (attr != null) return ot.dimensionsOf(attr).isEmpty() ? null : attr;
         List<ExpressionBuilder.CellReading> readings = ExpressionBuilder.cellReadings(model, ot, written);
