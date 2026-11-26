@@ -1,0 +1,12 @@
+reading /rules/rules/0/versions/0 "V1" 0 Binary undetermined open "P1" "toelage"
+reading /rules/rules/0/versions/0 "V1" 1 AttributeReference 100
+reading /rules/rules/0/versions/0 "V1" 2 AttributeReference undetermined open "P1" "toelage"
+reading /rules/rules/0/versions/0 "V1" OPEN
+state attribute "P1" "toelage" open
+state attribute "V1" "ploegtoelage" open
+state attribute "V1" "waarde" 100
+state link "lidmaatschap" "chef" "J1" "ploeg" "P1"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state object "J1" "Jutter"
+state object "P1" "Ploeg"
+state object "V1" "Vondst"

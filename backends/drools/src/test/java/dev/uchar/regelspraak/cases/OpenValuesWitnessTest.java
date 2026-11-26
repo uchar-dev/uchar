@@ -97,6 +97,7 @@ class OpenValuesWitnessTest {
     @Test void wv_1_5_complete_session() throws Exception {
         assertEquals(1, play("open-input", "closed"));
         assertEquals(1, play("filled-test", "closed"));
+        assertEquals(1, play("link", "closed"));
     }
 
     /** WV-1.5-complete-*: a member declared complete, an attribute and a characteristic, is settled leeg without a value
@@ -108,9 +109,9 @@ class OpenValuesWitnessTest {
     }
 
     /** WV-1.5-instance-ordered: an instance-ordered part reaches its fixpoint per object, the leeg test of the
-     *  predecessor's member undetermined over an open one. */
+     *  predecessor's member undetermined over an open one, and an open predecessor link leaving the root open too. */
     @Test void wv_1_5_instance_ordered() throws Exception {
-        assertEquals(2, play("instance-ordered", "case"));
+        assertEquals(3, play("instance-ordered", "case"));
     }
 
     /** WV-1.5-settled-operand, WV-1.5-derived-*, WV-1.5-negation, WV-1.5-input-beside-a-writer, WV-1.5-case-*: a
@@ -200,11 +201,17 @@ class OpenValuesWitnessTest {
         assertEquals(3, play("consistency", "case"));
     }
 
-    /** WV-1.5-link-*: a read over an absent link is settled leeg and a navigated check over it stands false; over a
-     *  present link an open member of the object it reaches is an open read; a role check reads no value and
-     *  stands. */
+    /** WV-1.5-link-*: an unwritten non-reciprocal to-one input role is open unless declared complete or stated empty in
+     *  {@code rolesEmpty}; a read, check, role check or fold range over an open role breaks off on an open read, while a
+     *  settled-absent role reads as ch. 1.2 and 5.8 read it; on a 1:n fact type the to-many direction stays closed; and on
+     *  a self-relation the two role positions are independent. */
     @Test void wv_1_5_link() throws Exception {
-        assertEquals(1, play("link", "case"));
+        assertEquals(2, play("link", "case"));
+        assertEquals(2, play("link-complete", "case"));
+        assertEquals(1, play("link-one-to-many", "case"));
+        assertEquals(6, play("link-two-step", "case"));
+        assertEquals(2, play("link-fold-range", "case"));
+        assertEquals(2, play("link-self-relation", "case"));
     }
 
     /** WV-1.5-outside-the-window: a rule outside its window of validity writes its target and fills nothing there, and so
@@ -447,7 +454,7 @@ class OpenValuesWitnessTest {
         dev.uchar.regelspraak.transpiler.tms.Fixpoint fp = DroolsBackend.fixpointOf(build, session);
         List<String> out = new ArrayList<>();
         for (var v : fp.values()) if (v.object() == object && v.attribute().equals(attribute)) out.add(String.valueOf(v.value()));
-        for (var o : fp.open()) if (o.object() == object && o.member().equals(attribute)) out.add("open");
+        for (var o : fp.open()) if (!o.role() && o.object() == object && o.member().equals(attribute)) out.add("open");
         return String.join(", ", out);
     }
 
@@ -504,6 +511,7 @@ class OpenValuesWitnessTest {
                 "fold-chain", "fold-in-a-binder",
                 "fold-in-a-date-stack", "fold-in-a-filter", "fold-over-a-parameter", "fold-over-a-union", "fold-over-the-date", "fold-subtype",
                 "fold-value-after-filters", "initialisation", "initialisation-condition", "input-per-object", "instance-ordered", "link",
+                "link-complete", "link-fold-range", "link-one-to-many", "link-self-relation", "link-two-step",
                 "no-open-without-the-property", "open-input", "outside-the-window", "past-undetermined-deposit",
                 "past-undetermined-fault", "past-undetermined-filter", "past-undetermined-fold", "quantifier-fold",
                 "quantifier-fold-filter", "quantifier-fold-filter-faults", "quantifier-fold-matrix-faults",

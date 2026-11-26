@@ -37,7 +37,7 @@ public final class OpenInput {
     }
 
     /** Per object, by identity, the members whose input is not complete. */
-    Map<Object, Set<ElementKey>> members() {
+    public Map<Object, Set<ElementKey>> members() {
         return members;
     }
 

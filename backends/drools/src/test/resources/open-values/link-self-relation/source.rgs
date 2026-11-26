@@ -1,0 +1,29 @@
+Afleiden uit leeg: nee
+
+Objecttype de Vergunning (mv: Vergunningen)
+    de vergoeding Numeriek (geheel getal);
+    de vorige vergoeding Numeriek (geheel getal);
+    is opvolgend kenmerk (bijvoeglijk);
+    is zonder voorganger kenmerk (bijvoeglijk);
+    is opgevolgd kenmerk (bijvoeglijk);
+
+Feittype opvolging
+    de vorige vergunning Vergunning
+    de volgende vergunning Vergunning
+Eén vorige vergunning heeft één volgende vergunning
+
+Regel vorige vergoeding
+    geldig altijd
+        De vorige vergoeding van een Vergunning moet gesteld worden op de vergoeding van de vorige vergunning van de Vergunning.
+
+Regel opvolgend
+    geldig altijd
+        Een Vergunning is opvolgend indien hij een volgende vergunning is.
+
+Regel zonder voorganger
+    geldig altijd
+        Een Vergunning is zonder voorganger indien hij geen volgende vergunning is.
+
+Regel opgevolgd
+    geldig altijd
+        Een Vergunning is opgevolgd indien hij een vorige vergunning is.

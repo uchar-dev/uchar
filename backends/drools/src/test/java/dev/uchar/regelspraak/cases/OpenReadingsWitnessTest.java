@@ -152,9 +152,106 @@ class OpenReadingsWitnessTest {
         pinned("open-exception-groups", VALUES.resolve("stack-exception-groups"));
     }
 
-    /** WV-5.12-open-path: a read over a path names the object it reached open. */
+    /** WV-5.12-open-path and WV-5.12-open-link / WV-5.12a-open-link: a read over a path names the object it reached open,
+     *  or breaks off on an open to-one role (1-step, 2-step, fold range, self-relation) with {@code open <object> "<role>"}
+     *  and {@code link "<ft>" "<r0>" <obj|open> "<r1>" <obj|open>}. */
     @Test void wv_5_12_open_path() throws Exception {
         pinned("open-path", VALUES.resolve("link"));
+        pinned("open-link-two-step", VALUES.resolve("link-two-step"));
+        pinned("open-link-fold-range", VALUES.resolve("link-fold-range"));
+        pinned("open-link-self-relation", VALUES.resolve("link-self-relation"));
+    }
+
+    /** WV-5.12-open-link: a to-one role that also declares a plural spells its declared singular {@code Role.name} in
+     *  {@code open <object> "<role>"}, never the plural, across {@code AttributeReference}, {@code CharacteristicCheck},
+     *  {@code RoleMembership} and {@code QuantifierFold}; and {@link ConditionReading.NodeReading#open()} carries the role
+     *  metadata while {@link ConditionReading.NodeReading#object()} is {@code null}. */
+    @Test void wv_5_12_open_link_singular_name_and_null_object(@TempDir Path dir) throws Exception {
+        String irJson = """
+                {"format": "uchar-ir-v1", "inferFromEmpty": false,
+                 "model": {
+                   "objectTypes": [
+                     {"node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+                      "attributes": [{"node": "Attribute", "name": "bonus", "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}}],
+                      "characteristics": [{"node": "Characteristic", "name": "ervaren", "kind": "adjectival"}]},
+                     {"node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+                      "attributes": [{"node": "Attribute", "name": "premie", "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}}],
+                      "characteristics": [
+                        {"node": "Characteristic", "name": "deskundig", "kind": "adjectival"},
+                        {"node": "Characteristic", "name": "toegewezen", "kind": "adjectival"},
+                        {"node": "Characteristic", "name": "alle ervaren", "kind": "adjectival"}]}],
+                   "factTypes": [
+                     {"node": "FactType", "name": "vangst", "reciprocal": false, "roles": [
+                       {"node": "Role", "name": "vinder", "objectType": "Jutter", "plural": "vinders", "many": false},
+                       {"node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": false}]}],
+                   "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []},
+                 "rules": {
+                   "rules": [
+                     {"node": "Rule", "name": "premie", "versions": [{
+                       "validity": {"node": "Validity"},
+                       "target": {"node": "AttributeReference", "attribute": "premie", "subjectType": "Vondst"},
+                       "value": {"node": "AttributeReference", "attribute": "bonus", "subjectType": "Jutter",
+                                 "path": [{"node": "RoleBinding", "factType": "vangst", "role": "vinder"}]},
+                       "initialisation": false, "presentation": "calculation"}]},
+                     {"node": "Rule", "name": "deskundig", "versions": [{
+                       "validity": {"node": "Validity"},
+                       "target": {"node": "AttributeReference", "attribute": "deskundig", "subjectType": "Vondst"},
+                       "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}},
+                       "condition": {"node": "CharacteristicCheck", "characteristic": "ervaren", "negated": false,
+                                     "navigation": {"node": "RoleBinding", "factType": "vangst", "role": "vinder"}},
+                       "initialisation": false}]},
+                     {"node": "Rule", "name": "toegewezen", "versions": [{
+                       "validity": {"node": "Validity"},
+                       "target": {"node": "AttributeReference", "attribute": "toegewezen", "subjectType": "Vondst"},
+                       "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}},
+                       "condition": {"node": "RoleMembership", "factType": "vangst", "role": "vondst", "negated": false},
+                       "initialisation": false}]},
+                     {"node": "Rule", "name": "alle ervaren", "versions": [{
+                       "validity": {"node": "Validity"},
+                       "target": {"node": "AttributeReference", "attribute": "alle ervaren", "subjectType": "Vondst"},
+                       "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}},
+                       "condition": {"node": "QuantifierFold", "quantifier": "all", "elementType": "Jutter",
+                                     "test": {"node": "CharacteristicCheck", "characteristic": "ervaren", "negated": false},
+                                     "sourceRole": {"node": "RoleBinding", "factType": "vangst", "role": "vinder"}},
+                       "initialisation": false}]}],
+                   "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
+                   "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []},
+                 "diagnostics": []}
+                """;
+        String caseJson = """
+                {"format": "uchar-case-v0", "asOfDate": null,
+                 "input": {"instances": [{"label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": []}],
+                           "parameters": {}},
+                 "expected": []}
+                """;
+        Path ir = dir.resolve("ir.json"), c = dir.resolve("case1.json");
+        Files.writeString(ir, irJson);
+        Files.writeString(c, caseJson);
+        for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+            List<String> out = lines(dir, c, branch);
+            for (String expected : List.of(
+                    "reading /rules/rules/0/versions/0 \"V1\" 0 AttributeReference undetermined open \"V1\" \"vinder\"",
+                    "reading /rules/rules/1/versions/0 \"V1\" 0 CharacteristicCheck undetermined open \"V1\" \"vinder\"",
+                    "reading /rules/rules/2/versions/0 \"V1\" 0 RoleMembership undetermined open \"V1\" \"vinder\"",
+                    "reading /rules/rules/3/versions/0 \"V1\" 0 QuantifierFold undetermined open \"V1\" \"vinder\"",
+                    "state link \"vangst\" \"vinder\" open \"vondst\" \"V1\""))
+                assertTrue(out.contains(expected), () -> branch + ": " + expected + " in " + out);
+            assertTrue(out.stream().noneMatch(l -> l.contains("\"vinders\"")), () -> branch + ": " + out);
+
+            CaseRunner runner = CaseRunner.reader(DroolsBackend.build(ir, branch, true));
+            runner.withSession(TmsDocuments.JSON.readTree(c.toFile()), (build, session, labels) -> {
+                DroolsBackend.fire(build, session);
+                for (ConditionReading r : DroolsBackend.readingsOf(build, session))
+                    for (ConditionReading.NodeReading n : r.nodes()) {
+                        assertNull(n.object(), branch + " " + r.form());
+                        assertTrue(n.open() != null && n.open().role(), branch + " " + r.form());
+                        assertEquals("vinder", n.open().member(), branch + " " + r.form());
+                        assertEquals("vangst", n.open().factType(), branch + " " + r.form());
+                        assertEquals(0, n.open().roleIndex(), branch + " " + r.form());
+                    }
+                return null;
+            });
+        }
     }
 
     /** Composites and quantifier folds in one another: a quantifier fold over a test on leeg that is undetermined on its
@@ -245,7 +342,8 @@ class OpenReadingsWitnessTest {
      *  value are told apart in the records: an undetermined node has no value and names no object. */
     @Test void wv_5_12_open_status() throws Exception {
         int open = 0, undetermined = 0;
-        for (String document : List.of("derived", "filled-test", "set-fold", "filled-in-a-fold", "past-undetermined-fault"))
+        for (String document : List.of("derived", "filled-test", "set-fold", "filled-in-a-fold", "past-undetermined-fault",
+                "link", "link-two-step", "link-fold-range", "link-self-relation"))
             for (Path c : cases(VALUES.resolve(document))) {
                 CaseRunner runner = CaseRunner.reader(DroolsBackend.build(VALUES.resolve(document).resolve("ir.json"),
                         DroolsBackend.Branch.EXEC_MODEL, true));

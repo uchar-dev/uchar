@@ -718,6 +718,8 @@ public final class TmsTranspiler {
             FOLD_MEMBER_FAULT("fold-member-fault", Kind.FORM, Kind.DEFAULT),
             /** Of a fold: the rule that notes the member for which the filter deposits (ch. 5.10, 5.11). */
             FOLD_FILTER_DEPOSIT("fold-filter-deposit", Kind.FORM, Kind.DEFAULT),
+            /** Of a fold: the rule that notes an open single step in its range (ch. 1.5, 5.11). */
+            FOLD_RANGE_OPEN("fold-range-open", Kind.FORM, Kind.DEFAULT),
             /** Of a uniqueness: the rule that inserts the key of an instance of one source (ch. 5.9). */
             UNIQUENESS_KEY("uniqueness-key", Kind.FORM),
             /** Of a uniqueness: the rule that faults an instance whose key component on a timeline the case gives as
@@ -746,7 +748,7 @@ public final class TmsTranspiler {
             /** Whether a rule of this role belongs to a fold, which {@link RuleOrigin#fold} then names. */
             public boolean inFold() {
                 return this == FOLD_CONTRIBUTION || this == FOLD_FILTER_FAULT || this == FOLD_MEMBER_FAULT
-                        || this == FOLD_FILTER_DEPOSIT;
+                        || this == FOLD_FILTER_DEPOSIT || this == FOLD_RANGE_OPEN;
             }
         }
     }
@@ -1196,7 +1198,8 @@ public final class TmsTranspiler {
     private Modelplan run() {
         writers = ProducerConsumer.producerIndex(model, defaults);
         openable = OpenableMembers.of(model, defaults,
-                ProducerConsumer.wireNavigation(model, navigationBindings, anchored));
+                ProducerConsumer.wireNavigation(model, navigationBindings, anchored),
+                navigationBindings, roleBindings, sourcePaths);
         createdExactValues = createdExactValues(writers);
         for (ResolvedRule r : model.resolvedRules)
             if (r.name() != null && !documentOrder.contains(r.name())) documentOrder.add(r.name());
@@ -3779,12 +3782,12 @@ public final class TmsTranspiler {
         if (!pair[0].many()) {
             if (!FactModelGenerator.hasReferenceField(model, van, pair[0].name(), destination))
                 throw new Refusal(DroolsCode.ONE_HOP_NO_FIELD.reason("description", description, "reason", FactModelGenerator.noReferenceFieldReason(model, van, pair[0].name(), destination).msg()));
-            return new Hop(van, destination, pair[0].name(), true, null, false);
+            return new Hop(van, destination, pair[0].name(), true, null, false, null);
         }
         if (!pair[1].many()) {
             if (!FactModelGenerator.hasReferenceField(model, destination, pair[1].name(), van))
                 throw new Refusal(DroolsCode.ONE_HOP_NO_FIELD.reason("description", description, "reason", FactModelGenerator.noReferenceFieldReason(model, destination, pair[1].name(), van).msg()));
-            return new Hop(van, destination, pair[1].name(), false, null, false);
+            return new Hop(van, destination, pair[1].name(), false, null, false, null);
         }
         // two to-many roles of a relation of two roles are read over its links above, so these two belong to a fact type
         // of more roles, which names no pair
@@ -6636,7 +6639,13 @@ public final class TmsTranspiler {
      *  gives the fold ({@code canBeOpen}, RUNTIME-SEMANTICS ch. 1.5; {@link #listsOpen}). */
     record Fold(String key, List<RulePlan> rules, List<Reads> readings, boolean canFail,
                 boolean deposits, boolean memberCanFail, boolean memberDeposits, boolean filterOpen, boolean valueCanFail,
-                boolean canBeOpen) {
+                boolean canBeOpen, boolean rangeCanBeOpen) {
+        Fold(String key, List<RulePlan> rules, List<Reads> readings, boolean canFail,
+             boolean deposits, boolean memberCanFail, boolean memberDeposits, boolean filterOpen, boolean valueCanFail,
+             boolean canBeOpen) {
+            this(key, rules, readings, canFail, deposits, memberCanFail, memberDeposits, filterOpen, valueCanFail,
+                    canBeOpen, false);
+        }
         /** Whether the rule that reads the fold reads its contributors in order: a quantifier fold whose matrix can
          *  fault or deposit, or whose filter can be undetermined ({@link MemberTest}). */
         boolean tested() {
@@ -6927,11 +6936,14 @@ public final class TmsTranspiler {
         Fold v = foldFor(f, reads, (key, name) -> {
             List<RulePlan> rules = new ArrayList<>();
             List<Reads> readings = new ArrayList<>();
-            Ends ends = contributionRules(key, name, kind, reads.subject, elem, range(f, reads.subject, elem), 0,
+            Range foldRange = range(f, reads.subject, elem);
+            Ends ends = contributionRules(key, name, kind, reads.subject, elem, foldRange, 0,
                     f.filter(), member, labels, rules, readings, false);
+            boolean rangeOpen = rangeOpenRules(key, name, reads.subject, elem, source, sourcePaths.get(f), 0,
+                    snippet(f.source()), rules, readings);
             refuseMixedDeposits(name, Collections.singletonList(f.filter()));
             return new Fold(key, List.copyOf(rules), List.copyOf(readings), ends.fault(), deposits(f.filter()), false, false,
-                    false, timelineMember, ends.open());
+                    false, timelineMember, ends.open(), rangeOpen);
         });
         Accumulation.Kind function = switch (kind) {
             case SOM, TOTAAL -> Accumulation.Kind.SUM;
@@ -7385,10 +7397,11 @@ public final class TmsTranspiler {
      */
     private static Term readFold(Fold v, int[] i, Reads reads, Term outcome, String source) {
         if (v.canFail() || v.valueCanFail()) reads.markFail();
+        if (v.rangeCanBeOpen()) reads.markOpen();
         int depositFlag = v.deposits() ? reads.depositFlag() : -1;
-        if (!v.canFail() && !v.valueCanFail() && depositFlag < 0) return outcome;
+        if (!v.rangeCanBeOpen() && !v.canFail() && !v.valueCanFail() && depositFlag < 0) return outcome;
         return new Term.FoldRead(outcome, depositFlag < 0 ? -1 : i[3], depositFlag, v.canFail() ? i[2] : -1,
-                v.valueCanFail() ? i[4] : -1, source);
+                v.valueCanFail() ? i[4] : -1, v.rangeCanBeOpen() ? i[6] : -1, source);
     }
 
     /** The fold of {@code f}, an aggregation or a quantifier fold, on the subject of {@code reads}, the rule that reads
@@ -7436,7 +7449,7 @@ public final class TmsTranspiler {
         return foldFor(f, reads, (key, name) -> {
             List<RulePlan> rules = new ArrayList<>();
             List<Reads> readings = new ArrayList<>();
-            boolean deposits = false;
+            boolean deposits = false, rangeOpen = false;
             Ends ends = new Ends(false, false);
             List<Condition> filters = new ArrayList<>();
             List<Integer> undetermined = new ArrayList<>();
@@ -7444,9 +7457,11 @@ public final class TmsTranspiler {
                 Expr.InstanceSetUnion.Branch t = u.branches().get(k);
                 if (t.elementType() == null)
                     throw new Refusal(DroolsCode.UNION_BRANCH_WITHOUT_TYPE.reason("snippet", snippet(t.source())));
+                Range branchRange = oneStepRange(t.sourceRole(), subject, t.elementType(), snippet(t.source()));
                 Ends own = contributionRules(key, name + ", selectie " + k, Expr.FunctionKind.AANTAL, subject,
-                        t.elementType(), oneStepRange(t.sourceRole(), subject, t.elementType(), snippet(t.source())), k,
-                        t.filter(), null, null, rules, readings, false);
+                        t.elementType(), branchRange, k, t.filter(), null, null, rules, readings, false);
+                rangeOpen |= rangeOpenRules(key, name + ", selectie " + k, subject, t.elementType(), t.sourceRole(),
+                        null, k, snippet(t.source()), rules, readings);
                 ends = new Ends(ends.fault() || own.fault(), ends.open() || own.open());
                 deposits |= deposits(t.filter());
                 filters.add(t.filter());
@@ -7462,7 +7477,7 @@ public final class TmsTranspiler {
             }
             refuseMixedDeposits(name, filters);
             return new Fold(key, List.copyOf(rules), List.copyOf(readings), ends.fault(), deposits, false, false, false, false,
-                    ends.open());
+                    ends.open(), rangeOpen);
         });
     }
 
@@ -7547,6 +7562,106 @@ public final class TmsTranspiler {
         if (deposits(filter)) out.add(filterDepositRule(key, formName + ": filterdeponering in " + name, subject,
                 elem, range, filter, readings::add));
         return new Ends(ends.fault(), ends.open() || openValue);
+    }
+
+    /** The openable single-role key of a step binding {@code rb} whose {@code role()} names the step's far role on a
+     *  non-reciprocal binary fact type outside {@link #linkRelations}, or {@code null} where the step cannot be open. */
+    private ElementKey openRangeStepKey(RoleBindingRef rb) {
+        if (rb == null || rb.factType() == null || rb.role() == null
+                || linkRelations.contains(Namen.norm(rb.factType())))
+            return null;
+        RegelSpraakModel.FactType ft = factType(rb.factType());
+        if (ft == null || ft.reciprocal || ft.roles.size() != 2) return null;
+        String normRole = Namen.norm(rb.role());
+        int farIdx = ft.roles.get(0).name() != null && Namen.norm(ft.roles.get(0).name()).equals(normRole) ? 0
+                : ft.roles.get(1).name() != null && Namen.norm(ft.roles.get(1).name()).equals(normRole) ? 1 : -1;
+        if (farIdx < 0 || ft.roles.get(farIdx).many()) return null;
+        ElementKey key = ElementKey.role(ft.name, farIdx, ft.roles.get(farIdx).name());
+        return openable.contains(key) ? key : null;
+    }
+
+    /** Adds one {@link RangeOpen} rule per openable single step in {@code sourcePath} (or {@code sourceRole} when
+     *  {@code sourcePath} is absent), and returns whether any step of the range can be open. */
+    private boolean rangeOpenRules(String key, String name, ObjectType subject, ObjectType elem,
+                                   RoleBindingRef sourceRole, List<RoleBindingRef> sourcePath, int selection,
+                                   Object description, List<RulePlan> out, List<Reads> readings) {
+        String formName = model.emittedRuleName(form);
+        if (sourcePath == null || sourcePath.isEmpty()) {
+            ElementKey rk = openRangeStepKey(sourceRole);
+            if (rk == null) return false;
+            String farRole = factType(rk.factType()).roles.get(rk.roleIndex()).name();
+            Reads reads = contributionReads(subject, subject, l -> l.subjectJoin(new Join(id("bereik"), null, FOLD_SUBJECT)));
+            reads.addSubjectAlpha(alongPath(id("bereik-open"),
+                    List.of(new Binding.Field(beanClass(subject), farRole)), Alpha.Comparator.LEEG));
+            Set<Integer> read = reads.follow();
+            int inputSlot = reads.openInput(), nodeSlot = reads.member();
+            reads.stop();
+            Term testTerm = new Term.Call(StaticFunction.INCOMPLETE_INPUT, List.of(new Term.SlotValue(inputSlot, null),
+                    new Term.SlotValue(nodeSlot, null), constant(rk)), null);
+            List<LhsItem> items = reads.plan(testTerm, read);
+            out.add(as(RuleOrigin.Role.FOLD_RANGE_OPEN, reads.rulePlan(formName + ": open bereik in " + name, items,
+                    new Consequence.RangeOpen(FOLD_SUBJECT, key, nodeSlot, rk,
+                            new Consequence.FoldPlace(selection, List.of(), Consequence.PlaceReason.RANGE_OPEN), 1,
+                            Consequence.Insertion.LOGICAL))));
+            readings.add(reads);
+            return true;
+        }
+        SourcePath.Plan plan = SourcePath.parse(model, subject, sourcePath, elem, linkRelations::contains);
+        boolean any = false;
+        for (int stepIdx = 0; stepIdx < sourcePath.size(); stepIdx++) {
+            ElementKey rk = openRangeStepKey(sourcePath.get(stepIdx));
+            if (rk == null) continue;
+            any = true;
+            String farRole = factType(rk.factType()).roles.get(rk.roleIndex()).name();
+            String ruleName = formName + ": open bereik in " + name + ", stap " + (stepIdx + 1);
+            if (stepIdx <= plan.forward()) {
+                List<Binding.Field> prefix = new ArrayList<>();
+                for (int j = 0; j < stepIdx; j++) {
+                    RegelSpraakModel.FactType ftJ = factType(sourcePath.get(j).factType());
+                    int idxJ = Namen.norm(ftJ.roles.get(0).name()).equals(Namen.norm(sourcePath.get(j).role())) ? 0 : 1;
+                    prefix.add(new Binding.Field(beanClass(plan.nodeTypes().get(j)), ftJ.roles.get(idxJ).name()));
+                }
+                List<Binding.Field> withCurrent = new ArrayList<>(prefix);
+                withCurrent.add(new Binding.Field(beanClass(plan.nodeTypes().get(stepIdx)), farRole));
+                Reads reads = contributionReads(subject, subject, l -> l.subjectJoin(new Join(id("bereik"), null, FOLD_SUBJECT)));
+                if (!prefix.isEmpty())
+                    reads.addSubjectAlpha(alongPath(id("bereik-aanwezig"), prefix, Alpha.Comparator.GEVULD));
+                reads.addSubjectAlpha(alongPath(id("bereik-open"), withCurrent, Alpha.Comparator.LEEG));
+                Set<Integer> read = reads.follow();
+                int inputSlot = reads.openInput();
+                int nodeSlot = prefix.isEmpty() ? reads.member() : reads.forwardNode(prefix);
+                reads.stop();
+                Term testTerm = new Term.Call(StaticFunction.INCOMPLETE_INPUT, List.of(
+                        new Term.SlotValue(inputSlot, null), new Term.SlotValue(nodeSlot, null), constant(rk)), null);
+                List<LhsItem> items = reads.plan(testTerm, read);
+                out.add(as(RuleOrigin.Role.FOLD_RANGE_OPEN, reads.rulePlan(ruleName, items,
+                        new Consequence.RangeOpen(FOLD_SUBJECT, key, nodeSlot, rk,
+                                new Consequence.FoldPlace(selection, List.of(), Consequence.PlaceReason.RANGE_OPEN),
+                                stepIdx + 1, Consequence.Insertion.LOGICAL))));
+                readings.add(reads);
+                continue;
+            }
+            ObjectType nodeType = plan.nodeTypes().get(stepIdx);
+            Range prefixRange = stepIdx == 1
+                    ? oneStepRange(sourcePath.get(0), subject, nodeType, description)
+                    : pathRange(sourcePath.subList(0, stepIdx), subject, nodeType, description);
+            List<Consequence.FoldPlace.Step> places = new ArrayList<>();
+            Reads reads = contributionReads(subject, nodeType, l -> places.addAll(prefixRange.perRoute().apply(l)));
+            reads.addSubjectAlpha(alongPath(id("bereik-open"),
+                    List.of(new Binding.Field(beanClass(nodeType), farRole)), Alpha.Comparator.LEEG));
+            Set<Integer> read = reads.follow();
+            int inputSlot = reads.openInput(), nodeSlot = reads.member();
+            reads.stop();
+            Term testTerm = new Term.Call(StaticFunction.INCOMPLETE_INPUT, List.of(new Term.SlotValue(inputSlot, null),
+                    new Term.SlotValue(nodeSlot, null), constant(rk)), null);
+            List<LhsItem> items = reads.plan(testTerm, read);
+            out.add(as(RuleOrigin.Role.FOLD_RANGE_OPEN, reads.rulePlan(ruleName, items,
+                    new Consequence.RangeOpen(FOLD_SUBJECT, key, nodeSlot, rk,
+                            new Consequence.FoldPlace(selection, places, Consequence.PlaceReason.RANGE_OPEN),
+                            stepIdx + 1, Consequence.Insertion.LOGICAL))));
+            readings.add(reads);
+        }
+        return any;
     }
 
     /**
@@ -7997,7 +8112,7 @@ public final class TmsTranspiler {
         Member reached = member(p.reaches(), a.attribute(), false);
         int i = reads.navigated(p, reached);
         noteObject(a, reads, i);
-        return reads.standing(i, reached, source(a.source()));
+        return reads.standing(i, reached, p, source(a.source()));
     }
 
     // ---------------- conditions ----------------
@@ -8107,8 +8222,8 @@ public final class TmsTranspiler {
         Member reached = member(p.reaches(), k.characteristic(), true);
         int i = reads.navigated(p, reached);
         noteObject(k, reads, i);
-        return new Term.Call(StaticFunction.CHARACTERISTIC_CHECK_ALONG_PATH, List.of(reads.standing(i, reached, null), constant(desired)),
-                source(k.source()));
+        return new Term.Call(StaticFunction.CHARACTERISTIC_CHECK_ALONG_PATH,
+                List.of(reads.standing(i, reached, p, null), constant(desired)), source(k.source()));
     }
 
     // ---------------- the whole-period qualifier ----------------
@@ -8321,6 +8436,19 @@ public final class TmsTranspiler {
         if (o.opSubject()) {
             if (!FactModelGenerator.hasReferenceField(model, reads.subject, o.beanField(), o.otherType()))
                 throw new Refusal(DroolsCode.ROLE_MEMBERSHIP_NO_FIELD.reason("snippet", snippet(r), "reason", FactModelGenerator.noReferenceFieldReason(model, reads.subject, o.beanField(), o.otherType()).msg()));
+            RegelSpraakModel.FactType ft = factType(rb.factType());
+            if (ft != null && !ft.reciprocal && ft.roles.size() == 2) {
+                int farIdx = ft.roles.get(1) == pair[1] ? 1 : 0;
+                ElementKey roleKey = ElementKey.role(ft.name, farIdx, pair[1].name());
+                if (openable.contains(roleKey)) {
+                    int i = reads.roleValue(o.beanField()), input = reads.openInput(), object = reads.member();
+                    reads.markOpen();
+                    return new Term.Call(StaticFunction.ROLE_FIELD_OPEN, List.of(new Term.SlotValue(i, null),
+                            constant(javaClass == null ? "" : javaClass.getName()), constant(negated),
+                            new Term.SlotValue(input, null), new Term.SlotValue(object, null), constant(roleKey)),
+                            source(r.source()));
+                }
+            }
             int i = reads.roleField(o.beanField(), javaClass);
             return new Term.Call(StaticFunction.ROLE_FIELD, List.of(new Term.SlotValue(i, null), constant(negated)),
                     source(r.source()));
@@ -8493,9 +8621,11 @@ public final class TmsTranspiler {
         boolean filterDeposits = deposits(kv.filter());
         if (filterDeposits) rules.add(filterDepositRule(key, formName + ": filterdeponering in " + name,
                 subject, elem, range, kv.filter(), readings::add));
+        boolean rangeOpen = rangeOpenRules(key, name, subject, elem, kv.sourceRole(), kv.sourcePath(), 0,
+                description, rules, readings);
         refuseMixedDeposits(name, Collections.singletonList(kv.filter()));
         return new Fold(key, List.copyOf(rules), List.copyOf(readings), filterEnds.fault(), filterDeposits, memberCanFail,
-                memberDeposits, filterEnds.open(), false, filterEnds.open() || matrixEnds.open());
+                memberDeposits, filterEnds.open(), false, filterEnds.open() || matrixEnds.open(), rangeOpen);
     }
 
     /**
@@ -8985,10 +9115,16 @@ public final class TmsTranspiler {
             return out;
         }
 
-        /** The read of {@code member} off a standing, bound at {@code slot}: the bound value, and where the member can be
-         *  open, through the read that breaks the evaluation off where it is ({@link StaticFunction#READ}). */
+        /** The read of {@code member} off a standing, bound at {@code slot}: the bound value, and where the member or
+         *  a hop of {@code path} can be open, through the read that breaks the evaluation off where it is
+         *  ({@link StaticFunction#READ}). */
         Term standing(int slot, Member member, String source) {
-            if (!openable.contains(member.key())) return new Term.SlotValue(slot, source);
+            return standing(slot, member, null, source);
+        }
+
+        Term standing(int slot, Member member, Path path, String source) {
+            if (!openable.contains(member.key()) && (path == null || !path.hasOpenableHop(openable)))
+                return new Term.SlotValue(slot, source);
             open = true;
             return new Term.Call(StaticFunction.READ, List.of(new Term.SlotValue(slot, null)), source);
         }
@@ -9055,7 +9191,8 @@ public final class TmsTranspiler {
                     v.canFail() ? existing("filterfout " + key) : -1,
                     v.deposits() ? existing("filterdeponering " + key) : -1,
                     v.valueCanFail() ? existing("lidfout " + key) : -1,
-                    v.listsOpen() ? existing("open leden " + key) : -1};
+                    v.listsOpen() ? existing("open leden " + key) : -1,
+                    v.rangeCanBeOpen() ? existing("bereikopen " + key) : -1};
             String b = "$bijdrage_" + id("vouw");
             Alpha ofFold = equal(id("vouw"), "fold", key);
             Join onSubject = onSubjectHere(id("vouw-onderwerp"));
@@ -9064,7 +9201,7 @@ public final class TmsTranspiler {
             if (function == null) {
                 states(new Accumulation(new FactPattern(Contribution.class, b, List.of(ofFold), List.of(onSubject), List.of()),
                         List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, itemCount))));
-                out = new int[]{allocateSlot(ReadKind.FOLD_COUNT, "vouw " + key, itemCount), -1, -1, -1, -1, -1};
+                out = new int[]{allocateSlot(ReadKind.FOLD_COUNT, "vouw " + key, itemCount), -1, -1, -1, -1, -1, -1};
             } else {
                 String contributionValue = "$bijdragewaarde_" + id("vouw");
                 String outcome = "$vouw_" + id("vouw");
@@ -9073,7 +9210,7 @@ public final class TmsTranspiler {
                         List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, itemCount),
                                 new Accumulation.Aggregation(function, contributionValue, outcome))));
                 out = new int[]{allocateSlot(ReadKind.FOLD_COUNT, "vouw " + key, itemCount),
-                        allocateSlot(ReadKind.FOLDED_VALUE, "vouwwaarde " + key, outcome), -1, -1, -1, -1};
+                        allocateSlot(ReadKind.FOLDED_VALUE, "vouwwaarde " + key, outcome), -1, -1, -1, -1, -1};
             }
             if (v.canFail()) {
                 String f = "$filterfout_" + id("vouw");
@@ -9115,6 +9252,17 @@ public final class TmsTranspiler {
                 states(new Accumulation(new FactPattern(FoldOpen.class, o, List.of(ofOpen), List.of(openOnSubject), List.of()),
                         List.of(new Accumulation.Aggregation(Accumulation.Kind.LIST, null, members))));
                 out[5] = allocateSlot(ReadKind.FOLD_OPEN, "open leden " + key, members);
+            }
+            if (v.rangeCanBeOpen()) {
+                String r = "$bereikopen_" + id("vouw");
+                Alpha ofRange = equal(id("bereikopen"), "fold", key);
+                Join rangeOnSubject = onSubjectHere(id("bereikopen-onderwerp"));
+                String rangeCount = "$bereikopen_aantal_" + id("vouw");
+                String earliest = "$eerste_bereikopen_" + id("vouw");
+                states(new Accumulation(new FactPattern(RangeOpen.class, r, List.of(ofRange), List.of(rangeOnSubject),
+                        List.of()), List.of(new Accumulation.Aggregation(Accumulation.Kind.COUNT, null, rangeCount),
+                        new Accumulation.Aggregation(Accumulation.Kind.MINIMUM, null, earliest))));
+                out[6] = allocateSlot(ReadKind.RANGE_OPEN, "bereikopen " + key, earliest);
             }
             return out;
         }
@@ -9337,6 +9485,31 @@ public final class TmsTranspiler {
             bindSubject(new Binding(w, List.of(), new Binding.Field(beanClass(subject), field), Binding.ReadForm.IS_SET,
                     javaClass));
             return allocateSlot(ReadKind.ROLE_FIELD, key, w);
+        }
+
+        /** The target object of the reference field {@code field} on this rule's subject, null where absent: bound for
+         *  a role check over a role that can be open ({@link TmsTranspiler#roleCheck}). */
+        int roleValue(String field) {
+            notAtForm(field);
+            String key = "rolwaarde " + field;
+            int known = existing(key);
+            if (known >= 0) return known;
+            String w = readName(field);
+            bindSubject(new Binding(w, List.of(), new Binding.Field(beanClass(subject), field),
+                    Binding.ReadForm.VALUE, null));
+            return allocateSlot(ReadKind.INPUT, key, w);
+        }
+
+        /** The node reached along a non-empty forward prefix {@code prefix} from this rule's subject, bound for a
+         *  {@link RangeOpen} rule on a multi-step fold range. */
+        int forwardNode(List<Binding.Field> prefix) {
+            String key = "voorwaarts " + prefix.stream().map(Binding.Field::property).toList();
+            int known = existing(key);
+            if (known >= 0) return known;
+            String w = "$knoop_" + id("pad");
+            bindSubject(new Binding(w, prefix.subList(0, prefix.size() - 1), prefix.get(prefix.size() - 1),
+                    Binding.ReadForm.VALUE, null));
+            return allocateSlot(ReadKind.INPUT_PATH, key, w);
         }
 
         /** The number of beans of {@code javaClass} whose reference field {@code field} names this rule's subject: the links
@@ -9577,7 +9750,8 @@ public final class TmsTranspiler {
             // a derived member or one that can be open, an attribute on a timeline, or any member at the end of a path
             // whose links a form creates: through the path's standing, whose rules bind every link and the member in
             // their left-hand sides
-            if (writers.containsKey(lk) || openable.contains(lk) || timelineAttribute(member) || path.created()) {
+            if (writers.containsKey(lk) || openable.contains(lk) || path.hasOpenableHop(openable)
+                    || timelineAttribute(member) || path.created()) {
                 PathRead p = new PathRead(path, member);
                 String ps = path.key();
                 String st = "$padstand_" + slots.size();
@@ -9859,7 +10033,8 @@ public final class TmsTranspiler {
             case Term.FoldRead v -> {
                 Term z = withoutDepositFlag(v.outcome());
                 return v.depositFlag() < 0 && z == v.outcome() ? v
-                        : new Term.FoldRead(z, v.deposits(), -1, v.filterFault(), v.memberFault(), v.source());
+                        : new Term.FoldRead(z, v.deposits(), -1, v.filterFault(), v.memberFault(), v.rangeOpen(),
+                                v.source());
             }
             case Term.Compound s -> {
                 List<Term> z = withoutDepositFlag(s.members());
@@ -10210,14 +10385,21 @@ public final class TmsTranspiler {
             present = new RulePlan(name + "link aanwezig", null, null,
                     oneSlot(ReadKind.REACHED_INPUT, "invoer " + ps + " " + lk, "$v"),
                     List.of(linked, bean), new Consequence.InsertPathState(SUBJECT, ps, lk,
-                            Consequence.StateSource.INCOMPLETE_INPUT, 0, "$bereikt", Consequence.Insertion.LOGICAL));
+                            inputSource(lk, Consequence.StateSource.REACHED), 0, "$bereikt",
+                            Consequence.Insertion.LOGICAL));
         }
 
         Alpha noLink = alongPath(id("geen-link"), fields, Alpha.Comparator.LEEG);
+        Consequence absentConsequence = path.hasOpenableHop(openable)
+                ? new Consequence.InsertOpenPathState(SUBJECT, ps, lk,
+                        fields.stream().map(Binding.Field::property).toList(),
+                        path.hops().stream().map(h -> h.roleKey() != null && openable.contains(h.roleKey())
+                                ? h.roleKey() : null).toList(),
+                        Consequence.Insertion.LOGICAL)
+                : new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.MISSING_LINK, -1, null,
+                        Consequence.Insertion.LOGICAL);
         RulePlan absent = new RulePlan(name + "link afwezig", null, null, new ReadTable(List.of()),
-                List.of(new Subject(javaClass, SUBJECT, List.of(noLink), List.of(), List.of())),
-                new Consequence.InsertPathState(SUBJECT, ps, lk, Consequence.StateSource.MISSING_LINK, -1, null,
-                        Consequence.Insertion.LOGICAL));
+                List.of(new Subject(javaClass, SUBJECT, List.of(noLink), List.of(), List.of())), absentConsequence);
         return List.of(present, absent);
     }
 
@@ -10479,14 +10661,20 @@ public final class TmsTranspiler {
         boolean created() {
             return hops.stream().anyMatch(h -> h.relation() != null);
         }
+
+        /** Whether any input hop of the path is a single role that {@code openable} allows to be open. */
+        boolean hasOpenableHop(OpenableMembers openable) {
+            return hops.stream().anyMatch(h -> h.roleKey() != null && openable.contains(h.roleKey()));
+        }
     }
 
     /** One hop of a path or a range, from an object of type {@code van} to one of type {@code destination}: over an input
      *  relation by the reference field {@code field} on the bean of one end ({@code onNear}: on the near object, else on
      *  the far one), over a relation of {@link #linkRelations} by its {@link RelationLink} facts ({@code relation} set,
-     *  {@code nearIsFirst} saying which end of the link the near object is, {@code field} null). */
+     *  {@code nearIsFirst} saying which end of the link the near object is, {@code field} null). {@code roleKey} is the
+     *  non-reciprocal single-role key of an input hop, or {@code null} for a reciprocal or created hop. */
     private record Hop(ObjectType van, ObjectType destination, String field, boolean onNear, String relation,
-                       boolean nearIsFirst) {}
+                       boolean nearIsFirst, ElementKey roleKey) {}
 
     /** A derived member read over a path: one family of path-standing rules. */
     private record PathRead(Path path, Member member) {
@@ -10517,11 +10705,27 @@ public final class TmsTranspiler {
             if (!FactModelGenerator.hasReferenceField(model, cur, role, next))
                 throw new Refusal(DroolsCode.NAVIGATION_ROLE_NO_FIELD.reason("description", description, "objectType", cur.name, "role", role, "targetType", next.name));
             fields.add(new Binding.Field(beanClass(cur), role));
-            hops.add(new Hop(cur, next, role, true, null, false));
+            hops.add(new Hop(cur, next, role, true, null, false, hopRoleKey(bindings.get(i), cur, next, role)));
             cur = next;
         }
         return new Path(subject.name + ":" + String.join(".", w.roles()), subject, w.roles(), cur, List.copyOf(fields),
                 List.copyOf(hops));
+    }
+
+    /** The non-reciprocal single-role {@link ElementKey} of an input hop {@code binding} from {@code van} to
+     *  {@code destination} along {@code role}, or {@code null} when the hop is reciprocal. */
+    private ElementKey hopRoleKey(RoleBindingRef binding, ObjectType van, ObjectType destination, String role) {
+        RegelSpraakModel.FactType ft = binding == null ? null : factType(binding.factType());
+        if (ft == null) {
+            FactModelGenerator.Origin origin = FactModelGenerator.roleOrigin(model, van, destination, role);
+            if (origin != null && origin.source() != null) ft = factType(origin.source());
+        }
+        if (ft == null || ft.reciprocal || ft.roles.size() != 2) return null;
+        String normRole = Namen.norm(binding != null && binding.role() != null ? binding.role() : role);
+        int farIdx = ft.roles.get(0).name() != null && Namen.norm(ft.roles.get(0).name()).equals(normRole) ? 0
+                : ft.roles.get(1).name() != null && Namen.norm(ft.roles.get(1).name()).equals(normRole) ? 1 : -1;
+        if (farIdx < 0 || ft.roles.get(farIdx).many()) return null;
+        return ElementKey.role(ft.name, farIdx, ft.roles.get(farIdx).name());
     }
 
     /** The hop over {@code binding} from {@code van} to {@code destination} where its relation is one of
@@ -10534,7 +10738,7 @@ public final class TmsTranspiler {
         if (ft == null || ft.roles.size() != 2 || ft.reciprocal)
             throw new Refusal(DroolsCode.CREATED_RELATION_STEP_NONBINARY.reason("factType", binding.factType()));
         boolean farIsSecond = Namen.norm(ft.roles.get(1).name()).equals(Namen.norm(binding.role()));
-        return new Hop(van, destination, null, false, Namen.norm(ft.name), farIsSecond);
+        return new Hop(van, destination, null, false, Namen.norm(ft.name), farIsSecond, null);
     }
 
     /** The declared fact type named {@code name}, compared as the verifier compares names, or null. */

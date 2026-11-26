@@ -1,0 +1,592 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "keurmeesteraantal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "keurmeesterbonus",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "alle keurmeesters ervaren",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "een keurmeester ervaren",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bonus",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "loodsaantal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "loodscapaciteit",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "ervaren",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "alle loodsen ruim",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "een loods ruim",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Loods",
+        "animate": false,
+        "plural": "Loodsen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "capaciteit",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "toewijzing",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "keurmeester",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "gekeurde vondst",
+            "objectType": "Vondst",
+            "many": false
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "vinding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "bewaring",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "bewaarplaats",
+            "objectType": "Loods",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "opgeslagen vondst",
+            "objectType": "Vondst",
+            "plural": "opgeslagen vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "keurmeesteraantal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "keurmeesteraantal",
+              "subjectType": "Vondst"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "count",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "keurmeester",
+                  "subjectType": "Vondst"
+                }
+              ],
+              "elementType": "Jutter",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "toewijzing",
+                "role": "keurmeester"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "keurmeesterbonus",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "keurmeesterbonus",
+              "subjectType": "Vondst"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "bonus",
+                  "subjectType": "Jutter"
+                }
+              ],
+              "elementType": "Jutter",
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "toewijzing",
+                "role": "keurmeester"
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "alle keurmeesters ervaren",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "alle keurmeesters ervaren",
+              "subjectType": "Vondst"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Jutter",
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "ervaren",
+                "negated": false
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "toewijzing",
+                "role": "keurmeester"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "een keurmeester ervaren",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "een keurmeester ervaren",
+              "subjectType": "Vondst"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "elementType": "Jutter",
+              "test": {
+                "node": "CharacteristicCheck",
+                "characteristic": "ervaren",
+                "negated": false
+              },
+              "sourceRole": {
+                "node": "RoleBinding",
+                "factType": "toewijzing",
+                "role": "keurmeester"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "loodsaantal",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "loodsaantal",
+              "subjectType": "Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "filledCount",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "capaciteit",
+                  "subjectType": "Loods"
+                }
+              ],
+              "elementType": "Loods",
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "vinding",
+                  "role": "vondst"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "bewaring",
+                  "role": "bewaarplaats"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "nonNegative"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "loodscapaciteit",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "loodscapaciteit",
+              "subjectType": "Jutter"
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "capaciteit",
+                  "subjectType": "Loods"
+                }
+              ],
+              "elementType": "Loods",
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "vinding",
+                  "role": "vondst"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "bewaring",
+                  "role": "bewaarplaats"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "alle loodsen ruim",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "alle loodsen ruim",
+              "subjectType": "Jutter"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Loods",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "capaciteit",
+                  "subjectType": "Loods"
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "5"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "vinding",
+                  "role": "vondst"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "bewaring",
+                  "role": "bewaarplaats"
+                }
+              ]
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "een loods ruim",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "een loods ruim",
+              "subjectType": "Jutter"
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "elementType": "Loods",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "capaciteit",
+                  "subjectType": "Loods"
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "5"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  }
+                }
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "vinding",
+                  "role": "vondst"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "bewaring",
+                  "role": "bewaarplaats"
+                }
+              ]
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

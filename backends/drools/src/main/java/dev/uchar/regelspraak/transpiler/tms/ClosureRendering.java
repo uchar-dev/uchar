@@ -292,11 +292,21 @@ final class ClosureRendering {
         };
     }
 
-    /** The evaluation of a fold in the rule that reads it ({@link Term.FoldRead}): its filter's deposit heard by this
-     *  rule's probe, then the first filter fault, then the first member fault, then the fold's value. */
+    /** The evaluation of a fold in the rule that reads it ({@link Term.FoldRead}): any open single step in its range,
+     *  its filter's deposit heard by this rule's probe, then the first filter fault, then the first member fault, then
+     *  the fold's value. */
     private static ValueFunction foldRead(Term.FoldRead v) {
         ValueFunction outcome = valueFunction(v.outcome());
-        int deposits = v.deposits(), depositFlag = v.depositFlag(), filterFault = v.filterFault(), memberFault = v.memberFault();
+        int deposits = v.deposits(), depositFlag = v.depositFlag(), filterFault = v.filterFault(),
+                memberFault = v.memberFault(), rangeOpen = v.rangeOpen();
+        if (rangeOpen >= 0) {
+            return w -> {
+                ComputeHelpers.beforeFoldOutcome(w[rangeOpen], depositFlag < 0 ? null : w[depositFlag],
+                        deposits < 0 ? null : w[deposits], filterFault < 0 ? null : w[filterFault],
+                        memberFault < 0 ? null : w[memberFault]);
+                return outcome.of(w);
+            };
+        }
         return w -> {
             if (depositFlag >= 0) ComputeHelpers.reportFilterDeposits(w[depositFlag], w[deposits]);
             if (filterFault >= 0 && w[filterFault] != null) throw ((FilterFault) w[filterFault]).fault();
@@ -459,6 +469,8 @@ final class ClosureRendering {
             case CHARACTERISTIC_CHECK_ALONG_PATH -> x -> ComputeHelpers.characteristicCheckAlongPath(x[0], (Boolean) x[1]);
             case ROLE_COUNT -> x -> ComputeHelpers.roleCount(x[0], (Boolean) x[1]);
             case ROLE_FIELD -> x -> ComputeHelpers.roleField(x[0], (Boolean) x[1]);
+            case ROLE_FIELD_OPEN -> x -> ComputeHelpers.roleFieldOpen(x[0], (String) x[1], (Boolean) x[2], x[3], x[4],
+                    (ElementKey) x[5]);
             case TIME_WINDOW -> x -> ComputeHelpers.timeWindow(x[0], (Boolean) x[1], x[2], (Boolean) x[3],
                     (Boolean) x[4], x[5]);
             case WHOLE_PERIOD -> x -> ComputeHelpers.wholePeriod(x[0], x[1], (String) x[2], (Integer) x[3],

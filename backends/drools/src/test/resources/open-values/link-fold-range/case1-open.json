@@ -1,0 +1,144 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "bonus": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "vondsten": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": [
+          "ervaren"
+        ]
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "keurmeester": [
+            "J1"
+          ],
+          "bewaarplaats": [
+            "L1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "rolesEmpty": [
+          "keurmeester"
+        ],
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "rolesEmpty": [
+          "vinder",
+          "bewaarplaats"
+        ],
+        "characteristics": []
+      },
+      {
+        "label": "L1",
+        "objectType": "Loods",
+        "attributes": {
+          "capaciteit": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "keurmeesteraantal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "keurmeesterbonus",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "alle keurmeesters ervaren"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "een keurmeester ervaren"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V3",
+      "attribute": "keurmeesteraantal"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V3",
+      "attribute": "keurmeesterbonus"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "V3",
+      "characteristic": "alle keurmeesters ervaren"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "V3",
+      "characteristic": "een keurmeester ervaren"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "loodsaantal"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "J1",
+      "attribute": "loodscapaciteit"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "J1",
+      "characteristic": "alle loodsen ruim"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "J1",
+      "characteristic": "een loods ruim"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

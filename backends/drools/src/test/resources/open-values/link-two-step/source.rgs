@@ -1,0 +1,24 @@
+Afleiden uit leeg: nee
+
+Objecttype de Ploeg (mv: Ploegen)
+    de toelage Numeriek (geheel getal);
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+
+Objecttype de Vondst (mv: Vondsten)
+    de waarde Numeriek (geheel getal);
+    de ploegtoelage Numeriek (geheel getal);
+
+Feittype vinding
+    de vinder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
+
+Feittype lidmaatschap
+    de chef Jutter
+    de ploeg Ploeg
+Eén chef heeft één ploeg
+
+Regel ploegtoelage
+    geldig altijd
+        De ploegtoelage van een Vondst moet berekend worden als zijn waarde plus de toelage van de ploeg van de vinder van de Vondst.

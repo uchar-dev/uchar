@@ -52,11 +52,27 @@ public record Fixpoint(List<DerivedValue> values, List<DerivedCharacteristic> ch
 
     /** Member {@code member} of {@code object}, a characteristic where {@code characteristic}, named as the model
      *  declares it, open at the fixpoint: no writer decides it, and a writer leaves it open or its input is not complete
-     *  and absent (RUNTIME-SEMANTICS ch. 1.5). */
-    public record OpenValue(Object object, String member, boolean characteristic) {
+     *  and absent (RUNTIME-SEMANTICS ch. 1.5). In a condition reading ({@link ConditionReading.NodeReading#open()}),
+     *  {@code factType} and {@code roleIndex} (0 or 1) identify a non-reciprocal single role when an open link broke
+     *  the node off; both are {@code null} and {@code -1} for an attribute or characteristic. */
+    public record OpenValue(Object object, String member, boolean characteristic, String factType, int roleIndex) {
+        public OpenValue(Object object, String member, boolean characteristic) {
+            this(object, member, characteristic, null, -1);
+        }
+
         public OpenValue {
             Objects.requireNonNull(object, "object");
             Objects.requireNonNull(member, "member");
+        }
+
+        /** Single role {@code role} at {@code roleIndex} of {@code factType}, open on {@code object} (ch. 1.5, 5.12). */
+        public static OpenValue role(Object object, String role, String factType, int roleIndex) {
+            return new OpenValue(object, role, false, Objects.requireNonNull(factType, "factType"), roleIndex);
+        }
+
+        /** Whether this open value is a role of a fact type rather than an attribute or characteristic. */
+        public boolean role() {
+            return factType != null;
         }
     }
 

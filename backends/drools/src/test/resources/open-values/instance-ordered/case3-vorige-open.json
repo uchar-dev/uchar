@@ -1,0 +1,60 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "basiseinddag": {
+            "date": "2026-06-01"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "basiseinddag": {
+            "date": "2026-12-01"
+          }
+        },
+        "roles": {
+          "vorige vergunning": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "einddag"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "restant"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V2",
+      "attribute": "einddag"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V2",
+      "attribute": "restant"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

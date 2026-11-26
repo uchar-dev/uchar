@@ -1,0 +1,30 @@
+reading /rules/rules/0/versions/0 "V1" 0 AttributeReference undetermined open "V1" "vorige vergunning"
+reading /rules/rules/0/versions/0 "V1" OPEN
+reading /rules/rules/0/versions/0 "V2" 0 AttributeReference 10 on "V1"
+reading /rules/rules/0/versions/0 "V2" HOLDS
+reading /rules/rules/1/versions/0 "V1" 0 RoleMembership undetermined open "V1" "vorige vergunning"
+reading /rules/rules/1/versions/0 "V1" OPEN
+reading /rules/rules/1/versions/0 "V2" 0 RoleMembership true
+reading /rules/rules/1/versions/0 "V2" HOLDS
+reading /rules/rules/2/versions/0 "V1" 0 RoleMembership undetermined open "V1" "vorige vergunning"
+reading /rules/rules/2/versions/0 "V1" OPEN
+reading /rules/rules/2/versions/0 "V2" 0 RoleMembership false
+reading /rules/rules/2/versions/0 "V2" FAILS
+reading /rules/rules/3/versions/0 "V1" 0 RoleMembership true
+reading /rules/rules/3/versions/0 "V1" HOLDS
+reading /rules/rules/3/versions/0 "V2" 0 RoleMembership undetermined open "V2" "volgende vergunning"
+reading /rules/rules/3/versions/0 "V2" OPEN
+state attribute "V1" "vergoeding" 10
+state attribute "V1" "vorige vergoeding" open
+state attribute "V2" "vergoeding" 20
+state attribute "V2" "vorige vergoeding" 10
+state characteristic "V1" "opgevolgd"
+state characteristic "V1" "opvolgend" open
+state characteristic "V1" "zonder voorganger" open
+state characteristic "V2" "opgevolgd" open
+state characteristic "V2" "opvolgend"
+state link "opvolging" "vorige vergunning" "V1" "volgende vergunning" "V2"
+state link "opvolging" "vorige vergunning" "V2" "volgende vergunning" open
+state link "opvolging" "vorige vergunning" open "volgende vergunning" "V1"
+state object "V1" "Vergunning"
+state object "V2" "Vergunning"

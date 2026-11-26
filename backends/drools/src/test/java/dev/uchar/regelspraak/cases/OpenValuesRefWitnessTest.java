@@ -85,8 +85,8 @@ class OpenValuesRefWitnessTest {
                 }
             }
         }
-        // the cases of the thirty-four witnesses that play, on two branches, counted 2026-11-24: 140 of thirty-one, the 2 of
-        // defaults-initialisation-only, the 6 of defaults-initialisation-exception and the 4 of contributor-filter
-        assertEquals(2 * 152, played);
+        // the cases of the thirty-four witnesses that play, on two branches, counted 2026-11-26: 152 before open to-one
+        // roles, plus the 4 open-role cases of absent-link, absent-link-path (2) and navigated-read
+        assertEquals(2 * 156, played);
     }
 }

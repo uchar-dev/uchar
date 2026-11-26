@@ -621,6 +621,58 @@ public final class ComputeHelpers {
         return ((OpenInput) openInput).incomplete(subject, member);
     }
 
+    /** A role check over {@code subject}'s own reference field {@code role}, whose bound value is {@code target},
+     *  narrowed to {@code counterpartClass} when non-empty, where the role can be open (RUNTIME-SEMANTICS ch. 1.5,
+     *  5.8a): settled when {@code target} is filled (including when {@code target} is outside {@code counterpartClass})
+     *  or when {@code openInput} closes the role on {@code subject}; otherwise breaks off with {@link OpenRead}. */
+    public static boolean roleFieldOpen(Object target, String counterpartClass, boolean negated, Object openInput,
+                                        Object subject, ElementKey role) {
+        if (target != null)
+            return (counterpartClass == null || counterpartClass.isEmpty() || isA(target, counterpartClass)) != negated;
+        if (openInput == null)
+            throw new IllegalStateException("the session has no OpenInput, which DroolsBackend.insert sets: the role "
+                    + FactNames.member(role) + " of " + FactNames.object(subject) + " reads it");
+        if (((OpenInput) openInput).incomplete(subject, role)) throw new OpenRead(new OpenMember(subject, role));
+        return negated;
+    }
+
+    /** The value of a {@link PathState} at a missing link along {@code properties} from {@code subject}, where
+     *  {@code roles} holds the {@link ElementKey} of each openable hop and {@code null} for any closed hop: at the
+     *  first absent hop, its {@link OpenMember} when {@code openInput} leaves that hop open on the object reached
+     *  before it, and {@code null} (settled leeg) otherwise (RUNTIME-SEMANTICS ch. 1.5, 5.8). */
+    public static Object missingLink(Object subject, List<?> properties, List<?> roles, Object openInput) {
+        Object cur = subject;
+        for (int i = 0; i < properties.size(); i++) {
+            Object next = readProperty(cur, (String) properties.get(i));
+            if (next == null) {
+                ElementKey role = (ElementKey) roles.get(i);
+                if (role == null) return null;
+                if (openInput == null)
+                    throw new IllegalStateException("the session has no OpenInput, which DroolsBackend.insert sets:"
+                            + " the role " + FactNames.member(role) + " of " + FactNames.object(cur) + " reads it");
+                return ((OpenInput) openInput).incomplete(cur, role) ? new OpenMember(cur, role) : null;
+            }
+            cur = next;
+        }
+        return null;
+    }
+
+    /** Pre-outcome evaluation of a {@code Term.FoldRead} in ch. 5.11 order when a fold's range can meet an open
+     *  single step: throws the first {@link RangeOpen} before any filter or member fault of the same or a later
+     *  selection, and before any contributor or fallback. */
+    public static void beforeFoldOutcome(Object rangeOpen, Object depositFlag, Object deposits, Object filterFault,
+                                         Object memberFault) {
+        RangeOpen ro = (RangeOpen) rangeOpen;
+        FilterFault ff = (FilterFault) filterFault;
+        if (ro != null && (ff == null || ro.selection() <= ff.place().get(0))) {
+            throw ro.openRead();
+        }
+        if (depositFlag != null) reportFilterDeposits(depositFlag, deposits);
+        if (ff != null) throw ff.fault();
+        if (memberFault != null) throw ((MemberFault) memberFault).fault();
+        if (ro != null) throw ro.openRead();
+    }
+
     /** The read of that input ({@link #input}): an open member breaks the evaluation off. */
     public static Object readInput(Object value, Object openInput, Object subject, ElementKey member) {
         return read(input(value, openInput, subject, member));
@@ -1315,8 +1367,8 @@ public final class ComputeHelpers {
             if (((Number) counts.get(i)).longValue() == 0) {
                 String field = fields.get(i);
                 throw new IllegalStateException((switch (reason) {
-                    case FILTER_FAULT -> DroolsCode.LIST_PLACE_MISSING_FILTER_FAULT.reason("fold", fold, "member",
-                            FactNames.object(member), "field", field);
+                    case FILTER_FAULT, RANGE_OPEN -> DroolsCode.LIST_PLACE_MISSING_FILTER_FAULT.reason("fold", fold,
+                            "member", FactNames.object(member), "field", field);
                     case MEMBER_FAULT -> DroolsCode.LIST_PLACE_MISSING_MEMBER_FAULT.reason("fold", fold, "member",
                             FactNames.object(member), "field", field);
                     case QUANTIFIER -> DroolsCode.LIST_PLACE_MISSING_QUANTIFIER.reason("fold", fold, "member",
@@ -1329,6 +1381,18 @@ public final class ComputeHelpers {
             place.add(((Number) places.get(i)).intValue());
         }
         return place;
+    }
+
+    /** The place of an open single step {@code step} in selection {@code selection} of fold {@code fold} on node
+     *  {@code node}: {@code [selection, step, ...listPlaces...]}. */
+    public static List<Integer> rangePlace(String fold, Object node, int selection, int step, List<String> fields,
+                                           List<?> counts, List<?> places) {
+        List<Integer> tail = foldPlace(Consequence.PlaceReason.RANGE_OPEN, fold, node, selection, fields, counts, places);
+        List<Integer> out = new ArrayList<>(tail.size() + 1);
+        out.add(selection);
+        out.add(step);
+        out.addAll(tail.subList(1, tail.size()));
+        return out;
     }
 
     // ---------------- the routes of a DRL text (plan.Route) ----------------

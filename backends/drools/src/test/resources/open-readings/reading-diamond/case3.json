@@ -27,6 +27,9 @@
           }
         },
         "roles": {},
+        "rolesEmpty": [
+          "club"
+        ],
         "characteristics": []
       },
       {
@@ -110,6 +113,9 @@
           }
         },
         "roles": {},
+        "rolesEmpty": [
+          "club"
+        ],
         "characteristics": []
       },
       {

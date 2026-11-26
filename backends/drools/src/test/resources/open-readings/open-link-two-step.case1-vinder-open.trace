@@ -1,0 +1,8 @@
+reading /rules/rules/0/versions/0 "V1" 0 Binary undetermined open "V1" "vinder"
+reading /rules/rules/0/versions/0 "V1" 1 AttributeReference 100
+reading /rules/rules/0/versions/0 "V1" 2 AttributeReference undetermined open "V1" "vinder"
+reading /rules/rules/0/versions/0 "V1" OPEN
+state attribute "V1" "ploegtoelage" open
+state attribute "V1" "waarde" 100
+state link "vinding" "vinder" open "vondst" "V1"
+state object "V1" "Vondst"

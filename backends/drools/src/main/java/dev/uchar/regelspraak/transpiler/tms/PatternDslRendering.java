@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.transpiler.tms;
 
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.ir.Validity;
 import dev.uchar.regelspraak.runtime.Accessors;
 import dev.uchar.regelspraak.transpiler.tms.plan.Accumulation;
@@ -250,6 +251,13 @@ final class PatternDslRendering {
                     new VariadicConsequence(new Variable[]{known(x.subject()), variable(x.value()), known(x.reached()),
                             known(Consequence.OPEN_INPUT)}, (drools, a) -> insert(drools, x.insertion(), new PathState(a[0],
                             x.path(), x.member(), ComputeHelpers.input(a[1], a[3], a[2], x.member()), a[2])));
+            case Consequence.InsertOpenPathState x -> {
+                List<String> properties = x.hopProperties();
+                List<ElementKey> roles = x.hopRoles();
+                yield new VariadicConsequence(new Variable[]{known(x.subject()), known(Consequence.OPEN_INPUT)},
+                        (drools, a) -> insert(drools, x.insertion(), new PathState(a[0], x.path(), x.member(),
+                                ComputeHelpers.missingLink(a[0], properties, roles, a[1]), null)));
+            }
             case Consequence.InsertPathState x -> x.source() == Consequence.StateSource.MISSING_LINK
                     ? new VariadicConsequence(new Variable[]{known(x.subject())}, (drools, a) ->
                             insert(drools, x.insertion(), new PathState(a[0], x.path(), x.member(), null, null)))
@@ -293,6 +301,7 @@ final class PatternDslRendering {
                                 depositCodesAgain(filter, x.depositFlag(), w, x.open(), what))));
             }
             case Consequence.FilterFault x -> filterFault(x);
+            case Consequence.RangeOpen x -> rangeOpen(x);
             case Consequence.MemberFault x -> consequenceItem(x.subject(), memberFaultSlots(x),
                     (drools, carrier, w) -> {
                         List<Integer> place = foldPlace(x.place(), x.fold(), w[x.member()], w);
@@ -446,6 +455,27 @@ final class PatternDslRendering {
                         + " over the same bound values");
             List<Integer> place = foldPlace(g.place(), g.fold(), w[g.member()], w);
             insert(drools, g.insertion(), new FilterFault(g.fold(), carrier, w[g.member()], fault, place));
+        });
+    }
+
+    /** An open single step of a fold's range ({@link Consequence.RangeOpen}): inserts the {@link RangeOpen} fact on
+     *  the fold's subject with the reached node, the role key, and {@code [selection, step, ...listPlaces...]}. */
+    private RuleItemBuilder<?> rangeOpen(Consequence.RangeOpen g) {
+        java.util.TreeSet<Integer> used = new java.util.TreeSet<>();
+        used.add(g.node());
+        for (Consequence.FoldPlace.Step s : g.place().steps()) {
+            used.add(s.count());
+            used.add(s.place());
+        }
+        int size = used.last() + 1;
+        return consequenceItem(g.subject(), List.copyOf(used), size, (drools, carrier, w) -> {
+            Object node = w[g.node()];
+            List<Integer> base = foldPlace(g.place(), g.fold(), node, w);
+            List<Integer> place = new ArrayList<>(base.size() + 1);
+            place.add(base.get(0));
+            place.add(g.step());
+            place.addAll(base.subList(1, base.size()));
+            insert(drools, g.insertion(), new RangeOpen(g.fold(), carrier, new OpenMember(node, g.role()), place));
         });
     }
 
@@ -1031,6 +1061,8 @@ final class PatternDslRendering {
         field(FoldOpen.class, "subject", FoldOpen::subject);
         field(FilterFault.class, "fold", FilterFault::fold);
         field(FilterFault.class, "subject", FilterFault::subject);
+        field(RangeOpen.class, "fold", RangeOpen::fold);
+        field(RangeOpen.class, "subject", RangeOpen::subject);
         field(FilterDeposit.class, "fold", FilterDeposit::fold);
         field(FilterDeposit.class, "subject", FilterDeposit::subject);
         field(MemberFault.class, "fold", MemberFault::fold);

@@ -1,0 +1,89 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "vergoeding": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "rolesEmpty": [
+          "vorige vergunning"
+        ],
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "vergoeding": {
+            "number": "20"
+          }
+        },
+        "roles": {
+          "vorige vergunning": [
+            "V1"
+          ]
+        },
+        "rolesEmpty": [
+          "volgende vergunning"
+        ],
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "V1",
+      "attribute": "vorige vergoeding"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "opvolgend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "zonder voorganger"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "opgevolgd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V2",
+      "attribute": "vorige vergoeding",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "opvolgend"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": "zonder voorganger"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V2",
+      "characteristic": "opgevolgd"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

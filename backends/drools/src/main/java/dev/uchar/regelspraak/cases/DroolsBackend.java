@@ -498,6 +498,24 @@ public final class DroolsBackend {
             closed.computeIfAbsent(a.bean(), k -> new HashSet<>())
                     .add(ProducerConsumer.elementOf(declarant, declared, true));
         }
+        for (Input.EmptyRole r : input.emptyRoles()) {
+            ObjectType t = types.get(r.bean());
+            if (t == null) throw emptyRoleRefused(r, DroolsCode.INSERT_EMPTY_ROLE.part("not-in-input"));
+            List<CaseInput.OppositeRole> hits = CaseInput.resolveOppositeRoles(build.model(), t, r.role());
+            if (hits.isEmpty())
+                throw emptyRoleRefused(r, DroolsCode.INSERT_EMPTY_ROLE.part("undeclared", "objectType", t.name));
+            if (hits.size() > 1)
+                throw emptyRoleRefused(r, DroolsCode.INSERT_EMPTY_ROLE.part("ambiguous", "objectType", t.name));
+            CaseInput.OppositeRole hit = hits.get(0);
+            RegelSpraakModel.FactType ft = hit.factType();
+            RegelSpraakModel.Role far = hit.role();
+            if (ft.reciprocal || far.many() || ft.roles.size() != 2)
+                throw emptyRoleRefused(r, DroolsCode.INSERT_EMPTY_ROLE.part("not-to-one", "objectType", t.name));
+            if (roleLinked(build.model(), beans, types, r.bean(), t, ft, hit.roleIndex()))
+                throw emptyRoleRefused(r, DroolsCode.INSERT_EMPTY_ROLE.part("linked"));
+            closed.computeIfAbsent(r.bean(), k -> new HashSet<>())
+                    .add(ProducerConsumer.ElementKey.role(ft.name, hit.roleIndex(), far.name()));
+        }
         OpenableMembers openable = build.execModelTranspiler().openableMembers();
         if (openable.isEmpty()) return null;
         Map<Object, Set<ProducerConsumer.ElementKey>> members = new IdentityHashMap<>();
@@ -523,6 +541,34 @@ public final class DroolsBackend {
     private static IllegalArgumentException absentRefused(Input.Absent a, Msg reason) {
         return new IllegalArgumentException(DroolsCode.INSERT_ABSENT_CHARACTERISTIC.reason("bean", name(a.bean()),
                 "characteristic", a.characteristic(), "reason", reason).text());
+    }
+
+    /** The refusal of the statement that a single role is empty, for {@code reason}. */
+    private static IllegalArgumentException emptyRoleRefused(Input.EmptyRole r, Msg reason) {
+        return new IllegalArgumentException(DroolsCode.INSERT_EMPTY_ROLE.reason("bean", name(r.bean()),
+                "role", r.role(), "reason", reason).text());
+    }
+
+    /** Whether {@code bean} (of type {@code t}) already has a link on role {@code farIndex} of {@code ft}, either on its
+     *  own reference field or on the counterpart's reference field of a 1:1 relation. */
+    private static boolean roleLinked(RegelSpraakModel model, List<Object> beans, Map<Object, ObjectType> types,
+                                      Object bean, ObjectType t, RegelSpraakModel.FactType ft, int farIndex) {
+        RegelSpraakModel.Role far = ft.roles.get(farIndex), near = ft.roles.get(1 - farIndex);
+        ObjectType farFiller = model.objectTypeByName(far.objectTypeName());
+        if (farFiller != null && FactModelGenerator.hasReferenceField(model, t, far.name(), farFiller)
+                && Accessors.leesEigenschap(bean, Namen.property(far.name())) != null)
+            return true;
+        if (!near.many() && farFiller != null) {
+            ObjectType nearFiller = model.objectTypeByName(near.objectTypeName());
+            for (Object other : beans) {
+                ObjectType otherType = types.get(other);
+                if (otherType != null && otherType.isA(farFiller) && nearFiller != null
+                        && FactModelGenerator.hasReferenceField(model, otherType, near.name(), nearFiller)
+                        && Accessors.leesEigenschap(other, Namen.property(near.name())) == bean)
+                    return true;
+            }
+        }
+        return false;
     }
 
     /** The {@link RelationLink} facts of the links {@code links} of the input over relations both of whose roles are

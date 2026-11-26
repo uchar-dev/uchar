@@ -69,22 +69,53 @@ class CompleteLoaderWitnessTest {
         assertEquals(Set.of(), plain.completeCharacteristics);
         member(ir, "attributes", "gewicht").put("complete", true);
         member(ir, "characteristics", "gemeld").put("complete", true);
-        RegelSpraakModel.ObjectType twisted = loadedVondst(ir);
+        addFactType(ir).put("complete", true);
+        RegelSpraakModel loaded = IrLoader.loadAll(ir).model();
+        RegelSpraakModel.ObjectType twisted = loaded.objectTypes.get("Vondst");
         assertEquals(Set.of("gewicht"), twisted.completeAttributes);
         assertEquals(Set.of("gemeld"), twisted.completeCharacteristics);
+        assertEquals(true, loaded.factTypes.get("vinding").roles.get(0).complete());
+        assertEquals(false, loaded.factTypes.get("vinding").roles.get(1).complete());
+    }
+
+    private static ObjectNode addFactType(ObjectNode ir) {
+        JsonNodeFactory f = JsonNodeFactory.instance;
+        ObjectNode r0 = f.objectNode();
+        r0.put("node", "Role");
+        r0.put("name", "vinder");
+        r0.put("objectType", "Vondst");
+        r0.put("many", false);
+        ObjectNode r1 = f.objectNode();
+        r1.put("node", "Role");
+        r1.put("name", "hervondst");
+        r1.put("objectType", "Vondst");
+        r1.put("many", true);
+        ObjectNode ft = f.objectNode();
+        ft.put("node", "FactType");
+        ft.put("name", "vinding");
+        ft.put("reciprocal", false);
+        ft.set("roles", f.arrayNode().add(r0).add(r1));
+        ((com.fasterxml.jackson.databind.node.ArrayNode) ir.get("model").get("factTypes")).add(ft);
+        return r0;
     }
 
     @Test void every_other_value_is_refused_at_its_pointer_in_the_sentence_of_the_ocaml_loader() throws Exception {
         JsonNodeFactory f = JsonNodeFactory.instance;
-        for (String list : List.of("attributes", "characteristics")) {
+        for (String list : List.of("attributes", "characteristics", "roles")) {
             String name = list.equals("attributes") ? "gewicht" : "gemeld";
             for (JsonNode value : List.of(f.booleanNode(false), f.nullNode(), f.textNode("true"), f.textNode("volledig"),
                     f.numberNode(1), f.arrayNode(), f.objectNode())) {
                 ObjectNode ir = golden();
-                member(ir, list, name).set("complete", value);
+                String at;
+                if (list.equals("roles")) {
+                    addFactType(ir).set("complete", value);
+                    at = "/model/factTypes/0/roles/0/complete";
+                } else {
+                    member(ir, list, name).set("complete", value);
+                    at = pointer(ir, list, name) + "/complete";
+                }
                 IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir),
                         () -> list + " complete " + value);
-                String at = pointer(ir, list, name) + "/complete";
                 assertEquals(at, e.site());
                 assertEquals("malformed uchar-ir-v1 document at '" + at + "': expected true, the one spelling of a "
                         + "member whose input is complete, got " + value, e.getMessage());
@@ -98,5 +129,12 @@ class CompleteLoaderWitnessTest {
         IrLoader.DocumentError e = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(ir));
         assertEquals(pointer(ir, "attributes", "gewicht") + "/completed", e.site());
         assertEquals("malformed uchar-ir-v1 document at '" + e.site() + "': unknown field on Attribute", e.getMessage());
+
+        ObjectNode irRole = golden();
+        addFactType(irRole).put("completed", true);
+        IrLoader.DocumentError er = assertThrows(IrLoader.DocumentError.class, () -> IrLoader.loadAll(irRole));
+        assertEquals("/model/factTypes/0/roles/0/completed", er.site());
+        assertEquals("malformed uchar-ir-v1 document at '/model/factTypes/0/roles/0/completed': unknown field on Role",
+                er.getMessage());
     }
 }

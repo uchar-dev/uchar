@@ -1,0 +1,7 @@
+reading /rules/rules/0/versions/0 "V1" 0 Binary 100
+reading /rules/rules/0/versions/0 "V1" 1 AttributeReference 100
+reading /rules/rules/0/versions/0 "V1" 2 AttributeReference empty on none
+reading /rules/rules/0/versions/0 "V1" HOLDS
+state attribute "V1" "ploegtoelage" 100
+state attribute "V1" "waarde" 100
+state object "V1" "Vondst"

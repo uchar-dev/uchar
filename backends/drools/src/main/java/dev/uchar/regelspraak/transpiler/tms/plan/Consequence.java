@@ -272,6 +272,20 @@ public sealed interface Consequence {
         }
     }
 
+    /** The standing of member {@code member} at the end of the path {@code path} on the object {@code subject} binds
+     *  where a link on the path is absent and at least one hop can be open (RUNTIME-SEMANTICS ch. 1.5, 5.8): the first
+     *  absent hop's {@code OpenMember} where {@link #OPEN_INPUT} names that hop's role on the object it stands on, and
+     *  null where the absent hop is settled absent, computed by {@link Route#MISSING_LINK}. */
+    record InsertOpenPathState(String subject, String path, ElementKey member, List<String> hopProperties,
+                               List<ElementKey> hopRoles, Insertion insertion) implements Consequence {
+        public InsertOpenPathState {
+            hopProperties = List.copyOf(hopProperties);
+            hopRoles = java.util.Collections.unmodifiableList(new ArrayList<>(hopRoles));
+            if (hopProperties.isEmpty() || hopProperties.size() != hopRoles.size())
+                throw new IllegalArgumentException("an openable missing link carries one role slot per hop");
+        }
+    }
+
     /**
      * The keys of the object {@code subject} binds in source {@code source} of the uniqueness {@code uniqueness}
      * (RUNTIME-SEMANTICS ch. 5.6, 5.9), made by the route {@link Route#UNIQUENESS_KEYS}: its key components in the
@@ -354,7 +368,7 @@ public sealed interface Consequence {
      *  ({@code FILTER_FAULT}), the first member whose timeline the case gives as the asOfDate-bucket scalar
      *  ({@code MEMBER_FAULT}), the members that the short circuit of a quantifier fold reaches ({@code QUANTIFIER}), or the
      *  selection of a member that can leave the fold open, without a step ({@code OPEN_MEMBER}). */
-    enum PlaceReason { FILTER_FAULT, MEMBER_FAULT, QUANTIFIER, OPEN_MEMBER }
+    enum PlaceReason { FILTER_FAULT, MEMBER_FAULT, QUANTIFIER, OPEN_MEMBER, RANGE_OPEN }
 
     /**
      * The contribution ({@code Contribution}, RUNTIME-SEMANTICS ch. 3.4) of the member in slot {@code member}, the subject of a
@@ -486,6 +500,18 @@ public sealed interface Consequence {
             if (place.reason() != PlaceReason.FILTER_FAULT)
                 throw new IllegalArgumentException("the place of a filter fault is that of the filter, not "
                         + place.reason());
+        }
+    }
+
+    /** An open single role {@code role} on the reached node in slot {@code node} at step {@code step} (1-based) of the
+     *  range of fold {@code fold} on the object {@code subject} binds (RUNTIME-SEMANTICS ch. 1.5). */
+    record RangeOpen(String subject, String fold, int node, ElementKey role, FoldPlace place, int step,
+                     Insertion insertion) implements Consequence {
+        public RangeOpen {
+            java.util.Objects.requireNonNull(role, "role");
+            if (place.reason() != PlaceReason.RANGE_OPEN || step < 1)
+                throw new IllegalArgumentException("the place of an open range step is RANGE_OPEN at step >= 1, not "
+                        + place.reason() + " at " + step);
         }
     }
 

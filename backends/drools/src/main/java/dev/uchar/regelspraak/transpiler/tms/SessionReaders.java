@@ -1043,6 +1043,13 @@ final class SessionReaders {
         candidates.forEach((subject, keys) -> {
             for (ElementKey key : keys) {
                 String name = declaredName(key);
+                if (key.isRole()) {
+                    RegelSpraakModel.FactType ft = analysis.factType(key.factType());
+                    if (ft != null && !ft.reciprocal && ft.roles.size() == 2
+                            && !roleLinkedInSession(session, subject, ft, key.roleIndex()))
+                        out.add(Fixpoint.OpenValue.role(subject, name, ft.name, key.roleIndex()));
+                    continue;
+                }
                 Object input = Accessors.leesEigenschap(subject, Namen.property(name));
                 boolean open = key.characteristic()
                         ? !Boolean.TRUE.equals(input) && !holding.getOrDefault(subject, Set.of()).contains(key)
@@ -1054,8 +1061,43 @@ final class SessionReaders {
         return out;
     }
 
-    /** The name of the member {@code key} as the type that declares it spells it. */
+    /** Whether {@code subject} holds a link in the near slot opposite {@code farIdx} of {@code ft} in {@code session}. */
+    private boolean roleLinkedInSession(KieSession session, Object subject, RegelSpraakModel.FactType ft, int farIdx) {
+        int nearIdx = 1 - farIdx;
+        RegelSpraakModel.Role far = ft.roles.get(farIdx), near = ft.roles.get(nearIdx);
+        RegelSpraakModel.ObjectType farType = model.objectTypeByName(far.objectTypeName());
+        RegelSpraakModel.ObjectType nearType = model.objectTypeByName(near.objectTypeName());
+        RegelSpraakModel.ObjectType subjectType = null;
+        for (RegelSpraakModel.ObjectType t : model.objectTypes.values())
+            if (Namen.ident(t.name, true).equals(subject.getClass().getSimpleName())) { subjectType = t; break; }
+        if (subjectType != null && farType != null
+                && dev.uchar.regelspraak.schema.FactModelGenerator.hasReferenceField(model, subjectType, far.name(), farType)
+                && Accessors.leesEigenschap(subject, Namen.property(far.name())) != null)
+            return true;
+        if (!near.many() && farType != null && nearType != null
+                && dev.uchar.regelspraak.schema.FactModelGenerator.hasReferenceField(model, farType, near.name(), nearType)) {
+            String nearProp = Namen.property(near.name());
+            Class<?> farClass = analysis.beanClass(farType);
+            for (Object other : session.getObjects(o -> farClass.isInstance(o)))
+                if (Accessors.leesEigenschap(other, nearProp) == subject) return true;
+        }
+        for (Object f : session.getObjects(o -> o instanceof RelationLink)) {
+            RelationLink rl = (RelationLink) f;
+            if (Namen.norm(rl.relation()).equals(Namen.norm(ft.name))
+                    && (nearIdx == 0 ? rl.first() == subject : rl.second() == subject))
+                return true;
+        }
+        return false;
+    }
+
+    /** The name of the member {@code key} as the type or fact type that declares it spells it. */
     private String declaredName(ElementKey key) {
+        if (key.isRole()) {
+            RegelSpraakModel.FactType ft = analysis.factType(key.factType());
+            if (ft != null && key.roleIndex() >= 0 && key.roleIndex() < ft.roles.size())
+                return ft.roles.get(key.roleIndex()).name();
+            throw new IllegalStateException("no fact type of the model declares " + FactNames.member(key));
+        }
         for (RegelSpraakModel.ObjectType t : model.objectTypes.values()) {
             if (!Namen.norm(t.name).equals(key.objectType())) continue;
             for (String n : key.characteristic() ? t.characteristics : t.attributes.keySet())
@@ -1398,8 +1440,11 @@ final class SessionReaders {
             OpenMember open = oc.undetermined() ? named(oc.judgement().read(), folds, watch) : null;
             nodes.add(new ConditionReading.NodeReading(s.node(), s.kind(), true, RecordingRendering.given(oc.value()),
                     s.unit(), oc.fault(), !found ? null : s.navigates() ? w[s.objectSlot()] : own(s, o), contributors,
-                    open == null ? null : new Fixpoint.OpenValue(open.subject(), declaredName(open.member()),
-                            open.member().characteristic())));
+                    open == null ? null : open.member().isRole()
+                            ? Fixpoint.OpenValue.role(open.subject(), declaredName(open.member()),
+                                    analysis.factType(open.member().factType()).name, open.member().roleIndex())
+                            : new Fixpoint.OpenValue(open.subject(), declaredName(open.member()),
+                                    open.member().characteristic())));
         }
         // a default of a stack on a timeline target is at its turn where the days of its turn hold one (ch. 7.11)
         if (r.turn() != null && ComputeHelpers.isEmpty(new RecordingRendering().value(r.turn(), w))) displaced = true;

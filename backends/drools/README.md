@@ -87,16 +87,21 @@ consumer does.
    of the reference field each member holds toward it, and `link(factType, first, second)` for every link of a relation
    both of whose roles are to-many, which no bean holds, `first` filling the role the fact type declares first, and
    `attributeEmpty(bean, attribute)` for a scalar attribute the input states to have no value (`attributesEmpty`,
-   ch. 1.5), and `characteristicAbsent(bean, characteristic)` for a characteristic the input states not to hold
-   (`characteristicsAbsent`, ch. 1.5), neither of which a bean field can tell from a member the input does not name;
-   `closedInputs()` treats every input member of the session as complete. `insert` states the facts the branch reads
-   from these (`BucketInput`, `ListPlace`, `RelationLink` of phase 0), and in a document in which a member can be open
+   ch. 1.5), `characteristicAbsent(bean, characteristic)` for a characteristic the input states not to hold
+   (`characteristicsAbsent`, ch. 1.5), and `roleEmpty(bean, role)` for a non-reciprocal to-one role the input states to
+   carry no link (`rolesEmpty`, ch. 1.5; refused on invalid calls with `DROOLS-376`), none of which a bean field can
+   tell from a member or role the input does not name;
+   `closedInputs()` treats every input member and to-one role of the session as complete. `insert` states the facts the branch reads
+   from these (`BucketInput`, `ListPlace`, `RelationLink` of phase 0), and in a document in which a member or role can be open
    it sets the global `open_invoer`, an `OpenInput`, so a consumer states no fact class of the branch itself.
    `CaseInput.of(build, case)` makes that `Input` from a `uchar-case-v0` case, as the replay makes it for every
    case: it reads `asOfDate` and `input.instances` onto fresh beans, sets the attributes, characteristics and role
    links (RUNTIME-SEMANTICS ch. 5.7a: the written role by name, else by the type pair; on a one-to-one relation the
    far field as well; a to-many role in the far end's field; a role of a relation of two to-many roles as one link,
-   from whichever side the case writes it; the reverse leg of a reciprocal role in a separate pass), and gives `beans()` by label, `types()` and `input()`, every to-many list in the order the reference
+   from whichever side the case writes it; the reverse leg of a reciprocal role in a separate pass), validates
+   `rolesEmpty` (undeclared in the model is EF-040, ambiguous across fact types EF-001, linked directly or from the
+   counterpart after mirroring EF-049 in list order, and 0 opposite hits, a to-many role or a reciprocal fact type an
+   `IllegalArgumentException` at load), and gives `beans()` by label, `types()` and `input()`, every to-many list in the order the reference
    interpreter folds over. The `cells` of a dimensioned attribute go into its bean member, a map of its cells by their
    labels in their declared spelling (`FactModelGenerator.cellKey`, RUNTIME-SEMANTICS ch. 5.8c); labels that name no
    cell are refused with EF-034, a cell named twice with EF-035, a cell value its decimals do not hold with EF-004 at the
@@ -437,24 +442,34 @@ read in `NodeReading.open`). A member is **settled leeg** where it stands that n
 that its input is complete (`(volledig gegeven)`, `complete`): in an end state it is in neither list, in a reading it is a
 value that is null.
 
-The analysis computes once which members can be open (`OpenableMembers`, the one place
+The analysis computes once which members and roles can be open (`OpenableMembers`, the one place
 of the lowering that reads `inferFromEmpty`): an input member that holds one value, on the objects of a type on which
-nothing but an initialisation writes it, unless its declaration says that its input is complete; and every member a form
-writes that reads such a member, through any number of forms. An initialisation, a rule or the initialisation default
+nothing but an initialisation writes it, unless its declaration says that its input is complete; a non-reciprocal
+to-one role (`Role.many == false` on a binary `FactType` with `reciprocal == false`, keyed per fact type and role slot
+as `ElementKey.role`) on the objects of a type on which no creation writes that directed role, unless the role
+declaration carries `complete` (`(volledig gegeven)`); and every member a form writes that reads such a member or role
+(via a role check, a navigated read or check, or a fold's `sourceRole` or `sourcePath`), through any number of forms —
+also where the document declares no openable attribute or characteristic at all. An initialisation, a rule or the initialisation default
 of a stack without an exception group, is the lowest writer of its target and makes no member derived (ch. 1.5, "The
 three states"). In any other document there is none, and the analysis builds nothing of what
-follows; nor does it, in a document with the property, for a member outside that set.
+follows; nor does it, in a document with the property, for a member or role outside that set.
 
-What opens a member is a writer or the input. `LeftOpen(subject, member, writer)` is inserted logically by a writer that
-neither decides nor stands to fill nothing. `OpenInput` holds per object the input members that are not complete; it is
+What opens a member or a role is a writer or the input. `LeftOpen(subject, member, writer)` is inserted logically by a writer that
+neither decides nor stands to fill nothing. `OpenInput` holds per object the input members and to-one roles that are not complete; it is
 constant in a session, so it is a global, `open_invoer`, which `insert` sets, and no rule binds it. An input member that
 no form writes is read off the bean, as any input, and the read takes that global beside the value
 (`ComputeHelpers.readInput`): the member is open where the bean holds no value, or does not hold the characteristic, and
-the `OpenInput` names it. A member a form writes is read through its standing, whose third state is the `OpenMember` of
+the `OpenInput` names it; an unlinked openable to-one role on a role check breaks off on `OpenMember(subject, roleKey)`
+(`ComputeHelpers.roleFieldOpen`, while a link to an instance outside `counterpartType` stands false or true). A member a form writes is read through its standing, whose third state is the `OpenMember` of
 the member on that object, in place of a value or a truth value: the standing rules take the `Value` or
 `HasCharacteristic` of a writer first, then a `LeftOpen`, and else the input, which on an object of which no form writes
-the member is open as above. Over a path either is read through its `PathState`, whose rule binds the bean the path
-reaches. Settled leeg is the absence of all of these, per object, so no rule brings the writers of a member together,
+the member is open as above. Over a path either is read through its `PathState` whenever the endpoint or any to-one hop
+can be open: where a link is absent at hop `j`, `Consequence.InsertPathState` walks the bound hops with `OpenInput`
+(`ComputeHelpers.missingLink`) and inserts `OpenMember(o_{j-1}, roleKey)` with `reached = null` if that hop is open, or
+nothing if settled absent. In a fold (`Aggregation`, `InstanceSetUnion` or `QuantifierFold`) whose `sourceRole` or
+`sourcePath` crosses an openable to-one step, a `RangeOpen` rule per such step inserts `RangeOpen(fold, subject,
+OpenMember(node, roleKey), place)` where the step's reference field is null and `OpenInput` names it, and
+`Term.FoldRead` checks the earliest `RangeOpen` before filter deposits and faults (`ComputeHelpers.beforeFoldOutcome`). Settled leeg is the absence of all of these, per object, so no rule brings the writers of a member together,
 and a standing derived before a writer left the member open is withdrawn as any other.
 
 A read of an open member breaks the evaluation off with an `OpenRead`; the operators of the production runtime see no
@@ -563,7 +578,10 @@ The build with readings refuses one form more: a fold that can be open over a re
 whose members have no place in an order here, so that which of them the reading names cannot be told (DROOLS-318).
 
 Witnesses `OpenableMembersWitnessTest`, `OpenValuesWitnessTest` (the examples of ch. 1.5), `OpenValuesRefWitnessTest` (the
-witnesses of the reference interpreter), `OpenReadingsWitnessTest` (the readings and the end state),
+witnesses of the reference interpreter), `OpenReadingsWitnessTest` (the readings and the end state, including `open
+<object> "<Role.name>"` with no `on <object>` on broken-off navigations, empty `contributors` on folds broken off by an
+open range step, and `EndState.openLinks()` for ch. 5.12a `link … open` lines), `EmptyAttributeInputWitnessTest` and
+`EmptyRoleInputWitnessTest` (`attributesEmpty` / `DROOLS-375` and `rolesEmpty` / `DROOLS-376`),
 `SameConclusionWitnessTest` (an open default with a constant, unit restatement, provisional fold deposits and faults, and
 `DefaultsDecision.open()`), `CompleteInputPreservationWitnessTest` (complete input gives the outcome of the document without
 the property, on every golden that is carried) and `InferFromEmptyRefusalWitnessTest` (what is refused, each beside a

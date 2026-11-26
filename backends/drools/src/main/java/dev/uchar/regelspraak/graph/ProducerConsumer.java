@@ -48,9 +48,31 @@ public final class ProducerConsumer {
      *  <p><b>The objecttype is the member's DECLARING type</b> (IR-SPEC ch. 2.2), not the type the form that
      *  touched it happens to range over — see {@link #elementOf}. A member is declared once and inherited, so
      *  a write on the supertype and a read on the subtype touch ONE element and must key alike. */
-    public record ElementKey(String objectType, String name, boolean characteristic) {
+    public record ElementKey(String objectType, String name, boolean characteristic, String factType, int roleIndex) {
+        public ElementKey(String objectType, String name, boolean characteristic) {
+            this(objectType, name, characteristic, null, -1);
+        }
+
         public static ElementKey of(String objectType, String name, boolean characteristic) {
-            return new ElementKey(Namen.norm(objectType), Namen.norm(name), characteristic);
+            return new ElementKey(Namen.norm(objectType), Namen.norm(name), characteristic, null, -1);
+        }
+
+        /** The identity of the non-reciprocal single role at {@code roleIndex} (0 or 1) of {@code factType}, whose
+         *  declared singular name is {@code roleName}. */
+        public static ElementKey role(String factType, int roleIndex, String roleName) {
+            return new ElementKey("", Namen.norm(roleName), false, Namen.norm(factType), roleIndex);
+        }
+
+        /** Whether this key names a role of a fact type rather than an attribute or characteristic of an object type. */
+        public boolean isRole() {
+            return factType != null;
+        }
+
+        @Override
+        public String toString() {
+            return isRole()
+                    ? "ElementKey[factType=" + factType + ", roleIndex=" + roleIndex + ", name=" + name + "]"
+                    : "ElementKey[objectType=" + objectType + ", name=" + name + ", characteristic=" + characteristic + "]";
         }
     }
 

@@ -45,6 +45,7 @@ public final class Input {
     private final List<ToManyList> lists = new ArrayList<>();
     private final List<Link> links = new ArrayList<>();
     private final List<Empty> empty = new ArrayList<>();
+    private final List<EmptyRole> emptyRoles = new ArrayList<>();
     private final List<Absent> absent = new ArrayList<>();
     private boolean closedInputs;
 
@@ -62,6 +63,10 @@ public final class Input {
     /** An attribute the input states to have no value: {@code attribute} of {@code bean}, its declared name in any
      *  spelling that is that name under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}. */
     record Empty(Object bean, String attribute) {}
+
+    /** A non-reciprocal single role the input states to be empty: {@code role} opposite {@code bean}, its declared name
+     *  or plural in any spelling that is that name under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}. */
+    record EmptyRole(Object bean, String role) {}
 
     /** A characteristic the input states not to hold: {@code characteristic} of {@code bean}, its declared name in any
      *  spelling that is that name under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}. */
@@ -115,6 +120,14 @@ public final class Input {
         return this;
     }
 
+    /** States that the non-reciprocal single role {@code role} opposite {@code bean} is empty ({@code rolesEmpty},
+     *  RUNTIME-SEMANTICS ch. 1.5): no link may fill that role on {@code bean}. {@code role} is its declared name or
+     *  plural, in any spelling that is that name under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}. */
+    public Input roleEmpty(Object bean, String role) {
+        emptyRoles.add(new EmptyRole(Objects.requireNonNull(bean, "bean"), Objects.requireNonNull(role, "role")));
+        return this;
+    }
+
     /** States that the characteristic {@code characteristic} of {@code bean} does not hold ({@code characteristicsAbsent},
      *  RUNTIME-SEMANTICS ch. 1.5): the bean must not hold it. {@code characteristic} is its declared name, in any spelling
      *  that is that name under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}, as a case names it. */
@@ -148,6 +161,10 @@ public final class Input {
 
     List<Empty> empty() {
         return List.copyOf(empty);
+    }
+
+    List<EmptyRole> emptyRoles() {
+        return List.copyOf(emptyRoles);
     }
 
     List<Absent> absent() {

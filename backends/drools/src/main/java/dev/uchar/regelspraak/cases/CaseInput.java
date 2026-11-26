@@ -209,9 +209,31 @@ public final class CaseInput {
     /** The attributes the case states to have no value ({@code attributesEmpty}, RUNTIME-SEMANTICS ch. 1.5), in the
      *  order of the case: what {@link #inputData()} names as such ({@link Input#attributeEmpty}). */
     private final List<Input.Empty> emptyAttributes = new ArrayList<>();
+    /** The non-reciprocal single roles the case states to be empty ({@code rolesEmpty}, RUNTIME-SEMANTICS ch. 1.5), in
+     *  the order of the case: what {@link #inputData()} names as such ({@link Input#roleEmpty}). */
+    private final List<Input.EmptyRole> emptyRoles = new ArrayList<>();
+    /** Every directed non-reciprocal role slot {@code (bean, factType, farIndex)} that a link of {@code roles} fills,
+     *  from either end: checked after {@link #setRoles} and {@link #mirrorReciprocalRoles} against {@code rolesEmpty}
+     *  (EF-049). */
+    private final Set<LinkedRoleSlot> linkedRoleSlots = new HashSet<>();
     /** The characteristics the case states not to hold ({@code characteristicsAbsent}, RUNTIME-SEMANTICS ch. 1.5), in the
      *  order of the case: what {@link #inputData()} names as such ({@link Input#characteristicAbsent}). */
     private final List<Input.Absent> absentCharacteristics = new ArrayList<>();
+
+    private record LinkedRoleSlot(Object bean, String factType, int farIndex) {
+        @Override public boolean equals(Object o) {
+            return o instanceof LinkedRoleSlot s && s.bean == bean && s.farIndex == farIndex
+                    && s.factType.equals(factType);
+        }
+
+        @Override public int hashCode() {
+            return Objects.hash(System.identityHashCode(bean), factType, farIndex);
+        }
+    }
+
+    /** A candidate role opposite an instance's type: its fact type, its index in {@link RegelSpraakModel.FactType#roles}
+     *  (0 or 1; 0 on a reciprocal fact type), and the role itself. */
+    record OppositeRole(RegelSpraakModel.FactType factType, int roleIndex, RegelSpraakModel.Role role) {}
     /** Per bean and per getter of a to-one reference field, the link of the case that wrote the field, which a collision
      *  of the reverse leg names ({@link #mirrorReciprocalRoles}). */
     private final Map<Object, Map<String, RoleLink>> writers = new IdentityHashMap<>();
@@ -255,6 +277,7 @@ public final class CaseInput {
             for (JsonNode i : instances) inputData.setAttributesAndCharacteristics(i);
             for (JsonNode i : instances) inputData.setRoles(i);
             inputData.mirrorReciprocalRoles();
+            for (JsonNode i : instances) inputData.readRolesEmpty(i);
             inputData.refuseLinkCycles(build, instances);
             inputData.readParameters(input.get("parameters"));
             return inputData;
@@ -291,6 +314,7 @@ public final class CaseInput {
         for (Input.Bucket e : bucketScalars) inputData.bucketScalar(e.bean(), e.attribute());
         for (Input.Link k : links) inputData.link(k.factType(), k.first(), k.second());
         for (Input.Empty e : emptyAttributes) inputData.attributeEmpty(e.bean(), e.attribute());
+        for (Input.EmptyRole r : emptyRoles) inputData.roleEmpty(r.bean(), r.role());
         for (Input.Absent a : absentCharacteristics) inputData.characteristicAbsent(a.bean(), a.characteristic());
         for (Map.Entry<Object, Map<String, ToManyList>> perHolder : lists.entrySet())
             for (ToManyList l : perHolder.getValue().values()) {
@@ -372,7 +396,7 @@ public final class CaseInput {
         for (String section : new String[]{"attributes", "roles", "characteristicTimelines"})
             if (i.has(section) && !i.get(section).isObject())
                 throw new IllegalArgumentException(label + "." + section + ": expected an object, got " + i.get(section));
-        for (String section : new String[]{"attributesEmpty", "characteristics", "characteristicsAbsent"}) {
+        for (String section : new String[]{"attributesEmpty", "rolesEmpty", "characteristics", "characteristicsAbsent"}) {
             JsonNode list = i.get(section);
             if (list == null) continue;
             if (!list.isArray())
@@ -579,6 +603,8 @@ public final class CaseInput {
         private String characteristic;
         /** For EF-048, the attribute the case gives a value and states has none. */
         private String attribute;
+        /** For EF-049, the role the case links and also names in {@code rolesEmpty}. */
+        private String role;
 
         private NameFault(String code, String label, String name, dev.uchar.regelspraak.message.Msg message) {
             super(message.text());
@@ -610,6 +636,16 @@ public final class CaseInput {
             return f;
         }
 
+        /** A role {@code role} the case links on instance {@code label} (directly or from the opposite instance) and
+         *  also names in {@code rolesEmpty} (EF-049, RUNTIME-SEMANTICS ch. 1.5, 5.7), as written in
+         *  {@code rolesEmpty}. */
+        static NameFault roleLinkedAndEmpty(String label, String role) {
+            NameFault f = new NameFault("EF-049", label, null, dev.uchar.regelspraak.message.Msg.drools("EF-049",
+                    "label", label, "role", role));
+            f.role = role;
+            return f;
+        }
+
         /** {@code what} is the part of the sentence: {@code object-type}, {@code attribute}, {@code characteristic} or
          *  {@code role}; {@code objectType} the type of the instance, which the sentence of an attribute and of a
          *  characteristic names. */
@@ -625,13 +661,40 @@ public final class CaseInput {
         }
 
         /** The parameters of the kind (ch. 5.7b): the label of the instance, for EF-040 the name, for EF-047 the
-         *  characteristic, and for EF-048 the attribute. */
+         *  characteristic, for EF-048 the attribute, and for EF-049 the role. */
         public Map<String, String> params() {
             Map<String, String> out = new LinkedHashMap<>();
             out.put("label", label);
             if (name != null) out.put("name", name);
             if (characteristic != null) out.put("characteristic", characteristic);
             if (attribute != null) out.put("attribute", attribute);
+            if (role != null) out.put("role", role);
+            return out;
+        }
+    }
+
+    /** A role key of the case input that resolves to more than one role opposite the instance's type (EF-001,
+     *  RUNTIME-SEMANTICS ch. 5.7b). */
+    public static final class AmbiguousRoleFault extends IllegalArgumentException {
+        private static final long serialVersionUID = 1L;
+
+        private final String roleKey;
+        private final String objectType;
+
+        AmbiguousRoleFault(String roleKey, String objectType) {
+            super(dev.uchar.regelspraak.message.Msg.drools("EF-001", "roleKey", roleKey, "objectType", objectType).text());
+            this.roleKey = roleKey;
+            this.objectType = objectType;
+        }
+
+        public String code() {
+            return "EF-001";
+        }
+
+        public Map<String, String> params() {
+            Map<String, String> out = new LinkedHashMap<>();
+            out.put("roleKey", roleKey);
+            out.put("objectType", objectType);
             return out;
         }
     }
@@ -684,7 +747,8 @@ public final class CaseInput {
                     written.getValue());
             // the role the key names opposite this instance's type, as the reference interpreter resolves it: a key that
             // names a role of a relation this type does not fill is a defect of the case, never a link by the type pair
-            List<RegelSpraakModel.Role> far = rolesOpposite(tI, written.getKey());
+            List<OppositeRole> candidates = resolveOppositeRoles(model, tI, written.getKey());
+            List<RegelSpraakModel.Role> far = candidates.stream().map(OppositeRole::role).toList();
             if (far.isEmpty())
                 throw new IllegalArgumentException("role key \"" + written.getKey() + "\" does not resolve to a declared"
                         + " role opposite \"" + tI.name + "\"");
@@ -703,6 +767,13 @@ public final class CaseInput {
                 if (filler != null && !tL.isA(filler))
                     throw new IllegalArgumentException("role \"" + written.getKey() + "\" on \"" + link.label() + "\" links \""
                             + link.target() + "\" of type \"" + tL.name + "\"; declared filler type is \"" + filler.name + "\"");
+                if (candidates.size() == 1 && !candidates.get(0).factType().reciprocal
+                        && candidates.get(0).factType().roles.size() == 2) {
+                    OppositeRole hit = candidates.get(0);
+                    String ftNorm = Namen.norm(hit.factType().name);
+                    linkedRoleSlots.add(new LinkedRoleSlot(bean, ftNorm, hit.roleIndex()));
+                    linkedRoleSlots.add(new LinkedRoleSlot(target, ftNorm, 1 - hit.roleIndex()));
+                }
                 // a relation both of whose roles are to-many has no reference field on either bean: its link is a fact
                 // of its own, the same one from whichever side the case writes it (ch. 5.7a)
                 if (manyToManyLink(tI, tL, e.getKey(), bean, target)) continue;
@@ -989,21 +1060,54 @@ public final class CaseInput {
         throw NameFault.undeclared("role", label, key, null);
     }
 
+    /** Reads and validates {@code rolesEmpty} on instance {@code i} after all {@code roles} and reciprocal legs have
+     *  been materialised (RUNTIME-SEMANTICS ch. 1.5, 5.7): 1-to-1 with {@code Case.load_file} in {@code ref}. */
+    private void readRolesEmpty(JsonNode i) {
+        JsonNode list = i.get("rolesEmpty");
+        if (list == null) return;
+        String label = i.get("label").asText();
+        Object bean = labelToBean.get(label);
+        ObjectType ot = labelType.get(label);
+        for (JsonNode item : list) {
+            String written = item.asText();
+            declaredRoleKey(label, written);
+            List<OppositeRole> hits = resolveOppositeRoles(model, ot, written);
+            if (hits.isEmpty())
+                throw new IllegalArgumentException("role key \"" + written + "\" in rolesEmpty does not resolve to a"
+                        + " declared role opposite \"" + ot.name + "\"");
+            if (hits.size() > 1) throw new AmbiguousRoleFault(written, ot.name);
+            OppositeRole hit = hits.get(0);
+            if (hit.factType().reciprocal || hit.role().many())
+                throw new IllegalArgumentException("role \"" + written + "\" on \"" + label
+                        + "\": \"rolesEmpty\" applies only to a non-reciprocal to-one role");
+            ObjectType farFiller = model.objectTypeByName(hit.role().objectTypeName());
+            boolean linkedField = farFiller != null
+                    && FactModelGenerator.hasReferenceField(model, ot, hit.role().name(), farFiller)
+                    && dev.uchar.regelspraak.runtime.Accessors.leesEigenschap(bean,
+                            Namen.property(hit.role().name())) != null;
+            if (linkedRoleSlots.contains(new LinkedRoleSlot(bean, Namen.norm(hit.factType().name), hit.roleIndex()))
+                    || linkedField)
+                throw NameFault.roleLinkedAndEmpty(label, written);
+            emptyRoles.add(new Input.EmptyRole(bean, written));
+        }
+    }
+
     /** The roles the role key {@code key} on an instance of {@code type} names, as the reference interpreter's case reader
      *  resolves it: of a fact type of two roles the role the key names by its name or plural, where {@code type} fills
      *  the other one (the declared filler an upper bound, IR-SPEC ch. 2.6); of a reciprocal fact type its one role, where
      *  {@code type} fills it and the key names it. More than one is an ambiguity, none a key no role opposite
      *  {@code type} answers to. */
-    private List<RegelSpraakModel.Role> rolesOpposite(ObjectType type, String key) {
-        List<RegelSpraakModel.Role> out = new ArrayList<>();
+    static List<OppositeRole> resolveOppositeRoles(RegelSpraakModel model, ObjectType type, String key) {
+        List<OppositeRole> out = new ArrayList<>();
+        String norm = Namen.norm(key);
         for (RegelSpraakModel.FactType ft : model.factTypes.values()) {
             if (ft.roles.size() == 2) {
                 RegelSpraakModel.Role a = ft.roles.get(0), b = ft.roles.get(1);
-                if (fills(type, a) && names(b).contains(Namen.norm(key))) out.add(b);
-                if (fills(type, b) && names(a).contains(Namen.norm(key))) out.add(a);
+                if (fills(model, type, a) && names(b).contains(norm)) out.add(new OppositeRole(ft, 1, b));
+                if (fills(model, type, b) && names(a).contains(norm)) out.add(new OppositeRole(ft, 0, a));
             } else if (ft.roles.size() == 1 && ft.reciprocal) {
                 RegelSpraakModel.Role r = ft.roles.get(0);
-                if (fills(type, r) && names(r).contains(Namen.norm(key))) out.add(r);
+                if (fills(model, type, r) && names(r).contains(norm)) out.add(new OppositeRole(ft, 0, r));
             }
         }
         return out;
@@ -1011,6 +1115,11 @@ public final class CaseInput {
 
     /** Whether an instance of {@code type} fills the role {@code r}. */
     private boolean fills(ObjectType type, RegelSpraakModel.Role r) {
+        return fills(model, type, r);
+    }
+
+    /** Whether an instance of {@code type} fills the role {@code r}. */
+    private static boolean fills(RegelSpraakModel model, ObjectType type, RegelSpraakModel.Role r) {
         return type.isA(model.objectTypeByName(r.objectTypeName()));
     }
 

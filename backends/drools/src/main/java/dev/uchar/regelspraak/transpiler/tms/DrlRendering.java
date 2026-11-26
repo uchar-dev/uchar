@@ -412,8 +412,11 @@ final class DrlRendering {
         throw new IllegalStateException("a field test with a constant of the type " + w.getClass().getName());
     }
 
-    /** The key of a member, as {@link ElementKey#of} makes every key of the plan. */
+    /** The key of a member or a role, as {@link ElementKey#of} or {@link ElementKey#role} makes it in the plan. */
     private String key(ElementKey e) {
+        if (e.isRole())
+            return typeName(ElementKey.class) + ".role(" + str(e.factType()) + ", " + e.roleIndex() + ", "
+                    + str(e.name()) + ")";
         return typeName(ElementKey.class) + ".of(" + str(e.objectType()) + ", " + str(e.name()) + ", "
                 + e.characteristic() + ")";
     }
@@ -1246,6 +1249,19 @@ final class DrlRendering {
             int place = reserveer();
             String name = name("vouwlezing", place);
             StringBuilder b = new StringBuilder();
+            if (v.rangeOpen() >= 0) {
+                if (v.depositFlag() >= 0 && v.deposits() < 0)
+                    throw new IllegalStateException("a fold reading with a probe and without deposits in " + plan.name());
+                b.append("    ").append(route(Route.BEFORE_FOLD_OUTCOME)).append("(")
+                        .append(slot(v.rangeOpen(), c)).append(", ")
+                        .append(v.depositFlag() < 0 ? "null" : depositFlag(v.depositFlag(), c).text()).append(", ")
+                        .append(v.deposits() < 0 ? "null" : slot(v.deposits(), c)).append(", ")
+                        .append(v.filterFault() < 0 ? "null" : slot(v.filterFault(), c)).append(", ")
+                        .append(v.memberFault() < 0 ? "null" : slot(v.memberFault(), c)).append(");\n");
+                b.append("    return ").append(value(v.outcome(), c).text()).append(";\n");
+                fill(place, v.source(), "Object " + name + "(" + c.declaration() + ")", b.toString());
+                return name + "(" + c.pass() + ")";
+            }
             if (v.depositFlag() >= 0) {
                 if (v.deposits() < 0)
                     throw new IllegalStateException("a fold reading with a probe and without deposits in " + plan.name());
@@ -1399,6 +1415,12 @@ final class DrlRendering {
                                 : (x.source() == Consequence.StateSource.INCOMPLETE_INPUT
                                         ? input(variable(x.value()), x.reached(), x.member()) : variable(x.value()))
                                         + ", " + x.reached()) + ")");
+                case Consequence.InsertOpenPathState x -> insert(b, "    ", x.insertion(), "new "
+                        + typeName(PathState.class) + "(" + x.subject() + ", " + str(x.path()) + ", "
+                        + key(x.member()) + ", " + route(Route.MISSING_LINK) + "(" + x.subject() + ", "
+                        + consequenceConstant(x.hopProperties()).text() + ", "
+                        + consequenceConstant(x.hopRoles()).text() + ", "
+                        + Consequence.OPEN_INPUT + "), null)");
                 case Consequence.Contribution x -> contribution(x, b);
                 case Consequence.FilteredContribution x -> filteredContribution(x, b);
                 case Consequence.FilterDeposit x -> insert(b, "    ", x.insertion(), "new "
@@ -1406,6 +1428,7 @@ final class DrlRendering {
                         + variable(x.member()) + ", " + depositCodesAgain(x.filter(), x.depositFlag(), x.slots(), x.open(),
                                 "the filter of " + x.fold()) + ")");
                 case Consequence.FilterFault x -> filterFault(x, b);
+                case Consequence.RangeOpen x -> rangeOpen(x, b);
                 case Consequence.MemberFault x -> insert(b, "    ", x.insertion(), "new " + typeName(MemberFault.class) + "("
                         + str(x.fold()) + ", " + x.subject() + ", " + variable(x.member()) + ", "
                         + (x.before() != null
@@ -2006,6 +2029,22 @@ final class DrlRendering {
             insert(b, "    ", x.insertion(), "new " + typeName(FilterFault.class) + "(" + str(x.fold()) + ", "
                     + x.subject() + ", " + variable(x.member()) + ", f, "
                     + foldPlace(x.place(), x.fold(), x.member(), null) + ")");
+        }
+
+        private void rangeOpen(Consequence.RangeOpen x, StringBuilder b) {
+            List<String> fields = new ArrayList<>(), counts = new ArrayList<>(), places = new ArrayList<>();
+            for (Consequence.FoldPlace.Step s : x.place().steps()) {
+                fields.add(str(s.field()));
+                counts.add(variable(s.count()));
+                places.add(variable(s.place()));
+            }
+            String placeExpr = route(Route.RANGE_PLACE) + "(" + str(x.fold()) + ", " + variable(x.node())
+                    + ", " + x.place().selection() + ", " + x.step() + ", java.util.Arrays.asList("
+                    + String.join(", ", fields) + "), java.util.Arrays.asList(" + String.join(", ", counts)
+                    + "), java.util.Arrays.asList(" + String.join(", ", places) + "))";
+            insert(b, "    ", x.insertion(), "new " + typeName(RangeOpen.class) + "(" + str(x.fold()) + ", "
+                    + x.subject() + ", " + route(Route.OPEN) + "(" + variable(x.node()) + ", " + key(x.role()) + "), "
+                    + placeExpr + ")");
         }
 
         /**

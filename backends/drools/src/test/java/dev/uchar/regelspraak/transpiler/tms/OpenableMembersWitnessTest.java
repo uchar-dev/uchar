@@ -48,14 +48,27 @@ class OpenableMembersWitnessTest {
         /** The members that are input and not complete on an object of type {@code type}, in their order. */
         private List<String> incomplete(String type) {
             return openable.incompleteInput(loaded.model().objectTypeByName(type)).stream()
-                    .map(m -> m.objectType() + "." + m.name()).toList();
+                    .map(m -> m.isRole() ? m.factType() + "#" + m.roleIndex() + ":" + m.name()
+                            : m.objectType() + "." + m.name()).toList();
+        }
+
+        /** The roles of every fact type, "factType#roleIndex:name", for which {@code asked} answers yes, ascending. */
+        private Set<String> roles(java.util.function.Predicate<ElementKey> asked) {
+            Set<String> out = new TreeSet<>();
+            for (var ft : loaded.model().factTypes.values())
+                for (int i = 0; i < ft.roles.size(); i++) {
+                    var r = ft.roles.get(i);
+                    if (r.name() == null) continue;
+                    ElementKey key = ElementKey.role(ft.name, i, r.name());
+                    if (asked.test(key)) out.add(key.factType() + "#" + key.roleIndex() + ":" + key.name());
+                }
+            return out;
         }
     }
 
     private static Document document(JsonNode json) throws Exception {
         IrLoader.Loaded loaded = IrLoader.loadAll(json);
-        return new Document(loaded, OpenableMembers.of(loaded.model(), loaded.prioritizedDefaults(),
-                ProducerConsumer.wireNavigation(loaded)));
+        return new Document(loaded, OpenableMembers.of(loaded));
     }
 
     private static JsonNode json(Path ir) throws Exception {
@@ -126,7 +139,7 @@ class OpenableMembersWitnessTest {
     }
 
     /** A creation that reads a member that can be open makes every form count as reading one, since it can leave a
-     *  relation open, which the reads of the forms do not name. */
+     *  relation open, which the reads of the forms do not name; and the role slots a creation writes are not open input. */
     @Test void a_creation_that_can_leave_a_relation_open() throws Exception {
         Document d = document(json(Path.of("..", "..", "ref", "test", "fixtures", "strict-empty", "object-creation", "ir.json")));
         Set<String> written = new TreeSet<>();
@@ -134,5 +147,42 @@ class OpenableMembersWitnessTest {
                 ProducerConsumer.wireNavigation(d.loaded())))
             for (ElementKey m : f.writes()) written.add(m.objectType() + "." + m.name());
         assertEquals(written, d.members(d.openable()::leftOpen));
+        // proefvangst#1:proefvondst on Jutter is written by the creation; proefvangst#0:jutter on a case Vondst is input
+        assertEquals(List.of(), d.incomplete("Jutter").stream().filter(s -> s.contains("#")).toList());
+        assertEquals(Set.of("proefvangst#0:jutter"), d.roles(d.openable()::openInput));
+    }
+
+    /** A non-reciprocal to-one role without a writer or {@code complete: true} is open input on its near type, even where
+     *  every attribute and characteristic is complete, and propagates through role checks, navigations and fold ranges. */
+    @Test void open_to_one_roles_complete_and_propagation() throws Exception {
+        JsonNode linkJson = fixture("link");
+        // close Jutter's input members so only the to-one role vinder can be open
+        attribute(linkJson, "bonus").put("complete", true);
+        ((ObjectNode) linkJson.get("model").get("objectTypes").get(0).get("characteristics").get(0)).put("complete", true);
+        ((ObjectNode) linkJson.get("model").get("objectTypes").get(1).get("attributes").get(0)).put("complete", true);
+        Document openRoleOnly = document(linkJson);
+        assertEquals(List.of(), openRoleOnly.incomplete("Jutter"));
+        assertEquals(List.of("vinding#0:vinder"), openRoleOnly.incomplete("Vondst"));
+        assertEquals(Set.of("vinding#0:vinder"), openRoleOnly.roles(openRoleOnly.openable()::openInput));
+        assertEquals(Set.of("vondst.deskundig", "vondst.toegewezen", "vondst.vindpremie"),
+                openRoleOnly.members(openRoleOnly.openable()::leftOpen));
+
+        ((ObjectNode) linkJson.get("model").get("factTypes").get(0).get("roles").get(0)).put("complete", true);
+        Document allClosed = document(linkJson);
+        assertEquals(List.of(), allClosed.incomplete("Vondst"));
+        assertEquals(Set.of(), allClosed.roles(allClosed.openable()::contains));
+        assertEquals(Set.of(), allClosed.members(allClosed.openable()::contains));
+
+        // self-relation: each role slot is tracked independently by its role index (0 vs 1)
+        JsonNode selfJson = fixture("instance-ordered");
+        for (JsonNode a : selfJson.get("model").get("objectTypes").get(0).get("attributes"))
+            ((ObjectNode) a).put("complete", true);
+        Document bothOpen = document(selfJson);
+        assertEquals(List.of("vorige vergunning#0:vergunning", "vorige vergunning#1:vorige vergunning"),
+                bothOpen.incomplete("Vergunning"));
+        ((ObjectNode) selfJson.get("model").get("factTypes").get(0).get("roles").get(1)).put("complete", true);
+        Document oneOpen = document(selfJson);
+        assertEquals(List.of("vorige vergunning#0:vergunning"), oneOpen.incomplete("Vergunning"));
+        assertEquals(Set.of(), oneOpen.members(oneOpen.openable()::leftOpen));
     }
 }

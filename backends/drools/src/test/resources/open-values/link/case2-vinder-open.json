@@ -1,0 +1,40 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "100"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "vindpremie"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "V1",
+      "characteristic": "deskundig"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "V1",
+      "characteristic": "toegewezen"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

@@ -15,6 +15,9 @@
           }
         },
         "roles": {},
+        "rolesEmpty": [
+          "vorige vergunning"
+        ],
         "characteristics": []
       },
       {

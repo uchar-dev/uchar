@@ -11,6 +11,6 @@ final class FactNames {
     }
 
     static String member(ElementKey e) {
-        return e.objectType() + "." + e.name();
+        return e.isRole() ? e.factType() + "#" + e.roleIndex() + "." + e.name() : e.objectType() + "." + e.name();
     }
 }

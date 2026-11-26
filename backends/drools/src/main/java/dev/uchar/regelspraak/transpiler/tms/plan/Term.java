@@ -167,8 +167,12 @@ public sealed interface Term {
      * fault bound at slot {@code memberFault} stands, its fault; then the fold's value {@code outcome}. A slot of -1: the
      * fold has none of that kind. The analysis adds no node where the fold has none of the three.
      */
-    record FoldRead(Term outcome, int deposits, int depositFlag, int filterFault, int memberFault, String source)
-            implements Term {}
+    record FoldRead(Term outcome, int deposits, int depositFlag, int filterFault, int memberFault, int rangeOpen,
+                    String source) implements Term {
+        public FoldRead(Term outcome, int deposits, int depositFlag, int filterFault, int memberFault, String source) {
+            this(outcome, deposits, depositFlag, filterFault, memberFault, -1, source);
+        }
+    }
 
     /**
      * A composite condition (RUNTIME-SEMANTICS ch. 5.10, IR-SPEC ch. 4.5): its members, truth values, read in the order

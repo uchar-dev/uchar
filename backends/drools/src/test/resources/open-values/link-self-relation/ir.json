@@ -1,0 +1,252 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Vergunning",
+        "animate": false,
+        "plural": "Vergunningen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vergoeding",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vorige vergoeding",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "opvolgend",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "zonder voorganger",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "opgevolgd",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "opvolging",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vorige vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "volgende vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vorige vergoeding",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vorige vergoeding",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De vorige vergoeding van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "vergoeding",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "de vergoeding van de vorige vergunning van de Vergunning"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "opvolging",
+                  "role": "vorige vergunning"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "opvolgend",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "opvolgend",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "Een Vergunning is opvolgend"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "RoleMembership",
+              "factType": "opvolging",
+              "role": "volgende vergunning",
+              "negated": false,
+              "source": {
+                "snippet": "hij een volgende vergunning is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "zonder voorganger",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "zonder voorganger",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "Een Vergunning is zonder voorganger"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "RoleMembership",
+              "factType": "opvolging",
+              "role": "volgende vergunning",
+              "negated": true,
+              "source": {
+                "snippet": "hij geen volgende vergunning is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "opgevolgd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "opgevolgd",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "Een Vergunning is opgevolgd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "RoleMembership",
+              "factType": "opvolging",
+              "role": "vorige vergunning",
+              "negated": false,
+              "source": {
+                "snippet": "hij een vorige vergunning is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

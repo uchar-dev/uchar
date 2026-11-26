@@ -616,6 +616,7 @@ public final class CaseRunner {
             else if (c instanceof CaseInput.LinkCycleFault l) kind = new FaultKind(l.code(), l.params());
             else if (c instanceof CaseInput.CellFault f) kind = new FaultKind(f.code(), f.params());
             else if (c instanceof CaseInput.NameFault f) kind = new FaultKind(f.code(), f.params());
+            else if (c instanceof CaseInput.AmbiguousRoleFault f) kind = new FaultKind(f.code(), f.params());
             else if (c instanceof CaseInput.LinkTargetFault f) kind = new FaultKind(f.code(), f.params());
             if (kind != null) {
                 String code = kind.code();
@@ -1047,9 +1048,11 @@ public final class CaseRunner {
         r.backendBuild = build;
         r.labelToBean.putAll(perLabel);
         r.labelType.putAll(types);
-        for (Fixpoint.OpenValue o : open)
+        for (Fixpoint.OpenValue o : open) {
+            if (o.role()) continue;
             r.open.computeIfAbsent(o.object(), k -> new java.util.HashSet<>())
                     .add((o.characteristic() ? "characteristic " : "attribute ") + o.member());
+        }
         List<ScenarioResult.ExpectationResult> out = new ArrayList<>();
         List<String> mis = new ArrayList<>();
         int position = 0;

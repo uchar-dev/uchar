@@ -1,0 +1,129 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "bonus": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "vondsten": [
+            "V1",
+            "V2"
+          ]
+        },
+        "characteristics": [
+          "ervaren"
+        ]
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {
+          "keurmeester": [
+            "J1"
+          ],
+          "bewaarplaats": [
+            "L1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "rolesEmpty": [
+          "keurmeester",
+          "bewaarplaats"
+        ],
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {},
+        "roles": {},
+        "rolesEmpty": [
+          "keurmeester",
+          "vinder",
+          "bewaarplaats"
+        ],
+        "characteristics": []
+      },
+      {
+        "label": "L1",
+        "objectType": "Loods",
+        "attributes": {
+          "capaciteit": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "keurmeesteraantal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "V3",
+      "attribute": "keurmeesterbonus"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V3",
+      "characteristic": "alle keurmeesters ervaren"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V3",
+      "characteristic": "een keurmeester ervaren"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "loodsaantal",
+      "value": {
+        "number": "1"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "loodscapaciteit",
+      "value": {
+        "number": "12"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "alle loodsen ruim"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "een loods ruim"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

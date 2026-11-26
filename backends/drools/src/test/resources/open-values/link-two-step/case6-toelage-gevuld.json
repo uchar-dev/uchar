@@ -1,0 +1,59 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "P1",
+        "objectType": "Ploeg",
+        "attributes": {
+          "toelage": {
+            "number": "15"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "ploeg": [
+            "P1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "100"
+          }
+        },
+        "roles": {
+          "vinder": [
+            "J1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "ploegtoelage",
+      "value": {
+        "number": "115"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

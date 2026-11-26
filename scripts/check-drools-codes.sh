@@ -131,6 +131,7 @@ DUTCH_EXCEPTIONS = {("DROOLS-257", "de"): "'DE' is the quantifier of the wire, w
 # the places of the entries of a fault kind (a sentence; every other `EF-###.slug` is a part of one): the parameters its carrier passes (the table of ch. 5.7b names the ones a red
 # case pins; a sentence may print others, such as the type of the creation budget or the detail of a calendar fault)
 EF_PLACES = {
+    "EF-001": {"roleKey", "objectType"},
     "EF-003.malformed": {"lexeme", "field"}, "EF-003.calendar": {"lexeme", "field", "detail"},
     "EF-004": {"place", "value", "decimals"}, "EF-005.bare": set(), "EF-005.in-rule": {"rule", "dividend"},
     "EF-006": {"place", "value", "decimals"}, "EF-007": set(), "EF-007.date": set(), "EF-007.easter": set(),
@@ -139,7 +140,7 @@ EF_PLACES = {
     "EF-015": {"creation", "stratum", "depth", "type", "parentDepth"},
     "EF-016": {"count", "enumeration", "attribute", "object"}, "EF-017": {"role", "label"},
     "EF-019.expression": set(), "EF-019.condition": set(),
-    "EF-048": {"label", "attribute"},
+    "EF-048": {"label", "attribute"}, "EF-049": {"label", "role"},
 }
 # key: the reason a Dutch entry with a word is equal to its English sister (owner's decision 3, 2026-10-19)
 _READ = "the sentence of a fault kind that the runtime writes and ComputeFault reads back by its words (code(), params()), and tests pin it"

@@ -428,7 +428,8 @@ final class SessionDump {
             if (o instanceof String s) return "String(" + quote(s) + ")";
             if (o instanceof Enum<?> e) return e.getDeclaringClass().getSimpleName() + "." + e.name();
             if (o instanceof ElementKey k)
-                return quote(k.objectType()) + "." + quote(k.name()) + (k.characteristic() ? " (characteristic)" : "");
+                return k.isRole() ? quote(k.factType()) + "#" + k.roleIndex() + "." + quote(k.name()) + " (role)"
+                        : quote(k.objectType()) + "." + quote(k.name()) + (k.characteristic() ? " (characteristic)" : "");
             // the sentence of an open read and of an undetermined judgement names its object by its identity
             // (OpenMember), and a member test of a fold whose filter or matrix is undetermined holds one: the dump
             // writes the open member they carry, its object by its name
@@ -611,6 +612,12 @@ final class SessionDump {
         for (EndState.Link k : state.links()) {
             String a = n.nameOf(k.first()), b = n.nameOf(k.second());
             if (k.firstRole().equals(k.secondRole()) && a.compareTo(b) > 0) { String x = a; a = b; b = x; }
+            lines.add("link " + quote(k.factType()) + " " + quote(k.firstRole()) + " " + a + " " + quote(k.secondRole())
+                    + " " + b);
+        }
+        for (EndState.OpenLink k : state.openLinks()) {
+            String a = k.first() == null ? "open" : n.nameOf(k.first());
+            String b = k.second() == null ? "open" : n.nameOf(k.second());
             lines.add("link " + quote(k.factType()) + " " + quote(k.firstRole()) + " " + a + " " + quote(k.secondRole())
                     + " " + b);
         }

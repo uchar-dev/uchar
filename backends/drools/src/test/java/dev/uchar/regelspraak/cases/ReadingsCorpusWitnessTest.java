@@ -269,7 +269,8 @@ class ReadingsCorpusWitnessTest {
                 if (member)
                     operands.add(() -> {
                         String difference = object(model, p.loaded(), r.object(), node,
-                                x.undetermined() ? x.open().object() : x.object(), n, label);
+                                x.undetermined() ? x.open().object() : x.object(),
+                                x.undetermined() ? x.open() : null, n, label);
                         if (difference != null) differences.add(at + ": knoop " + x.node() + " " + difference);
                     });
                 // an open read names a member that is open at the fixpoint, and the node that read it has no value
@@ -519,7 +520,7 @@ class ReadingsCorpusWitnessTest {
      *  read or a characteristic check, is the object its walk reaches on the beans once the fixpoint is written back
      *  ({@code DroolsBackend.reached}), by identity; else the difference. A walk the branch refuses is not held. */
     private static String object(RegelSpraakModel model, IrLoader.Loaded loaded, Object subject, Object node,
-                                 Object named, Counts n, Map<Object, String> label) {
+                                 Object named, Fixpoint.OpenValue open, Counts n, Map<Object, String> label) {
         ObjectType type = typeOf(model, subject);
         // a cell read walks the path of the reference under it
         Object read = node instanceof Expr.DimensionCellRead c ? c.attribute() : node;
@@ -537,8 +538,35 @@ class ReadingsCorpusWitnessTest {
             n.navigated++;
             if (reached == null) n.unlinked++;
         }
+        if (open != null && open.role()) {
+            if (walk.isEmpty() || reached != null)
+                return "las open rol " + open.member() + ", maar de wandeling bereikt "
+                        + (reached == null ? "zonder stap" : name(label, reached));
+            Object expected = carrierBeforeMissingHop(model, subject, type, walk, open);
+            return named == expected ? null : "noemt het object " + (named == null ? "geen" : name(label, named))
+                    + ", en de open stap staat op " + (expected == null ? "geen" : name(label, expected));
+        }
         return named == reached ? null : "noemt het object " + (named == null ? "geen" : name(label, named))
                 + ", en de wandeling bereikt " + (reached == null ? "geen" : name(label, reached));
+    }
+
+    /** The carrier bean on which the first missing hop of {@code walk} stands when that hop matches {@code open}, or
+     *  {@code null} if {@code walk} does not break at {@code open}. */
+    private static Object carrierBeforeMissingHop(RegelSpraakModel model, Object subject, ObjectType subjectType,
+                                                  List<RoleBindingRef> walk, Fixpoint.OpenValue open) {
+        FactModelGenerator.NavigationWalk w = FactModelGenerator.navigationWalk(model, subjectType, walk, null);
+        if (w == null || w.toMany()) return null;
+        Object current = subject;
+        for (int i = 0; i < w.roles().size(); i++) {
+            Object next = Accessors.leesEigenschap(current, Namen.property(w.roles().get(i)));
+            if (next == null) {
+                RoleBindingRef hop = walk.get(i);
+                return Namen.norm(hop.factType()).equals(Namen.norm(open.factType()))
+                        && Namen.norm(hop.role()).equals(Namen.norm(open.member())) ? current : null;
+            }
+            current = next;
+        }
+        return null;
     }
 
     /** Null where the value {@code read} of the read {@code a} on {@code subject} is the one the fixpoint gives the member

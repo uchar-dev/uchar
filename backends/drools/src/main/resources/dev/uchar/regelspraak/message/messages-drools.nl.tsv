@@ -445,6 +445,13 @@ DROOLS-375.undeclared	zijn type {objectType} declareert geen attribuut met die n
 DROOLS-375.dimensioned	het is op {objectType} gedimensioneerd en heeft een waarde per cel
 DROOLS-375.time-dependent	het is op {objectType} tijdsafhankelijk en heeft een waarde per periode
 DROOLS-375.filled	de bean heeft er een waarde voor
+DROOLS-376	insert: de invoer zegt dat de rol "{role}" op {bean} leeg is, en {reason}
+DROOLS-376.not-in-input	die bean is geen bean van de invoer
+DROOLS-376.undeclared	zijn type {objectType} heeft geen rol met die naam tegenover zich
+DROOLS-376.ambiguous	zijn type {objectType} heeft verscheidene rollen met die naam tegenover zich
+DROOLS-376.not-to-one	alleen een niet-wederkerige enkelvoudige rol mag op {objectType} leeg verklaard worden
+DROOLS-376.linked	een koppeling vult die rol al
+EF-001	rolsleutel "{roleKey}" op "{objectType}" is dubbelzinnig over gedeclareerde feittypen
 EF-002	de rol "{role}" van "{label}" verwijst naar het onbekende label "{target}"
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})
 EF-003.malformed	malformed date '{lexeme}' on '{field}': the uchar-case-v0 lexeme is yyyy-mm-dd — fixed field widths, digits only, no sign and no extended year
@@ -489,6 +496,7 @@ EF-040.object-type	instantie "{label}": het objecttype "{name}" is niet gedeclar
 EF-040.role	instantie "{label}": de rolsleutel "{name}" noemt geen gedeclareerde rol
 EF-047	instantie "{label}": het kenmerk "{characteristic}" staat in "characteristics" en in "characteristicsAbsent": de case zegt dat het geldt en dat het niet geldt
 EF-048	instantie "{label}": het attribuut "{attribute}" staat in "attributes" en in "attributesEmpty": de case geeft het een waarde en zegt dat het er geen heeft
+EF-049	instantie "{label}": de rol "{role}" heeft een koppeling en staat ook in "rolesEmpty": de case legt een koppeling en zegt dat er geen is
 FRAME.case-reads	{sentence}; de case leest het
 FRAME.case-sets	{sentence}; de case zet het
 FRAME.contract	contract: {sentence}

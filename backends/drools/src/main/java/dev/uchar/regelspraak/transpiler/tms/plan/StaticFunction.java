@@ -347,6 +347,10 @@ public enum StaticFunction {
     /** A role check over the subject's own reference field, bound as whether it is set, complemented where a
      *  {@code Boolean} constant says the check is negated. */
     ROLE_FIELD(ComputeHelpers.class, "roleField", false),
+    /** A role check over the subject's own reference field where the role can be open (ch. 1.5): from the bound
+     *  reference value, the counterpart class name (empty string for any), whether the check is negated, the session's
+     *  {@code OpenInput}, the subject and the role key. */
+    ROLE_FIELD_OPEN(ComputeHelpers.class, "roleFieldOpen", false),
     /** The evaluation-date gate of a time window (ch. 3.10) over its bounds, each with a {@code Boolean} constant that
      *  says whether the window has it, a {@code Boolean} constant for an inclusive end, and the evaluation date: an
      *  absent bound is open, a leeg one and an unset date never match. */
@@ -453,5 +457,7 @@ public enum StaticFunction {
 
     /** Whether a call is the read of a member or of a fold that can be open, which breaks the evaluation off where it
      *  is. */
-    public boolean readsOpen() { return this == READ || this == READ_INPUT || this == STANDING_COUNT; }
+    public boolean readsOpen() {
+        return this == READ || this == READ_INPUT || this == ROLE_FIELD_OPEN || this == STANDING_COUNT;
+    }
 }

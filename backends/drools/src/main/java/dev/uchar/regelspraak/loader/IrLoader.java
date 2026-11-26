@@ -1333,13 +1333,15 @@ public final class IrLoader {
         ft.reciprocal = bool(n, "reciprocal");
         origin(n, path, RegelSpraakModel.Designatable.factType(ft.name));
         designations(n, path, RegelSpraakModel.Designatable.factType(ft.name));
-        elements(n, "roles", r -> {
-            fields(r, pathOf(r), "Role", List.of("node", "name", "objectType", "many"), List.of("plural", "origin", "designations"));
+        list(n, path, "roles", (rp, r) -> {
+            boolean complete = complete(r, rp);
+            fields(r, rp, "Role", List.of("node", "name", "objectType", "many"),
+                    List.of("plural", "complete", "origin", "designations"));
             ft.roles.add(new RegelSpraakModel.Role(
-                    text(r, "name"), text(r, "objectType"), text(r, "plural"), bool(r, "many")));
+                    text(r, "name"), text(r, "objectType"), text(r, "plural"), bool(r, "many"), complete));
             if (text(r, "name") != null) {
-                origin(r, pathOf(r), RegelSpraakModel.Designatable.role(ft.name, text(r, "name")));
-                designations(r, pathOf(r), RegelSpraakModel.Designatable.role(ft.name, text(r, "name")));
+                origin(r, rp, RegelSpraakModel.Designatable.role(ft.name, text(r, "name")));
+                designations(r, rp, RegelSpraakModel.Designatable.role(ft.name, text(r, "name")));
             }
         });
         return ft;

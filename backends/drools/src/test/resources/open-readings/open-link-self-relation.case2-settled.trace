@@ -1,0 +1,25 @@
+reading /rules/rules/0/versions/0 "V1" 0 AttributeReference empty on none
+reading /rules/rules/0/versions/0 "V1" HOLDS
+reading /rules/rules/0/versions/0 "V2" 0 AttributeReference 10 on "V1"
+reading /rules/rules/0/versions/0 "V2" HOLDS
+reading /rules/rules/1/versions/0 "V1" 0 RoleMembership false
+reading /rules/rules/1/versions/0 "V1" FAILS
+reading /rules/rules/1/versions/0 "V2" 0 RoleMembership true
+reading /rules/rules/1/versions/0 "V2" HOLDS
+reading /rules/rules/2/versions/0 "V1" 0 RoleMembership true
+reading /rules/rules/2/versions/0 "V1" HOLDS
+reading /rules/rules/2/versions/0 "V2" 0 RoleMembership false
+reading /rules/rules/2/versions/0 "V2" FAILS
+reading /rules/rules/3/versions/0 "V1" 0 RoleMembership true
+reading /rules/rules/3/versions/0 "V1" HOLDS
+reading /rules/rules/3/versions/0 "V2" 0 RoleMembership false
+reading /rules/rules/3/versions/0 "V2" FAILS
+state attribute "V1" "vergoeding" 10
+state attribute "V2" "vergoeding" 20
+state attribute "V2" "vorige vergoeding" 10
+state characteristic "V1" "opgevolgd"
+state characteristic "V1" "zonder voorganger"
+state characteristic "V2" "opvolgend"
+state link "opvolging" "vorige vergunning" "V1" "volgende vergunning" "V2"
+state object "V1" "Vergunning"
+state object "V2" "Vergunning"

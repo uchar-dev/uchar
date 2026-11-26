@@ -288,6 +288,7 @@ class RuleOriginCorpusWitnessTest {
         if (rule.contains(": filterfout in vouw ")) return RuleOrigin.Role.FOLD_FILTER_FAULT;
         if (rule.contains(": lidfout in vouw ")) return RuleOrigin.Role.FOLD_MEMBER_FAULT;
         if (rule.contains(": filterdeponering in vouw ")) return RuleOrigin.Role.FOLD_FILTER_DEPOSIT;
+        if (rule.contains(": open bereik in vouw ")) return RuleOrigin.Role.FOLD_RANGE_OPEN;
         if (rule.contains(": bijdrage aan vouw ")) return RuleOrigin.Role.FOLD_CONTRIBUTION;
         if (rule.contains(": sleutelvorm van ")) return RuleOrigin.Role.UNIQUENESS_KEY_FORM_FAULT;
         if (rule.contains(": sleutel van ")) return RuleOrigin.Role.UNIQUENESS_KEY;

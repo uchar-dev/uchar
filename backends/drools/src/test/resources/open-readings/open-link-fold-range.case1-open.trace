@@ -1,0 +1,60 @@
+reading /rules/rules/0/versions/0 "V1" 0 Aggregation 1 contributors ["J1" empty reached]
+reading /rules/rules/0/versions/0 "V1" HOLDS
+reading /rules/rules/0/versions/0 "V2" 0 Aggregation 0
+reading /rules/rules/0/versions/0 "V2" HOLDS
+reading /rules/rules/0/versions/0 "V3" 0 Aggregation undetermined open "V3" "keurmeester"
+reading /rules/rules/0/versions/0 "V3" OPEN
+reading /rules/rules/1/versions/0 "V1" 0 Aggregation 10 contributors ["J1" 10 reached]
+reading /rules/rules/1/versions/0 "V1" HOLDS
+reading /rules/rules/1/versions/0 "V2" 0 Aggregation empty
+reading /rules/rules/1/versions/0 "V2" HOLDS
+reading /rules/rules/1/versions/0 "V3" 0 Aggregation undetermined open "V3" "keurmeester"
+reading /rules/rules/1/versions/0 "V3" OPEN
+reading /rules/rules/2/versions/0 "V1" 0 QuantifierFold true contributors ["J1" true reached]
+reading /rules/rules/2/versions/0 "V1" HOLDS
+reading /rules/rules/2/versions/0 "V2" 0 QuantifierFold true
+reading /rules/rules/2/versions/0 "V2" HOLDS
+reading /rules/rules/2/versions/0 "V3" 0 QuantifierFold undetermined open "V3" "keurmeester"
+reading /rules/rules/2/versions/0 "V3" OPEN
+reading /rules/rules/3/versions/0 "V1" 0 QuantifierFold true contributors ["J1" true reached]
+reading /rules/rules/3/versions/0 "V1" HOLDS
+reading /rules/rules/3/versions/0 "V2" 0 QuantifierFold false
+reading /rules/rules/3/versions/0 "V2" FAILS
+reading /rules/rules/3/versions/0 "V3" 0 QuantifierFold undetermined open "V3" "keurmeester"
+reading /rules/rules/3/versions/0 "V3" OPEN
+reading /rules/rules/4/versions/0 "J1" 0 Aggregation undetermined open "V2" "bewaarplaats"
+reading /rules/rules/4/versions/0 "J1" OPEN
+reading /rules/rules/5/versions/0 "J1" 0 Aggregation undetermined open "V2" "bewaarplaats"
+reading /rules/rules/5/versions/0 "J1" OPEN
+reading /rules/rules/6/versions/0 "J1" 0 QuantifierFold undetermined open "V2" "bewaarplaats"
+reading /rules/rules/6/versions/0 "J1" OPEN
+reading /rules/rules/7/versions/0 "J1" 0 QuantifierFold undetermined open "V2" "bewaarplaats"
+reading /rules/rules/7/versions/0 "J1" OPEN
+state attribute "J1" "bonus" 10
+state attribute "J1" "loodsaantal" open
+state attribute "J1" "loodscapaciteit" open
+state attribute "L1" "capaciteit" 12
+state attribute "V1" "keurmeesteraantal" 1
+state attribute "V1" "keurmeesterbonus" 10
+state attribute "V2" "keurmeesteraantal" 0
+state attribute "V3" "keurmeesteraantal" open
+state attribute "V3" "keurmeesterbonus" open
+state characteristic "J1" "alle loodsen ruim" open
+state characteristic "J1" "een loods ruim" open
+state characteristic "J1" "ervaren"
+state characteristic "V1" "alle keurmeesters ervaren"
+state characteristic "V1" "een keurmeester ervaren"
+state characteristic "V2" "alle keurmeesters ervaren"
+state characteristic "V3" "alle keurmeesters ervaren" open
+state characteristic "V3" "een keurmeester ervaren" open
+state link "bewaring" "bewaarplaats" "L1" "opgeslagen vondst" "V1"
+state link "bewaring" "bewaarplaats" open "opgeslagen vondst" "V2"
+state link "toewijzing" "keurmeester" "J1" "gekeurde vondst" "V1"
+state link "toewijzing" "keurmeester" open "gekeurde vondst" "V3"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state object "J1" "Jutter"
+state object "L1" "Loods"
+state object "V1" "Vondst"
+state object "V2" "Vondst"
+state object "V3" "Vondst"

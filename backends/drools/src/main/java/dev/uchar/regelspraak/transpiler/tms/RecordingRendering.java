@@ -129,9 +129,16 @@ final class RecordingRendering {
                 yield acc;
             }
             case Term.FoldRead v -> {
-                if (v.depositFlag() >= 0) ComputeHelpers.reportFilterDeposits(w[v.depositFlag()], w[v.deposits()]);
-                if (v.filterFault() >= 0 && w[v.filterFault()] != null) throw ((FilterFault) w[v.filterFault()]).fault();
-                if (v.memberFault() >= 0 && w[v.memberFault()] != null) throw ((MemberFault) w[v.memberFault()]).fault();
+                if (v.rangeOpen() >= 0)
+                    ComputeHelpers.beforeFoldOutcome(w[v.rangeOpen()], v.depositFlag() < 0 ? null : w[v.depositFlag()],
+                            v.deposits() < 0 ? null : w[v.deposits()],
+                            v.filterFault() < 0 ? null : w[v.filterFault()],
+                            v.memberFault() < 0 ? null : w[v.memberFault()]);
+                else {
+                    if (v.depositFlag() >= 0) ComputeHelpers.reportFilterDeposits(w[v.depositFlag()], w[v.deposits()]);
+                    if (v.filterFault() >= 0 && w[v.filterFault()] != null) throw ((FilterFault) w[v.filterFault()]).fault();
+                    if (v.memberFault() >= 0 && w[v.memberFault()] != null) throw ((MemberFault) w[v.memberFault()]).fault();
+                }
                 yield value(v.outcome(), w);
             }
             case Term.Compound s -> compound(s, w);

@@ -72,7 +72,8 @@ final class FormsPlan {
             "ComputeHelpers.open($onderwerp, ", "global OpenInput open_invoer;", "ComputeHelpers.readInput($uitkijkbonus, open_invoer, ",
             "ComputeHelpers.input($uitkijkbonus, open_invoer, ", "ComputeHelpers.input(false, open_invoer, ",
             "return ComputeHelpers.judge(() -> ", "return ComputeHelpers.judge(() -> {", "eval( ComputeHelpers.acts(",
-            "if (ComputeHelpers.decides(", "ComputeHelpers.quantifierRead(", "ComputeHelpers.quantifierReadUnordered(");
+            "if (ComputeHelpers.decides(", "ComputeHelpers.quantifierRead(", "ComputeHelpers.quantifierReadUnordered(",
+            "ComputeHelpers.missingLink(");
 
     private static final String O = "$onderwerp";
 
@@ -536,7 +537,8 @@ final class FormsPlan {
             "ComputeHelpers.quantifierVerdictOverOpen($aantal, $som, $openleden, ", "fout = ComputeHelpers.ended(e);",
             "$vouwonderwerp, $onderwerp, ComputeHelpers.filtered(oordeel_lidtoetsOnderEenOpenFilter(",
             "\"proefvouw: gefilterde lidtoets\", $vouwonderwerp, $onderwerp, lidtoets_lidtoetsOnderEenOpenFilter(",
-            "return ComputeHelpers.brokenOff(() -> ", ") != null;");
+            "return ComputeHelpers.brokenOff(() -> ", ") != null;",
+            "new RangeOpen(\"proefvouw\", $vouwonderwerp, ", "ComputeHelpers.rangePlace(");
 
     /**
      * A plan with every consequence of the rules of a fold (step 3a of card drl-teksttak-op-truth-maintenance), over the
@@ -664,6 +666,10 @@ final class FormsPlan {
                 new TestItem("breekt", TestItem.Role.BREAKS_OFF, filter, -1, List.of(0, 1, 2), 3, true)),
                 new Consequence.FilterFault(v, "proefvouw", 1, filter, new Consequence.FoldPlace(0, List.of(),
                         Consequence.PlaceReason.FILTER_FAULT), List.of(0, 1, 2), 3, true, Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("open bereikstap", "proef", null, table, List.of(foldSubject, member(post, v, height)),
+                new Consequence.RangeOpen(v, "proefvouw", 1, ElementKey.role("wachterpost", 1, "post"),
+                        new Consequence.FoldPlace(0, List.of(), Consequence.PlaceReason.RANGE_OPEN), 1,
+                        Consequence.Insertion.LOGICAL)));
         Subject subject = new Subject(kustvak, O, List.of(), List.of(), List.of());
         Accumulation fold = new Accumulation(new FactPattern(Contribution.class, "$bijdrage", List.of(new Alpha("vouw", List.of(
                 new Alpha.FieldTest("fold", Alpha.Comparator.GELIJK, "proefvouw: open som")))),
@@ -797,6 +803,10 @@ final class FormsPlan {
                         Consequence.Insertion.LOGICAL)));
         rules.add(new RulePlan("onvolledige invoer langs een pad", null, null, one, List.of(subject),
                 new Consequence.InsertPathState(O, "Wachter:post", bonus, Consequence.StateSource.INCOMPLETE_INPUT, 0, O,
+                        Consequence.Insertion.LOGICAL)));
+        rules.add(new RulePlan("open padstand zonder link", null, null, new ReadTable(List.of()), List.of(subject),
+                new Consequence.InsertOpenPathState(O, "Wachter:post", ElementKey.of("post", "hoogte", false),
+                        List.of("post"), List.of(ElementKey.role("wachterpost", 1, "post")),
                         Consequence.Insertion.LOGICAL)));
         return rules;
     }

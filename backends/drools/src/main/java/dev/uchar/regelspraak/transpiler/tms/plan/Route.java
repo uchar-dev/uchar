@@ -172,6 +172,15 @@ public enum Route {
     /** The input of a member, or its open member where the bean holds none and the input is not complete
      *  ({@link Consequence.StateSource#INCOMPLETE_INPUT}). */
     INPUT(ComputeHelpers.class, "input"),
+    /** The standing at a missing link along a path that has an openable single step: the {@code OpenMember} of the
+     *  first broken hop that is open in {@code OpenInput}, or null where that hop is settled absent
+     *  ({@link Consequence.InsertOpenPathState}). */
+    MISSING_LINK(ComputeHelpers.class, "missingLink"),
+    /** The pre-outcome check of a fold reading ({@link Term.FoldRead}) whose range can encounter an open single step:
+     *  throws the first {@code RangeOpen}, reports filter deposits and throws filter or member faults in ch. 5.11 order. */
+    BEFORE_FOLD_OUTCOME(ComputeHelpers.class, "beforeFoldOutcome"),
+    /** The place of an open single step in a fold's range ({@link Consequence.RangeOpen}). */
+    RANGE_PLACE(ComputeHelpers.class, "rangePlace"),
     /** The verdict of a matrix as a member's contribution, 1 or 0 ({@link Consequence.Input.Verdict}). */
     VERDICT(ComputeHelpers.class, "verdict"),
     /** A decision of a defaults stack on a target with declared decimals: the decision where it fits them, as a

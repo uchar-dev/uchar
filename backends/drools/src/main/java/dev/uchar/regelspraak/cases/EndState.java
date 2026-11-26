@@ -1,5 +1,6 @@
 package dev.uchar.regelspraak.cases;
 
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
 import dev.uchar.regelspraak.model.RegelSpraakModel;
 import dev.uchar.regelspraak.model.RegelSpraakModel.ObjectType;
 import dev.uchar.regelspraak.model.Unit;
@@ -8,7 +9,9 @@ import dev.uchar.regelspraak.schema.FactModelGenerator;
 import dev.uchar.regelspraak.transpiler.core.Namen;
 import dev.uchar.regelspraak.transpiler.tms.Fault;
 import dev.uchar.regelspraak.transpiler.tms.Fixpoint;
+import dev.uchar.regelspraak.transpiler.tms.OpenInput;
 import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.plan.Consequence;
 
 import org.kie.api.runtime.ClassObjectFilter;
 import org.kie.api.runtime.KieSession;
@@ -45,11 +48,17 @@ import java.util.function.Function;
  *                in the order of {@link Fixpoint#inconsistencies}
  * @param faults  the evaluation faults that stand, as {@link Fixpoint#faults} gives them: none in an end state
  */
-public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFact> channel, List<Fault> faults) {
+public record EndState(List<EndObject> objects, List<Link> links, List<OpenLink> openLinks,
+                       List<ChannelFact> channel, List<Fault> faults) {
+
+    public EndState(List<EndObject> objects, List<Link> links, List<ChannelFact> channel, List<Fault> faults) {
+        this(objects, links, List.of(), channel, faults);
+    }
 
     public EndState {
         objects = List.copyOf(objects);
         links = List.copyOf(links);
+        openLinks = List.copyOf(openLinks);
         channel = List.copyOf(channel);
         faults = List.copyOf(faults);
     }
@@ -117,6 +126,19 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
         }
     }
 
+    /** An open single role of fact type {@code factType} on one object (RUNTIME-SEMANTICS ch. 1.5, 5.12a): one of
+     *  {@code first} and {@code second} is the object and the other is {@code null} ({@code open} in the canonical
+     *  text), in the order of the declared roles {@code firstRole} and {@code secondRole}. */
+    public record OpenLink(String factType, String firstRole, Object first, String secondRole, Object second) {
+        public OpenLink {
+            Objects.requireNonNull(factType, "factType");
+            Objects.requireNonNull(firstRole, "firstRole");
+            Objects.requireNonNull(secondRole, "secondRole");
+            if ((first == null) == (second == null))
+                throw new IllegalArgumentException("an open link holds an object at one end and null at the open end");
+        }
+    }
+
     /** A §9.5 fact: the rule that deposited it, its subject, and the EF codes of the kinds deposited for that pair,
      *  ascending, each once. The backend keeps one fact per deposit; this is one per rule and subject (ch. 5.6). */
     public record ChannelFact(String rule, Object subject, List<String> codes) {
@@ -145,11 +167,13 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
         for (Fixpoint.DerivedCharacteristic k : fp.characteristics())
             derivedCharacteristics.computeIfAbsent(k.object(), o -> new HashSet<>()).add(Namen.norm(k.characteristic()));
 
-        // the names of what is open, per object; of an attribute and of a characteristic apart
+        // the names of what is open, per object; of an attribute and of a characteristic apart (roles go into openLinks)
         Map<Object, Map<Boolean, Set<String>>> open = new IdentityHashMap<>();
-        for (Fixpoint.OpenValue v : fp.open())
+        for (Fixpoint.OpenValue v : fp.open()) {
+            if (v.role()) continue;
             open.computeIfAbsent(v.object(), o -> new HashMap<>())
                     .computeIfAbsent(v.characteristic(), k -> new HashSet<>()).add(Namen.norm(v.member()));
+        }
 
         Map<Object, ObjectType> typeOf = new IdentityHashMap<>();
         TreeMap<String, Object> labelled = new TreeMap<>();
@@ -188,7 +212,33 @@ public record EndState(List<EndObject> objects, List<Link> links, List<ChannelFa
             members(m.object(), ot, displacements, derived, derivedCells, derivedCharacteristics, open, members, opened);
             objects.add(new EndObject(m.object(), null, ot.name, m.creation(), m.subject(), members, opened));
         }
-        return new EndState(objects, links(model, session, typeOf), channel(fp), fp.faults());
+        List<Link> allLinks = links(model, session, typeOf);
+        return new EndState(objects, allLinks, openLinks(model, session, objects, allLinks), channel(fp), fp.faults());
+    }
+
+    /** Every open non-reciprocal single role on the input objects of the session (RUNTIME-SEMANTICS ch. 1.5, 5.12a):
+     *  an incomplete role in {@link OpenInput} on an object that holds no link in that directed role slot. */
+    private static List<OpenLink> openLinks(RegelSpraakModel model, KieSession session, List<EndObject> objects,
+                                            List<Link> links) {
+        if (!(session.getGlobal(Consequence.OPEN_INPUT) instanceof OpenInput openInput)) return List.of();
+        List<OpenLink> out = new ArrayList<>();
+        for (EndObject eo : objects) {
+            Object bean = eo.object();
+            Set<ElementKey> incomplete = openInput.members().getOrDefault(bean, Set.of());
+            for (ElementKey key : incomplete) {
+                if (!key.isRole()) continue;
+                RegelSpraakModel.FactType ft = factType(model, key.factType());
+                if (ft.reciprocal || ft.roles.size() != 2) continue;
+                int farIdx = key.roleIndex(), nearIdx = 1 - farIdx;
+                boolean linked = links.stream().anyMatch(l -> l.factType().equals(ft.name)
+                        && (nearIdx == 0 ? l.first() == bean : l.second() == bean));
+                if (linked) continue;
+                String r0 = ft.roles.get(0).name(), r1 = ft.roles.get(1).name();
+                out.add(nearIdx == 0 ? new OpenLink(ft.name, r0, bean, r1, null)
+                        : new OpenLink(ft.name, r0, null, r1, bean));
+            }
+        }
+        return out;
     }
 
     /** The members of {@code bean}, of type {@code ot}, that hold a value, into {@code out}: the derived value where a rule

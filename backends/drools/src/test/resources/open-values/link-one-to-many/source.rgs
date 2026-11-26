@@ -1,0 +1,36 @@
+Afleiden uit leeg: nee
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    het vondstaantal Numeriek (niet-negatief geheel getal);
+    is vindend kenmerk (bijvoeglijk);
+    is volledig zwaar kenmerk (bijvoeglijk);
+    is deels zwaar kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    het gewicht Numeriek (geheel getal);
+    is toegewezen kenmerk (bijvoeglijk);
+
+Feittype vinding
+    de vinder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
+
+Regel toegewezen
+    geldig altijd
+        Een Vondst is toegewezen indien hij een vondst is.
+
+Regel vondstaantal
+    geldig altijd
+        Het vondstaantal van een Jutter moet berekend worden als het aantal vondsten van de Jutter.
+
+Regel vindend
+    geldig altijd
+        Een Jutter is vindend indien hij een vinder is.
+
+Regel volledig zwaar
+    geldig altijd
+        Een Jutter is volledig zwaar indien het gewicht van alle vondsten van de Jutter groter is dan 10.
+
+Regel deels zwaar
+    geldig altijd
+        Een Jutter is deels zwaar indien het gewicht van ten minste 1 van de vondsten van de Jutter groter is dan 10.
