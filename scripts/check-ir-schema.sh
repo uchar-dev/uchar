@@ -1997,20 +1997,43 @@ def _member_with(member, key, value, after="timeline"):
     return mutate
 
 
+def _role(d, many=False, reciprocal=False):
+    roles = [{"node": "Role", "name": "vinder", "objectType": "Jutter", "many": many,
+              "origin": {"form": "inputAboveComputation", "from": {"kind": "attribute", "owner": "Jutter", "name": "vondstwaarde"}}}]
+    if not reciprocal:
+        roles.append({"node": "Role", "name": "mede-jutter", "objectType": "Jutter", "many": True})
+    d["model"]["factTypes"] = [{"node": "FactType", "name": "vangst", "reciprocal": reciprocal, "roles": roles}]
+    return d["model"]["factTypes"][0]["roles"][0]
+
+
 COMPLETE_SHAPE_ROWS = [
     ("Attribute.complete = true", _member_with(_attr, "complete", True), True,
      "the declaration's statement that the input of the attribute is complete (IR-SPEC ch. 2.2)"),
     ("Characteristic.complete = true", _member_with(_char, "complete", True), True,
      "the declaration's statement that the input of the characteristic is complete (IR-SPEC ch. 2.2)"),
+    ("Role.complete = true", _member_with(_role, "complete", True, after="many"), True,
+     "the declaration's statement that the input of the to-one role is complete (IR-SPEC ch. 2.6)"),
+    ("Role.complete = true on a to-many role", _member_with(lambda d: _role(d, many=True), "complete", True, after="many"), True,
+     "WF-130.to-many-role is a verifier check with its own negative witness"),
+    ("Role.complete = true on a reciprocal fact type", _member_with(lambda d: _role(d, reciprocal=True), "complete", True, after="many"), True,
+     "WF-130.reciprocal-role is a verifier check with its own negative witness"),
     ("Attribute.complete = false", _member_with(_attr, "complete", False), False,
      "absent is the one spelling of a member whose input can be open"),
     ("Characteristic.complete = false", _member_with(_char, "complete", False), False,
      "absent is the one spelling of a member whose input can be open"),
+    ("Role.complete = false", _member_with(_role, "complete", False, after="many"), False,
+     "absent is the one spelling of a role whose input can be open"),
     ("Attribute.complete = null", _member_with(_attr, "complete", None), False,
      "absent is the one spelling of a member whose input can be open"),
+    ("Role.complete = null", _member_with(_role, "complete", None, after="many"), False,
+     "absent is the one spelling of a role whose input can be open"),
     ("Characteristic.complete as a text", _member_with(_char, "complete", "volledig"), False,
      "true is the one spelling of the statement, never the word of a source language"),
+    ("Role.complete as a text", _member_with(_role, "complete", "volledig gegeven", after="many"), False,
+     "true is the one spelling of the statement, never the word of a source language"),
     ("Attribute.complete as a number", _member_with(_attr, "complete", 1), False,
+     "true is the one spelling of the statement"),
+    ("Role.complete as a number", _member_with(_role, "complete", 1, after="many"), False,
      "true is the one spelling of the statement"),
 ]
 
@@ -2249,6 +2272,9 @@ ORDER_ROWS = [
     ("complete before an attribute's timeline", _member_with(_attr, "complete", True, after="datatype"), False),
     ("complete directly after a characteristic's timeline", _member_with(_char, "complete", True), True),
     ("complete before a characteristic's timeline", _member_with(_char, "complete", True, after="kind"), False),
+    ("complete directly after a role's many", _member_with(_role, "complete", True, after="many"), True),
+    ("complete before a role's many", _member_with(_role, "complete", True, after="objectType"), False),
+    ("complete after a role's origin", _member_with(_role, "complete", True, after="origin"), False),
 ]
 order_bad = 0
 for row, mutate, want_in_order in ORDER_ROWS:

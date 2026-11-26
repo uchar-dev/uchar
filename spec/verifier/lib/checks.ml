@@ -1946,6 +1946,36 @@ let wf013 ctx =
       | _ -> [])
     ctx.doc.fact_types
 
+(* WF-130 (IR-SPEC ch. 2.6): only a to-one role of a non-reciprocal fact type
+   may declare its input complete (RUNTIME-SEMANTICS ch. 1.5). *)
+let wf130 ctx =
+  List.concat
+    (List.mapi
+       (fun i (fn, (ft : fact_type_name)) ->
+         List.concat
+           (List.mapi
+              (fun j (r : role_ref) ->
+                if not r.role_complete then []
+                else
+                  let rname = Option.value r.role_identifier ~default:"" in
+                  let at = Printf.sprintf "/model/factTypes/%d/roles/%d/complete" i j in
+                  let params = [ ("factType", fn); ("role", rname) ] in
+                  if ft.reciprocal then
+                    [ v ~params "WF-130.reciprocal-role" at
+                        (Printf.sprintf
+                           "the role '%s' of the reciprocal fact type '%s' carries complete: only a to-one role of a \
+                            non-reciprocal fact type may declare its input complete"
+                           rname fn) ]
+                  else if r.role_many then
+                    [ v ~params "WF-130.to-many-role" at
+                        (Printf.sprintf
+                           "the to-many role '%s' of the fact type '%s' carries complete: only a to-one role of a \
+                            non-reciprocal fact type may declare its input complete"
+                           rname fn) ]
+                  else [])
+              ft.role_names))
+       ctx.doc.fact_types)
+
 let wf014 ctx =
   List.concat_map
     (fun (dn, d) ->
@@ -12897,7 +12927,7 @@ let all (doc : document) : violation list =
     [ wf001 ctx; wf002 ctx; wf103 ctx; wf104 ctx; wf105 ctx;
       wf003 ctx; wf004 ctx; wf005 ctx; wf006 ctx;
       wf007_model ctx; wf007_presentation ctx; wf009 ctx; wf092 ctx; wf011 ctx; wf012 ctx;
-      wf013 ctx; wf014 ctx;
+      wf013 ctx; wf130 ctx; wf014 ctx;
       wf015 ctx; wf016 ctx; wf115 ctx; wf017 ctx; wf018 ctx; wf107 ctx; wf020 ctx; wf101 ctx; wf021 ctx;
       wf022 ctx; wf023 ctx; wf023_precision ctx; wf025 ctx; wf025_numbers ctx; wf025_units ctx; wf026 ctx; wf128 ctx; wf027 ctx; wf028 ctx;
       wf029 ctx; wf030 ctx; wf031 ctx; wf085 ctx; wf032 ctx; wf033 ctx;

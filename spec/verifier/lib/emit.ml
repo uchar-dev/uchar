@@ -532,7 +532,8 @@ module Make (P : PRODUCER) = struct
     node "Role"
       ([ ("name", so r.role_identifier); ("objectType", so r.role_object_type_name) ]
       @ optional "plural" s r.role_plural
-      @ [ ("many", b r.role_many) ])
+      @ [ ("many", b r.role_many) ]
+      @ if r.role_complete then [ ("complete", b true) ] else [])
 
   let fact_type_name (ft : fact_type_name) : json =
     node "FactType"

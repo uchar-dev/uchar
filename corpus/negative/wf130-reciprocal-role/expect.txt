@@ -1,0 +1,3 @@
+WF-130.reciprocal-role
+factType=maatschap
+role=maat

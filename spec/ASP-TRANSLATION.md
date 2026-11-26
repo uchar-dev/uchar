@@ -3609,6 +3609,18 @@ on a supertype of `otype`):
   `ctx.closed_inputs`, `ot.characteristic_complete` (`complete: true`),
   or `characteristicsAbsent` (`case.world.stated_absent`) names it, emits
   `hasnot(label,k).`; otherwise emits nothing (open).
+- **Unwritten non-reciprocal to-one input role**: when `not ctx.closed_inputs`,
+  for each binary non-reciprocal `FactType` `ft` (`reciprocal = false`, roles
+  `[r0; r1]`) and each directed pair `(near, far)` with `far.role_many = false`
+  and `isa ctx i.otype near.objectType` that no creation writes on `i.otype`
+  (`not (Uchar_ref.Eval.written_role_on ctx.doc ~otype:i.otype ~fact_type:ftn ~far)`),
+  if no link holds `(i, ftn, far)` in `case.world` (after reverse-leg
+  materialisation), `not far.role_complete`, and `rolesEmpty`
+  (`case.world.stated_roles_empty`) does not name `(i.label, link_key ~fact_type:ftn far)`,
+  `input_states` emits `ropen(label, role_term ~fact_type:ftn far).`. On an
+  object minted by `ObjectCreation`, `input_states` does not run, so an
+  unassigned to-one role on a minted object carries no `ropen/2` fact and is
+  settled absent unless a creation leaves it open.
 
 For written members, `member_states` derives `settled/2`, `hasnot/2` and
 `wnila/2` per concrete type `tname` in `doc.object_types`, from every
@@ -3661,11 +3673,13 @@ ob<n>(key)      :- ob<n>_r<k>(key).
 
 and appends `ob<n>_r<k>` to `b.bd_reads`. `open_read` calls
 `boundary_read` with `path @ [not stands_atom(holder,attr)]` (at
-`member_read`, `symbolic_term`, `dt_term`, `sum_term`, `struct_base`); an
-absent link fails `path`, so it derives no open read and evaluates as
-settled leeg. In a document with creations, `open_relation` calls
+`member_read`, `symbolic_term`, `dt_term`, `sum_term`, `struct_base`); a
+settled-absent link fails `path`, so it derives no open read and evaluates as
+settled leeg. Whenever `ctx.strict` is `true`, `open_relation` calls
 `boundary_read` with `path @ [ropen(holder,rel)]` on each navigation hop
-in `member_read` and on `Role_membership`. `reached_after` extends
+in `member_read` and on `Role_membership`, and `range_open_reads` calls the
+same per hop of `source_role` / `source_path` in `fold_reads` and
+`Quantifier_fold`. `reached_after` extends
 `ctx.reach` so only reached reads open the boundary: a division's divisor
 waits for its dividend's binding atoms (`translate_division`), an
 `IfThenElse` arm waits for its condition atoms and branch guard
@@ -3694,12 +3708,13 @@ derivable, the condition is undetermined:
   `fails = [hasnot(S,k)]`; under a narrowing host `e` (`RUNTIME-SEMANTICS.md`
   ch. 5.8b rule 4), `not isa(S,e)` is established false (`fails`).
   `negation` swaps `holds` and `fails`.
-- **Navigated characteristic check**: to-one hop `role(S,rel,N)`; an
-  absent link (`not jd(key)` over `role(S,rel,_)`) is established false
+- **Navigated characteristic check**: to-one hop `role(S,rel,N)`; a
+  settled-absent link (`not jd(key)` over `role(S,rel,_)`) is established false
   in both polarities (preserving ch. 5.8's asymmetry for standing links),
-  while a present link reads `has(N,k)` vs `hasnot(N,k)`. When the
-  document contains creations, both `holds` and `fails` append
-  `not ropen(S,rel)`.
+  while a present link reads `has(N,k)` vs `hasnot(N,k)`. When `ctx.strict` is
+  `true`, both `holds` and `fails` append `not ropen(S,rel)`, so an open
+  non-reciprocal to-one role or a relation left open by a creation leaves both
+  polarities undetermined.
 - **Other atomic conditions** (`Comparison`, `Predicate` including
   `Empty_predicate` and `Filled`, `Role_membership`, `Identity_check`):
   `cond_atoms` runs inside `within_boundary` and reifies `jd<n>(key)`.

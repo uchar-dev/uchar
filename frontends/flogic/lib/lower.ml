@@ -197,7 +197,7 @@ let collect (stmts : stmt list) : model =
                             f.f_roles
                             @ [ ( n,
                                   { A.role_identifier = Some n; role_object_type_name = Some filler;
-                                    role_plural = None; role_many = many },
+                                    role_plural = None; role_many = many; role_complete = false },
                                   line ) ]
                       | _ ->
                           refuse ~line

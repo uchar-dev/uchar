@@ -71,13 +71,18 @@
           "items": { "type": "string", "minLength": 1 }
         },
         "roles": {
-          "description": "Role name (as declared) to the labels of the linked instances; a to-one role carries exactly one label.",
+          "description": "Role name (as declared) to the labels of the linked instances; a to-one role carries exactly one label. In a document with inferFromEmpty false, a non-reciprocal to-one role that no creation writes on the instance's type is open where no link holds it unless 'rolesEmpty' names it or its declaration marks it complete (RUNTIME-SEMANTICS ch. 1.5).",
           "type": "object",
           "additionalProperties": {
             "type": "array",
             "minItems": 1,
             "items": { "type": "string", "minLength": 1 }
           }
+        },
+        "rolesEmpty": {
+          "description": "Non-reciprocal to-one roles the case states have no link on this instance (RUNTIME-SEMANTICS ch. 1.5): in a document with inferFromEmpty false such a role is settled absent instead of open (on an object where a creation writes the role, the role follows its writers and the field changes nothing); in a document without the property the field changes no outcome. Optional. A role named here and linked in the same role position on this instance — whether under 'roles' here or from the counterpart instance (EF-049) — one the model does not declare (EF-040), one that does not resolve from the instance's objectType, one that resolves ambiguously (EF-001), a to-many role and a role of a reciprocal fact type are refused by the case readers, which see the IR.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
         },
         "characteristics": {
           "description": "Characteristics asserted true on input; every other characteristic starts false, and in a document with inferFromEmpty false one that no rule writes on the instance's type is open unless 'characteristicsAbsent' names it (RUNTIME-SEMANTICS ch. 1.5). A characteristic the IR declares TIME-DEPENDENT (a 'kenmerkGranulariteit' entry) is NOT delivered here — its truth is periods, and it belongs in 'characteristicTimelines'; every temporal reader consults that field and nothing else. This schema CANNOT enforce that: it validates the case document alone and never sees the IR's declarations, so which names are time-dependent is unknowable here. The three case readers therefore hold the rule themselves and refuse the static delivery at load, by name and with the reason (maintainer decision 2026-09-09); before that they accepted it and answered from an empty period set without a word.",

@@ -672,9 +672,9 @@ let () =
     { ft_name = Some "Zaakkoppeling"; reciprocal = false;
       role_names =
         [ { role_identifier = Some "moederzaak"; role_object_type_name = Some "Zaak"; role_plural = None;
-            role_many = false };
+            role_many = false; role_complete = false };
           { role_identifier = Some "deelzaak"; role_object_type_name = Some "Zaak";
-            role_plural = Some "deelzaken"; role_many = true } ] }
+            role_plural = Some "deelzaken"; role_many = true; role_complete = false } ] }
   in
   let tariff : A.prioritized_defaults =
     { pd_name = Some "tarief van een zaak"; pd_subject = "Zaak"; pd_characteristic = None;

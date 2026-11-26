@@ -1244,16 +1244,18 @@ let day_kind path j : day_kind =
   check_keys path kvs ~ext:[ "plural" ] [ "node"; "name" ];
   { dk_name = str (path / "name") (field path kvs "name"); dk_plural = ext_field path kvs "plural" str }
 
-(* A role: its plural is written whole or not at all, absent the v0 null. *)
+(* A role: its plural is written whole or not at all, absent the v0 null;
+   complete (IR-SPEC ch. 2.6, WF-130) is written true or not at all. *)
 let role_ref path j : role_ref =
   let kvs = obj path j in
   expect_node path kvs "Role";
-  check_keys path kvs ~ext:[ "plural"; "origin"; "designations" ] [ "node"; "name"; "objectType"; "many" ];
+  check_keys path kvs ~ext:[ "plural"; "complete"; "origin"; "designations" ] [ "node"; "name"; "objectType"; "many" ];
   {
     role_identifier = str_opt (path / "name") (field path kvs "name");
     role_object_type_name = str_opt (path / "objectType") (field path kvs "objectType");
     role_plural = ext_field path kvs "plural" str;
     role_many = bool_ (path / "many") (field path kvs "many");
+    role_complete = complete_field path kvs;
   }
 
 let fact_type_name path j : fact_type_name =

@@ -559,6 +559,9 @@ type role_ref = {
   role_object_type_name : string option;
   role_plural : string option;
   role_many : bool;
+  role_complete : bool;
+      (* complete (IR-SPEC ch. 2.6, WF-130): written true or not at all on a
+         non-reciprocal to-one role *)
 }
 
 type fact_type_name = {

@@ -1854,9 +1854,9 @@ let translate_scope (enums : enum_ctx) (structs : struct_ctx) (functions : (stri
       { ft_name = Some fact_type_name; reciprocal = false;
         role_names =
           [ { role_identifier = Some caller_role; role_object_type_name = Some ot_name; role_plural = None;
-              role_many = false };
+              role_many = false; role_complete = false };
             { role_identifier = Some callee_role; role_object_type_name = Some callee_type;
-              role_plural = None; role_many = false } ] }
+              role_plural = None; role_many = false; role_complete = false } ] }
     in
     (* besluit 6: which of this callee's inputs are reentrant context targets
        carrying an own default — those args become highest defaults, not member

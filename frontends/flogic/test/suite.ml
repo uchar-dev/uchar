@@ -312,9 +312,9 @@ let () =
     { ft_name = Some "seinpaar"; reciprocal = false;
       role_names =
         [ { role_identifier = Some "hoofdsein"; role_object_type_name = Some "Sein"; role_plural = None;
-            role_many = false };
+            role_many = false; role_complete = false };
           { role_identifier = Some "bijsein"; role_object_type_name = Some "Sein";
-            role_plural = Some "bijseinen"; role_many = true } ] }
+            role_plural = Some "bijseinen"; role_many = true; role_complete = false } ] }
   in
   let visible : A.prioritized_defaults =
     { pd_name = Some "zichtbaar sein"; pd_subject = "Sein"; pd_characteristic = Some "zichtbaar";
