@@ -20135,13 +20135,14 @@ let ov_stack ?(subject = "Vondst") ?(unordered = false) ?name ?characteristic ?a
 (* an object of the case: its attributes (number lexemes), those it names in
    attributesEmpty, the characteristics it names, those it names in
    characteristicsAbsent, and its links *)
-let ov_obj ?(ty = "Vondst") ?(empty = []) ?(chars = []) ?(absent = []) ?(roles = []) label attrs =
+let ov_obj ?(ty = "Vondst") ?(empty = []) ?(chars = []) ?(absent = []) ?(roles = []) ?(roles_empty = []) label attrs =
   Printf.sprintf
-    {|{"label": "%s", "objectType": "%s", "attributes": {%s}%s, "roles": {%s}, "characteristics": [%s]%s}|}
+    {|{"label": "%s", "objectType": "%s", "attributes": {%s}%s, "roles": {%s}%s, "characteristics": [%s]%s}|}
     label ty
     (String.concat ", " (List.map (fun (a, v) -> Printf.sprintf {|"%s": {"number": "%s"}|} a v) attrs))
     (if empty = [] then "" else Printf.sprintf {|, "attributesEmpty": [%s]|} (String.concat ", " (List.map (Printf.sprintf "%S") empty)))
     (String.concat ", " (List.map (fun (r, ls) -> Printf.sprintf {|"%s": [%s]|} r (String.concat ", " (List.map (Printf.sprintf "%S") ls))) roles))
+    (if roles_empty = [] then "" else Printf.sprintf {|, "rolesEmpty": [%s]|} (String.concat ", " (List.map (Printf.sprintf "%S") roles_empty)))
     (String.concat ", " (List.map (Printf.sprintf "%S") chars))
     (if absent = [] then "" else Printf.sprintf {|, "characteristicsAbsent": [%s]|} (String.concat ", " (List.map (Printf.sprintf "%S") absent)))
 
@@ -20224,7 +20225,7 @@ let ov_fault_frame ~name ~ir ~case_text code =
      | _ -> false)
 
 let ov_vondst attrs chars = ov_type "Vondst" attrs chars
-let ov_v1 ?empty ?chars ?absent attrs = [ ov_obj ?empty ?chars ?absent "V1" attrs ]
+let ov_v1 ?empty ?chars ?absent ?roles_empty attrs = [ ov_obj ?empty ?chars ?absent ?roles_empty "V1" attrs ]
 
 (* "het vindloon van een Vondst is 10 indien zijn taxatie groter is dan 1000"
    and "de uitbetaling van een Vondst is zijn vindloon plus zijn bergloon" *)
@@ -20786,38 +20787,376 @@ let () =
     ~case_text:(ov_case (ov_v1 [ ("gewicht", "-1") ]) [ ov_inconsistent "controle gewicht" ]) ();
   ov_frame ~name:"WV-1.5-consistency (no gewicht)" ~ir ~case_text:(ov_case (ov_v1 []) [ ov_consistent ]) ()
 
-(* WV-1.5-link-*: "de vindpremie van een Vondst is zijn waarde plus de bonus van
-   de vinder van de Vondst", waarde 100: 100 without a vinder, open with a
-   vinder without a bonus, 120 with a bonus of 20. "Deskundig gevonden indien
-   de vinder ervaren is" and "ongeschoold gevonden indien de vinder niet
-   ervaren is" stand not to hold without a vinder, are open where the case does
-   not name ervaren for the vinder, and "toegewezen indien hij een vinder
-   heeft" stands without a bonus *)
+(* WV-1.5-link-*: non-reciprocal to-one roles in strict documents (ch. 1.5, S20):
+   - omitted to-one role -> open across RoleMembership (positive and negated),
+     1-step and 2-step AttributeReference / CharacteristicCheck / Predicate,
+     and Aggregation (count, sum, InstanceSetUnion) + QuantifierFold (all,
+     atLeast 1) whose sourceRole or sourcePath walks a to-one role;
+   - rolesEmpty and Role.complete -> settled absent (and invariance under
+     inferFromEmpty: true or beside an undetermined creation writer);
+   - 1:n fact type: to-one back-arrow open while to-many side stays closed;
+   - self-relation: vorige vergunning and volgende vergunning independent;
+   - made object: unassigned to-one role settled absent while case object open;
+   - case-reader refusals: EF-049 (same-instance, counterpart, normalised,
+     self-relation), EF-040, EF-001, 0-role match, many: true, reciprocal: true *)
 let () =
   work @@ fun () ->
-  let ir =
-    ov_doc ~fact_types:[ ov_vangst ]
+  let vinder_bonus = ov_attr ~ty:"Jutter" ~path:[ ("vangst", "vinder") ] "bonus" in
+  let vangst_ft ?(complete = false) () =
+    Printf.sprintf
+      {|{"node": "FactType", "name": "vangst", "reciprocal": false, "roles": [{"node": "Role", "name": "vinder", "objectType": "Jutter", "many": false%s}, {"node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true}]}|}
+      (if complete then {|, "complete": true|} else "")
+  in
+  let ir ?(strict = true) ?(complete = false) () =
+    ov_doc ~strict ~fact_types:[ vangst_ft ~complete () ]
       [ ov_type "Jutter" [ "bonus" ] [ "ervaren" ];
-        ov_vondst [ "waarde"; "vindpremie" ] [ "deskundig gevonden"; "ongeschoold gevonden"; "toegewezen" ] ]
-      [ ov_rule ~name:"vindpremie" "vindpremie" (Some (ov_bin "plus" (ov_attr "waarde") (ov_attr ~ty:"Jutter" ~path:[ ("vangst", "vinder") ] "bonus")));
+        ov_vondst [ "waarde"; "vindpremie" ]
+          [ "deskundig gevonden"; "ongeschoold gevonden"; "toegewezen"; "verweesd"; "bonusloos" ] ]
+      [ ov_rule ~name:"vindpremie" "vindpremie" (Some (ov_bin "plus" (ov_attr "waarde") vinder_bonus));
         ov_rule ~name:"deskundig gevonden" ~cond:(ov_check ~navigation:("vangst", "vinder") "ervaren") "deskundig gevonden" None;
         ov_rule ~name:"ongeschoold gevonden" ~cond:(ov_check ~negated:true ~navigation:("vangst", "vinder") "ervaren") "ongeschoold gevonden" None;
         ov_rule ~name:"toegewezen"
           ~cond:{|{"node": "RoleMembership", "factType": "vangst", "role": "vondst", "negated": false, "source": {"snippet": "hij een vinder heeft"}}|}
-          "toegewezen" None ]
+          "toegewezen" None;
+        ov_rule ~name:"verweesd"
+          ~cond:{|{"node": "RoleMembership", "factType": "vangst", "role": "vondst", "negated": true, "source": {"snippet": "hij geen vinder heeft"}}|}
+          "verweesd" None;
+        ov_rule ~name:"bonusloos" ~cond:(ov_test "empty" vinder_bonus) "bonusloos" None ]
   in
-  let v1 roles = ov_obj ~roles "V1" [ ("waarde", "100") ] in
-  ov_frame ~name:"WV-1.5-link-absent" ~ir
-    ~case_text:(ov_case [ v1 [] ]
-                  [ ov_attr_is "vindpremie" "100"; ov_char_is "deskundig gevonden" "not"; ov_char_is "ongeschoold gevonden" "not";
-                    ov_char_is "toegewezen" "not" ]) ();
-  ov_frame ~name:"WV-1.5-link-present-open" ~ir
+  let v1 ?(roles_empty = []) roles = ov_obj ~roles ~roles_empty "V1" [ ("waarde", "100") ] in
+  let expect p d o t vw bl =
+    [ ov_attr_is "vindpremie" p; ov_char_is "deskundig gevonden" d; ov_char_is "ongeschoold gevonden" o;
+      ov_char_is "toegewezen" t; ov_char_is "verweesd" vw; ov_char_is "bonusloos" bl ]
+  in
+  ov_frame ~name:"WV-1.5-link-open" ~ir:(ir ())
+    ~case_text:(ov_case [ v1 [] ] (expect "open" "open" "open" "open" "open" "open")) ();
+  ov_frame ~name:"WV-1.5-link-absent (rolesEmpty)" ~ir:(ir ())
+    ~case_text:(ov_case [ v1 ~roles_empty:[ "vinder" ] [] ] (expect "100" "not" "not" "not" "holds" "holds")) ();
+  ov_frame ~closed:true ~name:"WV-1.5-link-absent (closed-inputs)" ~ir:(ir ())
+    ~case_text:(ov_case [ v1 [] ] (expect "100" "not" "not" "not" "holds" "holds")) ();
+  ov_frame ~name:"WV-1.5-link-absent (without the property, omitted)" ~ir:(ir ~strict:false ())
+    ~case_text:(ov_case [ v1 [] ] (expect "100" "not" "not" "not" "holds" "holds")) ();
+  ov_frame ~name:"WV-1.5-link-absent (without the property, rolesEmpty)" ~ir:(ir ~strict:false ())
+    ~case_text:(ov_case [ v1 ~roles_empty:[ "vinder" ] [] ] (expect "100" "not" "not" "not" "holds" "holds")) ();
+  ov_frame ~name:"WV-1.5-link-complete (omitted)" ~ir:(ir ~complete:true ())
+    ~case_text:(ov_case [ v1 [] ] (expect "100" "not" "not" "not" "holds" "holds")) ();
+  ov_frame ~name:"WV-1.5-link-complete (linked)" ~ir:(ir ~complete:true ())
+    ~case_text:
+      (ov_case [ v1 [ ("vinder", [ "J1" ]) ]; ov_obj ~ty:"Jutter" ~chars:[ "ervaren" ] "J1" [ ("bonus", "20") ] ]
+         (expect "120" "holds" "not" "holds" "not" "not")) ();
+  ov_frame ~name:"WV-1.5-link-present-open" ~ir:(ir ())
     ~case_text:(ov_case [ v1 [ ("vinder", [ "J1" ]) ]; ov_obj ~ty:"Jutter" "J1" [] ]
-                  [ ov_attr_is "vindpremie" "open"; ov_char_is "deskundig gevonden" "open"; ov_char_is "ongeschoold gevonden" "open";
-                    ov_char_is "toegewezen" "holds" ]) ();
-  ov_frame ~name:"WV-1.5-link-present-filled" ~ir
+                  (expect "open" "open" "open" "holds" "not" "open")) ();
+  ov_frame ~name:"WV-1.5-link-present-filled" ~ir:(ir ())
     ~case_text:(ov_case [ v1 [ ("vinder", [ "J1" ]) ]; ov_obj ~ty:"Jutter" ~chars:[ "ervaren" ] "J1" [ ("bonus", "20") ] ]
-                  [ ov_attr_is "vindpremie" "120"; ov_char_is "deskundig gevonden" "holds"; ov_char_is "ongeschoold gevonden" "not" ]) ()
+                  (expect "120" "holds" "not" "holds" "not" "not")) ();
+  (* 1:n fact type: V1 without Jutter has vinder open, while J1 without Vondsten has vondsten closed *)
+  let count_type = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}|} in
+  let one_to_many_ir =
+    ov_doc ~fact_types:[ ov_vangst ]
+      [ ov_type "Jutter" [ "vondstaantal" ] [ "vindend"; "alle zwaar"; "een zwaar" ];
+        ov_vondst [ "gewicht" ] [ "toegewezen" ] ]
+      [ ov_rule ~name:"toegewezen"
+          ~cond:{|{"node": "RoleMembership", "factType": "vangst", "role": "vondst", "negated": false, "source": {"snippet": "vinder"}}|}
+          "toegewezen" None;
+        ov_rule ~ty:"Jutter" ~name:"vondstaantal" "vondstaantal"
+          (Some
+             (Printf.sprintf
+                {|{"node": "Aggregation", "kind": "count", "arguments": [{"node": "AttributeReference", "attribute": "vondsten", "subjectType": "Jutter", "source": {"snippet": "vondsten"}}], "elementType": "Vondst", "sourceRole": {"node": "RoleBinding", "factType": "vangst", "role": "vondst"}, "type": %s, %s}|}
+                count_type (ov_src "aantal")));
+        ov_rule ~ty:"Jutter" ~name:"vindend"
+          ~cond:{|{"node": "RoleMembership", "factType": "vangst", "role": "vinder", "negated": false, "source": {"snippet": "vondst"}}|}
+          "vindend" None;
+        ov_rule ~ty:"Jutter" ~name:"alle zwaar"
+          ~cond:
+            (Printf.sprintf
+               {|{"node": "QuantifierFold", "quantifier": "all", "elementType": "Vondst", "test": %s, %s, "sourceRole": {"node": "RoleBinding", "factType": "vangst", "role": "vondst"}}|}
+               (ov_gt "gewicht" "10") (ov_src "alle"))
+          "alle zwaar" None;
+        ov_rule ~ty:"Jutter" ~name:"een zwaar"
+          ~cond:
+            (Printf.sprintf
+               {|{"node": "QuantifierFold", "quantifier": "atLeast", "threshold": 1, "elementType": "Vondst", "test": %s, %s, "sourceRole": {"node": "RoleBinding", "factType": "vangst", "role": "vondst"}}|}
+               (ov_gt "gewicht" "10") (ov_src "een"))
+          "een zwaar" None ]
+  in
+  ov_frame ~name:"WV-1.5-link-one-to-many" ~ir:one_to_many_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj "V1" [ ("gewicht", "20") ]; ov_obj ~ty:"Jutter" "J1" [] ]
+         [ ov_char_is "toegewezen" "open"; ov_attr_is ~label:"J1" "vondstaantal" "0"; ov_char_is ~label:"J1" "vindend" "not";
+           ov_char_is ~label:"J1" "alle zwaar" "holds"; ov_char_is ~label:"J1" "een zwaar" "not" ]) ();
+  (* 2-step navigation: Vondst -> vinder -> ploeg *)
+  let lidmaatschap_ft =
+    {|{"node": "FactType", "name": "lidmaatschap", "reciprocal": false, "roles": [{"node": "Role", "name": "chef", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "ploeg", "objectType": "Ploeg", "many": false}]}|}
+  in
+  let two_step_ir =
+    ov_doc ~fact_types:[ ov_vangst; lidmaatschap_ft ]
+      [ ov_vondst [ "waarde"; "ploegtoelage" ] []; ov_type "Jutter" [] []; ov_type "Ploeg" [ "toelage" ] [] ]
+      [ ov_rule ~name:"ploegtoelage" "ploegtoelage"
+          (Some
+             (ov_bin "plus" (ov_attr "waarde")
+                (ov_attr ~ty:"Ploeg" ~path:[ ("vangst", "vinder"); ("lidmaatschap", "ploeg") ] "toelage"))) ]
+  in
+  ov_frame ~name:"WV-1.5-link-two-step (vinder open)" ~ir:two_step_ir
+    ~case_text:(ov_case [ v1 [] ] [ ov_attr_is "ploegtoelage" "open" ]) ();
+  ov_frame ~name:"WV-1.5-link-two-step (vinder empty stops before hop 2)" ~ir:two_step_ir
+    ~case_text:(ov_case [ v1 ~roles_empty:[ "vinder" ] [] ] [ ov_attr_is "ploegtoelage" "100" ]) ();
+  ov_frame ~name:"WV-1.5-link-two-step (ploeg open)" ~ir:two_step_ir
+    ~case_text:(ov_case [ v1 [ ("vinder", [ "J1" ]) ]; ov_obj ~ty:"Jutter" "J1" [] ] [ ov_attr_is "ploegtoelage" "open" ]) ();
+  ov_frame ~name:"WV-1.5-link-two-step (ploeg empty)" ~ir:two_step_ir
+    ~case_text:
+      (ov_case [ v1 [ ("vinder", [ "J1" ]) ]; ov_obj ~ty:"Jutter" ~roles_empty:[ "ploeg" ] "J1" [] ]
+         [ ov_attr_is "ploegtoelage" "100" ]) ();
+  ov_frame ~name:"WV-1.5-link-two-step (toelage open)" ~ir:two_step_ir
+    ~case_text:
+      (ov_case
+         [ v1 [ ("vinder", [ "J1" ]) ]; ov_obj ~ty:"Jutter" ~roles:[ ("ploeg", [ "P1" ]) ] "J1" [];
+           ov_obj ~ty:"Ploeg" "P1" [] ]
+         [ ov_attr_is "ploegtoelage" "open" ]) ();
+  ov_frame ~name:"WV-1.5-link-two-step (toelage filled)" ~ir:two_step_ir
+    ~case_text:
+      (ov_case
+         [ v1 [ ("vinder", [ "J1" ]) ]; ov_obj ~ty:"Jutter" ~roles:[ ("ploeg", [ "P1" ]) ] "J1" [];
+           ov_obj ~ty:"Ploeg" "P1" [ ("toelage", "15") ] ]
+         [ ov_attr_is "ploegtoelage" "115" ]) ();
+  (* Fold, InstanceSetUnion count, and QuantifierFold over 1-step to-one sourceRole and 2-step sourcePath *)
+  let bewaring_ft =
+    {|{"node": "FactType", "name": "bewaring", "reciprocal": false, "roles": [{"node": "Role", "name": "bewaarplaats", "objectType": "Loods", "many": false}, {"node": "Role", "name": "opgeslagen vondst", "objectType": "Vondst", "plural": "opgeslagen vondsten", "many": true}]}|}
+  in
+  let hoofd_ft =
+    {|{"node": "FactType", "name": "hoofdbewaring", "reciprocal": false, "roles": [{"node": "Role", "name": "hoofdloods", "objectType": "Loods", "many": false}, {"node": "Role", "name": "beheerder", "objectType": "Jutter", "plural": "beheerders", "many": true}]}|}
+  in
+  let reserve_ft =
+    {|{"node": "FactType", "name": "reservebewaring", "reciprocal": false, "roles": [{"node": "Role", "name": "reserveloods", "objectType": "Loods", "plural": "reserveloodsen", "many": true}, {"node": "Role", "name": "reservebeheerder", "objectType": "Jutter", "plural": "reservebeheerders", "many": true}]}|}
+  in
+  let path_2 = ov_roles [ ("vangst", "vondst"); ("bewaring", "bewaarplaats") ] in
+  let fold_range_ir =
+    ov_doc ~fact_types:[ ov_vangst; bewaring_ft; hoofd_ft; reserve_ft ]
+      [ ov_vondst [ "vinderaantal"; "vinderbonus" ] [ "alle vinders ervaren"; "een vinder ervaren" ];
+        ov_type "Jutter" [ "bonus"; "loodsaantal"; "loodscapaciteit"; "unieloodsen" ]
+          [ "ervaren"; "alle loodsen ruim"; "een loods ruim" ];
+        ov_type "Loods" [ "capaciteit" ] [] ]
+      [ ov_rule ~name:"vinderaantal" "vinderaantal"
+          (Some
+             (Printf.sprintf
+                {|{"node": "Aggregation", "kind": "count", "arguments": [{"node": "AttributeReference", "attribute": "vinder", "subjectType": "Vondst", "source": {"snippet": "vinder"}}], "elementType": "Jutter", "sourceRole": {"node": "RoleBinding", "factType": "vangst", "role": "vinder"}, "type": %s, %s}|}
+                count_type (ov_src "aantal")));
+        ov_rule ~name:"vinderbonus" "vinderbonus"
+          (Some
+             (Printf.sprintf
+                {|{"node": "Aggregation", "kind": "sum", "arguments": [%s], "elementType": "Jutter", "sourceRole": {"node": "RoleBinding", "factType": "vangst", "role": "vinder"}, "type": %s, %s}|}
+                (ov_attr ~ty:"Jutter" "bonus") ov_num (ov_src "som")));
+        ov_rule ~name:"alle vinders ervaren"
+          ~cond:
+            (Printf.sprintf
+               {|{"node": "QuantifierFold", "quantifier": "all", "elementType": "Jutter", "test": %s, %s, "sourceRole": {"node": "RoleBinding", "factType": "vangst", "role": "vinder"}}|}
+               (ov_check "ervaren") (ov_src "alle"))
+          "alle vinders ervaren" None;
+        ov_rule ~name:"een vinder ervaren"
+          ~cond:
+            (Printf.sprintf
+               {|{"node": "QuantifierFold", "quantifier": "atLeast", "threshold": 1, "elementType": "Jutter", "test": %s, %s, "sourceRole": {"node": "RoleBinding", "factType": "vangst", "role": "vinder"}}|}
+               (ov_check "ervaren") (ov_src "een"))
+          "een vinder ervaren" None;
+        ov_rule ~ty:"Jutter" ~name:"loodsaantal" "loodsaantal"
+          (Some
+             (Printf.sprintf
+                {|{"node": "Aggregation", "kind": "filledCount", "arguments": [%s], "elementType": "Loods", "sourcePath": [%s], "type": %s, %s}|}
+                (ov_attr ~ty:"Loods" "capaciteit") path_2 count_type (ov_src "gevuld aantal")));
+        ov_rule ~ty:"Jutter" ~name:"loodscapaciteit" "loodscapaciteit"
+          (Some
+             (Printf.sprintf
+                {|{"node": "Aggregation", "kind": "sum", "arguments": [%s], "elementType": "Loods", "sourcePath": [%s], "type": %s, %s}|}
+                (ov_attr ~ty:"Loods" "capaciteit") path_2 ov_num (ov_src "som")));
+        ov_rule ~ty:"Jutter" ~name:"unieloodsen" "unieloodsen"
+          (Some
+             (Printf.sprintf
+                {|{"node": "Aggregation", "kind": "count", "arguments": [{"node": "InstanceSetUnion", "branches": [{"node": "InstanceSetBranch", "elementType": "Loods", "sourceRole": {"node": "RoleBinding", "factType": "hoofdbewaring", "role": "hoofdloods"}, "filter": null}, {"node": "InstanceSetBranch", "elementType": "Loods", "sourceRole": {"node": "RoleBinding", "factType": "reservebewaring", "role": "reserveloods"}, "filter": null}]}], "type": %s, %s}|}
+                count_type (ov_src "unie")));
+        ov_rule ~ty:"Jutter" ~name:"alle loodsen ruim"
+          ~cond:
+            (Printf.sprintf
+               {|{"node": "QuantifierFold", "quantifier": "all", "elementType": "Loods", "test": %s, %s, "sourcePath": [%s]}|}
+               (ov_cmp "greater" (ov_attr ~ty:"Loods" "capaciteit") (ov_lit "5")) (ov_src "alle") path_2)
+          "alle loodsen ruim" None;
+        ov_rule ~ty:"Jutter" ~name:"een loods ruim"
+          ~cond:
+            (Printf.sprintf
+               {|{"node": "QuantifierFold", "quantifier": "atLeast", "threshold": 1, "elementType": "Loods", "test": %s, %s, "sourcePath": [%s]}|}
+               (ov_cmp "greater" (ov_attr ~ty:"Loods" "capaciteit") (ov_lit "5")) (ov_src "een") path_2)
+          "een loods ruim" None ]
+  in
+  ov_frame ~name:"WV-1.5-link-fold-range (open)" ~ir:fold_range_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~chars:[ "ervaren" ] ~roles:[ ("vondsten", [ "V1"; "V2" ]); ("reserveloodsen", [ "L1" ]) ] "J1" [ ("bonus", "10") ];
+           ov_obj ~roles:[ ("bewaarplaats", [ "L1" ]) ] "V1" [];
+           ov_obj "V2" [];
+           ov_obj "V3" [];
+           ov_obj ~ty:"Loods" "L1" [ ("capaciteit", "12") ] ]
+         [ ov_attr_is ~label:"V3" "vinderaantal" "open"; ov_attr_is ~label:"V3" "vinderbonus" "open";
+           ov_char_is ~label:"V3" "alle vinders ervaren" "open"; ov_char_is ~label:"V3" "een vinder ervaren" "open";
+           ov_attr_is ~label:"V1" "vinderaantal" "1"; ov_attr_is ~label:"V1" "vinderbonus" "10";
+           ov_attr_is ~label:"J1" "loodsaantal" "open"; ov_attr_is ~label:"J1" "loodscapaciteit" "open";
+           ov_attr_is ~label:"J1" "unieloodsen" "open";
+           ov_char_is ~label:"J1" "alle loodsen ruim" "open"; ov_char_is ~label:"J1" "een loods ruim" "open" ]) ();
+  ov_frame ~name:"WV-1.5-link-fold-range (settled via rolesEmpty)" ~ir:fold_range_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~chars:[ "ervaren" ] ~roles:[ ("vondsten", [ "V1"; "V2" ]); ("reserveloodsen", [ "L1" ]) ] ~roles_empty:[ "hoofdloods" ] "J1" [ ("bonus", "10") ];
+           ov_obj ~roles:[ ("bewaarplaats", [ "L1" ]) ] "V1" [];
+           ov_obj ~roles_empty:[ "bewaarplaats" ] "V2" [];
+           ov_obj ~roles_empty:[ "vinder" ] "V3" [];
+           ov_obj ~ty:"Loods" "L1" [ ("capaciteit", "12") ] ]
+         [ ov_attr_is ~label:"V3" "vinderaantal" "0"; ov_attr_is ~label:"V3" "vinderbonus" "leeg";
+           ov_char_is ~label:"V3" "alle vinders ervaren" "holds"; ov_char_is ~label:"V3" "een vinder ervaren" "not";
+           ov_attr_is ~label:"J1" "loodsaantal" "1"; ov_attr_is ~label:"J1" "loodscapaciteit" "12";
+           ov_attr_is ~label:"J1" "unieloodsen" "1";
+           ov_char_is ~label:"J1" "alle loodsen ruim" "holds"; ov_char_is ~label:"J1" "een loods ruim" "holds" ]) ();
+  (* Self-relation: Vergunning on opvolging (vorige vergunning / volgende vergunning) *)
+  let opvolging_ft =
+    {|{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "vorige vergunning", "objectType": "Vergunning", "many": false}, {"node": "Role", "name": "volgende vergunning", "objectType": "Vergunning", "many": false}]}|}
+  in
+  let self_rel_ir =
+    ov_doc ~fact_types:[ opvolging_ft ]
+      [ ov_type "Vergunning" [ "vergoeding"; "vorige vergoeding" ] [ "heeft vorige"; "heeft geen vorige"; "heeft volgende" ] ]
+      [ ov_rule ~ty:"Vergunning" ~name:"vorige vergoeding" "vorige vergoeding"
+          (Some (ov_attr ~ty:"Vergunning" ~path:[ ("opvolging", "vorige vergunning") ] "vergoeding"));
+        ov_rule ~ty:"Vergunning" ~name:"heeft vorige"
+          ~cond:{|{"node": "RoleMembership", "factType": "opvolging", "role": "volgende vergunning", "negated": false, "source": {"snippet": "vorige"}}|}
+          "heeft vorige" None;
+        ov_rule ~ty:"Vergunning" ~name:"heeft geen vorige"
+          ~cond:{|{"node": "RoleMembership", "factType": "opvolging", "role": "volgende vergunning", "negated": true, "source": {"snippet": "geen vorige"}}|}
+          "heeft geen vorige" None;
+        ov_rule ~ty:"Vergunning" ~name:"heeft volgende"
+          ~cond:{|{"node": "RoleMembership", "factType": "opvolging", "role": "vorige vergunning", "negated": false, "source": {"snippet": "volgende"}}|}
+          "heeft volgende" None ]
+  in
+  ov_frame ~name:"WV-1.5-link-self-relation (open ends)" ~ir:self_rel_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Vergunning" "G1" [ ("vergoeding", "10") ];
+           ov_obj ~ty:"Vergunning" ~roles:[ ("vorige vergunning", [ "G1" ]) ] "G2" [ ("vergoeding", "20") ] ]
+         [ ov_attr_is ~label:"G1" "vorige vergoeding" "open"; ov_char_is ~label:"G1" "heeft vorige" "open";
+           ov_char_is ~label:"G1" "heeft geen vorige" "open"; ov_char_is ~label:"G1" "heeft volgende" "holds";
+           ov_attr_is ~label:"G2" "vorige vergoeding" "10"; ov_char_is ~label:"G2" "heeft vorige" "holds";
+           ov_char_is ~label:"G2" "heeft geen vorige" "not"; ov_char_is ~label:"G2" "heeft volgende" "open" ]) ();
+  ov_frame ~name:"WV-1.5-link-self-relation (rolesEmpty ends)" ~ir:self_rel_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Vergunning" ~roles_empty:[ "vorige vergunning" ] "G1" [ ("vergoeding", "10") ];
+           ov_obj ~ty:"Vergunning" ~roles:[ ("vorige vergunning", [ "G1" ]) ] ~roles_empty:[ "volgende vergunning" ] "G2" [ ("vergoeding", "20") ] ]
+         [ ov_attr_is ~label:"G1" "vorige vergoeding" "leeg"; ov_char_is ~label:"G1" "heeft vorige" "not";
+           ov_char_is ~label:"G1" "heeft geen vorige" "holds"; ov_char_is ~label:"G1" "heeft volgende" "holds";
+           ov_attr_is ~label:"G2" "vorige vergoeding" "10"; ov_char_is ~label:"G2" "heeft vorige" "holds";
+           ov_char_is ~label:"G2" "heeft geen vorige" "not"; ov_char_is ~label:"G2" "heeft volgende" "not" ]) ();
+  (* Made object & creation writer overrides complete / rolesEmpty *)
+  let proef_complete_ft =
+    {|{"node": "FactType", "name": "proefvangst", "reciprocal": false, "roles": [{"node": "Role", "name": "jutter", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "proefvondst", "objectType": "Vondst", "many": false, "complete": true}]}|}
+  in
+  let proef_oc =
+    {|{"node": "ObjectCreation", "name": "proefvondst", "versions": [{"createdType": "Vondst", "subject": "Jutter", "assignments": [], "condition": {"node": "CharacteristicCheck", "characteristic": "ervaren", "negated": true, "source": {"snippet": "niet ervaren"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "proefvangst", "role": "proefvondst"}}]}|}
+  in
+  let made_ir =
+    ov_doc ~fact_types:[ proef_complete_ft; bewaring_ft ] ~object_creations:[ proef_oc ]
+      [ ov_type "Jutter" [ "proefhuur" ] [ "ervaren"; "heeft proef"; "proef onopgeslagen" ];
+        ov_vondst [ "bewaarhuur" ] [ "opgeslagen"; "onopgeslagen" ];
+        ov_type "Loods" [ "huur" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"heeft proef"
+          ~cond:{|{"node": "RoleMembership", "factType": "proefvangst", "role": "jutter", "negated": false, "source": {"snippet": "proef"}}|}
+          "heeft proef" None;
+        ov_rule ~name:"bewaarhuur" "bewaarhuur" (Some (ov_attr ~ty:"Loods" ~path:[ ("bewaring", "bewaarplaats") ] "huur"));
+        ov_rule ~name:"opgeslagen"
+          ~cond:{|{"node": "RoleMembership", "factType": "bewaring", "role": "opgeslagen vondst", "negated": false, "source": {"snippet": "opgeslagen"}}|}
+          "opgeslagen" None;
+        ov_rule ~name:"onopgeslagen"
+          ~cond:{|{"node": "RoleMembership", "factType": "bewaring", "role": "opgeslagen vondst", "negated": true, "source": {"snippet": "onopgeslagen"}}|}
+          "onopgeslagen" None;
+        ov_rule ~ty:"Jutter" ~name:"proefhuur" "proefhuur"
+          (Some (ov_attr ~ty:"Loods" ~path:[ ("proefvangst", "proefvondst"); ("bewaring", "bewaarplaats") ] "huur"));
+        ov_rule ~ty:"Jutter" ~name:"proef onopgeslagen"
+          ~cond:(ov_check ~navigation:("proefvangst", "proefvondst") "onopgeslagen")
+          "proef onopgeslagen" None ]
+  in
+  ov_frame ~name:"WV-1.5-link-complete (beside open creation writer)" ~ir:made_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~roles_empty:[ "proefvondst" ] "J1" []; ov_obj "V9" [] ]
+         [ ov_char_is ~label:"J1" "heeft proef" "open"; ov_attr_is ~label:"J1" "proefhuur" "open";
+           ov_char_is ~label:"J1" "proef onopgeslagen" "open" ]) ();
+  ov_frame ~name:"WV-1.5-link-made-object (minted settled absent vs case V9 open)" ~ir:made_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~absent:[ "ervaren" ] "J1" []; ov_obj "V9" [] ]
+         [ ov_char_is ~label:"J1" "heeft proef" "holds"; ov_attr_is ~label:"J1" "proefhuur" "leeg";
+           ov_char_is ~label:"J1" "proef onopgeslagen" "holds";
+           ov_attr_is ~label:"V9" "bewaarhuur" "open"; ov_char_is ~label:"V9" "opgeslagen" "open";
+           ov_char_is ~label:"V9" "onopgeslagen" "open" ]) ();
+  (* Case-reader refusals & idempotence on rolesEmpty *)
+  let check_role_refusal name ~ir ~case_text want =
+    let irf = write_temp ".ir.json" ir in
+    let casef = write_temp ".case.json" case_text in
+    let got =
+      Fun.protect
+        ~finally:(fun () ->
+          (try Sys.remove irf with _ -> ());
+          try Sys.remove casef with _ -> ())
+        (fun () ->
+          let doc = Ir_v0.Loader.load_file irf in
+          try
+            ignore (Uchar_ref.Case.load_file doc casef);
+            Error "loaded"
+          with Uchar_ref.Case.Error { code; params; text } -> Ok (code, params, text))
+    in
+    match got with
+    | Error s -> check (name ^ " (" ^ s ^ ")") false
+    | Ok (code, params, text) -> check (name ^ " (got: " ^ text ^ ")") (want code params text)
+  in
+  let refusal_ir =
+    ov_doc
+      ~fact_types:
+        [ {|{"node": "FactType", "name": "vangst", "reciprocal": false, "roles": [{"node": "Role", "name": "vinder", "objectType": "Jutter", "plural": "vinders", "many": false}, {"node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true}]}|};
+          {|{"node": "FactType", "name": "toezichtA", "reciprocal": false, "roles": [{"node": "Role", "name": "beheerder", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "objectA", "objectType": "Vondst", "many": true}]}|};
+          {|{"node": "FactType", "name": "toezichtB", "reciprocal": false, "roles": [{"node": "Role", "name": "beheerder", "objectType": "Loods", "many": false}, {"node": "Role", "name": "objectB", "objectType": "Vondst", "many": true}]}|};
+          {|{"node": "FactType", "name": "samenwerking", "reciprocal": true, "roles": [{"node": "Role", "name": "partner", "objectType": "Jutter", "plural": "partners", "many": false}]}|};
+          opvolging_ft ]
+      [ ov_vondst [ "waarde" ] []; ov_type "Jutter" [] []; ov_type "Loods" [] []; ov_type "Vergunning" [] [] ]
+      []
+  in
+  ov_frame ~name:"WV-1.5-case-roles-empty (duplicate singular + plural idempotent)" ~ir:refusal_ir
+    ~case_text:(ov_case [ ov_obj ~roles_empty:[ "  VINDER "; "vinders" ] "V1" [] ] [ ov_consistent ]) ();
+  check_role_refusal "WV-1.5-case-roles-empty-refused (EF-049 same-instance)" ~ir:refusal_ir
+    ~case_text:(ov_case [ ov_obj ~roles:[ ("vinder", [ "J1" ]) ] ~roles_empty:[ "vinder" ] "V1" []; ov_obj ~ty:"Jutter" "J1" [] ] [ ov_consistent ])
+    (fun c p _ -> (c, p) = (Some "EF-049", [ ("label", "V1"); ("role", "vinder") ]));
+  check_role_refusal "WV-1.5-case-roles-empty-refused (EF-049 normalised)" ~ir:refusal_ir
+    ~case_text:(ov_case [ ov_obj ~roles:[ ("vinder", [ "J1" ]) ] ~roles_empty:[ "  VINDER " ] "V1" []; ov_obj ~ty:"Jutter" "J1" [] ] [ ov_consistent ])
+    (fun c p _ -> (c, p) = (Some "EF-049", [ ("label", "V1"); ("role", "  VINDER ") ]));
+  check_role_refusal "WV-1.5-case-roles-empty-refused (EF-049 counterpart)" ~ir:refusal_ir
+    ~case_text:(ov_case [ ov_obj ~roles_empty:[ "vinder" ] "V1" []; ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1" ]) ] "J1" [] ] [ ov_consistent ])
+    (fun c p _ -> (c, p) = (Some "EF-049", [ ("label", "V1"); ("role", "vinder") ]));
+  check_role_refusal "WV-1.5-case-roles-empty-refused (EF-049 self-relation)" ~ir:refusal_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Vergunning" ~roles_empty:[ "volgende vergunning" ] "G1" [];
+           ov_obj ~ty:"Vergunning" ~roles:[ ("vorige vergunning", [ "G1" ]) ] "G2" [] ]
+         [ ov_consistent ])
+    (fun c p _ -> (c, p) = (Some "EF-049", [ ("label", "G1"); ("role", "volgende vergunning") ]));
+  check_role_refusal "WV-1.5-case-roles-empty-refused (EF-040 undeclared)" ~ir:refusal_ir
+    ~case_text:(ov_case [ ov_obj ~roles_empty:[ "vinderz" ] "V1" [] ] [ ov_consistent ])
+    (fun c p _ -> (c, p) = (Some "EF-040", [ ("label", "V1"); ("name", "vinderz") ]));
+  check_role_refusal "WV-1.5-case-roles-empty-refused (EF-001 ambiguous)" ~ir:refusal_ir
+    ~case_text:(ov_case [ ov_obj ~roles_empty:[ "beheerder" ] "V1" [] ] [ ov_consistent ])
+    (fun c p _ -> (c, p) = (Some "EF-001", [ ("roleKey", "beheerder"); ("objectType", "Vondst") ]));
+  check_role_refusal "WV-1.5-case-roles-empty-refused (0 matching roles)" ~ir:refusal_ir
+    ~case_text:(ov_case [ ov_obj ~ty:"Loods" ~roles_empty:[ "vinder" ] "L1" [] ] [ ov_consistent ])
+    (fun c p t -> c = None && p = [] && Uchar_ref.Case.contains ~needle:"does not resolve to a declared role" t);
+  check_role_refusal "WV-1.5-case-roles-empty-refused (to-many)" ~ir:refusal_ir
+    ~case_text:(ov_case [ ov_obj ~ty:"Jutter" ~roles_empty:[ "vondsten" ] "J1" [] ] [ ov_consistent ])
+    (fun c p t -> c = None && p = [] && Uchar_ref.Case.contains ~needle:"is a to-many role" t);
+  check_role_refusal "WV-1.5-case-roles-empty-refused (reciprocal)" ~ir:refusal_ir
+    ~case_text:(ov_case [ ov_obj ~ty:"Jutter" ~roles_empty:[ "partner" ] "J1" [] ] [ ov_consistent ])
+    (fun c p t -> c = None && p = [] && Uchar_ref.Case.contains ~needle:"reciprocal" t)
 
 (* WV-1.5-closed-*: the uitbetaling of the first example, with every input
    member complete and bergloon 3, is 3; "de drijftoeslag is 2 indien hij niet
@@ -22351,25 +22690,28 @@ let () =
 let () =
   work @@ fun () ->
   let ir = ov_strict_corpus "corpus/golden/jutterswet-vergunningketen/ir.json" in
-  let vergunning ?(roles = "") label dates =
-    Printf.sprintf {|{"label": "%s", "objectType": "Vergunning", "attributes": {%s}, "roles": {%s}, "characteristics": []}|} label
+  let vergunning ?(roles = "") ?(roles_empty = "") label dates =
+    Printf.sprintf {|{"label": "%s", "objectType": "Vergunning", "attributes": {%s}, "roles": {%s}%s, "characteristics": []}|} label
       (String.concat ", " (List.map (fun (a, d) -> Printf.sprintf {|"%s": {"date": "%s"}|} a d) dates))
       roles
+      (if roles_empty = "" then "" else Printf.sprintf {|, "rolesEmpty": [%s]|} roles_empty)
   in
   let einddag label d =
     if d = "open" then ov_attr_is ~label "einddag" "open"
     else Printf.sprintf {|{"kind": "attributeValue", "label": "%s", "attribute": "einddag", "value": {"date": "%s"}}|} label d
   in
   List.iter
-    (fun (name, stopdag, restant, v2) ->
+    (fun (name, roles_empty, stopdag, v1_eind, restant, v2) ->
       ov_frame ~name:("WV-1.5-instance-ordered (" ^ name ^ ")") ~ir
         ~case_text:
           (ov_case
-             [ vergunning "V1" (stopdag @ [ ("basiseinddag", "2026-06-01") ]);
+             [ vergunning ~roles_empty "V1" (stopdag @ [ ("basiseinddag", "2026-06-01") ]);
                vergunning ~roles:{|"vorige vergunning": ["V1"]|} "V2" [ ("basiseinddag", "2026-12-01") ] ]
-             [ einddag "V1" "2026-06-01"; ov_attr_is "restant" restant; einddag "V2" v2; ov_attr_is ~label:"V2" "restant" "open" ])
+             [ einddag "V1" v1_eind; ov_attr_is "restant" restant; einddag "V2" v2; ov_attr_is ~label:"V2" "restant" "open" ])
         ())
-    [ ("stopdag of V1 open", [], "open", "open"); ("stopdag of V1 given", [ ("stopdag", "2026-03-01") ], "92", "2027-03-03") ]
+    [ ("stopdag of V1 open", {|"vorige vergunning"|}, [], "2026-06-01", "open", "open");
+      ("stopdag of V1 given", {|"vorige vergunning"|}, [ ("stopdag", "2026-03-01") ], "2026-06-01", "92", "2027-03-03");
+      ("vorige vergunning of V1 open", "", [], "open", "open", "open") ]
 
 (* whether a matrix over members a creation adds reads the evaluation date
    hangs on their order, which this encoding does not carry: CLINGO-035, as in

@@ -464,10 +464,14 @@ spec bug.
 - A document that carries `inferFromEmpty: false` (IR-SPEC ch. 2) is
   read as RUNTIME-SEMANTICS ch. 1.5 lays down. A member is filled
   (`val/3`, `has/2`), settled leeg (`settled/2`, `hasnot/2`) or open,
-  which is the absence of all of them. Settled leeg is derived
+  which is the absence of all of them; a non-reciprocal `to-one` input
+  role on a case instance is linked (`role/3`), open (`ropen/2`) where
+  unlinked, not declared `complete`, and not listed in `rolesEmpty`, or
+  settled absent otherwise (including on every made instance). Settled leeg is derived
   positively: for an input member from the case (a member whose
   declaration says `complete`, `attributesEmpty`, `characteristicsAbsent`,
-  and every input member where the session treats it as complete, the
+  and every input member — non-reciprocal `to-one` input roles included —
+  where the session treats it as complete, the
   runner's `--closed-inputs`); for a member a rule or a defaults group
   writes, per
   concrete type, from its writers, each of which states where it fills

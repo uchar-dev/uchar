@@ -1386,11 +1386,10 @@ let open_read ctx ~holder ~attribute path =
   boundary_read ctx ~what:(Printf.sprintf "%S" attribute) (path @ [ "not " ^ stands_atom ctx ~holder attribute ])
 
 (* a read over the relation [rel] (a role term) from [holder], which [path]
-   binds: a relation is complete, but where a creation left it open there
-   (ropen/2, ch. 1.5, "A creation") the read is open. Only a document with a
-   creation has an open relation *)
+   binds: open where the relation is open there (ropen/2, ch. 1.5: an unlinked
+   non-reciprocal to-one input role, or a relation a creation left open) *)
 let open_relation ctx ~holder ~rel path =
-  if ctx.doc.object_creations <> [] || ctx.doc.fact_creations <> [] then
+  if ctx.strict then
     boundary_read ctx ~what:("the relation " ^ rel) (path @ [ Printf.sprintf "ropen(%s,%s)" holder rel ])
 
 let key_arity key = List.length (String.split_on_char ',' key)
@@ -5526,9 +5525,9 @@ let judge_ref : (ctx -> subject:string -> subject_ot:string -> condition_expr ->
   ref (fun _ ~subject:_ ~subject_ot:_ _ -> fault "the judgement of a condition is asked before it is defined")
 
 (* [read] each body that holds where a hop of the range of a fold from
-   [subject] crosses a relation a creation left open (ch. 1.5, "A creation") *)
+   [subject] crosses a relation that is open (ch. 1.5) *)
 let range_open_reads ctx ~subject ~source_role ~source_path read =
-  if ctx.doc.object_creations <> [] || ctx.doc.fact_creations <> [] then
+  if ctx.strict then
     ignore
       (List.fold_left
          (fun (atoms, cur) rb ->
@@ -13093,10 +13092,9 @@ let rec judge ctx ~subject ~subject_ot (c : condition_expr) : judgement =
       let none = [ "not " ^ List.hd (helper [ [ link "_" ] ]) ] in
       let holds = [ link n; Printf.sprintf "has(%s,%s)" n k ]
       and absent = [ link n; Printf.sprintf "hasnot(%s,%s)" n k ] in
-      (* over a relation a creation left open nothing stands (ch. 1.5, "A
-         creation") *)
+      (* over a relation that is open nothing stands (ch. 1.5) *)
       let closed =
-        if ctx.doc.object_creations <> [] || ctx.doc.fact_creations <> [] then
+        if ctx.strict then
           [ Printf.sprintf "not ropen(%s,%s)" subject (role_term ~fact_type:rb.rb_fact_type role) ]
         else []
       in
@@ -15793,6 +15791,51 @@ let case_only_attributes (doc : document) =
    input with a default value: without a value, not in attributesEmpty and not
    complete, it is open (iopen/2), and the initialisation is not at its turn
    there; otherwise it follows the initialisation as a derived member does *)
+(* whether an object creation or a fact creation can lay a link on [fact_type]
+   that reaches [far] from an instance of [otype] *)
+let written_role_on ctx ~otype ~fact_type ~(far : role_ref) =
+  let key = role_term ~fact_type far in
+  let role_is rname =
+    match far.role_identifier with Some n -> norm n = norm rname | None -> false
+  in
+  let target_ot (fc : resolved_fact_creation) =
+    match fc.fc_target with
+    | Some _ as t -> t
+    | None -> (
+        match Option.map snd (List.find_opt (fun (n, _) -> norm n = norm fc.fc_fact_type) ctx.doc.fact_types) with
+        | Some { role_names = [ a; b ]; reciprocal = false; _ } ->
+            let matches (r : role_ref) =
+              match r.role_identifier with Some n -> norm n = norm fc.objective_role | None -> false
+            in
+            if matches a && not (matches b) then a.role_object_type_name
+            else if matches b && not (matches a) then b.role_object_type_name
+            else None
+        | _ -> None)
+  in
+  List.exists
+    (fun (oc : resolved_object_creation) ->
+      match (oc.oc_subject, oc.created_type) with
+      | Some subj, Some created when isa ctx otype subj -> (
+          let pair =
+            match oc.oc_connecting_role with
+            | Some rb -> (
+                match Ir_v0.Checks.resolve_binding (Ir_v0.Checks.ctx_of ctx.doc) rb with
+                | Ok (_, bound, _) -> Some (rb.rb_fact_type, bound)
+                | Error _ -> None)
+            | None -> (
+                try Option.map (fun (ftn, bound, _) -> (ftn, bound)) (connecting_pair ctx.doc ~from_type:subj ~to_type:created)
+                with _ -> None)
+          in
+          match pair with Some (ftn, new_role) -> role_term ~fact_type:ftn new_role = key | None -> false)
+      | _ -> false)
+    ctx.doc.object_creations
+  || List.exists
+       (fun (fc : resolved_fact_creation) ->
+         norm fc.fc_fact_type = norm fact_type
+         && ((role_is fc.objective_role && Option.fold ~none:false ~some:(isa ctx otype) fc.anchor_point)
+            || (role_is fc.anchor_role && Option.fold ~none:false ~some:(isa ctx otype) (target_ot fc))))
+       ctx.doc.fact_creations
+
 let input_states ctx (i : Uchar_ref.World.instance) =
   let ot = object_type ctx i.otype in
   let input ~characteristic m = not (written_on ctx ~otype:i.otype ~characteristic m) in
@@ -15819,7 +15862,32 @@ let input_states ctx (i : Uchar_ref.World.instance) =
                || Uchar_ref.World.Key.mem (i.label, norm k) ctx.case.world.stated_absent)
           then emit ctx "hasnot(%s,%s)." (str_raw i.label) (str k)
       | None -> ())
-    ot.characteristics
+    ot.characteristics;
+  if not ctx.closed_inputs then
+    List.iter
+      (fun (ftn, (ft : fact_type_name)) ->
+        if not ft.reciprocal then
+          match ft.role_names with
+          | [ r0; r1 ] ->
+              List.iter
+                (fun (near, far) ->
+                  if
+                    (not far.role_many)
+                    && isa ctx i.otype (Option.value near.role_object_type_name ~default:"")
+                  then
+                    let key = Uchar_ref.World.link_key ~fact_type:ftn far in
+                    let given =
+                      Uchar_ref.World.links i ~fact_type:ftn far <> []
+                      || Uchar_ref.World.Key.mem (i.label, key) ctx.case.world.stated_roles_empty
+                    in
+                    if
+                      not
+                        (given || far.role_complete
+                       || written_role_on ctx ~otype:i.otype ~fact_type:ftn ~far)
+                    then emit ctx "ropen(%s,%s)." (str_raw i.label) (role_term ~fact_type:ftn far))
+                [ (r0, r1); (r1, r0) ]
+          | _ -> ())
+      ctx.doc.fact_types
 
 (* the state of a derived member (ch. 1.5, "A derived member"), per concrete
    type of the document, from the outcomes of the writers that write it there
