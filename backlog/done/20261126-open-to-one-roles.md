@@ -65,3 +65,21 @@ Out of scope:
 - wederkerige feittypen als open relatie
 - creaties onder `inferFromEmpty: false` in Drools (`DROOLS-370` blijft ongewijzigd)
 - `regelspraak-toolchain` (eigen vervolgkaart `20261126-open-to-one-roles-in-service.md` na de uchar-pin)
+
+## Result (2026-11-26)
+
+- **IR-schema, `IR-SPEC.md` & verifier (`spec/`, `frontends/catala/`, `frontends/flogic/`):**
+  - optioneel kernveld `"complete": true` op `Role` in `uchar-ir-v1.schema.json` en `IR-SPEC.md` ch. 2.6, meegenomen in verifier-AST, loader, round-trip/canonicalisatie (gate 3) en strip/permutatie van presentatie (gate 13);
+  - welgevormdheidsregel `WF-130` weigert `complete: true` op een `meerdere`-rol of op de rol van een wederkerig feittype, met negatieve getuigen `corpus/negative/wf130-complete-many-role/` en `corpus/negative/wf130-complete-reciprocal-role/`.
+- **Caseschema, runtime-semantiek, `ref` & `clingo` (`spec/`, `ref/`, `backends/clingo/`, `scripts/`):**
+  - optionele `"rolesEmpty"` op `$defs.instance` in `uchar-case-v0.schema.json` en `RUNTIME-SEMANTICS.md` (ch. 1.5, 5.7, 5.7b, 5.12, 5.12a) met `EF-040`, `EF-001` en nieuwe foutcode **`EF-049`** (`label`, `role`) bij gelijktijdige koppeling en `rolesEmpty` op hetzelfde gerichte rolslot (rode getuige `corpus/red/jutterswet-rol-gevuld-en-leeg/` voor eigen én tegenkoppeling);
+  - symmetrische evaluatie van open versus vaststaand afwezige niet-wederkerige `to-one`-rollen in `ref` en `clingo` (`ASP-TRANSLATION.md` S20), inclusief meerstaps-navigatie, `RoleCheck`, vouwbereiken, creaties, zelf-relaties, `open <object> "<rol>"` in ch. 5.12 en `link ... open`-regels in ch. 5.12a;
+  - Gate 5 (`scripts/check-oracle.sh`) toetst `--closed-inputs`-behoud én eindtoestandsmonotonie bij het openlaten van `to-one`-rollen.
+- **RegelSpraak-frontend (`frontends/regelspraak/`):**
+  - `(volledig gegeven)` op `rolSpecificatie` in `RegelSpraak.g4`, `DefinitionResolver`, `RuleChecker`, `IrEmitter` en `SemanticTokens`, met foutcodes **`RGS-474`** (`meerdere` / wederkerig) en **`RGS-475`** (door creatie geschreven rol);
+  - `- de|het <rolnaam> is leeg` in `ScenarioResolver` (`ResolvedScenario.EmptyRole` met `key`, `factType`, `farIndex`, `targetType`, `line`), `CaseEmitter`, `SemanticTokens` en `grammar/DIVERGENCES.md`, met **`RGS-476`**..**`RGS-480`** (attribuut/rol-ambiguïteit, niet-`to-one`/wederkerig, periode, conflict binnen één situatieblok vanuit beide richtingen, en waarschuwing zonder geërfde koppeling onder `inferFromEmpty: true`) en wederzijdse `gebaseerd op`-overschrijving inclusief tegenkoppelingen (`1735` JUnit-tests groen).
+- **Drools-backend, corpus & poorten (`backends/drools/`, `corpus/golden/`, `spec/CONSTRUCTS.md`, `scripts/`):**
+  - `Role.complete` in `IrLoader`, `"rolesEmpty"` & `EF-049` in `CaseInput`/`CaseRunner`, `Input.roleEmpty` met **`DROOLS-376`** (`INSERT_EMPTY_ROLE`, `376` codes) en `FactModelGenerator.hasRoleReferenceField` voor subtypen met gelijknamige `to-one`-rollen;
+  - open `to-one`-rollen op zowel `PatternDslRendering` als `DrlRendering`: `ElementKey.role(...)`, `OpenableMembers`, `Fixpoint.OpenValue.role(...)`, `EndState.OpenLink` & `SessionDump`, `Consequence.InsertOpenPathState` (`Route.MISSING_LINK`), open `RoleCheck`, en `RangeOpen` (`RuleOrigin.Role.FOLD_RANGE_OPEN`, `Route.RANGE_PLACE`, `Route.BEFORE_FOLD_OUTCOME` inclusief selectievolgorde tegenover `FoldOpen` in `InstanceSetUnion`);
+  - nieuwe Jutterswet-goldens `corpus/golden/jutterswet-invoer-rol-strikt/` (6 casussen) en `corpus/golden/jutterswet-invoer-rol/` (3 casussen), `spec/CONSTRUCTS.md` rijen 48–49, en `EXPECTED_PLAYED=400` in Gate 12 (`2093` Drools JUnit-tests groen; alle 17 poorten + 3 builds + `after-run` groen met `red=0`).
+
