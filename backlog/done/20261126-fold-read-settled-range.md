@@ -2,7 +2,7 @@
 
 Priority: high
 Size: S
-Status: doing
+Status: done
 May touch: `backends/drools/`
 Out of scope: `spec/`, `ref/`, `backends/clingo/`, `frontends/regelspraak/`, `corpus/`
 
@@ -31,3 +31,20 @@ kwantorvouw met een ingevulde naar-één-stap in haar `sourcePath` voortijdig af
    tegen `ref --trace` op beide Drools-takken (`EXEC_MODEL` en `DRL_TEXT`), voor zowel
    het onbepaalde geval met bijdrager `[V2]` als het besliste geval naast een open
    lid `[V2, V3]`.
+
+## Result (2026-11-26)
+
+Geland:
+- `ComputeHelpers.beforeFoldOutcome` voert bij `rangeOpen == null` uitsluitend de
+  gewone voorcontroles (`reportFilterDeposits`, `filterFault`, `memberFault`) uit en
+  keert terug zodat `outcome` evalueert.
+- Getuige `open-settled-range-quantifier` toegevoegd aan `OpenReadingsWitnessTest`
+  (`case1-onbepaald-met-bijdrager` en `case2-beslist-naast-open-lid`) tegen
+  `ref --trace` op zowel `EXEC_MODEL` als `DRL_TEXT` (20/20 tests groen).
+
+Buiten scope gebleven:
+- `spec/`, `ref/`, `backends/clingo/`, `frontends/regelspraak/` en `corpus/`.
+
+Verificatie:
+- Volledige `make gates`: 17/17 poorten + 3 builds + `after-run` groen (`red=0` in 323s).
+- `scripts/check-self-contained.sh`: PASS.
