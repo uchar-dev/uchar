@@ -359,4 +359,173 @@ class CompleteMarkerTest {
                 .filter(s -> s.text().equals("(mag opgegeven worden)")).findFirst().orElseThrow();
         assertEquals(Kind.KEYWORD, opgave.kind(), "the opgave marker is the same kind of span");
     }
+
+    // ---------------- roles ----------------
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> factTypeRoles(String ir, int factTypeIndex) {
+        Map<String, Object> root = (Map<String, Object>) Report.json(ir);
+        Map<String, Object> model = (Map<String, Object>) root.get("model");
+        Map<String, Object> ft = (Map<String, Object>) ((List<Object>) model.get("factTypes")).get(factTypeIndex);
+        return (List<Map<String, Object>>) ft.get("roles");
+    }
+
+    @Test void the_marker_writes_complete_on_a_non_reciprocal_to_one_role_in_schema_key_order() {
+        String source = """
+                Afleiden uit leeg: nee
+
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                Objecttype de Vondst (mv: Vondsten)
+                Objecttype de Keuring (mv: Keuringen)
+
+                Feittype vinder van een vondst
+                    de vinder Jutter (volledig gegeven)
+                    de vondst (mv: vondsten) Vondst
+                Eén vinder heeft meerdere vondsten
+
+                Feittype keuring van een vondst
+                    de vondst Vondst
+                    de keuring (mv: keuringen) Keuring (volledig gegeven)
+                Eén vondst heeft één keuring
+                """;
+        String ir = clean(source).document();
+        Map<String, Object> vinder = factTypeRoles(ir, 0).get(0);
+        assertEquals(List.of("node", "name", "objectType", "many", "complete"), List.copyOf(vinder.keySet()));
+        assertEquals(Boolean.FALSE, vinder.get("many"));
+        assertEquals(Boolean.TRUE, vinder.get("complete"));
+        assertFalse(factTypeRoles(ir, 0).get(1).containsKey("complete"));
+
+        Map<String, Object> keuring = factTypeRoles(ir, 1).get(1);
+        assertEquals(List.of("node", "name", "objectType", "plural", "many", "complete"),
+                List.copyOf(keuring.keySet()));
+        assertEquals(Boolean.TRUE, keuring.get("complete"));
+
+        List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("rollen.rgs", source));
+        SemanticTokens.Document tokens = Resolver.tokens(files);
+        SemanticTokensCheck.check(files, tokens);
+        List<Span> markers = tokens.files().get(0).spans().stream()
+                .filter(s -> s.text().equals("(volledig gegeven)")).toList();
+        assertEquals(2, markers.size());
+        assertTrue(markers.stream().allMatch(s -> s.kind() == Kind.KEYWORD && !s.declaration() && s.declaredAt() == null));
+    }
+
+    @Test void rgs_474_refuses_complete_on_to_many_and_reciprocal_roles() {
+        Diagnostic many = refused("""
+                Afleiden uit leeg: nee
+
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                Objecttype de Vondst (mv: Vondsten)
+
+                Feittype vinder van een vondst
+                    de vinder Jutter
+                    de vondst (mv: vondsten) Vondst (volledig gegeven)
+                Eén vinder heeft meerdere vondsten
+                """, "RGS-474");
+        assertEquals(8, many.line());
+        assertTrue(many.message(Locale.forLanguageTag("nl")).contains("kardinaliteit 'meerdere'"),
+                many.message(Locale.forLanguageTag("nl")));
+        assertTrue(many.message(Locale.ENGLISH).contains("cardinality 'meerdere'"),
+                many.message(Locale.ENGLISH));
+
+        Diagnostic reciprocal = refused("""
+                Afleiden uit leeg: nee
+
+                Objecttype de Jutter (mv: Jutters) (bezield)
+
+                Wederkerig feittype strandmaat
+                    de maat (mv: maten) Jutter (volledig gegeven)
+                Eén maat is strandmaat van één maat
+                """, "RGS-474");
+        assertEquals(6, reciprocal.line());
+        assertTrue(reciprocal.message(Locale.forLanguageTag("nl")).contains("wederkerig feittype"),
+                reciprocal.message(Locale.forLanguageTag("nl")));
+        assertTrue(reciprocal.message(Locale.ENGLISH).contains("reciprocal fact type"),
+                reciprocal.message(Locale.ENGLISH));
+    }
+
+    @Test void rgs_475_refuses_complete_on_a_role_written_by_object_or_fact_creation_slot_and_subtype_exact() {
+        // 1:1 ObjectCreation writes the created-side role ('keuring'), NOT the back-link ('vondst') on case Keuring instances
+        String objectCreationBase = """
+                Afleiden uit leeg: nee
+
+                Objecttype de Vondst (mv: Vondsten)
+                    het gewicht Numeriek (geheel getal);
+                Objecttype de Strandvondst is een Vondst (mv: Strandvondsten)
+                Objecttype de Keuring (mv: Keuringen)
+                    het rapportnummer Numeriek (geheel getal);
+
+                Feittype keuring van een vondst
+                    de vondst Vondst %s
+                    de keuring Keuring %s
+                Eén vondst heeft één keuring
+
+                Regel maak keuring
+                    geldig altijd
+                        Een %s heeft een keuring met rapportnummer gelijk aan 1.
+                """;
+        Diagnostic ocRefused = refused(objectCreationBase.formatted("", "(volledig gegeven)", "Vondst"), "RGS-475");
+        assertEquals(11, ocRefused.line());
+        assertTrue(ocRefused.message(Locale.forLanguageTag("nl")).contains("objectcreatie 'maak keuring' op Vondst zelf legt"),
+                ocRefused.message(Locale.forLanguageTag("nl")));
+        assertTrue(ocRefused.message(Locale.ENGLISH).contains("object creation 'maak keuring' lays on Vondst itself"),
+                ocRefused.message(Locale.ENGLISH));
+
+        // Back-link role ('vondst') on case instances of Keuring stays input, so '(volledig gegeven)' stands there
+        String backLinkAllowed = clean(objectCreationBase.formatted("(volledig gegeven)", "", "Vondst")).document();
+        assertEquals(Boolean.TRUE, factTypeRoles(backLinkAllowed, 0).get(0).get("complete"));
+
+        // Writer on a strict subtype (Strandvondst) alone leaves 'keuring' input on other Vondst instances
+        String subtypeWriterAllowed = clean(objectCreationBase.formatted("", "(volledig gegeven)", "Strandvondst")).document();
+        assertEquals(Boolean.TRUE, factTypeRoles(subtypeWriterAllowed, 0).get(1).get("complete"));
+
+        // Self-relation: slot 1 ('volgende vergunning') written by ObjectCreation -> refused on slot 1, allowed on slot 0
+        String selfRel = """
+                Afleiden uit leeg: nee
+
+                Objecttype de Vergunning (mv: Vergunningen)
+                    het volgnummer Numeriek (geheel getal);
+
+                Feittype opvolging van vergunningen
+                    de vorige vergunning Vergunning %s
+                    de volgende vergunning Vergunning %s
+                Eén vorige vergunning wordt gevolgd door één volgende vergunning
+
+                Regelgroep vervolggroep
+                is recursief
+                Regel vervolgvergunning
+                    geldig altijd
+                        Een Vergunning heeft een volgende vergunning met volgnummer gelijk aan 2
+                            indien zijn volgnummer gelijk is aan 1.
+                """;
+        Diagnostic selfRefused = refused(selfRel.formatted("", "(volledig gegeven)"), "RGS-475");
+        assertEquals(8, selfRefused.line());
+        String selfAllowed = clean(selfRel.formatted("(volledig gegeven)", "")).document();
+        assertEquals(Boolean.TRUE, factTypeRoles(selfAllowed, 0).get(0).get("complete"));
+
+        // FactCreation: writes 'hulpjutter' (the anchorRole, to-one) on Vondst -> refused on 'hulpjutter'
+        String factCreationModel = """
+                Afleiden uit leeg: nee
+
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                Objecttype de Vondst (mv: Vondsten)
+
+                Feittype vinder van een vondst
+                    de vinder Jutter
+                    de vondst (mv: vondsten) Vondst
+                Eén vinder heeft meerdere vondsten
+
+                Feittype hulp bij een vondst
+                    de hulpjutter Jutter (volledig gegeven)
+                    de hulpvondst (mv: hulpvondsten) Vondst
+                Eén hulpjutter helpt bij meerdere hulpvondsten
+
+                Regel koppel hulpvondst
+                    geldig altijd
+                        Een hulpvondst van een Jutter is een vondst van de Jutter.
+                """;
+        Diagnostic fcRefused = refused(factCreationModel, "RGS-475");
+        assertEquals(12, fcRefused.line());
+        assertTrue(fcRefused.message(Locale.forLanguageTag("nl")).contains("feitcreatie 'koppel hulpvondst' op Vondst zelf legt"),
+                fcRefused.message(Locale.forLanguageTag("nl")));
+    }
 }

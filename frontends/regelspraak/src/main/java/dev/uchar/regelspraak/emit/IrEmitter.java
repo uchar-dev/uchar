@@ -724,6 +724,7 @@ public final class IrEmitter {
         w.key("objectType").value(r.objectTypeName());
         if (r.plural() != null) w.key("plural").value(r.plural());
         w.key("many").value(r.many());
+        if (r.complete()) w.key("complete").value(true);
         originAndDesignations(RegelSpraakModel.Designatable.role(ft.name, r.name()));
         w.endObject();
     }

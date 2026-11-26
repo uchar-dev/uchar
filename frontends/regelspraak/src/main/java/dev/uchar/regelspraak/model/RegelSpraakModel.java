@@ -1186,10 +1186,15 @@ public final class RegelSpraakModel {
      *  (§13.3.9.1), or null when none is declared — the resolver matches plural
      *  references against the declared form, never a synthesised one. `many` is the
      *  role's cardinality from the feittype's cardinaliteit line (§13.3.9.1): true when this
-     *  role is the "meerdere" side (a navigation TO it yields many), false when "één". */
-    public record Role(String name, String objectTypeName, String plural, boolean many) {
-        public Role(String name, String objectTypeName) { this(name, objectTypeName, null, false); }
-        public Role(String name, String objectTypeName, String plural) { this(name, objectTypeName, plural, false); }
+     *  role is the "meerdere" side (a navigation TO it yields many), false when "één".
+     *  `complete` marks a non-reciprocal to-one role whose input is declared complete
+     *  ('(volledig gegeven)', IR-SPEC ch. 2.2 / WF-130). */
+    public record Role(String name, String objectTypeName, String plural, boolean many, boolean complete) {
+        public Role(String name, String objectTypeName) { this(name, objectTypeName, null, false, false); }
+        public Role(String name, String objectTypeName, String plural) { this(name, objectTypeName, plural, false, false); }
+        public Role(String name, String objectTypeName, String plural, boolean many) {
+            this(name, objectTypeName, plural, many, false);
+        }
     }
 
     /** Whether navigating from {@code holder} to {@code target} through the role named

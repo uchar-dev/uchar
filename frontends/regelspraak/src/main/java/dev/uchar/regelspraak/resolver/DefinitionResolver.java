@@ -1395,7 +1395,7 @@ public final class DefinitionResolver {
                 model.diagnostics.add(new RegelSpraakModel.Diagnostic(RegelSpraakModel.Severity.WARNING,
                         "RGS-027", params("factType", ft.name, "role", roleName),
                         ctx.feitTypeNaam().getStart().getLine()));
-            roles.add(new Role(roleName, src(rs.objectTypeNaam()), plural));
+            roles.add(new Role(roleName, src(rs.objectTypeNaam()), plural, false, rs.VOLLEDIG_GEGEVEN() != null));
             if (rs.bepaaldLidwoord() != null) ft.roleArticles.put(roleName, src(rs.bepaaldLidwoord()).toLowerCase());
             roleLines.computeIfAbsent(ft, k -> new java.util.HashMap<>()).putIfAbsent(roleName, rs.getStart().getLine());
         }
@@ -1404,6 +1404,17 @@ public final class DefinitionResolver {
         // take a 'meerdere' mark; an absent line leaves a role single.
         if (!ft.reciprocal && ctx.feitTypeCardinaliteit() != null)
             roles = markCardinality(ft.name, roles, ctx.feitTypeCardinaliteit(), recovered);
+        for (int i = 0; i < roles.size(); i++) {
+            Role r = roles.get(i);
+            if (r.complete() && (ft.reciprocal || r.many())) {
+                if (!recovered)
+                    error("RGS-474", params("complete", "(volledig gegeven)", "factType", ft.name,
+                            "reason", Msg.frontend(ft.reciprocal ? "RGS-474.reciprocal" : "RGS-474.many",
+                                    ft.reciprocal ? "factType" : "role", ft.reciprocal ? ft.name : r.name()),
+                            "role", r.name()), ctx.rolSpecificatie(i).getStart().getLine());
+                roles.set(i, new Role(r.name(), r.objectTypeName(), r.plural(), r.many(), false));
+            }
+        }
         ft.roles.addAll(roles);
         model.factTypes.put(ft.name, ft);
     }
@@ -1477,7 +1488,8 @@ public final class DefinitionResolver {
                         "roles", RegelSpraakModel.quotedList(result.stream().map(Role::name).toList())),
                         card.getStart().getLine());
             if (j >= 0 && result.get(j).many() != plural.get(s))
-                result.set(j, new Role(result.get(j).name(), result.get(j).objectTypeName(), result.get(j).plural(), plural.get(s)));
+                result.set(j, new Role(result.get(j).name(), result.get(j).objectTypeName(), result.get(j).plural(),
+                        plural.get(s), result.get(j).complete()));
         }
         return result;
     }
@@ -1591,7 +1603,7 @@ public final class DefinitionResolver {
             preceding = end;
             previousSentence = memberSentence == null ? Msg.frontend("PART.previous-head-text")
                     : Msg.frontend(role ? "PART.previous-role" : "PART.previous-member", "name", memberName(member));
-            onName = role;                                  // a role ends on its filler, an object-type name
+            onName = role && end.getType() != RegelSpraak.VOLLEDIG_GEGEVEN; // a role ends on its filler unless '(volledig gegeven)' follows it
             onCharacteristic = !role && end.getType() == RegelSpraak.KENMERK;
         }
         return refused;

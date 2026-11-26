@@ -208,6 +208,47 @@ class SemanticTokensRecoveryTest {
         }
     }
 
+    @Test void a_role_empty_bullet_and_marked_role_the_recovery_cut_short_give_their_tokens() {
+        String model = """
+                Afleiden uit leeg: nee
+
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                Objecttype de Vondst (mv: Vondsten)
+                    de afhaaldatum Datum in dagen;
+
+                Feittype vondstmelding
+                    de vinder Jutter (volledig gegeven)
+                    de vondst (mv: vondsten) Vondst
+                Eén vinder heeft meerdere vondsten
+                """;
+        for (String broken : List.of("- de vinder", "- de vinder is", "- de vinder is leeg van")) {
+            String scenario = """
+                    Scenario afgebroken rol
+                    Gegeven is de volgende situatie:
+                    een Vondst V1
+                    """ + broken + "\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n";
+            List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("model.rgs", model),
+                    new SemanticTokens.SourceFile("toets.rgs", scenario));
+            SemanticTokens.Document d = Resolver.tokens(files);
+            assertTrue(d.diagnostics().stream().anyMatch(x -> "RGS-216".equals(x.code())),
+                    () -> broken + ": the syntax error is in the output: " + d.diagnostics());
+            SemanticTokensCheck.check(files, d);
+            if (broken.contains("is leeg")) {
+                SemanticTokens.Span role = d.files().get(1).spans().stream()
+                        .filter(s -> s.text().equals("vinder")).findFirst().orElseThrow();
+                assertEquals(SemanticTokens.Kind.ROLE, role.kind(), broken);
+                assertNotNull(role.declaredAt(), broken);
+            }
+        }
+        for (String cutRole : List.of(
+                model.substring(0, model.indexOf("(volledig gegeven)") + "(volledig".length()),
+                model.substring(0, model.indexOf("(volledig gegeven)") + "(volledig gegeven)".length()))) {
+            List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("cut.rgs", cutRole));
+            SemanticTokens.Document d = Resolver.tokens(files);
+            SemanticTokensCheck.check(files, d);
+        }
+    }
+
     /** Floors, measured at the build (card semantic-tokens, 2026-10-22): the cut sources read, and how many of them
      *  carry a syntax error, so the sweep keeps reaching the recovery. */
     private static final int MIN_RUNS = 7620;

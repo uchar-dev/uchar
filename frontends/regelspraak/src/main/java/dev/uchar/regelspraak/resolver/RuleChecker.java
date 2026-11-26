@@ -3013,6 +3013,25 @@ final class RuleChecker {
             } else if (d.objectTypeExtensie() != null) {
                 typeName = d.objectTypeExtensie().objectTypeNaam();
                 members = d.objectTypeExtensie().objectTypeMember();
+            } else if (d.feitTypeDefinition() != null) {
+                FeitTypeDefinitionContext ftd = d.feitTypeDefinition();
+                if (DefinitionResolver.recovered(ftd)) continue;
+                FactType ft = model.factTypes.get(DefinitionResolver.src(ftd.feitTypeNaam()));
+                if (ft == null || ft.reciprocal || ft.roles.size() != 2 || ftd.rolSpecificatie().size() != 2) continue;
+                for (int farIdx = 0; farIdx < 2; farIdx++) {
+                    Role far = ft.roles.get(farIdx);
+                    if (!far.complete()
+                            || !seen.add("role\u0000" + dev.uchar.regelspraak.emit.IrEmitter.norm(ft.name) + "\u0000" + farIdx))
+                        continue;
+                    ObjectType nearType = model.objectTypeByName(ft.roles.get(1 - farIdx).objectTypeName());
+                    if (nearType == null) continue;
+                    Msg writer = ownRoleWriter(ft, farIdx, nearType);
+                    if (writer != null)
+                        error(ftd.rolSpecificatie(farIdx).getStart().getLine(), "RGS-475",
+                                params("complete", "(volledig gegeven)", "factType", ft.name, "nearType", nearType.name,
+                                        "role", far.name(), "writer", writer));
+                }
+                continue;
             } else continue;
             ObjectType t = model.objectTypeByName(src(typeName));
             if (t == null) continue;
@@ -3033,6 +3052,48 @@ final class RuleChecker {
                             "name", name, "objectType", t.name, "writer", writer, "complete", "(volledig gegeven)"));
             }
         }
+    }
+
+    /** The first creation that can lay a link on the directed role {@code (ft, farIdx)} on {@code nearType} itself
+     *  (subtype-aware via {@code nearType.isA(...)} and slot-exact on {@code 0} vs {@code 1}, mirroring
+     *  {@code Eval.written_role_on} in {@code ref/lib/eval.ml}), or null: a creation whose subject/endpoint is a strict
+     *  subtype of {@code nearType} leaves the role input outside that subtype, and the back-link role of an object
+     *  creation on a case instance of the created type remains input as well (RUNTIME-SEMANTICS ch. 1.5). */
+    private Msg ownRoleWriter(FactType ft, int farIdx, ObjectType nearType) {
+        Role far = ft.roles.get(farIdx);
+        for (ResolvedObjectCreation oc : model.objectCreations) {
+            if (oc.subject() == null || oc.createdType() == null || !nearType.isA(oc.subject())) continue;
+            RegelSpraakModel.RoleBindingRef rb = oc.connectingRole() != null ? oc.connectingRole()
+                    : model.connectingRoleBinding(oc.subject(), oc.createdType());
+            if (rb != null && sameName(rb.factType(), ft.name) && roleMatchesSlot(ft, farIdx, rb.role()))
+                return Msg.frontend("RGS-475.object-creation", "name", withoutVersion(oc.name()));
+        }
+        for (ResolvedFactCreation fc : model.factCreations) {
+            if (fc.factType() == null || !sameName(fc.factType(), ft.name)) continue;
+            boolean writesFromAnchor = roleMatchesSlot(ft, farIdx, fc.targetRole())
+                    && fc.anchor() != null && nearType.isA(fc.anchor());
+            ObjectType targetType = fc.target() != null ? fc.target() : factCreationTargetType(ft, fc.targetRole());
+            boolean writesFromTarget = roleMatchesSlot(ft, farIdx, fc.anchorRole())
+                    && targetType != null && nearType.isA(targetType);
+            if (writesFromAnchor || writesFromTarget)
+                return Msg.frontend("RGS-475.fact-creation", "name", withoutVersion(fc.name()));
+        }
+        return null;
+    }
+
+    private static boolean roleMatchesSlot(FactType ft, int slotIdx, String roleName) {
+        if (roleName == null || slotIdx < 0 || slotIdx >= ft.roles.size()) return false;
+        Role r = ft.roles.get(slotIdx);
+        return sameName(r.name(), roleName) || (r.plural() != null && sameName(r.plural(), roleName));
+    }
+
+    private ObjectType factCreationTargetType(FactType ft, String targetRole) {
+        if (targetRole == null || ft.roles.size() != 2) return null;
+        boolean m0 = sameName(ft.roles.get(0).name(), targetRole);
+        boolean m1 = sameName(ft.roles.get(1).name(), targetRole);
+        if (m0 && !m1) return model.objectTypeByName(ft.roles.get(0).objectTypeName());
+        if (m1 && !m0) return model.objectTypeByName(ft.roles.get(1).objectTypeName());
+        return null;
     }
 
     /** The first writer other than an initialisation that writes the member {@code name} of {@code t} on {@code t}

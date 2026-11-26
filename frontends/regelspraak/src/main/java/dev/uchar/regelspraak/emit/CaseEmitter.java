@@ -122,6 +122,11 @@ public final class CaseEmitter {
             w.endArray();
         }
         w.endObject();
+        if (!i.rolesEmpty().isEmpty()) {
+            w.key("rolesEmpty").beginArray();
+            for (String r : i.rolesEmpty()) w.value(r);
+            w.endArray();
+        }
         w.key("characteristics").beginArray();
         for (CharacteristicValue k : i.characteristics()) if (k.holds() && k.periods() == null) w.value(k.characteristic());
         w.endArray();

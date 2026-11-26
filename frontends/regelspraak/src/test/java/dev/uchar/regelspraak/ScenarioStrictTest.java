@@ -1132,4 +1132,270 @@ class ScenarioStrictTest {
             prev = pos;
         }
     }
+
+    @Test void role_is_leeg_writes_rolesEmpty_between_roles_and_characteristics_and_is_idempotent_in_block() {
+        String source = NEE + MODEL + """
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                Objecttype de Keuring (mv: Keuringen)
+
+                Feittype vondstmelding
+                    de melder Jutter
+                    de vondst (mv: vondsten) Vondst
+                Eén melder heeft meerdere vondsten
+
+                Feittype keuring van een vondst
+                    de gekeurde vondst Vondst
+                    de keuring (mv: keuringen) Keuring
+                Eén gekeurde vondst heeft één keuring
+
+                Scenario rol leeg en sleutelvolgorde
+                Gegeven is de volgende situatie:
+                een Jutter J1
+                een Vondst V1
+                - het gewicht is 7
+                - de afhaaldatum is leeg
+                - de melder is J1
+                - de keuring is leeg
+                - de keuringen is leeg
+                - is afhaalbaar
+                - is niet drijfhout
+                - is aangespoeld van 01-01-2025 tot 01-02-2025
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        String emitted = CaseEmitter.emit(only(source));
+        int v1At = emitted.indexOf("\"label\": \"V1\"");
+        String v1Slice = emitted.substring(v1At);
+        List<String> keys = List.of("\"label\"", "\"objectType\"", "\"attributes\"", "\"attributesEmpty\"",
+                "\"roles\"", "\"rolesEmpty\"", "\"characteristics\"", "\"characteristicsAbsent\"",
+                "\"characteristicTimelines\"");
+        int prev = -1;
+        for (String key : keys) {
+            int pos = v1Slice.indexOf(key);
+            assertTrue(pos > prev, () -> key + " out of order in:\n" + v1Slice);
+            prev = pos;
+        }
+        assertTrue(v1Slice.contains("""
+                "rolesEmpty": [
+                          "keuringen"
+                        ]"""), v1Slice);
+        assertFalse(emitted.substring(0, v1At).contains("rolesEmpty"), "omitted when empty on J1");
+    }
+
+    @Test void role_is_leeg_overrides_and_is_overridden_by_direct_and_counterpart_links_across_gebaseerd_op() {
+        String base = """
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                Objecttype de Vondst (mv: Vondsten)
+                    het gewicht Numeriek (geheel getal);
+
+                Feittype vondstmelding
+                    de vinder Jutter
+                    de vondst (mv: vondsten) Vondst
+                Eén vinder heeft meerdere vondsten
+
+                Situatie gekoppeld via jutter:
+                een Jutter J1
+                - de vondsten zijn V1 en V2
+                een Vondst V1
+                een Vondst V2
+
+                Situatie gekoppeld op vondst:
+                een Jutter J1
+                een Vondst V1
+                - de vinder is J1
+
+                Situatie zonder vinder:
+                een Jutter J1
+                een Vondst V1
+                - de vinder is leeg
+
+                Scenario ontkoppel tegenrol met rest
+                gebaseerd op de situatie gekoppeld via jutter
+                Gegeven is de volgende situatie:
+                een Vondst V1
+                - de vinder is leeg
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+
+                Scenario ontkoppel directe rol
+                gebaseerd op de situatie gekoppeld op vondst
+                Gegeven is de volgende situatie:
+                een Vondst V1
+                - de vinder is leeg
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+
+                Scenario herkoppel via tegenrol
+                gebaseerd op de situatie zonder vinder
+                Gegeven is de volgende situatie:
+                een Jutter J1
+                - de vondsten zijn V1
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+
+                Scenario herkoppel direct
+                gebaseerd op de situatie zonder vinder
+                Gegeven is de volgende situatie:
+                een Vondst V1
+                - de vinder is J1
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        for (String prefix : List.of(NEE, "")) {
+            ScenarioBundle bundle = ScenarioResolver.resolve(prefix + base);
+            assertTrue(bundle.isOk(), () -> bundle.model().errors().toString());
+            List<ResolvedScenario> s = bundle.scenarios();
+            assertEquals(4, s.size());
+
+            // Scenario 0: V1 unlinked from J1's 'vondsten', leaving only V2 on J1 and ["vinder"] in V1.rolesEmpty
+            String c0 = CaseEmitter.emit(s.get(0));
+            String j1Block = c0.substring(0, c0.indexOf("\"label\": \"V1\""));
+            assertTrue(j1Block.contains("\"vondsten\": [\n            \"V2\"\n          ]"), c0);
+            assertFalse(j1Block.contains("\"V1\""), "V1 removed from J1.vondsten:\n" + c0);
+            assertTrue(c0.contains("\"rolesEmpty\": [\n          \"vinder\"\n        ]"), c0);
+
+            // Scenario 1: V1's direct 'vinder' cleared and replaced by rolesEmpty: ["vinder"]
+            String c1 = CaseEmitter.emit(s.get(1));
+            assertTrue(c1.contains("\"roles\": {},\n        \"rolesEmpty\": [\n          \"vinder\"\n        ]"), c1);
+
+            // Scenario 2: V1's inherited rolesEmpty cleared when J1 links V1 in 'vondsten'
+            String c2 = CaseEmitter.emit(s.get(2));
+            assertFalse(c2.contains("rolesEmpty"), c2);
+            assertTrue(c2.contains("\"vondsten\": [\n            \"V1\"\n          ]"), c2);
+
+            // Scenario 3: V1's inherited rolesEmpty cleared when V1 links J1 directly
+            String c3 = CaseEmitter.emit(s.get(3));
+            assertFalse(c3.contains("rolesEmpty"), c3);
+            assertTrue(c3.contains("\"vinder\": [\n            \"J1\"\n          ]"), c3);
+
+            if (prefix.isEmpty()) {
+                // Only 'Situatie zonder vinder' has an uninherited 'de vinder is leeg'; scenarios 0 and 1 clear an inherited link
+                assertEquals(1, bundle.warnings().size(), () -> bundle.warnings().toString());
+                Diagnostic w = bundle.warnings().get(0);
+                assertEquals("RGS-480", w.code());
+                assertEquals(Severity.WARNING, w.severity());
+                assertEquals(ScenarioFixture.lineOf(base, "- de vinder is leeg"), w.line());
+            } else {
+                assertEquals(List.of(), bundle.warnings());
+            }
+        }
+    }
+
+    @Test void self_relation_slots_are_distinguished_for_role_is_leeg_and_same_block_conflicts() {
+        String header = NEE + """
+                Objecttype de Vergunning (mv: Vergunningen)
+
+                Feittype opvolging van vergunningen
+                    de vorige vergunning Vergunning
+                    de volgende vergunning Vergunning
+                Eén vorige vergunning wordt gevolgd door één volgende vergunning
+
+                """;
+        // Valid: V1 has vorige vergunning empty (slot 0) and volgende vergunning = V2 (slot 1), plus V2 points back on slot 0
+        String valid = header + """
+                Scenario keten
+                Gegeven is de volgende situatie:
+                een Vergunning V1
+                - de vorige vergunning is leeg
+                - de volgende vergunning is V2
+                een Vergunning V2
+                - de vorige vergunning is V1
+                - de volgende vergunning is leeg
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        String emitted = CaseEmitter.emit(only(valid));
+        assertTrue(emitted.contains("\"vorige vergunning\""), emitted);
+        assertTrue(emitted.contains("\"volgende vergunning\""), emitted);
+
+        // Invalid: V1 has 'vorige vergunning is leeg' (slot 0 on V1) AND V2 has 'volgende vergunning is V1' (also slot 0 on V1!)
+        String counterpartConflict = header + """
+                Scenario tegenbotsing
+                Gegeven is de volgende situatie:
+                een Vergunning V1
+                - de vorige vergunning is leeg
+                een Vergunning V2
+                - de volgende vergunning is V1
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        assertEquals(List.of("RGS-479 {label=V1, role=vorige vergunning}"),
+                errorsOn(counterpartConflict, "- de volgende vergunning is V1"));
+    }
+
+    @Test void role_is_leeg_refuses_ambiguity_non_to_one_period_and_same_block_links() {
+        String model = NEE + """
+                Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+                    1. voorjaar
+                    2. najaar
+
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                Objecttype de Vondst (mv: Vondsten)
+                    de keurmeester Tekst;
+                    het pakket Numeriek (geheel getal) gedimensioneerd met seizoen;
+
+                Feittype vondstmelding
+                    de vinder Jutter
+                    de vondst (mv: vondsten) Vondst
+                Eén vinder heeft meerdere vondsten
+
+                Feittype keuring
+                    de keurmeester Jutter
+                    de gekeurde vondst (mv: gekeurde vondsten) Vondst
+                Eén keurmeester keurt meerdere gekeurde vondsten
+
+                Feittype pakketrelatie
+                    het pakket in voorjaar Jutter
+                    de pakketvondst Vondst
+                Eén pakket in voorjaar hoort bij één pakketvondst
+
+                Feittype tweede melding
+                    de beoordelaar Jutter
+                    de gemelde vondst Vondst
+                Eén beoordelaar beoordeelt één gemelde vondst
+
+                Feittype derde melding
+                    de beoordelaar Jutter
+                    de beoordeelde vondst Vondst
+                Eén beoordelaar heeft één beoordeelde vondst
+
+                Wederkerig feittype strandmaat
+                    de maat (mv: maten) Jutter
+                Eén maat is strandmaat van één maat
+
+                Scenario geweigerd
+                Gegeven is de volgende situatie:
+                een Jutter J1
+                - de vondsten is leeg
+                - de maat is leeg
+                - de vondsten zijn V2
+                een Vondst V1
+                - de keurmeester is leeg
+                - het pakket in voorjaar is leeg
+                - de beoordelaar is leeg
+                - de vinder is leeg van 01-01-2025 tot 01-02-2025
+                - de vinder is J1
+                - de vinder is leeg // direct op V1
+                een Vondst V2
+                - de vinder is leeg // tegenrol op J1
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        assertEquals(List.of("RGS-477 {factType=vondstmelding, reason=maar heeft kardinaliteit 'meerdere', role=vondsten}"),
+                errorsOn(model, "- de vondsten is leeg"));
+        assertEquals(List.of("RGS-477 {factType=strandmaat, reason=maar 'strandmaat' is een wederkerig feittype, role=maat}"),
+                errorsOn(model, "- de maat is leeg"));
+        assertEquals(List.of("RGS-476 {attribute=keurmeester, factType=keuring, objectType=Vondst, role=keurmeester, written=keurmeester}"),
+                errorsOn(model, "- de keurmeester is leeg"));
+        assertEquals(List.of("RGS-476 {attribute=pakket, factType=pakketrelatie, objectType=Vondst, role=pakket in voorjaar, written=pakket in voorjaar}"),
+                errorsOn(model, "- het pakket in voorjaar is leeg"));
+        assertEquals(List.of("RGS-247 {objectType=Vondst, role=beoordelaar}"),
+                errorsOn(model, "- de beoordelaar is leeg"));
+        assertEquals(List.of("RGS-478 {role=vinder}"),
+                errorsOn(model, "- de vinder is leeg van"));
+        assertEquals(List.of("RGS-479 {label=V1, role=vinder}"),
+                errorsOn(model, "- de vinder is leeg // direct op V1"));
+        assertEquals(List.of("RGS-479 {label=V2, role=vinder}"),
+                errorsOn(model, "- de vinder is leeg // tegenrol op J1"));
+    }
 }

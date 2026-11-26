@@ -3421,7 +3421,22 @@ scenario blocks then resolve against that model (`ScenarioResolver`):
   names the other role of a fact type in which the instance's type fills a
   role, by its declared name or its declared plural. The verb follows the
   cardinality (`is` to-one, `zijn` to-many), and every label a role names
-  must stand in the merged situation with a type that fills the role.
+  must stand in the merged situation with a type that fills the role. A
+  non-reciprocal to-one role stated to have no link (`de|het <rol> is leeg`)
+  is the case file's `rolesEmpty` (RUNTIME-SEMANTICS ch. 1.5, ch. 5.7). Where
+  the written name matches both an attribute (or cell) on the instance's type
+  and a role opposite it, it is refused as ambiguous (RGS-476); on a to-many
+  or reciprocal role it is refused (RGS-477), and with a period it is refused
+  (RGS-478). Within one situation block a role slot is given a link (from
+  either end of the relation, slot-exact on 0 vs 1 for a self-relation) or
+  `is leeg` (RGS-479); a block merged later overrides an inherited link from
+  either end (removing the instance from a counterpart's inherited role list
+  as well) or overrides an inherited `is leeg` from either end, so a case
+  never links a role slot and names it in `rolesEmpty` (EF-049). In a document
+  without `Afleiden uit leeg: nee` a role the situation does not link has no
+  link already, so there the bullet counts only where it clears an inherited
+  link; elsewhere the lowering writes it all the same, with a WARNING
+  (RGS-480) beside the model.
 - **Characteristics**: the verb follows the kind (`heeft` for a possessive
   one, `is` otherwise). A time-dependent characteristic is delivered as
   periods only, as every case reader demands; a period belongs to a
@@ -3482,10 +3497,11 @@ serialiser, so a case file and an IR document share one shape.
 - `asOfDate` is the peildatum, or null. The instances come in first-seen
   order with their attributes, roles and characteristics in first-seen
   order. An instance writes `attributes`, `attributesEmpty` where an attribute
-  is stated to have no value, `roles`, `characteristics`, then
+  is stated to have no value, `roles`, `rolesEmpty` where a non-reciprocal
+  to-one role is stated to have no link, `characteristics`, then
   `characteristicsAbsent` where a characteristic does not hold, then
   `characteristicTimelines` where a time-dependent characteristic holds
-  somewhere, `attributesEmpty`, `characteristicsAbsent` and
+  somewhere, `attributesEmpty`, `rolesEmpty`, `characteristicsAbsent` and
   `characteristicTimelines` only when they are not empty: the `properties` order
   of the case schema, and gate 16 holds every case file it writes for a golden
   byte for byte to the one pinned beside the golden. An expectation `staat niet
@@ -4824,21 +4840,21 @@ line in either file of a chain, RGS-462 in both languages, a value other than `j
 tokens, the scenario route with and without a scope); the golden `jutterswet-afleiden-uit-leeg`, which gate 10
 re-emits and whose cases pin the reading of RUNTIME-SEMANTICS ch. 1.5.
 
-## Volledig gegeven — `(volledig gegeven)` on an attribute or a characteristic
+## Volledig gegeven — `(volledig gegeven)` on an attribute, a characteristic or a non-reciprocal to-one role
 
-uchar DIALECT EXTENSION (decision of the maintainer, 2026-11-21). In a document with `Afleiden uit leeg: nee` an input
-member the case gives no value, or a characteristic it does not name, is open unless its input is declared complete
-(below): nothing stands about it, and what reads it does not stand either (RUNTIME-SEMANTICS ch. 1.5). For some members the author knows that the input is complete:
-where the case gives no value, there is none. That is the one way a document closes: an attribute declared complete
+uchar DIALECT EXTENSION (decision of the maintainer, 2026-11-21; extended to non-reciprocal to-one roles, 2026-11-26). In a document with `Afleiden uit leeg: nee` an input
+member the case gives no value, a characteristic it does not name, or a non-reciprocal to-one role it does not link, is open unless its input is declared complete
+(below): nothing stands about it, and what reads it does not stand either (RUNTIME-SEMANTICS ch. 1.5). For some members and roles the author knows that the input is complete:
+where the case gives no value or link, there is none. That is the one way a document closes: an attribute declared complete
 and given no value is settled leeg, not open, and a test on leeg over it holds, where over an open member it is
-undetermined; a characteristic declared complete that the case does not name stands not to hold; a member that only an initialisation writes is input as well, and declared complete it is settled leeg
+undetermined; a characteristic declared complete that the case does not name stands not to hold; a non-reciprocal to-one role declared complete that the case does not link is settled absent; a member that only an initialisation writes is input as well, and declared complete it is settled leeg
 there, where the initialisation gives its value. Official RegelSpraak v2.3.0 has no way to write that; this extension
-gives the dialect one marker on a member declaration, and the wire one field on the declaration, `complete: true`
-(IR-SPEC ch. 2.2). The frontend writes the field and gives it no meaning of its own: what it means for an evaluation is
+gives the dialect one marker on a member or role declaration, and the wire one field on the declaration, `complete: true`
+(IR-SPEC ch. 2.2, WF-130). The frontend writes the field and gives it no meaning of its own: what it means for an evaluation is
 the executors' (RUNTIME-SEMANTICS ch. 1.5, "Complete input"), and in a document without `Afleiden uit leeg: nee` it
 changes no outcome.
 
-### Surface syntax (additive; one optional element in two existing productions)
+### Surface syntax (additive; one optional element in three existing productions)
 
 ```
 Afleiden uit leeg: nee
@@ -4847,12 +4863,17 @@ Objecttype de Vondst (mv: Vondsten)
     de taxatie Numeriek (geheel getal);
     de toeslag Numeriek (geheel getal) (volledig gegeven);
     is drijfhout kenmerk (bijvoeglijk) (volledig gegeven);
+
+Feittype vinder van een vondst
+    de vinder Jutter (volledig gegeven)
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
 ```
 
 New token: `VOLLEDIG_GEGEVEN`, the phrase `(volledig gegeven)`, a whole token with its parentheses like the opgave
 marker (§7). On an attribute it stands in the place of the opgave marker, after the optional timeline and before the
 optional `;`: `de opslagkosten Numeriek (geheel getal) voor elke maand (volledig gegeven);`. On a characteristic it stands after the optional timeline: `is gemeld
-kenmerk (bijvoeglijk) voor elke maand (volledig gegeven);`. The grammar admits it beside the opgave marker on one
+kenmerk (bijvoeglijk) voor elke maand (volledig gegeven);`. On a role in a `Feittype` it stands at the end of `rolSpecificatie`, right after the filler `objectTypeNaam`: `de vinder Jutter (volledig gegeven)`. The grammar admits it beside the opgave marker on one
 attribute, before and after it, only so that the resolver can refuse the pair with a message of its own (RGS-463,
 below). The token reserves no word: `volledig` and `gegeven` keep lexing as `LOWER_ID` everywhere else, so an
 attribute, a characteristic or a rule named with them stays readable, and a comment or a text literal that contains
@@ -4915,6 +4936,14 @@ Each is one ERROR at the line of the marked declaration (witness: `CompleteMarke
   value (witness: `CompleteMarkerTest.an_initialisation_is_no_reason`). An allocation and the member assignment of an
   object creation are no writers in that sense: ch. 1.5 reads a member a creation assigns as input on an object the case
   gives, and an executor refuses an allocation in a document with the property (slug `allocation`).
+- RGS-474: `(volledig gegeven)` on a role of a `Wederkerig feittype` or on a role with cardinality `meerdere` (`many:
+  true`), the frontend mirror of WF-130 (IR-SPEC ch. 2.6). The marker is cleared on the refused role so no ill-formed
+  `complete: true` reaches the wire.
+- RGS-475: `(volledig gegeven)` on a non-reciprocal to-one role that an `ObjectCreation` or `FactCreation` can lay on
+  the near filler type itself (subtype-aware via `nearType.isA(...)` and slot-exact on role slot 0 vs 1, mirroring
+  `Eval.written_role_on` in `ref/lib/eval.ml`). A creation whose subject/endpoint is a strict subtype of the near
+  filler type leaves the role input outside that subtype, and the back-link role of an `ObjectCreation` on a case
+  instance of the created type remains input as well (RUNTIME-SEMANTICS ch. 1.5).
 
 ### Emission
 

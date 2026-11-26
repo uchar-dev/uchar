@@ -677,7 +677,8 @@ feitTypeNaamWoord
     ;
 // §13.3.9.1: '<lidwoord>? <rolnaam> <objecttypenaam>'. Capitalisation splits role
 // (lowercase) from objecttype (capitalised) — see header note on naming.
-rolSpecificatie : bepaaldLidwoord? rolNaam ( MV_START meervoudsvorm RPAREN )? benaming* objectTypeNaam ;
+// Dialect extension ("Volledig gegeven"): optional VOLLEDIG_GEGEVEN on a non-reciprocal to-one role.
+rolSpecificatie : bepaaldLidwoord? rolNaam ( MV_START meervoudsvorm RPAREN )? benaming* objectTypeNaam VOLLEDIG_GEGEVEN? ;
 rolNaam         : lowerNaam ; // §13.3.9.4
 
 // §13.3.9.1/.2 cardinality line: '(één <rol> | meerdere <mvrol>) <relatiebeschrijving>

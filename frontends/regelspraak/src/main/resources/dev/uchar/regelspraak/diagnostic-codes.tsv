@@ -419,3 +419,10 @@ RGS-470	attribute-filled-and-empty-in-block	ERROR	attribute,label
 RGS-471	attribute-empty-with-period	ERROR	attribute
 RGS-472	attribute-empty-on-dimensioned-attribute	ERROR	attribute,written
 RGS-473	attribute-empty-changes-nothing	WARNING	written
+RGS-474	complete-on-non-to-one-role	ERROR	complete,factType,reason,role
+RGS-475	complete-on-written-role	ERROR	complete,factType,nearType,role,writer
+RGS-476	empty-bullet-attribute-and-role	ERROR	attribute,factType,objectType,role,written
+RGS-477	role-empty-not-to-one	ERROR	factType,reason,role
+RGS-478	role-empty-with-period	ERROR	role
+RGS-479	role-linked-and-empty-in-block	ERROR	label,role
+RGS-480	role-empty-changes-nothing	WARNING	written

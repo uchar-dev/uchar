@@ -382,6 +382,46 @@ class SemanticTokensScenarioTest {
         assertEquals(6, generated.generatedFrom().line());
     }
 
+    @Test void role_is_leeg_marks_leeg_as_keyword_and_binds_role_declaration() {
+        String model = """
+                Afleiden uit leeg: nee
+
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                Objecttype de Vondst (mv: Vondsten)
+                    de afhaaldatum Datum in dagen;
+
+                Feittype vondstmelding
+                    de vinder Jutter
+                    de vondst (mv: vondsten) Vondst
+                Eén vinder heeft meerdere vondsten
+                """;
+        String test = """
+                Scenario rol leeg in situatie
+                Gegeven is de volgende situatie:
+                een Vondst V1
+                - de afhaaldatum is leeg
+                - de vinder is leeg
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("model.rgs", model),
+                new SemanticTokens.SourceFile("toets.rgs", test));
+        SemanticTokens.Document d = Resolver.tokens(files);
+        assertTrue(d.diagnostics().isEmpty(), () -> "no diagnostic: " + d.diagnostics());
+        SemanticTokensCheck.check(files, d);
+        java.util.Map<Integer, List<String>> lines = new java.util.TreeMap<>();
+        for (Span s : d.files().get(1).spans()) {
+            assertFalse(SemanticTokensCheck.unlinked(s), () -> "a reference without its declaration: " + s);
+            assertNotEquals(Kind.WORD, s.kind(), () -> "a word outside every name: " + s);
+            lines.computeIfAbsent(s.line(), x -> new ArrayList<>()).add(s.text() + " " + s.kind().wire()
+                    + (s.declaredAt() == null ? "" : " " + s.declaredAt().line()));
+        }
+        assertEquals(List.of("- punctuation", "de keyword", "afhaaldatum attribute 5", "is keyword", "leeg keyword"),
+                lines.get(4));
+        assertEquals(List.of("- punctuation", "de keyword", "vinder role 8", "is keyword", "leeg keyword"),
+                lines.get(5));
+    }
+
     /** A characteristic declared with a leading "niet" binds its own declaration where its whole name is written, in
      *  a situation and in an expectation, as the scenario route reads it; beside it, "geen drijfhout" is the negation
      *  of "drijfhout". Each line as its spans, a name with the line of the declaration it points at. Measured on the

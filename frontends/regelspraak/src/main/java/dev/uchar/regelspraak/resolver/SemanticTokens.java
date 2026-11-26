@@ -1310,7 +1310,7 @@ public final class SemanticTokens {
         ObjectType ot = objectTypeOf(inst);
         for (ToewijzingContext t : inst.toewijzing()) {
             if (t instanceof AttribuutLeegToewijzingContext a) {
-                member(range(a.toewijzingNaam()), Kind.ATTRIBUTE, ot);
+                emptyMemberOrRole(range(a.toewijzingNaam()), ot);
             } else if (t instanceof AttribuutToewijzingContext a) {
                 member(range(a.toewijzingNaam()), Kind.ATTRIBUTE, ot);
             }
@@ -1464,6 +1464,28 @@ public final class SemanticTokens {
                 candidates.add(new Candidate(lookup(Kind.ROLE, hit.factType().name, hit.role().name()), null,
                         model.objectTypeByName(hit.role().objectTypeName()), null, hit.factType()));
         claimName(r, Kind.ROLE, candidates);
+    }
+
+    /** A bullet {@code de|het <naam> is leeg} on an instance of {@code ot}: an attribute or a non-reciprocal to-one
+     *  role, resolved against both namespaces as {@link ScenarioResolver} reads it. */
+    private void emptyMemberOrRole(int[] range, ObjectType ot) {
+        int[] r = withoutArticle(range);
+        if (r == null) return;
+        String written = text(r[0], r[1]);
+        if (ot == null) {
+            boolean hitsAttr = !members(written, Kind.ATTRIBUTE).isEmpty();
+            boolean hitsRole = !roles(written).isEmpty();
+            if (hitsAttr && hitsRole) claim(r, Kind.UNRESOLVED, false, null);
+            else if (hitsRole) role(range, null);
+            else member(range, Kind.ATTRIBUTE, null);
+            return;
+        }
+        boolean hitsAttr = ot.attributeName(written) != null
+                || !ExpressionBuilder.cellReadings(model, ot, written).isEmpty();
+        boolean hitsRole = !ScenarioResolver.rolesNamed(model, ot, written).isEmpty();
+        if (hitsAttr && hitsRole) claim(r, Kind.UNRESOLVED, false, null);
+        else if (hitsRole) role(range, ot);
+        else member(range, Kind.ATTRIBUTE, ot);
     }
 
     /** A name of {@code kind}: unresolved without a candidate, linked to the one candidate, and of its kind without a

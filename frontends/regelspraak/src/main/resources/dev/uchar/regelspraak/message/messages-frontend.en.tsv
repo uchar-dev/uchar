@@ -797,3 +797,16 @@ RGS-470	the attribute '{attribute}' of {label} has in one situation block both a
 RGS-471	the attribute '{attribute}' is given with 'is leeg', but with a period or as a time-dependent attribute; a case file supplies only an attribute without a timeline as settled empty, without a period (attributesEmpty), and a time-dependent attribute is empty outside the periods the situation gives
 RGS-472	'{written}' is the dimensioned attribute '{attribute}' or a cell of it and is given with 'is leeg', but a case file supplies only an attribute without dimensions as settled empty (attributesEmpty), and a cell the situation does not name is empty
 RGS-473	'{written}' changes nothing in a document without 'Afleiden uit leeg: nee': there an attribute the situation does not name is empty already; the sentence counts only in a document with 'Afleiden uit leeg: nee'
+RGS-474	role '{role}' of fact type '{factType}': '{complete}' stands only on a non-reciprocal to-one role, {reason} (WF-130, dialect, Volledig gegeven)
+RGS-474.many	and '{role}' has cardinality 'meerdere' — a to-many role carries a collection and no scalar reference
+RGS-474.reciprocal	and '{factType}' is a reciprocal fact type — a reciprocal fact type has no directed to-one role
+RGS-475	role '{role}' of fact type '{factType}': '{complete}' stands on a role that {writer} lays on {nearType} itself — the link then follows its writers on every object of {nearType} and is pure input nowhere, so the marking does nothing (RUNTIME-SEMANTICS ch. 1.5); leave '{complete}' out, or put it on the input members that {writer} reads (dialect, Volledig gegeven)
+RGS-475.fact-creation	fact creation '{name}'
+RGS-475.object-creation	object creation '{name}'
+RGS-476	'{written}' on {objectType} is given with 'is leeg', but names both the attribute '{attribute}' of {objectType} and the role '{role}' of the fact type '{factType}'; disambiguate the name so it stands whether the attribute (attributesEmpty) or the role (rolesEmpty) is empty
+RGS-477	the role '{role}' of the fact type '{factType}' is given with 'is leeg', {reason}; a case file supplies only a non-reciprocal to-one role as settled empty (rolesEmpty)
+RGS-477.many	but has cardinality 'meerdere'
+RGS-477.reciprocal	but '{factType}' is a reciprocal fact type
+RGS-478	the role '{role}' is given with 'is leeg', but with a period; a role has no timeline and a case file supplies a non-reciprocal to-one role as settled empty without a period only (rolesEmpty)
+RGS-479	the role '{role}' of {label} has in one situation block both a link and 'is leeg'; within a block a role is given a link or is empty, and an inherited link is replaced only by a later block: a next situation the scenario or the situation is based on, or the scenario's or the situation's own block
+RGS-480	'{written}' changes nothing in a document without 'Afleiden uit leeg: nee': there a role the situation does not link has no link already; the sentence counts only in a document with 'Afleiden uit leeg: nee' or where it clears an inherited link
