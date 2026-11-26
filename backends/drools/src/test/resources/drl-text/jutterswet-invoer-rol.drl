@@ -1,0 +1,281 @@
+package dev.uchar.regelspraak.tms;
+
+import accumulate dev.uchar.regelspraak.transpiler.tms.ExactSumFunction exactSum;
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.Contribution;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.Value;
+
+function Object pad_vindpremie(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("vinder"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "bonus");
+}
+
+// zijn waarde plus de bonus van de vinder van de Vondst
+function Object waarde_vindpremie(Object $waarde2, Object $vinderBonus) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($waarde2, $vinderBonus), Integer.valueOf(0), "vindpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vindpremie"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $waarde2 : waarde, $vinderBonus : (pad_vindpremie(this)) )
+then
+    Object v = waarde_vindpremie($waarde2, $vinderBonus);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vindpremie", ComputeHelpers.designate(v, "vindpremie")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "vindpremie", false), v, "vindpremie"));
+        }
+    }
+end
+
+function Object pad_ketenpremie(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("vinder", "ploeg"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "ploegtoelage");
+}
+
+// zijn waarde plus de ploegtoelage van de ploeg van de vinder van de Vondst
+function Object waarde_ketenpremie(Object $waarde2, Object $vinderPloegPloegtoelage) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($waarde2, $vinderPloegPloegtoelage), Integer.valueOf(0), "ketenpremie", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "ketenpremie"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $waarde2 : waarde, $vinderPloegPloegtoelage : (pad_ketenpremie(this)) )
+then
+    Object v = waarde_ketenpremie($waarde2, $vinderPloegPloegtoelage);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "ketenpremie", ComputeHelpers.designate(v, "ketenpremie")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "ketenpremie", false), v, "ketenpremie"));
+        }
+    }
+end
+
+function Object pad_keurtoeslag(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("keurmeester"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "bonus");
+}
+
+// zijn waarde plus de bonus van de keurmeester van de Vondst
+function Object waarde_keurtoeslag(Object $waarde2, Object $keurmeesterBonus) {
+    try {
+        return ComputeHelpers.fitTarget(RegelSpraakRuntime.rsPlus($waarde2, $keurmeesterBonus), Integer.valueOf(0), "keurtoeslag", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "keurtoeslag"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $waarde2 : waarde, $keurmeesterBonus : (pad_keurtoeslag(this)) )
+then
+    Object v = waarde_keurtoeslag($waarde2, $keurmeesterBonus);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "keurtoeslag", ComputeHelpers.designate(v, "keurtoeslag")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vondst", "keurtoeslag", false), v, "keurtoeslag"));
+        }
+    }
+end
+
+// hij een vondst is
+function boolean toets_toegewezen(Object $vinderGezet) {
+    return ComputeHelpers.roleField($vinderGezet, Boolean.FALSE);
+}
+
+rule "toegewezen"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vinderGezet : (ComputeHelpers.isSet(vinder, null)) )
+    eval( toets_toegewezen($vinderGezet) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "toegewezen", true)));
+end
+
+// hij geen vondst is
+function boolean toets_verweesd(Object $vinderGezet) {
+    return ComputeHelpers.roleField($vinderGezet, Boolean.TRUE);
+}
+
+rule "verweesd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $vinderGezet : (ComputeHelpers.isSet(vinder, null)) )
+    eval( toets_verweesd($vinderGezet) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "verweesd", true)));
+end
+
+// hij een gekeurde vondst is
+function boolean toets_gekeurd(Object $keurmeesterGezet) {
+    return ComputeHelpers.roleField($keurmeesterGezet, Boolean.FALSE);
+}
+
+rule "gekeurd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vondst( $keurmeesterGezet : (ComputeHelpers.isSet(keurmeester, null)) )
+    eval( toets_gekeurd($keurmeesterGezet) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vondst", "gekeurd", true)));
+end
+
+// de som van de capaciteit van alle bewaarplaatsen van alle vondsten van de Jutter
+function Object waarde_loodscapaciteit(Object $aantal_vouw_9, Object $vouw_vouw_11) {
+    try {
+        return ComputeHelpers.fitTarget(ComputeHelpers.foldValue($aantal_vouw_9, $vouw_vouw_11, null), Integer.valueOf(0), "loodscapaciteit", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "loodscapaciteit"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_6 : Contribution( fold == "loodscapaciteit: vouw 0", subject == $onderwerp, $bijdragewaarde_vouw_10 : value ); $aantal_vouw_9 : count(), $vouw_vouw_11 : exactSum($bijdragewaarde_vouw_10) )
+then
+    Object v = waarde_loodscapaciteit($aantal_vouw_9, $vouw_vouw_11);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "loodscapaciteit", ComputeHelpers.designate(v, "loodscapaciteit")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("jutter", "loodscapaciteit", false), v, "loodscapaciteit"));
+        }
+    }
+end
+
+// de capaciteit van alle bewaarplaatsen van alle vondsten van de Jutter groter is dan 5
+function boolean toets_ruimBewaard(Object $aantal_vouw_18, Object $vouw_vouw_20) {
+    return ComputeHelpers.quantifierVerdict($aantal_vouw_18, $vouw_vouw_20, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
+}
+
+rule "ruim bewaard"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter()
+    accumulate( $bijdrage_vouw_15 : Contribution( fold == "ruim bewaard: vouw 1", subject == $onderwerp, $bijdragewaarde_vouw_19 : value ); $aantal_vouw_18 : count(), $vouw_vouw_20 : exactSum($bijdragewaarde_vouw_19) )
+    eval( toets_ruimBewaard($aantal_vouw_18, $vouw_vouw_20) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "ruim bewaard", true)));
+end
+
+function Object pad_vorigeVergoeding(Object o) {
+    Object bereikt = ComputeHelpers.along(o, java.util.Arrays.asList("vorigeVergunning"));
+    return bereikt == null ? null : ComputeHelpers.readProperty(bereikt, "vergoeding");
+}
+
+// de vergoeding van de vorige vergunning van de Vergunning
+function Object waarde_vorigeVergoeding(Object $vorigeVergunningVergoeding) {
+    try {
+        return ComputeHelpers.fitTarget($vorigeVergunningVergoeding, Integer.valueOf(0), "vorige vergoeding", null);
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+}
+
+rule "vorige vergoeding"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( $vorigeVergunningVergoeding : (pad_vorigeVergoeding(this)) )
+then
+    Object v = waarde_vorigeVergoeding($vorigeVergunningVergoeding);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insertLogical(new Fault($onderwerp, "vorige vergoeding", ComputeHelpers.designate(v, "vorige vergoeding")));
+    } else {
+        if (!ComputeHelpers.isEmpty(v)) {
+            insertLogical(new Value($onderwerp, ElementKey.of("vergunning", "vorige vergoeding", false), v, "vorige vergoeding"));
+        }
+    }
+end
+
+// hij een volgende vergunning is
+function boolean toets_opvolgend(Object $vorigeVergunningGezet) {
+    return ComputeHelpers.roleField($vorigeVergunningGezet, Boolean.FALSE);
+}
+
+rule "opvolgend"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( $vorigeVergunningGezet : (ComputeHelpers.isSet(vorigeVergunning, null)) )
+    eval( toets_opvolgend($vorigeVergunningGezet) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vergunning", "opvolgend", true)));
+end
+
+// hij een vorige vergunning is
+function boolean toets_opgevolgd(Object $volgendeVergunningGezet) {
+    return ComputeHelpers.roleField($volgendeVergunningGezet, Boolean.FALSE);
+}
+
+rule "opgevolgd"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Vergunning( $volgendeVergunningGezet : (ComputeHelpers.isSet(volgendeVergunning, null)) )
+    eval( toets_opgevolgd($volgendeVergunningGezet) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("vergunning", "opgevolgd", true)));
+end
+
+function boolean beta1_loodscapaciteitBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("vinder"), java.util.Arrays.asList());
+}
+
+function boolean beta2_loodscapaciteitBijdrageAanVouw0(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("bewaarplaats"), java.util.Arrays.asList());
+}
+
+rule "loodscapaciteit: bijdrage aan vouw 0"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Loods( $capaciteit : capaciteit )
+    exists( $tussen_pad_3 : dev.uchar.regelspraak.facts.Vondst( beta1_loodscapaciteitBijdrageAanVouw0(this, $vouwonderwerp), beta2_loodscapaciteitBijdrageAanVouw0(this, $onderwerp) ) )
+then
+    Object v = ComputeHelpers.contribution("loodscapaciteit: vouw 0", $vouwonderwerp, $onderwerp, $capaciteit, null, null, false, false);
+    if (v != null) {
+        insertLogical(v);
+    }
+end
+
+function boolean beta1_ruimBewaardBijdrageAanVouw1(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("vinder"), java.util.Arrays.asList());
+}
+
+function boolean beta2_ruimBewaardBijdrageAanVouw1(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("bewaarplaats"), java.util.Arrays.asList());
+}
+
+// de capaciteit van alle bewaarplaatsen van alle vondsten van de Jutter groter is dan 5
+function boolean matrix_ruimBewaardBijdrageAanVouw1(Object $onderwerp, Object $capaciteit) {
+    return RegelSpraakRuntime.rsAggVergelijk($capaciteit, new java.math.BigDecimal("5"), ">");
+}
+
+rule "ruim bewaard: bijdrage aan vouw 1"
+    dialect "mvel"
+when
+    $vouwonderwerp : dev.uchar.regelspraak.facts.Jutter()
+    $onderwerp : dev.uchar.regelspraak.facts.Loods( $capaciteit : capaciteit )
+    exists( $tussen_pad_12 : dev.uchar.regelspraak.facts.Vondst( beta1_ruimBewaardBijdrageAanVouw1(this, $vouwonderwerp), beta2_ruimBewaardBijdrageAanVouw1(this, $onderwerp) ) )
+then
+    insertLogical(new Contribution("ruim bewaard: vouw 1", $vouwonderwerp, $onderwerp, ComputeHelpers.verdict(matrix_ruimBewaardBijdrageAanVouw1($onderwerp, $capaciteit))));
+end
+

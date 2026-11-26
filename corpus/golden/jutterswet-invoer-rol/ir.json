@@ -1,0 +1,862 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Ploeg",
+        "animate": false,
+        "plural": "Ploegen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "ploegtoelage",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Loods",
+        "animate": false,
+        "plural": "Loodsen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "capaciteit",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "bonus",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "loodscapaciteit",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "ruim bewaard",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "waarde",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vindpremie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "ketenpremie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "keurtoeslag",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "toegewezen",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "verweesd",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "gekeurd",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vergunning",
+        "animate": false,
+        "plural": "Vergunningen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vergoeding",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "vorige vergoeding",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "opvolgend",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "opgevolgd",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vinding",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "keuring",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "keurmeester",
+            "objectType": "Jutter",
+            "many": false,
+            "complete": true
+          },
+          {
+            "node": "Role",
+            "name": "gekeurde vondst",
+            "objectType": "Vondst",
+            "plural": "gekeurde vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "ploegverband",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "ploeglid",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "ploeg",
+            "objectType": "Ploeg",
+            "many": false
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "bewaring",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "bewaarplaats",
+            "objectType": "Loods",
+            "plural": "bewaarplaatsen",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "opgeslagen vondst",
+            "objectType": "Vondst",
+            "plural": "opgeslagen vondsten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "opvolging",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vorige vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "volgende vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vindpremie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vindpremie",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De vindpremie van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "waarde",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn waarde"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "bonus",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de bonus van de vinder van de Vondst"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "vinding",
+                    "role": "vinder"
+                  }
+                ]
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn waarde plus de bonus van de vinder van de Vondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "ketenpremie",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "ketenpremie",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De ketenpremie van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "waarde",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn waarde"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "ploegtoelage",
+                "subjectType": "Ploeg",
+                "source": {
+                  "snippet": "de ploegtoelage van de ploeg van de vinder van de Vondst"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "vinding",
+                    "role": "vinder"
+                  },
+                  {
+                    "node": "RoleBinding",
+                    "factType": "ploegverband",
+                    "role": "ploeg"
+                  }
+                ]
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn waarde plus de ploegtoelage van de ploeg van de vinder van de Vondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "keurtoeslag",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "keurtoeslag",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "De keurtoeslag van een Vondst"
+              }
+            },
+            "value": {
+              "node": "Binary",
+              "op": "plus",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "waarde",
+                "subjectType": "Vondst",
+                "source": {
+                  "snippet": "zijn waarde"
+                }
+              },
+              "right": {
+                "node": "AttributeReference",
+                "attribute": "bonus",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "de bonus van de keurmeester van de Vondst"
+                },
+                "path": [
+                  {
+                    "node": "RoleBinding",
+                    "factType": "keuring",
+                    "role": "keurmeester"
+                  }
+                ]
+              },
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "zijn waarde plus de bonus van de keurmeester van de Vondst"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "toegewezen",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "toegewezen",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is toegewezen"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "RoleMembership",
+              "factType": "vinding",
+              "role": "vondst",
+              "negated": false,
+              "source": {
+                "snippet": "hij een vondst is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "verweesd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "verweesd",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is verweesd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "RoleMembership",
+              "factType": "vinding",
+              "role": "vondst",
+              "negated": true,
+              "source": {
+                "snippet": "hij geen vondst is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "gekeurd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "gekeurd",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is gekeurd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "RoleMembership",
+              "factType": "keuring",
+              "role": "gekeurde vondst",
+              "negated": false,
+              "source": {
+                "snippet": "hij een gekeurde vondst is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "loodscapaciteit",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "loodscapaciteit",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "De loodscapaciteit van een Jutter"
+              }
+            },
+            "value": {
+              "node": "Aggregation",
+              "kind": "sum",
+              "arguments": [
+                {
+                  "node": "AttributeReference",
+                  "attribute": "capaciteit",
+                  "subjectType": "Loods",
+                  "source": {
+                    "snippet": "de capaciteit van alle bewaarplaatsen van alle vondsten van de Jutter"
+                  }
+                }
+              ],
+              "elementType": "Loods",
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "vinding",
+                  "role": "vondst"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "bewaring",
+                  "role": "bewaarplaats"
+                }
+              ],
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              },
+              "source": {
+                "snippet": "de som van de capaciteit van alle bewaarplaatsen van alle vondsten van de Jutter"
+              }
+            },
+            "initialisation": false,
+            "presentation": "calculation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "ruim bewaard",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "ruim bewaard",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is ruim bewaard"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "all",
+              "elementType": "Loods",
+              "test": {
+                "node": "Comparison",
+                "op": "greater",
+                "left": {
+                  "node": "AttributeReference",
+                  "attribute": "capaciteit",
+                  "subjectType": "Loods",
+                  "source": {
+                    "snippet": "de capaciteit van alle bewaarplaatsen van alle vondsten van de Jutter"
+                  }
+                },
+                "right": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "5"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "5"
+                  }
+                },
+                "source": {
+                  "snippet": "de capaciteit van alle bewaarplaatsen van alle vondsten van de Jutter groter is dan 5"
+                }
+              },
+              "source": {
+                "snippet": "de capaciteit van alle bewaarplaatsen van alle vondsten van de Jutter groter is dan 5"
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "vinding",
+                  "role": "vondst"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "bewaring",
+                  "role": "bewaarplaats"
+                }
+              ]
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "vorige vergoeding",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "vorige vergoeding",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "De vorige vergoeding van een Vergunning"
+              }
+            },
+            "value": {
+              "node": "AttributeReference",
+              "attribute": "vergoeding",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "de vergoeding van de vorige vergunning van de Vergunning"
+              },
+              "path": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "opvolging",
+                  "role": "vorige vergunning"
+                }
+              ]
+            },
+            "initialisation": false,
+            "presentation": "equation"
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "opvolgend",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "opvolgend",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "Een Vergunning is opvolgend"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "RoleMembership",
+              "factType": "opvolging",
+              "role": "volgende vergunning",
+              "negated": false,
+              "source": {
+                "snippet": "hij een volgende vergunning is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      },
+      {
+        "node": "Rule",
+        "name": "opgevolgd",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "opgevolgd",
+              "subjectType": "Vergunning",
+              "source": {
+                "snippet": "Een Vergunning is opgevolgd"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "RoleMembership",
+              "factType": "opvolging",
+              "role": "vorige vergunning",
+              "negated": false,
+              "source": {
+                "snippet": "hij een vorige vergunning is"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

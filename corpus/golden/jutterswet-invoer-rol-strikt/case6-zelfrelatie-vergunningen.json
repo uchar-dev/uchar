@@ -1,0 +1,76 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "vergoeding": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "rolesEmpty": [
+          "vorige vergunning"
+        ],
+        "characteristics": []
+      },
+      {
+        "label": "G2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "vergoeding": {
+            "number": "20"
+          }
+        },
+        "roles": {
+          "vorige vergunning": [
+            "G1"
+          ]
+        },
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeEmpty",
+      "label": "G1",
+      "attribute": "vorige vergoeding"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "G1",
+      "characteristic": "opvolgend"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "G1",
+      "characteristic": "opgevolgd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "G2",
+      "attribute": "vorige vergoeding",
+      "value": {
+        "number": "10"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "G2",
+      "characteristic": "opvolgend"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "G2",
+      "characteristic": "opgevolgd"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

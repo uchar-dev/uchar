@@ -329,6 +329,12 @@ class RuleOriginWitnessTest {
                 "verdeel de opbrengst van een berging: ontvanger -> FORM allocation-recipient",
                 "verdeel de opbrengst van een berging -> FORM own"),
                 table(build("jutterswet-bergersdeling", false), "verdeel de opbrengst van een berging"));
+        // a fold over a multi-step range with an openable single step in a strict document
+        assertEquals(List.of(
+                "loodscapaciteit -> FORM own",
+                "loodscapaciteit: bijdrage aan vouw 0 -> FORM fold-contribution vouw /rules/rules/6/versions/0/value",
+                "loodscapaciteit: open bereik in vouw 0, stap 2 -> FORM fold-range-open vouw /rules/rules/6/versions/0/value"),
+                table(build("jutterswet-invoer-rol-strikt", false), "loodscapaciteit"));
     }
 
     @Test void a_stack_lowers_itself_where_no_default_is_at_hand() throws Exception {

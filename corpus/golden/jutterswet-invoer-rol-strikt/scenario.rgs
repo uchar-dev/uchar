@@ -1,0 +1,126 @@
+Situatie zonder vinder:
+een Jutter J1
+- de bonus is 20
+- de ploeg is leeg
+een Vondst V1
+- de waarde is 100
+- de vinder is leeg
+- de bewaarplaats is leeg
+
+Situatie met tegenkoppeling:
+een Loods L1
+- de capaciteit is 12
+een Ploeg P1
+- de ploegtoelage is 15
+een Jutter J1
+- de bonus is 20
+- de ploeg is P1
+- de vondsten zijn V1
+- de gekeurde vondsten zijn V1
+een Vondst V1
+- de waarde is 100
+- de bewaarplaats is L1
+
+Scenario rol weggelaten
+Gegeven is de volgende situatie:
+een Vondst V1
+- de waarde is 100
+Met als verwacht resultaat:
+- de vindpremie van V1 staat niet vast
+- de ketenpremie van V1 staat niet vast
+- de keurtoeslag van V1 is 100
+- of V1 toegewezen is, staat niet vast
+- of V1 verweesd is, staat niet vast
+- V1 is niet gekeurd
+- de gegevens zijn consistent
+
+Scenario rol vaststaand leeg
+gebaseerd op de situatie zonder vinder
+Met als verwacht resultaat:
+- de vindpremie van V1 is 100
+- de ketenpremie van V1 is 100
+- de keurtoeslag van V1 is 100
+- V1 is niet toegewezen
+- V1 is verweesd
+- V1 is niet gekeurd
+- de loodscapaciteit van J1 is leeg
+- J1 is ruim bewaard
+- de gegevens zijn consistent
+
+Scenario tweede stap en vouwbereik open
+Gegeven is de volgende situatie:
+een Loods L1
+- de capaciteit is 12
+een Jutter J1
+- de bonus is 20
+- de vondsten zijn V1, V2
+een Vondst V1
+- de waarde is 100
+- de bewaarplaats is L1
+een Vondst V2
+- de waarde is 50
+Met als verwacht resultaat:
+- de vindpremie van V1 is 120
+- de ketenpremie van V1 staat niet vast
+- V1 is toegewezen
+- V1 is niet verweesd
+- de loodscapaciteit van J1 staat niet vast
+- of J1 ruim bewaard is, staat niet vast
+- de gegevens zijn consistent
+
+Scenario leeg vervangen vanuit tegenobject
+gebaseerd op de situatie zonder vinder
+Gegeven is de volgende situatie:
+een Loods L1
+- de capaciteit is 12
+een Ploeg P1
+- de ploegtoelage is 15
+een Jutter J1
+- de ploeg is P1
+- de vondsten zijn V1
+- de gekeurde vondsten zijn V1
+een Vondst V1
+- de bewaarplaats is L1
+Met als verwacht resultaat:
+- de vindpremie van V1 is 120
+- de ketenpremie van V1 is 115
+- de keurtoeslag van V1 is 120
+- V1 is toegewezen
+- V1 is niet verweesd
+- V1 is gekeurd
+- de loodscapaciteit van J1 is 12
+- J1 is ruim bewaard
+- de gegevens zijn consistent
+
+Scenario tegenkoppeling vervangen door leeg
+gebaseerd op de situatie met tegenkoppeling
+Gegeven is de volgende situatie:
+een Vondst V1
+- de vinder is leeg
+Met als verwacht resultaat:
+- de vindpremie van V1 is 100
+- de ketenpremie van V1 is 100
+- de keurtoeslag van V1 is 120
+- V1 is niet toegewezen
+- V1 is verweesd
+- V1 is gekeurd
+- de loodscapaciteit van J1 is leeg
+- J1 is ruim bewaard
+- de gegevens zijn consistent
+
+Scenario zelfrelatie vergunningen
+Gegeven is de volgende situatie:
+een Vergunning G1
+- de vergoeding is 10
+- de vorige vergunning is leeg
+een Vergunning G2
+- de vergoeding is 20
+- de vorige vergunning is G1
+Met als verwacht resultaat:
+- de vorige vergoeding van G1 is leeg
+- G1 is niet opvolgend
+- G1 is opgevolgd
+- de vorige vergoeding van G2 is 10
+- G2 is opvolgend
+- of G2 opgevolgd is, staat niet vast
+- de gegevens zijn consistent

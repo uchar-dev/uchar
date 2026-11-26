@@ -1671,7 +1671,10 @@ EXPECTED_CHANNEL=(
 # 398 with jutterswet-invoer-leeg and jutterswet-invoer-leeg-strikt (card settled-empty-input, 2026-11-25): scalar
 # attributes stated to have no value (attributesEmpty, RUNTIME-SEMANTICS ch. 1.5), in an ordinary and in a strict
 # document (PLAYED 3 and 5).
-EXPECTED_PLAYED=398
+# 400 with jutterswet-invoer-rol and jutterswet-invoer-rol-strikt (card open-to-one-roles, 2026-11-26): non-reciprocal
+# to-one roles open without a link, closed by Role.complete or stated empty in rolesEmpty (RUNTIME-SEMANTICS ch. 1.5),
+# in an ordinary and in a strict document (PLAYED 3 and 6).
+EXPECTED_PLAYED=400
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

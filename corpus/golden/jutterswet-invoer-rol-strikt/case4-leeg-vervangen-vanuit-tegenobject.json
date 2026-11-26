@@ -1,0 +1,124 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "bonus": {
+            "number": "20"
+          }
+        },
+        "roles": {
+          "ploeg": [
+            "P1"
+          ],
+          "vondsten": [
+            "V1"
+          ],
+          "gekeurde vondsten": [
+            "V1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "100"
+          }
+        },
+        "roles": {
+          "bewaarplaats": [
+            "L1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "L1",
+        "objectType": "Loods",
+        "attributes": {
+          "capaciteit": {
+            "number": "12"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "P1",
+        "objectType": "Ploeg",
+        "attributes": {
+          "ploegtoelage": {
+            "number": "15"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vindpremie",
+      "value": {
+        "number": "120"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "ketenpremie",
+      "value": {
+        "number": "115"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "keurtoeslag",
+      "value": {
+        "number": "120"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "toegewezen"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V1",
+      "characteristic": "verweesd"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "gekeurd"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "loodscapaciteit",
+      "value": {
+        "number": "12"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "ruim bewaard"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

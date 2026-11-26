@@ -1,0 +1,57 @@
+Situatie met tegenkoppeling:
+een Loods L1
+- de capaciteit is 12
+een Ploeg P1
+- de ploegtoelage is 15
+een Jutter J1
+- de bonus is 20
+- de ploeg is P1
+- de vondsten zijn V1
+- de gekeurde vondsten zijn V1
+een Vondst V1
+- de waarde is 100
+- de bewaarplaats is L1
+
+Scenario niets genoemd
+Gegeven is de volgende situatie:
+een Vondst V1
+- de waarde is 100
+Met als verwacht resultaat:
+- de vindpremie van V1 is 100
+- de ketenpremie van V1 is 100
+- de keurtoeslag van V1 is 100
+- V1 is niet toegewezen
+- V1 is verweesd
+- V1 is niet gekeurd
+- de gegevens zijn consistent
+
+Scenario als leeg gegeven
+Gegeven is de volgende situatie:
+een Vondst V1
+- de waarde is 100
+- de vinder is leeg
+- de bewaarplaats is leeg
+Met als verwacht resultaat:
+- de vindpremie van V1 is 100
+- de ketenpremie van V1 is 100
+- de keurtoeslag van V1 is 100
+- V1 is niet toegewezen
+- V1 is verweesd
+- V1 is niet gekeurd
+- de gegevens zijn consistent
+
+Scenario tegenkoppeling vervangen door leeg
+gebaseerd op de situatie met tegenkoppeling
+Gegeven is de volgende situatie:
+een Vondst V1
+- de vinder is leeg
+Met als verwacht resultaat:
+- de vindpremie van V1 is 100
+- de ketenpremie van V1 is 100
+- de keurtoeslag van V1 is 120
+- V1 is niet toegewezen
+- V1 is verweesd
+- V1 is gekeurd
+- de loodscapaciteit van J1 is leeg
+- J1 is ruim bewaard
+- de gegevens zijn consistent

@@ -1,0 +1,96 @@
+Afleiden uit leeg: nee
+
+Objecttype de Ploeg (mv: Ploegen)
+    de ploegtoelage Numeriek (geheel getal);
+
+Objecttype de Loods (mv: Loodsen)
+    de capaciteit Numeriek (geheel getal);
+
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de bonus Numeriek (geheel getal);
+    de loodscapaciteit Numeriek (geheel getal);
+    is ruim bewaard kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    de waarde Numeriek (geheel getal);
+    de vindpremie Numeriek (geheel getal);
+    de ketenpremie Numeriek (geheel getal);
+    de keurtoeslag Numeriek (geheel getal);
+    is toegewezen kenmerk (bijvoeglijk);
+    is verweesd kenmerk (bijvoeglijk);
+    is gekeurd kenmerk (bijvoeglijk);
+
+Objecttype de Vergunning (mv: Vergunningen)
+    de vergoeding Numeriek (geheel getal);
+    de vorige vergoeding Numeriek (geheel getal);
+    is opvolgend kenmerk (bijvoeglijk);
+    is opgevolgd kenmerk (bijvoeglijk);
+
+Feittype vinding
+    de vinder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
+
+Feittype keuring
+    de keurmeester Jutter (volledig gegeven)
+    de gekeurde vondst (mv: gekeurde vondsten) Vondst
+Eén keurmeester heeft meerdere gekeurde vondsten
+
+Feittype ploegverband
+    het ploeglid Jutter
+    de ploeg Ploeg
+Eén ploeglid heeft één ploeg
+
+Feittype bewaring
+    de bewaarplaats (mv: bewaarplaatsen) Loods
+    de opgeslagen vondst (mv: opgeslagen vondsten) Vondst
+Eén bewaarplaats bevat meerdere opgeslagen vondsten
+
+Feittype opvolging
+    de vorige vergunning Vergunning
+    de volgende vergunning Vergunning
+Eén vorige vergunning heeft één volgende vergunning
+
+Regel vindpremie
+    geldig altijd
+        De vindpremie van een Vondst moet berekend worden als zijn waarde plus de bonus van de vinder van de Vondst.
+
+Regel ketenpremie
+    geldig altijd
+        De ketenpremie van een Vondst moet berekend worden als zijn waarde plus de ploegtoelage van de ploeg van de vinder van de Vondst.
+
+Regel keurtoeslag
+    geldig altijd
+        De keurtoeslag van een Vondst moet berekend worden als zijn waarde plus de bonus van de keurmeester van de Vondst.
+
+Regel toegewezen
+    geldig altijd
+        Een Vondst is toegewezen indien hij een vondst is.
+
+Regel verweesd
+    geldig altijd
+        Een Vondst is verweesd indien hij geen vondst is.
+
+Regel gekeurd
+    geldig altijd
+        Een Vondst is gekeurd indien hij een gekeurde vondst is.
+
+Regel loodscapaciteit
+    geldig altijd
+        De loodscapaciteit van een Jutter moet berekend worden als de som van de capaciteit van alle bewaarplaatsen van alle vondsten van de Jutter.
+
+Regel ruim bewaard
+    geldig altijd
+        Een Jutter is ruim bewaard indien de capaciteit van alle bewaarplaatsen van alle vondsten van de Jutter groter is dan 5.
+
+Regel vorige vergoeding
+    geldig altijd
+        De vorige vergoeding van een Vergunning moet gesteld worden op de vergoeding van de vorige vergunning van de Vergunning.
+
+Regel opvolgend
+    geldig altijd
+        Een Vergunning is opvolgend indien hij een volgende vergunning is.
+
+Regel opgevolgd
+    geldig altijd
+        Een Vergunning is opgevolgd indien hij een vorige vergunning is.
