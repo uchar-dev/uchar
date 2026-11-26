@@ -34,6 +34,12 @@ initialisation, which gives 3; with the values 7 and 4 in the case they are 7 an
 (ch. 1.5, "The three states"). It is 8 where gemeld holds, also with 7 in the case; 5 where gemeld stands not to hold and
 the case gives no strandloon, 7 where it gives 7; and open where gemeld is open, with or without 7 in the case.
 
+`absent-link`, `absent-link-path` and `navigated-read` test reads over non-reciprocal `to-one` input roles (`vinder`,
+`ploeg`): their settled-absent cases (`absent-link` case1, `absent-link-path` case1 and case2, `navigated-read` case3)
+close the unlinked role in `rolesEmpty`, while `absent-link` case5 (`case5-vinder-open`), `absent-link-path` case5 and
+case6 (`case5-vinder-open`, `case6-ploeg-open`) and `navigated-read` case5 (`case5-vinder-open`) omit the link without
+`rolesEmpty` so that the role is open (1-step and 2-step).
+
 `contributor-filter` does not come from `spec/proposals/STRICT-EMPTY.md`: it is the worked example of the filter of a
 contributor in RUNTIME-SEMANTICS ch. 5.12 (`WV-5.12-contributor-filter`), its IR emitted by the RegelSpraak frontend.
 Four quantifier folds `alle` over the vondsten of J1, each with a compound filter: "gemerkt of drijfhout" and "gemerkt en

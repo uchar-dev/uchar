@@ -55,8 +55,9 @@ May touch:
 - `backends/clingo/` (`lib/`, `codes.tsv` indien nodig, `test/`, `README.md`)
 - `backends/drools/` (`model/`, `loader/`, `graph/`, `cases/`, `transpiler/`, `refusal/`, `message/`, `src/test/`, `README.md`)
 - `frontends/regelspraak/` (`grammar/RegelSpraak.g4`, `grammar/DIVERGENCES.md`, `model/`, `resolver/`, `ir/`, `emit/`, `diagnostic-codes.tsv`, `message/`, `src/test/`)
+- `frontends/catala/` (`lib/`, `test/`) en `frontends/flogic/` (`lib/`, `test/`) uitsluitend voor het nieuwe veld `role_complete` op `Ast.role_ref`
 - `corpus/golden/...`, `corpus/negative/wf130-...`, `corpus/red/...`
-- `scripts/` (`check-schema.sh`, `check-case-schema.sh`, `check-oracle.sh`, `check-red.sh`, `check-drools.sh`, `check-drools-codes.sh`, `check-rgs-codes.sh`, `check-exec-codes.sh` waar zelf-tests, cataloguslijsten of pinnen meebewegen)
+- `scripts/` (`check-ir-schema.sh`, `check-case-schema.sh`, `check-oracle.sh`, `check-red.sh`, `check-drools.sh`, `check-drools-codes.sh`, `check-rgs-codes.sh`, `check-exec-codes.sh` waar zelf-tests, cataloguslijsten of pinnen meebewegen)
 - `backlog/new/20261126-open-to-one-roles.md` → `doing/` → `done/`
 
 Out of scope:

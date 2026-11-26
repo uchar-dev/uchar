@@ -5861,7 +5861,9 @@ non-reciprocal to-one role). Where a role named in `rolesEmpty` on an instance
 is also linked in that same directed role position on the instance — whether
 through `roles` on the instance itself or through the opposite role on the
 counterpart instance after reverse legs are materialised (ch. 5.7a) — the case
-input is refused with EF-049 (`label`, `role`); on a non-reciprocal
+input is refused with EF-049 (`label`, `role`, where `role` is the entry as
+written in `rolesEmpty`, or the first conflicting entry in list order when
+several entries name that role); on a non-reciprocal
 self-relation the two roles occupy distinct positions, so linking one role on an
 instance does not conflict with naming the other in `rolesEmpty`. Naming one item twice within
 `attributesEmpty`, `rolesEmpty` (by singular or declared plural of the same role)

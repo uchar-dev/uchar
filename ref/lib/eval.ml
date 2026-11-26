@@ -6303,7 +6303,8 @@ let instance_depth env world0 (o : Ir_v0.Checks.instance_order) =
    ch. 1.5): an object creation whose subject covers [otype] and whose made
    object fills [far], or a fact creation on [fact_type] whose anchor covers
    [otype] with [far] as its target role, or whose target covers [otype] with
-   [far] as its anchor role. Shared with the ASP backend. *)
+   [far] as its anchor role; [Translate.written_role_on] computes the same
+   predicate independently on the ASP side (gate 1). *)
 let written_role_on (doc : document) ~otype ~fact_type ~(far : role_ref) =
   let key = World.link_key ~fact_type far in
   let sub a b = Ir_v0.Checks.subtype_of doc ~sub:a ~super:b in

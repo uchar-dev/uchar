@@ -15410,6 +15410,22 @@ let () =
   ov_expect "WV-1.5-link-absent (rolesEmpty)"
     (summary (ov_run ~roles_empty:[ ("V1", "vinder") ] "link-absent-roles-empty" (doc true) (input false)))
     "100 not not not holds holds";
+  let doc_plural_to_one =
+    { (doc true) with
+      fact_types =
+        [ ( "vinding",
+            { ft_name = Some "vinding"; reciprocal = false;
+              role_names =
+                [ { role_identifier = Some "vinder"; role_object_type_name = Some "Jutter";
+                    role_plural = Some "vinders"; role_many = false; role_complete = false };
+                  { role_identifier = Some "vondst"; role_object_type_name = Some "Vondst";
+                    role_plural = Some "vondsten"; role_many = true; role_complete = false } ] } ) ] }
+  in
+  ov_expect "WV-1.5-link-absent (rolesEmpty singular + plural)"
+    (summary
+       (ov_run ~roles_empty:[ ("V1", "vinder"); ("V1", "vinders") ] "link-absent-roles-empty-singular-and-plural"
+          doc_plural_to_one (input false)))
+    "100 not not not holds holds";
   ov_expect "WV-1.5-link-absent (without the property, omitted)"
     (summary (ov_run "link-absent-ordinary-omitted" (doc false) (input false)))
     "100 not not not holds holds";
@@ -18529,6 +18545,10 @@ let () =
     {|{ "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": { "vinder": [ "J1" ] }, "rolesEmpty": [ "  VINDER " ], "characteristics": [] },
       { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {}, "characteristics": [] }|}
     (fun c p _ -> (c, p) = (Some "EF-049", [ ("label", "V1"); ("role", "  VINDER ") ]));
+  check_role_refusal "WV-1.5-case-roles-empty-refused (EF-049 first conflicting entry in list order)"
+    {|{ "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": { "vinder": [ "J1" ] }, "rolesEmpty": [ "vinders", "vinder" ], "characteristics": [] },
+      { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {}, "characteristics": [] }|}
+    (fun c p _ -> (c, p) = (Some "EF-049", [ ("label", "V1"); ("role", "vinders") ]));
   check_role_refusal "WV-1.5-case-roles-empty-refused (EF-049 counterpart link)"
     {|{ "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "rolesEmpty": [ "vinder" ], "characteristics": [] },
       { "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": { "vondsten": [ "V1" ] }, "characteristics": [] }|}
@@ -19201,15 +19221,24 @@ let () =
               if l = i.ov_label && open_input ~characteristic:false a then
                 without ~empty:(List.filter (( <> ) (l, a)) sc.sc_empty) (l ^ "." ^ a ^ " (attributesEmpty)") sc.sc_input)
             sc.sc_empty;
+          let role_slot otype k =
+            let ftn', far', _ = Case.resolve_role_ft sc.sc_doc ~otype ~key:k in
+            World.link_key ~fact_type:ftn' far'
+          in
+          let seen_roles = ref [] in
           List.iter
             (fun (l, key) ->
               if l = i.ov_label then
                 let ftn, far, _ = Case.resolve_role_ft sc.sc_doc ~otype:i.ov_type ~key in
+                let slot = World.link_key ~fact_type:ftn far in
                 let ft = List.assoc ftn sc.sc_doc.fact_types in
-                if (not ft.reciprocal) && open_role_on i.ov_type ftn far then begin
+                if (not (List.mem slot !seen_roles)) && (not ft.reciprocal) && open_role_on i.ov_type ftn far then begin
+                  seen_roles := slot :: !seen_roles;
                   incr role_empty_drops;
-                  without ~roles_empty:(List.filter (( <> ) (l, key)) sc.sc_roles_empty)
-                    (l ^ "." ^ key ^ " (rolesEmpty)") sc.sc_input
+                  let roles_empty =
+                    List.filter (fun (l', k') -> l' <> l || role_slot i.ov_type k' <> slot) sc.sc_roles_empty
+                  in
+                  without ~roles_empty (l ^ "." ^ key ^ " (rolesEmpty)") sc.sc_input
                 end)
             sc.sc_roles_empty;
           List.iter

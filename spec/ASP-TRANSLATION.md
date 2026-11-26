@@ -3613,7 +3613,8 @@ on a supertype of `otype`):
   for each binary non-reciprocal `FactType` `ft` (`reciprocal = false`, roles
   `[r0; r1]`) and each directed pair `(near, far)` with `far.role_many = false`
   and `isa ctx i.otype near.objectType` that no creation writes on `i.otype`
-  (`not (Uchar_ref.Eval.written_role_on ctx.doc ~otype:i.otype ~fact_type:ftn ~far)`),
+  (`not (written_role_on ctx ~otype:i.otype ~fact_type:ftn ~far)`, computed
+  independently in `translate.ml` without calling `Uchar_ref.Eval`),
   if no link holds `(i, ftn, far)` in `case.world` (after reverse-leg
   materialisation), `not far.role_complete`, and `rolesEmpty`
   (`case.world.stated_roles_empty`) does not name `(i.label, link_key ~fact_type:ftn far)`,

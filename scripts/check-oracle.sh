@@ -408,11 +408,10 @@ def role_standing(doc, otype, ft, far):
     return "input"
 
 
-def open_link_line(ft, pos, label):
-    r0, r1 = ft["roles"]
+def open_link_line(ft_name, r0, r1, pos, label):
     if pos == 1:
-        return "link %s %s %s %s open" % (quote(ft["name"]), quote(r0["name"]), quote(label), quote(r1["name"]))
-    return "link %s %s open %s %s" % (quote(ft["name"]), quote(r0["name"]), quote(r1["name"]), quote(label))
+        return "link %s %s %s %s open" % (quote(ft_name), quote(r0), quote(label), quote(r1))
+    return "link %s %s open %s %s" % (quote(ft_name), quote(r0), quote(r1), quote(label))
 PYLIB
 if ! python3 -I - "$list" "$work" <<'PYEOF'
 import collections, copy, json, os, sys
@@ -444,6 +443,16 @@ def drop_list_member(c, i, field, target):
     inst[field] = [x for x in inst[field] if norm(x) != target]
 
 
+def role_empty_slot(doc, otype, r):
+    ft, pos, _, _ = resolve_role_ft(doc, otype, r)
+    return (norm(ft["name"]), pos)
+
+
+def drop_role_empty(doc, c, i, otype, slot):
+    inst = c["input"]["instances"][i]
+    inst["rolesEmpty"] = [x for x in inst["rolesEmpty"] if role_empty_slot(doc, otype, x) != slot]
+
+
 def drop_link(doc, c, ft_n, ai, ao, al, bi, bo, bl):
     for idx, otype, want_pos, target in ((ai, ao, 1, bl), (bi, bo, 0, al)):
         roles = c["input"]["instances"][idx].get("roles") or {}
@@ -461,7 +470,7 @@ def drop_inputs(doc, case):
     out = []
     by_label = {inst["label"]: (idx, inst["objectType"]) for idx, inst in enumerate(case["input"]["instances"])}
     for i, inst in enumerate(case["input"]["instances"]):
-        label = inst["label"]
+        label, otype = inst["label"], inst["objectType"]
         for a in (inst.get("attributes") or {}):
             out.append(("attribute", label, a,
                         lambda c, i=i, a=a: c["input"]["instances"][i]["attributes"].pop(a)))
@@ -475,12 +484,13 @@ def drop_inputs(doc, case):
                         lambda c, i=i, na=na: drop_list_member(c, i, "attributesEmpty", na)))
         seen_roles = set()
         for r in (inst.get("rolesEmpty") or []):
-            nr = norm(r)
-            if nr in seen_roles:
+            slot = role_empty_slot(doc, otype, r)
+            if slot in seen_roles:
                 continue
-            seen_roles.add(nr)
+            seen_roles.add(slot)
             out.append(("roleEmpty", label, r,
-                        lambda c, i=i, nr=nr: drop_list_member(c, i, "rolesEmpty", nr)))
+                        lambda c, doc=doc, i=i, otype=otype, slot=slot:
+                        drop_role_empty(doc, c, i, otype, slot)))
         for field in ("characteristics", "characteristicsAbsent"):
             seen = set()
             for k in (inst.get(field) or []):
@@ -521,7 +531,7 @@ sample_doc = {
                         {"name": "Dossier", "attributes": [], "characteristics": []}],
         "factTypes": [
             {"name": "vangst", "reciprocal": False,
-             "roles": [{"name": "vinder", "objectType": "Jutter", "many": False},
+             "roles": [{"name": "vinder", "plural": "vinders", "objectType": "Jutter", "many": False},
                        {"name": "vondst", "plural": "vondsten", "objectType": "Vondst", "many": True}]},
             {"name": "rapportage", "reciprocal": False,
              "roles": [{"name": "vondst", "objectType": "Vondst", "many": False},
@@ -535,7 +545,7 @@ sample_case = {"input": {"instances": [
      "attributes": {"gewicht": {"number": "10"}},
      "attributesEmpty": ["ophaalwens", "Ophaalwens"],
      "roles": {"rapport": ["R1"]},
-     "rolesEmpty": ["vinder", "Vinder"],
+     "rolesEmpty": ["vinder", "Vinder", "vinders"],
      "characteristics": ["gemeld"],
      "characteristicsAbsent": ["drijfhout", "Drijfhout"]},
     {"label": "J1", "objectType": "Jutter",
@@ -553,12 +563,12 @@ for kind, label, member, drop in drop_inputs(sample_doc, sample_case):
                       dict(inst0["roles"]), list(inst0["rolesEmpty"]), dict(inst3["roles"]),
                       list(inst0["characteristics"]), list(inst0["characteristicsAbsent"])))
 want_drops = [
-    ("attribute", "V1", "gewicht", [], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder"], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
-    ("attribute", "V1", "ophaalwens", ["gewicht"], [], {"rapport": ["R1"]}, ["vinder", "Vinder"], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
+    ("attribute", "V1", "gewicht", [], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder", "vinders"], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
+    ("attribute", "V1", "ophaalwens", ["gewicht"], [], {"rapport": ["R1"]}, ["vinder", "Vinder", "vinders"], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
     ("roleEmpty", "V1", "vinder", ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, [], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
-    ("characteristic", "V1", "gemeld", ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder"], {"vondst": ["V1"]}, [], ["drijfhout", "Drijfhout"]),
-    ("characteristic", "V1", "drijfhout", ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder"], {"vondst": ["V1"]}, ["gemeld"], []),
-    ("link", "V1", json.dumps(["rapportage", "R1"]), ["gewicht"], ["ophaalwens", "Ophaalwens"], {}, ["vinder", "Vinder"], {}, ["gemeld"], ["drijfhout", "Drijfhout"]),
+    ("characteristic", "V1", "gemeld", ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder", "vinders"], {"vondst": ["V1"]}, [], ["drijfhout", "Drijfhout"]),
+    ("characteristic", "V1", "drijfhout", ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder", "vinders"], {"vondst": ["V1"]}, ["gemeld"], []),
+    ("link", "V1", json.dumps(["rapportage", "R1"]), ["gewicht"], ["ophaalwens", "Ophaalwens"], {}, ["vinder", "Vinder", "vinders"], {}, ["gemeld"], ["drijfhout", "Drijfhout"]),
 ]
 if got_drops != want_drops:
     sys.stderr.write("check-oracle: FAIL (monotonicity) — drop_inputs self-test got %r, want %r\n"
@@ -655,7 +665,10 @@ def lost(reduced, full):
             return False
         subject = made.group(1)
         if subject in objects:
-            return any(is_open(l) and l.startswith("link ") and subject in l for l in reduced)
+            return any(
+                m is not None and "open" in (m.group(3), m.group(5)) and subject in (m.group(3), m.group(5))
+                for m in (LINK.match(l) for l in reduced)
+            )
         return made_on_open(subject)
 
     for line in reduced:
@@ -714,6 +727,10 @@ rows = [
      ['object "J1" "Jutter"', 'link "proefvangst" "jutter" "J1" "proefvondst" open', 'object «"maak"»("J1")#1 "Vondst"',
       'attribute «"maak"»("J1")#1 "gewicht" 3'], True),
     ("a made object on no open relation", ['object "J1" "Jutter"'], ['object "J1" "Jutter"', 'object «"maak"»("J1")#1 "Vondst"'], False),
+    ("a made object whose subject is a prefix of another object on an open relation",
+     ['object "V1" "Jutter"', 'object "V10" "Jutter"', 'link "proefvangst" "jutter" "V10" "proefvondst" open'],
+     ['object "V1" "Jutter"', 'object "V10" "Jutter"', 'link "proefvangst" "jutter" "V10" "proefvondst" open',
+      'object «"maak"»("V1")#1 "Vondst"'], False),
     ("a made object made for a made object on an open relation",
      ['object "J1" "Jutter"', 'link "proefvangst" "jutter" "J1" "proefvondst" open'],
      ['object "J1" "Jutter"', 'object «"maak"»("J1")#1 "Vondst"', 'object «"meld"»(«"maak"»("J1")#1)#1 "Melding"',
@@ -853,14 +870,11 @@ def judge(standing_of, state, kind, label, member):
     # "opened" (a member or role declared complete that no writer writes, which ref names open)
     if kind == "roleEmpty":
         ft_name, r0, r1, pos = member
-        line = ("link %s %s %s %s open" % (quote(ft_name), quote(r0), quote(label), quote(r1)) if pos == 1
-                else "link %s %s open %s %s" % (quote(ft_name), quote(r0), quote(r1), quote(label)))
-        named_open = line in state
+        named_open = open_link_line(ft_name, r0, r1, pos, label) in state
     elif kind == "link":
         ft_name, r0, r1, b_label = member
-        line0 = "link %s %s %s %s open" % (quote(ft_name), quote(r0), quote(label), quote(r1))
-        line1 = "link %s %s open %s %s" % (quote(ft_name), quote(r0), quote(r1), quote(b_label))
-        named_open = line0 in state and line1 in state
+        named_open = (open_link_line(ft_name, r0, r1, 1, label) in state
+                      and open_link_line(ft_name, r0, r1, 0, b_label) in state)
     else:
         named_open = "%s %s %s open" % (kind, quote(label), quote(member)) in state
     if standing_of == "input":
