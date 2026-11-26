@@ -718,7 +718,7 @@ public final class ScenarioResolver {
     /** A role assignment keyed by its directed role slot, so a later assignment of the same role replaces it. */
     private record RoleAssignment(RoleSlot slot, RoleValue value) {}
     /** A non-reciprocal to-one role stated to have no link ("de/het <rol> is leeg"). */
-    private record EmptyRoleAssignment(RoleSlot slot, FactType factType, int farIndex, String key, int line) {}
+    private record EmptyRoleAssignment(RoleSlot slot, EmptyRole value) {}
     /** One link or 'is leeg' event on a directed role slot within a situation block, in written order. */
     private record RoleEvent(String targetLabel, RoleSlot slot, boolean linked, String roleNameOnTarget, int line) {}
 
@@ -851,7 +851,9 @@ public final class ScenarioResolver {
             }
             String key = far.plural() != null && norm(far.plural()).equals(norm(written)) ? far.plural() : far.name();
             RoleSlot slot = new RoleSlot(norm(ft.name), hit.farIndex());
-            EmptyRoleAssignment empty = new EmptyRoleAssignment(slot, ft, hit.farIndex(), key, line);
+            ObjectType targetType = model.objectTypeByName(far.objectTypeName());
+            EmptyRoleAssignment empty = new EmptyRoleAssignment(slot,
+                    new EmptyRole(key, ft, hit.farIndex(), targetType, line));
             rolesEmpty.add(empty);
             roleEvents.add(new RoleEvent(label, slot, false, far.name(), line));
             if (model.inferFromEmpty()) {
@@ -1536,7 +1538,7 @@ public final class ScenarioResolver {
         final ObjectType objectType;
         private final Map<String, AttributeValue> attributes = new LinkedHashMap<>();
         private final Map<RoleSlot, RoleValue> roles = new LinkedHashMap<>();
-        private final Map<RoleSlot, String> rolesEmpty = new LinkedHashMap<>();
+        private final Map<RoleSlot, EmptyRole> rolesEmpty = new LinkedHashMap<>();
         private final Map<String, CharacteristicValue> characteristics = new LinkedHashMap<>();
 
         InstanceBuilder(String label, ObjectType objectType) { this.label = label; this.objectType = objectType; }
@@ -1558,7 +1560,7 @@ public final class ScenarioResolver {
         }
         void setRoleEmpty(EmptyRoleAssignment er) {
             roles.remove(er.slot());
-            rolesEmpty.put(er.slot(), er.key());
+            rolesEmpty.put(er.slot(), er.value());
         }
         void unlinkCounterpart(RoleSlot counterSlot, String unlinkedTarget) {
             RoleValue rv = roles.get(counterSlot);

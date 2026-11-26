@@ -260,6 +260,13 @@ class OpenReadingsWitnessTest {
         documents("reading-composite");
     }
 
+    /** Count over an {@code InstanceSetUnion} where one branch has an undetermined member filter and another branch has
+     *  an open 1:1 {@code sourceRole}: the reading names whichever selection comes first in branch order, matching
+     *  {@code ref --trace} on both branches. */
+    @Test void instance_set_union_selection_order_between_open_filter_and_open_range() throws Exception {
+        documents("open-union-range");
+    }
+
     /** WV-5.12-open-creation and WV-5.12a-open-link: a creation is refused, with readings as without. */
     @Test void wv_5_12_open_creation_is_refused() {
         Path ir = Path.of("..", "..", "ref", "test", "fixtures", "strict-empty", "object-creation", "ir.json");

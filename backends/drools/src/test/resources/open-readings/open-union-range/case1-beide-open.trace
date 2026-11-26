@@ -1,0 +1,11 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation undetermined open "V1" "waarde"
+reading /rules/rules/0/versions/0 "J1" OPEN
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation undetermined open "J1" "hoofdvondst"
+reading /rules/rules/1/versions/0 "J1" OPEN
+state attribute "J1" "telling achteraan" open
+state attribute "J1" "telling vooraan" open
+state attribute "V1" "waarde" open
+state link "hoofdvangst" "hoofdvinder" "J1" "hoofdvondst" open
+state link "vondstmelding" "vinder" "J1" "vondst" "V1"
+state object "J1" "Jutter"
+state object "V1" "Vondst"

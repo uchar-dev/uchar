@@ -277,6 +277,148 @@ class EmptyRoleInputWitnessTest {
         assertEquals(List.of(), faults);
     }
 
+    /** Two binary fact types on supertype {@code Jutter} ("algemeen verband") and subtype {@code Strandjutter} ("speciaal
+     *  verband") that declare the same singular to-one role name {@code ploeg} toward {@code Ploeg}: {@code Strandjutter}
+     *  inherits only {@code Jutter.ploeg} (whose {@code fieldOrigin} is "algemeen verband"), so linking {@code SJ1} in
+     *  "algemeen verband" ({@code SJ1.ploeg == P1}) must NOT mark "speciaal verband" as linked in {@code CaseInput},
+     *  {@code DroolsBackend.insert} or {@code Fixpoint.open()}. */
+    @Test void subtype_with_second_fact_type_sharing_role_name_distinguishes_the_two_relations() throws Exception {
+        String doc = """
+                {
+                  "format": "uchar-ir-v1",
+                  "inferFromEmpty": false,
+                  "model": {
+                    "objectTypes": [
+                      { "node": "ObjectType", "name": "Ploeg", "animate": false, "plural": "Ploegen",
+                        "attributes": [], "characteristics": [] },
+                      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+                        "attributes": [], "characteristics": [] },
+                      { "node": "ObjectType", "name": "Strandjutter", "animate": true, "plural": "Strandjutters",
+                        "supertype": "Jutter", "attributes": [], "characteristics": [] }
+                    ],
+                    "factTypes": [
+                      {
+                        "node": "FactType", "name": "algemeen verband", "reciprocal": false,
+                        "roles": [
+                          { "node": "Role", "name": "algemene jutter", "objectType": "Jutter", "plural": "algemene jutters", "many": false },
+                          { "node": "Role", "name": "ploeg", "objectType": "Ploeg", "plural": "algemene ploegen", "many": false }
+                        ]
+                      },
+                      {
+                        "node": "FactType", "name": "speciaal verband", "reciprocal": false,
+                        "roles": [
+                          { "node": "Role", "name": "speciale jutter", "objectType": "Strandjutter", "many": false },
+                          { "node": "Role", "name": "ploeg", "objectType": "Ploeg", "plural": "speciale ploegen", "many": false }
+                        ]
+                      }
+                    ],
+                    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []
+                  },
+                  "rules": {
+                    "rules": [], "dayKindDefinitions": [], "objectCreations": [], "allocations": [],
+                    "consistencies": [], "uniquenesses": [], "factCreations": [], "startPointDeterminations": [],
+                    "ruleGroups": []
+                  },
+                  "diagnostics": []
+                }
+                """;
+        Path irFile = Files.createTempFile("subtype-shared-role", ".json");
+        Path conflictFile = Files.createTempFile("subtype-shared-role-ef049", ".json");
+        try {
+            Files.writeString(irFile, doc);
+            JsonNode validCase = JSON.readTree("""
+                    {
+                      "format": "uchar-case-v0",
+                      "asOfDate": null,
+                      "input": {
+                        "instances": [
+                          { "label": "P1", "objectType": "Ploeg", "attributes": {},
+                            "roles": { "algemene jutter": ["SJ1"] },
+                            "rolesEmpty": ["speciale jutter"], "characteristics": [] },
+                          { "label": "SJ1", "objectType": "Strandjutter", "attributes": {},
+                            "roles": {}, "rolesEmpty": ["speciale ploegen"], "characteristics": [] }
+                        ],
+                        "parameters": {}
+                      },
+                      "expected": [{ "kind": "consistent" }]
+                    }
+                    """);
+            Files.writeString(conflictFile, """
+                    {
+                      "format": "uchar-case-v0",
+                      "asOfDate": null,
+                      "input": {
+                        "instances": [
+                          { "label": "P1", "objectType": "Ploeg", "attributes": {},
+                            "roles": { "algemene jutter": ["SJ1"] }, "characteristics": [] },
+                          { "label": "SJ1", "objectType": "Strandjutter", "attributes": {},
+                            "roles": {}, "rolesEmpty": ["algemene ploegen"], "characteristics": [] }
+                        ],
+                        "parameters": {}
+                      },
+                      "expectedFault": { "code": "EF-049" }
+                    }
+                    """);
+            List<String> faults = new ArrayList<>();
+            expectFault(irFile, conflictFile, false, "algemeen-verband-conflict", "EF-049",
+                    Map.of("label", "SJ1", "role", "algemene ploegen"), faults);
+            assertEquals(List.of(), faults);
+
+            for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {
+                assertNull(CaseRunner.playCase(irFile, validCase, branch), branch::name);
+
+                DroolsBackend.Build build = DroolsBackend.build(irFile, branch);
+                Class<?> ploegCls = Class.forName(FactModelGenerator.PACKAGE + ".Ploeg", true, build.beanLoader());
+                Class<?> sjCls = Class.forName(FactModelGenerator.PACKAGE + ".Strandjutter", true, build.beanLoader());
+                TmsRepeatedFireWitnessTest.inSession(build, () -> {
+                    // SJ1 linked only in "algemeen verband" (SJ1.ploeg == P1); "speciaal verband" omitted -> open on SJ1 and P1
+                    Object p1 = ploegCls.getConstructor().newInstance();
+                    Object sj1 = sjCls.getConstructor().newInstance();
+                    sjCls.getMethod(Namen.setter("ploeg"), ploegCls).invoke(sj1, p1);
+                    KieSession openSession = build.kieBase().newKieSession();
+                    try {
+                        DroolsBackend.insert(build, openSession, new Input().bean(p1).bean(sj1)
+                                .roleEmpty(p1, "speciale jutter"));
+                        assertNull(DroolsBackend.fire(build, openSession).noFixpoint());
+                        var fpOpen = DroolsBackend.fixpointOf(build, openSession).open();
+                        var endOpen = DroolsBackend.endStateOf(build, openSession, Map.of(p1, "P1", sj1, "SJ1")::get)
+                                .openLinks();
+                        assertEquals(List.of(dev.uchar.regelspraak.transpiler.tms.Fixpoint.OpenValue.role(
+                                sj1, "ploeg", "speciaal verband", 1)), fpOpen, branch::name);
+                        assertEquals(List.of(new EndState.OpenLink("speciaal verband", "speciale jutter", sj1, "ploeg", null)),
+                                endOpen, branch::name);
+                    } finally {
+                        openSession.dispose();
+                    }
+
+                    // Input.roleEmpty(sj1, "speciale ploegen") is accepted even when SJ1.ploeg == P1
+                    assertEquals(List.of(), openRolesForLabel(build, new Input().bean(p1).bean(sj1)
+                                    .roleEmpty(p1, "speciale jutter").roleEmpty(sj1, "speciale ploegen"),
+                            Map.of(p1, "P1", sj1, "SJ1")), branch::name);
+
+                    // Input.roleEmpty(sj1, "algemene ploegen") is refused because SJ1.ploeg == P1 belongs to "algemeen verband"
+                    expectInsertRefusal(build, new Input().bean(p1).bean(sj1).roleEmpty(sj1, "algemene ploegen"),
+                            DroolsCode.INSERT_EMPTY_ROLE.reason("bean", beanId(sj1), "role", "algemene ploegen",
+                                    "reason", DroolsCode.INSERT_EMPTY_ROLE.part("linked")).text(),
+                            branch + " algemeen-linked", faults);
+
+                    // 1:1 counterpart link on P1.specialeJutter == SJ1 refuses Input.roleEmpty(sj1, "speciale ploegen")
+                    Object p2 = ploegCls.getConstructor().newInstance();
+                    Object sj2 = sjCls.getConstructor().newInstance();
+                    ploegCls.getMethod(Namen.setter("speciale jutter"), sjCls).invoke(p2, sj2);
+                    expectInsertRefusal(build, new Input().bean(p2).bean(sj2).roleEmpty(sj2, "speciale ploegen"),
+                            DroolsCode.INSERT_EMPTY_ROLE.reason("bean", beanId(sj2), "role", "speciale ploegen",
+                                    "reason", DroolsCode.INSERT_EMPTY_ROLE.part("linked")).text(),
+                            branch + " speciaal-counterpart-linked", faults);
+                });
+            }
+            assertEquals(List.of(), faults);
+        } finally {
+            Files.deleteIfExists(irFile);
+            Files.deleteIfExists(conflictFile);
+        }
+    }
+
     private static void expectFault(Path ir, Path c, boolean ordinary, String what, String code,
                                     Map<String, String> params, List<String> faults) {
         for (DroolsBackend.Branch branch : DroolsBackend.Branch.values()) {

@@ -168,9 +168,9 @@ public sealed interface Term {
      * fold has none of that kind. The analysis adds no node where the fold has none of the three.
      */
     record FoldRead(Term outcome, int deposits, int depositFlag, int filterFault, int memberFault, int rangeOpen,
-                    String source) implements Term {
+                    int openMembers, String source) implements Term {
         public FoldRead(Term outcome, int deposits, int depositFlag, int filterFault, int memberFault, String source) {
-            this(outcome, deposits, depositFlag, filterFault, memberFault, -1, source);
+            this(outcome, deposits, depositFlag, filterFault, memberFault, -1, -1, source);
         }
     }
 

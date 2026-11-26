@@ -1257,7 +1257,8 @@ final class DrlRendering {
                         .append(v.depositFlag() < 0 ? "null" : depositFlag(v.depositFlag(), c).text()).append(", ")
                         .append(v.deposits() < 0 ? "null" : slot(v.deposits(), c)).append(", ")
                         .append(v.filterFault() < 0 ? "null" : slot(v.filterFault(), c)).append(", ")
-                        .append(v.memberFault() < 0 ? "null" : slot(v.memberFault(), c)).append(");\n");
+                        .append(v.memberFault() < 0 ? "null" : slot(v.memberFault(), c)).append(", ")
+                        .append(v.openMembers() < 0 ? "null" : slot(v.openMembers(), c)).append(");\n");
                 b.append("    return ").append(value(v.outcome(), c).text()).append(";\n");
                 fill(place, v.source(), "Object " + name + "(" + c.declaration() + ")", b.toString());
                 return name + "(" + c.pass() + ")";

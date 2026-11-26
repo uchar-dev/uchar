@@ -64,12 +64,6 @@ public final class OpenableMembers {
                 loaded.navigationBindings(), loaded.roleBindings(), loaded.sourcePaths());
     }
 
-    /** The members of {@code model} with its defaults groups {@code defaults} that can be open. */
-    static OpenableMembers of(RegelSpraakModel model, List<PrioritizedDefaults> defaults,
-                              ProducerConsumer.Navigation navigation) {
-        return of(model, defaults, navigation, Map.of(), Map.of(), Map.of());
-    }
-
     /** The members of {@code model} with its defaults groups {@code defaults} and role side tables that can be open.
      *  This is the one place where the lowering reads the document's {@code inferFromEmpty}. */
     static OpenableMembers of(RegelSpraakModel model, List<PrioritizedDefaults> defaults,

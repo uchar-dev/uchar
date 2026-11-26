@@ -58,7 +58,7 @@ public record ResolvedScenario(String name, Scope scope, LocalDate asOfDate, Sit
      *  the same holds per cell. {@code rolesEmpty} holds the non-reciprocal to-one roles stated to have no link
      *  ("de/het &lt;rol&gt; is leeg"), the case file's {@code rolesEmpty}. */
     public record Instance(String label, ObjectType objectType, List<AttributeValue> attributes,
-                            List<RoleValue> roles, List<String> rolesEmpty,
+                            List<RoleValue> roles, List<EmptyRole> rolesEmpty,
                             List<CharacteristicValue> characteristics) {
         public Instance(String label, ObjectType objectType, List<AttributeValue> attributes,
                         List<RoleValue> roles, List<CharacteristicValue> characteristics) {
@@ -90,6 +90,12 @@ public record ResolvedScenario(String name, Scope scope, LocalDate asOfDate, Sit
             this(key, factType, 0, targetType, targetLabels, many, line);
         }
     }
+
+    /** A non-reciprocal to-one role stated to have no link ("de/het &lt;rol&gt; is leeg"): the key as the case file
+     *  writes it (the declared role name, or its declared plural where the source wrote the plural), the fact type and
+     *  0-based far-role slot the role was resolved in, the declared target type of that far role, and the 1-based
+     *  source line of the bullet. */
+    public record EmptyRole(String key, FactType factType, int farIndex, ObjectType targetType, int line) {}
 
     /** A characteristic a situation gives on an instance under its declared name. {@code holds} is false where the
      *  situation states that it does not hold ("is niet X", "heeft geen X"), the case file's

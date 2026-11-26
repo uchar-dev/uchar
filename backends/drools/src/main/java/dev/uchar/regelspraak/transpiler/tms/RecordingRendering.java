@@ -133,7 +133,8 @@ final class RecordingRendering {
                     ComputeHelpers.beforeFoldOutcome(w[v.rangeOpen()], v.depositFlag() < 0 ? null : w[v.depositFlag()],
                             v.deposits() < 0 ? null : w[v.deposits()],
                             v.filterFault() < 0 ? null : w[v.filterFault()],
-                            v.memberFault() < 0 ? null : w[v.memberFault()]);
+                            v.memberFault() < 0 ? null : w[v.memberFault()],
+                            v.openMembers() < 0 ? null : w[v.openMembers()]);
                 else {
                     if (v.depositFlag() >= 0) ComputeHelpers.reportFilterDeposits(w[v.depositFlag()], w[v.deposits()]);
                     if (v.filterFault() >= 0 && w[v.filterFault()] != null) throw ((FilterFault) w[v.filterFault()]).fault();

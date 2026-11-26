@@ -7401,7 +7401,8 @@ public final class TmsTranspiler {
         int depositFlag = v.deposits() ? reads.depositFlag() : -1;
         if (!v.rangeCanBeOpen() && !v.canFail() && !v.valueCanFail() && depositFlag < 0) return outcome;
         return new Term.FoldRead(outcome, depositFlag < 0 ? -1 : i[3], depositFlag, v.canFail() ? i[2] : -1,
-                v.valueCanFail() ? i[4] : -1, v.rangeCanBeOpen() ? i[6] : -1, source);
+                v.valueCanFail() ? i[4] : -1, v.rangeCanBeOpen() ? i[6] : -1,
+                v.rangeCanBeOpen() && v.listsOpen() ? i[5] : -1, source);
     }
 
     /** The fold of {@code f}, an aggregation or a quantifier fold, on the subject of {@code reads}, the rule that reads
@@ -10034,7 +10035,7 @@ public final class TmsTranspiler {
                 Term z = withoutDepositFlag(v.outcome());
                 return v.depositFlag() < 0 && z == v.outcome() ? v
                         : new Term.FoldRead(z, v.deposits(), -1, v.filterFault(), v.memberFault(), v.rangeOpen(),
-                                v.source());
+                                v.openMembers(), v.source());
             }
             case Term.Compound s -> {
                 List<Term> z = withoutDepositFlag(s.members());

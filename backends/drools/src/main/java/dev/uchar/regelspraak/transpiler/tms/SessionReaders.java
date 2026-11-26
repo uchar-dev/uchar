@@ -1071,11 +1071,11 @@ final class SessionReaders {
         for (RegelSpraakModel.ObjectType t : model.objectTypes.values())
             if (Namen.ident(t.name, true).equals(subject.getClass().getSimpleName())) { subjectType = t; break; }
         if (subjectType != null && farType != null
-                && dev.uchar.regelspraak.schema.FactModelGenerator.hasReferenceField(model, subjectType, far.name(), farType)
+                && dev.uchar.regelspraak.schema.FactModelGenerator.hasRoleReferenceField(model, subjectType, ft, far.name(), farType)
                 && Accessors.leesEigenschap(subject, Namen.property(far.name())) != null)
             return true;
         if (!near.many() && farType != null && nearType != null
-                && dev.uchar.regelspraak.schema.FactModelGenerator.hasReferenceField(model, farType, near.name(), nearType)) {
+                && dev.uchar.regelspraak.schema.FactModelGenerator.hasRoleReferenceField(model, farType, ft, near.name(), nearType)) {
             String nearProp = Namen.property(near.name());
             Class<?> farClass = analysis.beanClass(farType);
             for (Object other : session.getObjects(o -> farClass.isInstance(o)))

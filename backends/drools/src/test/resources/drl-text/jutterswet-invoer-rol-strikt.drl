@@ -144,7 +144,7 @@ function Object waarde_loodscapaciteit(Object $aantal_vouw_24, Object $vouw_vouw
 
 // de som van de capaciteit van alle bewaarplaatsen van alle vondsten van de Jutter
 function Object vouwlezing_loodscapaciteit(Object $aantal_vouw_24, Object $vouw_vouw_26, Object $openleden_vouw_30, Object $eerste_bereikopen_vouw_35) {
-    ComputeHelpers.beforeFoldOutcome($eerste_bereikopen_vouw_35, null, null, null, null);
+    ComputeHelpers.beforeFoldOutcome($eerste_bereikopen_vouw_35, null, null, null, null, $openleden_vouw_30);
     return ComputeHelpers.foldValue(ComputeHelpers.standingCount($aantal_vouw_24, $openleden_vouw_30), $vouw_vouw_26, null);
 }
 
@@ -175,7 +175,7 @@ function Object oordeel_ruimBewaard(Object $aantal_vouw_51, Object $vouw_vouw_53
 
 // de capaciteit van alle bewaarplaatsen van alle vondsten van de Jutter groter is dan 5
 function Object vouwlezing_ruimBewaard(Object $aantal_vouw_51, Object $vouw_vouw_53, Object $openleden_vouw_57, Object $eerste_bereikopen_vouw_62) {
-    ComputeHelpers.beforeFoldOutcome($eerste_bereikopen_vouw_62, null, null, null, null);
+    ComputeHelpers.beforeFoldOutcome($eerste_bereikopen_vouw_62, null, null, null, null, $openleden_vouw_57);
     return ComputeHelpers.quantifierVerdictOverOpen($aantal_vouw_51, $vouw_vouw_53, $openleden_vouw_57, dev.uchar.regelspraak.ir.Condition.Quantifier.ALLE, Integer.valueOf(0));
 }
 

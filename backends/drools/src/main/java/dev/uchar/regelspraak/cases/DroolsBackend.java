@@ -555,7 +555,7 @@ public final class DroolsBackend {
                                       Object bean, ObjectType t, RegelSpraakModel.FactType ft, int farIndex) {
         RegelSpraakModel.Role far = ft.roles.get(farIndex), near = ft.roles.get(1 - farIndex);
         ObjectType farFiller = model.objectTypeByName(far.objectTypeName());
-        if (farFiller != null && FactModelGenerator.hasReferenceField(model, t, far.name(), farFiller)
+        if (farFiller != null && FactModelGenerator.hasRoleReferenceField(model, t, ft, far.name(), farFiller)
                 && Accessors.leesEigenschap(bean, Namen.property(far.name())) != null)
             return true;
         if (!near.many() && farFiller != null) {
@@ -563,7 +563,7 @@ public final class DroolsBackend {
             for (Object other : beans) {
                 ObjectType otherType = types.get(other);
                 if (otherType != null && otherType.isA(farFiller) && nearFiller != null
-                        && FactModelGenerator.hasReferenceField(model, otherType, near.name(), nearFiller)
+                        && FactModelGenerator.hasRoleReferenceField(model, otherType, ft, near.name(), nearFiller)
                         && Accessors.leesEigenschap(other, Namen.property(near.name())) == bean)
                     return true;
             }

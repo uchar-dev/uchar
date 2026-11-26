@@ -124,7 +124,7 @@ public final class CaseEmitter {
         w.endObject();
         if (!i.rolesEmpty().isEmpty()) {
             w.key("rolesEmpty").beginArray();
-            for (String r : i.rolesEmpty()) w.value(r);
+            for (EmptyRole r : i.rolesEmpty()) w.value(r.key());
             w.endArray();
         }
         w.key("characteristics").beginArray();

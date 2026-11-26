@@ -1082,7 +1082,7 @@ public final class CaseInput {
                         + "\": \"rolesEmpty\" applies only to a non-reciprocal to-one role");
             ObjectType farFiller = model.objectTypeByName(hit.role().objectTypeName());
             boolean linkedField = farFiller != null
-                    && FactModelGenerator.hasReferenceField(model, ot, hit.role().name(), farFiller)
+                    && FactModelGenerator.hasRoleReferenceField(model, ot, hit.factType(), hit.role().name(), farFiller)
                     && dev.uchar.regelspraak.runtime.Accessors.leesEigenschap(bean,
                             Namen.property(hit.role().name())) != null;
             if (linkedRoleSlots.contains(new LinkedRoleSlot(bean, Namen.norm(hit.factType().name), hit.roleIndex()))

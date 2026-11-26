@@ -298,12 +298,12 @@ final class ClosureRendering {
     private static ValueFunction foldRead(Term.FoldRead v) {
         ValueFunction outcome = valueFunction(v.outcome());
         int deposits = v.deposits(), depositFlag = v.depositFlag(), filterFault = v.filterFault(),
-                memberFault = v.memberFault(), rangeOpen = v.rangeOpen();
+                memberFault = v.memberFault(), rangeOpen = v.rangeOpen(), openMembers = v.openMembers();
         if (rangeOpen >= 0) {
             return w -> {
                 ComputeHelpers.beforeFoldOutcome(w[rangeOpen], depositFlag < 0 ? null : w[depositFlag],
                         deposits < 0 ? null : w[deposits], filterFault < 0 ? null : w[filterFault],
-                        memberFault < 0 ? null : w[memberFault]);
+                        memberFault < 0 ? null : w[memberFault], openMembers < 0 ? null : w[openMembers]);
                 return outcome.of(w);
             };
         }

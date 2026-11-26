@@ -131,7 +131,7 @@ class RouteWitnessTest {
                 "OPEN: OpenMember ComputeHelpers.open[Object, ElementKey]",
                 "INPUT: Object ComputeHelpers.input[Object, Object, Object, ElementKey]",
                 "MISSING_LINK: Object ComputeHelpers.missingLink[Object, List, List, Object]",
-                "BEFORE_FOLD_OUTCOME: void ComputeHelpers.beforeFoldOutcome[Object, Object, Object, Object, Object]",
+                "BEFORE_FOLD_OUTCOME: void ComputeHelpers.beforeFoldOutcome[Object, Object, Object, Object, Object, Object]",
                 "RANGE_PLACE: List ComputeHelpers.rangePlace[String, Object, int, int, List, List, List]",
                 "VERDICT: BigDecimal ComputeHelpers.verdict[boolean]",
                 "FITTED: Object ComputeHelpers.fitted[Object, Integer, String]",

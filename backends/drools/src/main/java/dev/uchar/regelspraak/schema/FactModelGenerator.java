@@ -451,6 +451,16 @@ public final class FactModelGenerator {
         return field == null ? null : field.origin();
     }
 
+    /** Whether {@code ot}'s bean carries the reference field for {@code role} of {@code ft} toward {@code targetName}:
+     *  {@link #hasReferenceField} holds, and {@link #fieldOrigin} names {@code ROL} of {@code ft}. */
+    public static boolean hasRoleReferenceField(RegelSpraakModel model, ObjectType ot, FactType ft, String role,
+                                                ObjectType targetName) {
+        if (!hasReferenceField(model, ot, role, targetName) || ft == null) return false;
+        Origin origin = fieldOrigin(model, ot, role);
+        return origin != null && origin.kind() == Origin.Kind.ROL && origin.source() != null
+                && Namen.norm(origin.source()).equals(Namen.norm(ft.name));
+    }
+
     /**
      * WHY {@link #hasReferenceField} said no — the precise §13.3.9 reason, so a per-form refusal names the
      * bean-model limit instead of a generic scope note. The two causes are DIFFERENT and are named apart: a

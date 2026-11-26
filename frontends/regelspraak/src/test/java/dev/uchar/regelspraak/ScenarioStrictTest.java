@@ -1304,9 +1304,24 @@ class ScenarioStrictTest {
                 Met als verwacht resultaat:
                 - de gegevens zijn consistent
                 """;
-        String emitted = CaseEmitter.emit(only(valid));
+        ResolvedScenario resolved = only(valid);
+        String emitted = CaseEmitter.emit(resolved);
         assertTrue(emitted.contains("\"vorige vergunning\""), emitted);
         assertTrue(emitted.contains("\"volgende vergunning\""), emitted);
+        List<ResolvedScenario.EmptyRole> v1Empty = resolved.situation().instance("V1").rolesEmpty();
+        List<ResolvedScenario.EmptyRole> v2Empty = resolved.situation().instance("V2").rolesEmpty();
+        assertEquals(1, v1Empty.size());
+        assertEquals("vorige vergunning", v1Empty.get(0).key());
+        assertEquals("opvolging van vergunningen", v1Empty.get(0).factType().name);
+        assertEquals(0, v1Empty.get(0).farIndex());
+        assertEquals("Vergunning", v1Empty.get(0).targetType().name);
+        assertEquals(ScenarioFixture.lineOf(valid, "- de vorige vergunning is leeg"), v1Empty.get(0).line());
+        assertEquals(1, v2Empty.size());
+        assertEquals("volgende vergunning", v2Empty.get(0).key());
+        assertEquals("opvolging van vergunningen", v2Empty.get(0).factType().name);
+        assertEquals(1, v2Empty.get(0).farIndex());
+        assertEquals("Vergunning", v2Empty.get(0).targetType().name);
+        assertEquals(ScenarioFixture.lineOf(valid, "- de volgende vergunning is leeg"), v2Empty.get(0).line());
 
         // Invalid: V1 has 'vorige vergunning is leeg' (slot 0 on V1) AND V2 has 'volgende vergunning is V1' (also slot 0 on V1!)
         String counterpartConflict = header + """

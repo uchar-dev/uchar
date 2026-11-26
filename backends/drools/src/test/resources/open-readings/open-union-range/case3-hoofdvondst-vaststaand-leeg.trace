@@ -1,0 +1,10 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/0/versions/0 "J1" HOLDS
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/1/versions/0 "J1" HOLDS
+state attribute "J1" "telling achteraan" 1
+state attribute "J1" "telling vooraan" 1
+state attribute "V1" "waarde" 20
+state link "vondstmelding" "vinder" "J1" "vondst" "V1"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
