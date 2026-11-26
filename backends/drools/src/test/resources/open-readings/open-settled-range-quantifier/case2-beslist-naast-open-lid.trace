@@ -1,0 +1,17 @@
+reading /rules/rules/0/versions/0 "V1" 0 QuantifierFold false contributors ["V2" true reached; "V3" undetermined unreached]
+reading /rules/rules/0/versions/0 "V1" FAILS
+reading /rules/rules/0/versions/0 "V2" 0 QuantifierFold undetermined open "V1" "taxatie" contributors ["V1" undetermined reached; "V3" undetermined reached]
+reading /rules/rules/0/versions/0 "V2" OPEN
+reading /rules/rules/0/versions/0 "V3" 0 QuantifierFold false contributors ["V1" undetermined reached; "V2" true reached]
+reading /rules/rules/0/versions/0 "V3" FAILS
+state attribute "V1" "taxatie" open
+state attribute "V2" "taxatie" 10
+state attribute "V3" "taxatie" open
+state characteristic "V2" "alleen" open
+state link "vangst" "jutter" "J1" "vondst" "V1"
+state link "vangst" "jutter" "J1" "vondst" "V2"
+state link "vangst" "jutter" "J1" "vondst" "V3"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"
+state object "V3" "Vondst"

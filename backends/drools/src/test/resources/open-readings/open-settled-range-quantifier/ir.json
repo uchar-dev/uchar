@@ -1,0 +1,159 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "taxatie",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "alleen",
+            "kind": "adjectival"
+          }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vangst",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "jutter",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "alleen",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "alleen",
+              "subjectType": "Vondst",
+              "source": {
+                "snippet": "Een Vondst is alleen"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "QuantifierFold",
+              "quantifier": "none",
+              "elementType": "Vondst",
+              "filter": {
+                "node": "IdentityCheck",
+                "anchor": "form",
+                "negated": true,
+                "source": {
+                  "snippet": "niet de Vondst zelf zijn"
+                }
+              },
+              "test": {
+                "node": "Predicate",
+                "kind": "filled",
+                "operand": {
+                  "node": "AttributeReference",
+                  "attribute": "taxatie",
+                  "subjectType": "Vondst",
+                  "source": {
+                    "snippet": "de taxatie van geen van de vondsten van de jutter van de Vondst die niet de Vondst zelf zijn"
+                  }
+                },
+                "negated": false,
+                "digits": 0,
+                "source": {
+                  "snippet": "de taxatie van geen van de vondsten van de jutter van de Vondst die niet de Vondst zelf zijn gevuld is"
+                }
+              },
+              "source": {
+                "snippet": "de taxatie van geen van de vondsten van de jutter van de Vondst die niet de Vondst zelf zijn gevuld is"
+              },
+              "sourcePath": [
+                {
+                  "node": "RoleBinding",
+                  "factType": "vangst",
+                  "role": "jutter"
+                },
+                {
+                  "node": "RoleBinding",
+                  "factType": "vangst",
+                  "role": "vondst"
+                }
+              ]
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

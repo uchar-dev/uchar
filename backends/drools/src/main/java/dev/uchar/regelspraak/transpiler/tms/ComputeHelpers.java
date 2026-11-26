@@ -658,11 +658,19 @@ public final class ComputeHelpers {
     }
 
     /** Pre-outcome evaluation of a {@code Term.FoldRead} in ch. 5.11 order when a fold's range can meet an open
-     *  single step: throws the first {@link RangeOpen} before any filter fault, undetermined filter or member fault of
-     *  the same or a later selection, while an earlier selection's fault or undetermined filter wins. */
+     *  single step: when no step of the range is open ({@code rangeOpen == null}), runs the ordinary pre-outcome checks
+     *  and returns so {@code outcome} evaluates; otherwise throws the first {@link RangeOpen} before any filter fault,
+     *  undetermined filter or member fault of the same or a later selection, while an earlier selection's fault or
+     *  undetermined filter wins. */
     public static void beforeFoldOutcome(Object rangeOpen, Object depositFlag, Object deposits, Object filterFault,
                                          Object memberFault, Object openMembers) {
         RangeOpen ro = (RangeOpen) rangeOpen;
+        if (ro == null) {
+            if (depositFlag != null) reportFilterDeposits(depositFlag, deposits);
+            if (filterFault != null) throw ((FilterFault) filterFault).fault();
+            if (memberFault != null) throw ((MemberFault) memberFault).fault();
+            return;
+        }
         FilterFault ff = (FilterFault) filterFault;
         FoldOpen earliestOpen = null;
         if (openMembers instanceof List<?> list)
@@ -670,10 +678,10 @@ public final class ComputeHelpers {
                 FoldOpen fo = (FoldOpen) o;
                 if (earliestOpen == null || fo.place().get(1) < earliestOpen.place().get(1)) earliestOpen = fo;
             }
-        int roSel = ro == null ? Integer.MAX_VALUE : ro.selection();
+        int roSel = ro.selection();
         int ffSel = ff == null ? Integer.MAX_VALUE : ff.place().get(0);
         int openSel = earliestOpen == null ? Integer.MAX_VALUE : earliestOpen.place().get(1);
-        if (ro != null && roSel <= ffSel && roSel <= openSel) {
+        if (roSel <= ffSel && roSel <= openSel) {
             throw ro.openRead();
         }
         if (depositFlag != null) reportFilterDeposits(depositFlag, deposits);
@@ -681,7 +689,7 @@ public final class ComputeHelpers {
         if (earliestOpen != null && openSel < roSel)
             throw new OpenRead(OpenMember.ofFold(earliestOpen.fold(), earliestOpen.subject()));
         if (memberFault != null) throw ((MemberFault) memberFault).fault();
-        if (ro != null) throw ro.openRead();
+        throw ro.openRead();
     }
 
     /** The read of that input ({@link #input}): an open member breaks the evaluation off. */

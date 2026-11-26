@@ -267,6 +267,13 @@ class OpenReadingsWitnessTest {
         documents("open-union-range");
     }
 
+    /** A quantifier fold over a path starting with an openable to-one role ({@code jutter -> vondsten}) when that
+     *  to-one role IS linked ({@code RangeOpen == null}): an undetermined fold keeps its reached contributors in the
+     *  reading, and a deciding member settles the fold even beside another member with an open matrix. */
+    @Test void quantifier_fold_with_settled_openable_range_step_keeps_contributors_and_deciding_verdict() throws Exception {
+        documents("open-settled-range-quantifier");
+    }
+
     /** WV-5.12-open-creation and WV-5.12a-open-link: a creation is refused, with readings as without. */
     @Test void wv_5_12_open_creation_is_refused() {
         Path ir = Path.of("..", "..", "ref", "test", "fixtures", "strict-empty", "object-creation", "ir.json");
