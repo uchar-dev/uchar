@@ -1142,7 +1142,13 @@ let open_text (doc : document) (world : World.t) label (member : World.member) =
         List.find_map
           (fun (fact_type, (ft : fact_type_name)) ->
             List.find_map
-              (fun r -> if World.link_key ~fact_type r = link then Some (World.role_spelling r) else None)
+              (fun (r : role_ref) ->
+                if World.link_key ~fact_type r = link then
+                  match (r.role_identifier, r.role_plural) with
+                  | Some n, _ -> Some n
+                  | None, Some m -> Some m
+                  | None, None -> Some "?"
+                else None)
               ft.role_names)
           doc.fact_types
     | (Attribute _ | Characteristic _), None -> None

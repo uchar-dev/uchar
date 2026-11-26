@@ -6234,6 +6234,9 @@ let instance_depth env world0 (o : Ir_v0.Checks.instance_order) =
   in
   (* the hops of the trail are each (object, the binding taken from it) *)
   let hop (label, (rb : role_binding)) = Printf.sprintf "%s -(%s: %s)->" label rb.rb_fact_type rb.rb_role in
+  let stored (i : World.instance) (rb : role_binding) =
+    List.map (World.get world0) (World.links i ~fact_type:rb.rb_fact_type (bound_role env rb))
+  in
   (* None while the depth of the object is open *)
   let memo = Hashtbl.create 16 in
   let rec depth trail label =
@@ -6257,7 +6260,7 @@ let instance_depth env world0 (o : Ir_v0.Checks.instance_order) =
           match SMap.find_opt label world0.World.instances with
           | None -> 0
           | Some i -> (
-              match if leaves_from i pred then linked env world0 i ~binding:pred else [] with
+              match if leaves_from i pred then stored i pred else [] with
               | p :: _ -> 1 + depth ((label, pred) :: trail) p.World.label
               | [] -> (
                   match
@@ -6265,7 +6268,7 @@ let instance_depth env world0 (o : Ir_v0.Checks.instance_order) =
                       (fun owner ->
                         if not (leaves_from i owner) then None
                         else
-                          match linked env world0 i ~binding:owner with
+                          match stored i owner with
                           | q :: _ -> Some (owner, q)
                           | [] -> None)
                       o.io_owners
@@ -6295,6 +6298,61 @@ let instance_depth env world0 (o : Ir_v0.Checks.instance_order) =
    measurement of preservation with complete knowledge). The one place the
    property is read for the evaluation: a document without it has no open
    member, and nothing in the evaluation tells it from another. *)
+(* whether a creation of [doc] can lay a link on [fact_type] placing an
+   instance of [otype] in the sister role opposite [far] (RUNTIME-SEMANTICS
+   ch. 1.5): an object creation whose subject covers [otype] and whose made
+   object fills [far], or a fact creation on [fact_type] whose anchor covers
+   [otype] with [far] as its target role, or whose target covers [otype] with
+   [far] as its anchor role. Shared with the ASP backend. *)
+let written_role_on (doc : document) ~otype ~fact_type ~(far : role_ref) =
+  let key = World.link_key ~fact_type far in
+  let sub a b = Ir_v0.Checks.subtype_of doc ~sub:a ~super:b in
+  let role_is rname =
+    (match far.role_identifier with Some n -> norm n = norm rname | None -> false)
+    || match far.role_plural with Some m -> norm m = norm rname | None -> false
+  in
+  let target_ot (fc : resolved_fact_creation) =
+    match fc.fc_target with
+    | Some t -> Some t
+    | None -> (
+        match Ir_v0.Checks.find_ci doc.fact_types fc.fc_fact_type with
+        | Some { role_names = [ a; b ]; _ } ->
+            let matches (r : role_ref) =
+              match r.role_identifier with Some n -> norm n = norm fc.objective_role | None -> false
+            in
+            if matches a && not (matches b) then a.role_object_type_name
+            else if matches b && not (matches a) then b.role_object_type_name
+            else None
+        | _ -> None)
+  in
+  let env0 =
+    { doc; params = SMap.empty; param_tls = SMap.empty; as_of = None; locals = SMap.empty; btypes = SMap.empty;
+      subj = None; form = None }
+  in
+  List.exists
+    (fun (oc : resolved_object_creation) ->
+      match (oc.oc_subject, oc.created_type) with
+      | Some subj, Some created when sub otype subj -> (
+          let pair =
+            match oc.oc_connecting_role with
+            | Some rb -> (
+                match Ir_v0.Checks.resolve_binding (Ir_v0.Checks.ctx_of doc) rb with
+                | Ok (_, bound, _) -> Some (rb.rb_fact_type, bound)
+                | Error _ -> None)
+            | None -> (
+                try Option.map (fun (ftn, bound, _) -> (ftn, bound)) (connecting_pair env0 ~from_type:subj ~to_type:created)
+                with _ -> None)
+          in
+          match pair with Some (ftn, new_role) -> World.link_key ~fact_type:ftn new_role = key | None -> false)
+      | _ -> false)
+    doc.object_creations
+  || List.exists
+       (fun (fc : resolved_fact_creation) ->
+         norm fc.fc_fact_type = norm fact_type
+         && ((role_is fc.objective_role && Option.fold ~none:false ~some:(sub otype) fc.anchor_point)
+            || (role_is fc.anchor_role && Option.fold ~none:false ~some:(sub otype) (target_ot fc))))
+       doc.fact_creations
+
 let open_inputs env ~closed_inputs (world : World.t) =
   if env.doc.infer_from_empty || closed_inputs then World.Member.empty
   else
@@ -6319,27 +6377,53 @@ let open_inputs env ~closed_inputs (world : World.t) =
     in
     SMap.fold
       (fun label (i : World.instance) acc ->
-        (* the effective type: a member inherited from a supertype carries its field *)
-        let ot = object_type env i.otype in
-        let member acc m ~given ~complete =
-          if given || complete || written ~otype:i.otype m then acc else World.Member.add (label, m) () acc
-        in
-        let acc =
+        if SMap.mem label world.World.mints then acc
+        else
+          (* the effective type: a member inherited from a supertype carries its field *)
+          let ot = object_type env i.otype in
+          let member acc m ~given ~complete =
+            if given || complete || written ~otype:i.otype m then acc else World.Member.add (label, m) () acc
+          in
+          let acc =
+            List.fold_left
+              (fun acc (a, _) ->
+                member acc (World.attribute a)
+                  ~given:(World.attr i a <> Value.Empty || World.timeline i a <> None)
+                  ~complete:(List.mem a ot.attribute_complete))
+              acc ot.attributes
+          in
+          let acc =
+            List.fold_left
+              (fun acc -> function
+                | Some k ->
+                    member acc (World.characteristic k)
+                      ~given:(World.has_char i k || World.char_periods i k <> None)
+                      ~complete:(List.mem k ot.characteristic_complete)
+                | None -> acc)
+              acc ot.characteristics
+          in
           List.fold_left
-            (fun acc (a, _) ->
-              member acc (World.attribute a)
-                ~given:(World.attr i a <> Value.Empty || World.timeline i a <> None)
-                ~complete:(List.mem a ot.attribute_complete))
-            acc ot.attributes
-        in
-        List.fold_left
-          (fun acc -> function
-            | Some k ->
-                member acc (World.characteristic k)
-                  ~given:(World.has_char i k || World.char_periods i k <> None)
-                  ~complete:(List.mem k ot.characteristic_complete)
-            | None -> acc)
-          acc ot.characteristics)
+            (fun acc (ftn, (ft : fact_type_name)) ->
+              if ft.reciprocal then acc
+              else
+                match ft.role_names with
+                | [ r0; r1 ] ->
+                    List.fold_left
+                      (fun acc (near, far) ->
+                        if far.role_many || not (fills env i.otype near) then acc
+                        else
+                          let key = World.link_key ~fact_type:ftn far in
+                          let given =
+                            World.links i ~fact_type:ftn far <> []
+                            || World.Key.mem (label, key) world.stated_roles_empty
+                          in
+                          if given || far.role_complete || written_role_on env.doc ~otype:i.otype ~fact_type:ftn ~far
+                          then acc
+                          else World.Member.add (label, World.Relation key) () acc)
+                      acc
+                      [ (r0, r1); (r1, r0) ]
+                | _ -> acc)
+            acc env.doc.fact_types)
       world.World.instances World.Member.empty
 
 let evaluate ?(closed_inputs = false) env world =

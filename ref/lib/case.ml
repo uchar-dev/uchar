@@ -525,7 +525,8 @@ let cells_of_json (doc : document) ~label ~attr ~(dims : string list) (decl : da
        [] cells);
   cells
 
-let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance * string list * string list =
+let load_instance (doc : document) ~at (j : Yojson.Safe.t) :
+    World.instance * string list * string list * (string * role_ref * string) list =
   let kvs = obj ~at j in
   let label = str_field ~at kvs "label" in
   (* the schema asks minLength 1, and every later position of this instance
@@ -708,6 +709,35 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance * st
       (obj_field ~at:label kvs "roles")
     |> fst
   in
+  (* the non-reciprocal to-one roles the case states have no link on this
+     instance (RUNTIME-SEMANTICS ch. 1.5): resolved from [otype_name] as
+     "roles" is (EF-040 undeclared, EF-001 ambiguous), restricted to
+     non-reciprocal to-one roles, and checked against all links after reverse
+     legs are materialised (EF-049) *)
+  let empty_roles =
+    match List.assoc_opt "rolesEmpty" kvs with
+    | None -> []
+    | Some j ->
+        List.mapi
+          (fun i rj ->
+            let r = str ~at:(Printf.sprintf "%s.rolesEmpty[%d]" label i) rj in
+            if not (role_declared doc r) then undeclared r "role key %S names no declared role" r;
+            let ft_name, far, _ = resolve_role_ft doc ~otype:otype_name ~key:r in
+            (match Ir_v0.Checks.find_ci doc.fact_types ft_name with
+            | Some ft when ft.reciprocal ->
+                fail
+                  "%s: role %S in \"rolesEmpty\" belongs to the reciprocal fact type %S: \"rolesEmpty\" \
+                   applies only to a non-reciprocal to-one role"
+                  label r ft_name
+            | _ -> ());
+            if far.role_many then
+              fail
+                "%s: role %S in \"rolesEmpty\" is a to-many role of fact type %S: \"rolesEmpty\" applies \
+                 only to a non-reciprocal to-one role"
+                label r ft_name;
+            (ft_name, far, r))
+          (list_ ~at:(child label "rolesEmpty") j)
+  in
   let ctls =
     match List.assoc_opt "characteristicTimelines" kvs with
     | None -> SMap.empty
@@ -763,7 +793,7 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) : World.instance * st
           SMap.empty
           (obj ~at:(child label "characteristicTimelines") j)
   in
-  ({ label; otype = otype_name; attrs; chars; left_side; tls; ctls }, empty_attrs, absent)
+  ({ label; otype = otype_name; attrs; chars; left_side; tls; ctls }, empty_attrs, absent, empty_roles)
 
 (* ch. 5.7a: a supplied role link ESTABLISHES the relation instance, and
    BOTH roles read it — a relation is symmetric, so the reader arriving
@@ -1221,28 +1251,44 @@ let load_file (doc : document) path : t =
     | j -> fail "asOfDate: expected a string or null, got %s" (got j)
   in
   let input = obj_field ~at:root kvs "input" in
-  let world =
+  let world, empty_role_checks =
     List.fold_left
-      (fun (w : World.t) (n, ij) ->
-        let i, empty_attrs, absent = load_instance doc ~at:(Printf.sprintf "input.instances[%d]" n) ij in
+      (fun ((w : World.t), checks) (n, ij) ->
+        let i, empty_attrs, absent, empty_roles =
+          load_instance doc ~at:(Printf.sprintf "input.instances[%d]" n) ij
+        in
         (* label uniqueness is this loader's cross-check (see the header);
            left to the world's own guard it surfaced as an evaluation
            fault, exit 1, from a case that never got to evaluation *)
         if SMap.mem i.label w.instances then
           failc ~params:[ ("label", i.label) ] "EF-039" "duplicate instance label %S" i.label;
         let w = World.add_instance w i in
-        {
-          w with
-          stated_empty = List.fold_left (fun acc a -> World.Key.add (i.label, a) () acc) w.stated_empty empty_attrs;
-          stated_absent = List.fold_left (fun acc c -> World.Key.add (i.label, c) () acc) w.stated_absent absent;
-        })
-      World.empty
+        ( {
+            w with
+            stated_empty = List.fold_left (fun acc a -> World.Key.add (i.label, a) () acc) w.stated_empty empty_attrs;
+            stated_absent = List.fold_left (fun acc c -> World.Key.add (i.label, c) () acc) w.stated_absent absent;
+            stated_roles_empty =
+              List.fold_left
+                (fun acc (ft_name, far, _) ->
+                  World.Key.add (i.label, World.link_key ~fact_type:ft_name far) () acc)
+                w.stated_roles_empty empty_roles;
+          },
+          checks @ List.map (fun (ft_name, far, written) -> (i.label, ft_name, far, written)) empty_roles ))
+      (World.empty, [])
       (List.mapi (fun n ij -> (n, ij)) (list_field ~at:"input" input "instances"))
   in
   (* the targets are checked on the links as the case keys them; the reverse
      legs materialised after are typed by construction *)
   check_role_targets doc world;
   let world = materialise_relations doc world in
+  List.iter
+    (fun (label, ft_name, far, written) ->
+      if World.links (World.get world label) ~fact_type:ft_name far <> [] then
+        failc ~params:[ ("label", label); ("role", written) ] "EF-049"
+          "%s: role %S is linked on %S and named in \"rolesEmpty\": the case links the role and states \
+           that it has no link"
+          label written label)
+    empty_role_checks;
   check_link_cycles doc world;
   let params, param_tls =
     List.fold_left

@@ -8,6 +8,9 @@
         "objectType": "Vondst",
         "attributes": {},
         "roles": {},
+        "rolesEmpty": [
+          "vinder"
+        ],
         "characteristics": []
       }
     ],

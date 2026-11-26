@@ -1,0 +1,60 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "100.00"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "vindpremie"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "V1",
+      "characteristic": "afwijkend gemeld"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "meldtoeslag"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "V1",
+      "characteristic": "deskundig gevonden"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "leertoeslag"
+    },
+    {
+      "kind": "characteristicOpen",
+      "label": "V1",
+      "characteristic": "ongeschoold gevonden"
+    },
+    {
+      "kind": "attributeOpen",
+      "label": "V1",
+      "attribute": "scholingstoeslag"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

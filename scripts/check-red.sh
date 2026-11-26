@@ -167,6 +167,7 @@ pairs=$(mktemp) || exit 2
 cat > "$pairs" <<'EOF2'
 aanvoergeld-parameter-unbound/case1-tarief-ongebonden|aanvoergeld-parameter-unbound/case2-drempel-ongebonden|one document, two parameters the case leaves unbound: EF-014 differs in `parameter` only (aanvoertarief, aanvoerdrempel)
 jutterswet-dubbele-melding/case1-beide-schrijvers-gelden|jutterswet-dubbele-melding/case2-een-van-twee-vondsten|one document, two instances whose writers disagree: EF-016 differs in `label` only (V, V2)
+jutterswet-rol-gevuld-en-leeg/case1-zelfde-instantie|jutterswet-rol-gevuld-en-leeg/case2-tegeninstantie|one document, same-instance link vs counterpart link beside rolesEmpty: EF-049 differs in `label` only (V1, V2)
 EOF2
 
 # The comparison of one executor's observation with the pin, in python (the gate requires python3 already): the lines

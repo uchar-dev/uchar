@@ -12,6 +12,9 @@
           }
         },
         "roles": {},
+        "rolesEmpty": [
+          "vinder"
+        ],
         "characteristics": []
       }
     ],

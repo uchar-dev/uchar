@@ -155,13 +155,17 @@ type t = {
          do not hold (`characteristicsAbsent`), set by the case reader. The
          case gives them as it gives a value: none of them is open but
          beside a writer that leaves it open ([char_open]) *)
+  stated_roles_empty : unit Key.t;
+      (* by (label, link_key ~fact_type far): the non-reciprocal to-one roles
+         the case states have no link on that instance (`rolesEmpty`), set by
+         the case reader (RUNTIME-SEMANTICS ch. 1.5) *)
 }
 
 let empty =
   { instances = SMap.empty; order = []; channel = []; outcomes = []; evaluating = []; owners = Key.empty;
     holders = Key.empty; mints = SMap.empty; written = Key.empty; char_writes = Key.empty; parts = Key.empty;
     open_input = Member.empty; opening = []; opened = Member.empty; stated_empty = Key.empty;
-    stated_absent = Key.empty }
+    stated_absent = Key.empty; stated_roles_empty = Key.empty }
 
 let add_instance w inst =
   if SMap.mem inst.label w.instances then
@@ -291,10 +295,15 @@ let links i ~fact_type role = Option.value (SMap.find_opt (link_key ~fact_type r
 let role_spelling (r : Ir_v0.Ast.role_ref) =
   match (r.role_plural, r.role_identifier) with Some m, _ -> m | None, Some n -> n | None, None -> "?"
 
-(* Whether the relation over [role] of [fact_type] is open on [i]: a creation
-   whose condition is undetermined could link [i] there (RUNTIME-SEMANTICS
-   ch. 1.5). The mark is kept with the members a standing outcome leaves open *)
-let links_open w (i : instance) ~fact_type role = Member.mem (i.label, Relation (link_key ~fact_type role)) w.opened
+(* Whether the relation over [role] of [fact_type] is open on [i]: an unlinked
+   non-reciprocal to-one input role in [open_input] that [rolesEmpty] does not
+   close, or a relation a creation whose condition is undetermined could link
+   [i] over (RUNTIME-SEMANTICS ch. 1.5) *)
+let links_open w (i : instance) ~fact_type role =
+  let key = link_key ~fact_type role in
+  let m = (i.label, Relation key) in
+  (links i ~fact_type role = [] && Member.mem m w.open_input && not (Key.mem (i.label, key) w.stated_roles_empty))
+  || Member.mem m w.opened
 
 (* The labels linked to [i] over [role] of [fact_type] as an evaluation reads
    them: the links that stand, and [Open_read] where the relation is open on

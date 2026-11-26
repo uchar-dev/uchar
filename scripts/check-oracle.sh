@@ -295,32 +295,132 @@ PYEOF
     status=1
 fi
 
-# check 6: monotonicity (RUNTIME-SEMANTICS ch. 1.5, "The two requirements"): giving an open input member a value — or
-# stating that it has no value (`attributesEmpty`) or does not hold (`characteristicsAbsent`) — adds outcomes and
-# changes none, without exception. Per golden that check 5 carries (every case of its strict copy plays) and per golden
-# that carries the property itself, per case file and per input the case gives (an attribute in `attributes` or in
-# `attributesEmpty`, a characteristic in `characteristics` or in `characteristicsAbsent`), the case without that input
-# runs beside the case as it is, both with `runner --end-state`: the end state of ch. 5.12a with its open members. The run without the input
-# keeps every outcome of its end state in the other: each of its lines that is not open stands there; a member it has
-# no line for (settled leeg, or standing not to hold) has none there either; a link or an object the other adds lies on
-# a relation it has open. What the member left out is without its value is read off the document, not off ref's end
-# state, so that ref closing an open input member cannot take its run out of the comparison (ch. 1.5), in four
-# standings: derived, where a writer other than an initialisation writes it on the object's type (a rule other than an
-# initialisation, or a defaults group with a default other than its initialisation default or with an exception
-# group); an open input member, where no such writer writes it and its declaration does not say its input is complete;
-# complete, declared so with no writer, settled leeg; and initialised, declared complete with an initialisation as its
-# one writer, settled leeg below the initialisation, which then gives its value. A run that leaves out an open input
-# member must have it open in ref's end state, and a run that leaves out a complete one must not; each fails by name
-# where it does not. A run that leaves out a derived or an initialised member is compared where ref names the member
-# open, and else counted apart, and so is one that leaves out a complete member. Every other difference fails by name
-# unless MONOTONE_GAPS lists it; the comparison,
-# the reading of the document and the judgement of a run pass rows of their own, and the run of MONOTONE_MUTANT,
-# compared all the same, must lose an outcome. The runs go in one batch, one runner per core, and are judged in corpus
-# order.
+# check 6: monotonicity (RUNTIME-SEMANTICS ch. 1.5, "The two requirements"): giving an open input member a value —
+# stating that it has no value (`attributesEmpty`), does not hold (`characteristicsAbsent`) or has no link on a
+# non-reciprocal to-one role (`rolesEmpty`), or supplying a link on a non-reciprocal to-one–to-one fact type both of
+# whose roles are openable input roles — adds outcomes and changes none, without exception. A link where at least one
+# side is `many: true`, declared `complete: true`, or written by a creation is not left out: dropping a `1:n` link
+# changes the closed `to-many` collection on the `many` side (e.g. its count from 1 to 0), which is no open-input
+# relaxation. Per golden that check 5 carries (every case of its strict copy plays) and per golden
+# that carries the property itself, per case file and per input the case gives, the case without that input
+# runs beside the case as it is, both with `runner --end-state`: the end state of ch. 5.12a with its open members and
+# open relations.
+cat > "$work/mono_lib.py" <<'PYLIB'
+def norm(s):
+    return " ".join(s.split()).lower()
+
+
+def quote(s):
+    return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def chain(doc, otype):
+    types = {norm(o["name"]): o for o in doc["model"]["objectTypes"]}
+    out, t = [], norm(otype)
+    while t is not None:
+        if t not in types or types[t] in out:
+            raise ValueError("no object type %r, or a cycle of supertypes through it" % t)
+        out.append(types[t])
+        t = norm(types[t]["supertype"]) if "supertype" in types[t] else None
+    return out
+
+
+def subtype_of(doc, sub, sup):
+    return bool(sub and sup) and norm(sup) in {norm(o["name"]) for o in chain(doc, sub)}
+
+
+def role_matches(r, key):
+    names = {norm(r["name"])}
+    if "plural" in r and r["plural"]:
+        names.add(norm(r["plural"]))
+    return norm(key) in names
+
+
+def resolve_role_ft(doc, otype, key):
+    hits = []
+    for ft in doc["model"].get("factTypes", []):
+        roles = ft["roles"]
+        if len(roles) == 2 and not ft.get("reciprocal"):
+            r0, r1 = roles
+            if subtype_of(doc, otype, r0["objectType"]) and role_matches(r1, key):
+                hits.append((ft, 1, r1, r0))
+            if subtype_of(doc, otype, r1["objectType"]) and role_matches(r0, key):
+                hits.append((ft, 0, r0, r1))
+        elif len(roles) == 1 and ft.get("reciprocal"):
+            r = roles[0]
+            if subtype_of(doc, otype, r["objectType"]) and role_matches(r, key):
+                hits.append((ft, 0, r, r))
+    if len(hits) != 1:
+        raise ValueError("role key %r from %s resolved to %d roles" % (key, otype, len(hits)))
+    return hits[0]
+
+
+def written_role_on(doc, otype, ft, far):
+    ft_n, far_n = norm(ft["name"]), norm(far["name"])
+    for oc in doc["rules"].get("objectCreations", []):
+        for v in oc["versions"]:
+            subj, created = v.get("subject"), v.get("createdType")
+            if not subtype_of(doc, otype, subj):
+                continue
+            if "connectingRole" in v:
+                rb = v["connectingRole"]
+                if norm(rb["factType"]) == ft_n and norm(rb["role"]) == far_n:
+                    return True
+            elif subj and created:
+                blocked, cands = False, []
+                for ft_c in doc["model"].get("factTypes", []):
+                    rs = ft_c["roles"]
+                    if len(rs) == 2 and not ft_c.get("reciprocal"):
+                        a, b = rs
+                        if norm(subj) == norm(created):
+                            if subtype_of(doc, subj, a["objectType"]) and subtype_of(doc, subj, b["objectType"]):
+                                blocked = True
+                        elif subtype_of(doc, subj, a["objectType"]) and subtype_of(doc, created, b["objectType"]):
+                            cands.append((ft_c, b))
+                        elif subtype_of(doc, subj, b["objectType"]) and subtype_of(doc, created, a["objectType"]):
+                            cands.append((ft_c, a))
+                    elif len(rs) == 1 and ft_c.get("reciprocal") and norm(subj) == norm(created):
+                        if subtype_of(doc, subj, rs[0]["objectType"]):
+                            cands.append((ft_c, rs[0]))
+                if not blocked and len(cands) == 1:
+                    ft_c, bound = cands[0]
+                    if norm(ft_c["name"]) == ft_n and norm(bound["name"]) == far_n:
+                        return True
+    for fc in doc["rules"].get("factCreations", []):
+        for v in fc["versions"]:
+            if norm(v["factType"]) != ft_n:
+                continue
+            if role_matches(far, v["targetRole"]) and subtype_of(doc, otype, v.get("anchor")):
+                return True
+            t_roles = [r for r in ft["roles"] if norm(r["name"]) == norm(v["targetRole"])]
+            if len(t_roles) == 1 and role_matches(far, v["anchorRole"]) and subtype_of(doc, otype, t_roles[0]["objectType"]):
+                return True
+    return False
+
+
+def role_standing(doc, otype, ft, far):
+    if ft.get("reciprocal") or far.get("many"):
+        return "closed"
+    if written_role_on(doc, otype, ft, far):
+        return "derived"
+    if far.get("complete") is True:
+        return "complete"
+    return "input"
+
+
+def open_link_line(ft, pos, label):
+    r0, r1 = ft["roles"]
+    if pos == 1:
+        return "link %s %s %s %s open" % (quote(ft["name"]), quote(r0["name"]), quote(label), quote(r1["name"]))
+    return "link %s %s open %s %s" % (quote(ft["name"]), quote(r0["name"]), quote(r1["name"]), quote(label))
+PYLIB
 if ! python3 -I - "$list" "$work" <<'PYEOF'
 import collections, copy, json, os, sys
 
 list_path, work = sys.argv[1:3]
+sys.path.insert(0, work)
+from mono_lib import norm, resolve_role_ft, role_standing
+
 by_golden = collections.OrderedDict()
 for line in open(list_path, encoding="utf-8"):
     case = line.rstrip("\n")
@@ -337,8 +437,6 @@ for line in open(os.path.join(work, "tasks.tsv"), encoding="utf-8"):
     entry = closed.setdefault(name, [copy_path, True])
     entry[1] = entry[1] and ok
 strict = [l.strip() for l in open(os.path.join(work, "strict.txt"), encoding="utf-8") if l.strip()]
-def norm(s):
-    return " ".join(s.split()).lower()
 
 
 def drop_list_member(c, i, field, target):
@@ -346,8 +444,22 @@ def drop_list_member(c, i, field, target):
     inst[field] = [x for x in inst[field] if norm(x) != target]
 
 
-def drop_inputs(case):
+def drop_link(doc, c, ft_n, ai, ao, al, bi, bo, bl):
+    for idx, otype, want_pos, target in ((ai, ao, 1, bl), (bi, bo, 0, al)):
+        roles = c["input"]["instances"][idx].get("roles") or {}
+        for k in list(roles):
+            ft, pos, _, _ = resolve_role_ft(doc, otype, k)
+            if norm(ft["name"]) == ft_n and pos == want_pos:
+                rest = [x for x in roles[k] if x != target]
+                if rest:
+                    roles[k] = rest
+                else:
+                    roles.pop(k)
+
+
+def drop_inputs(doc, case):
     out = []
+    by_label = {inst["label"]: (idx, inst["objectType"]) for idx, inst in enumerate(case["input"]["instances"])}
     for i, inst in enumerate(case["input"]["instances"]):
         label = inst["label"]
         for a in (inst.get("attributes") or {}):
@@ -361,6 +473,14 @@ def drop_inputs(case):
             seen_empty.add(na)
             out.append(("attribute", label, a,
                         lambda c, i=i, na=na: drop_list_member(c, i, "attributesEmpty", na)))
+        seen_roles = set()
+        for r in (inst.get("rolesEmpty") or []):
+            nr = norm(r)
+            if nr in seen_roles:
+                continue
+            seen_roles.add(nr)
+            out.append(("roleEmpty", label, r,
+                        lambda c, i=i, nr=nr: drop_list_member(c, i, "rolesEmpty", nr)))
         for field in ("characteristics", "characteristicsAbsent"):
             seen = set()
             for k in (inst.get(field) or []):
@@ -370,26 +490,75 @@ def drop_inputs(case):
                 seen.add(nk)
                 out.append(("characteristic", label, k,
                             lambda c, i=i, field=field, nk=nk: drop_list_member(c, i, field, nk)))
+    seen_links = set()
+    for inst in case["input"]["instances"]:
+        label, otype = inst["label"], inst["objectType"]
+        for rkey, targets in (inst.get("roles") or {}).items():
+            ft, pos, _, _ = resolve_role_ft(doc, otype, rkey)
+            if ft.get("reciprocal") or len(ft["roles"]) != 2 or ft["roles"][0]["many"] or ft["roles"][1]["many"]:
+                continue
+            r0, r1 = ft["roles"]
+            for t in targets:
+                a_label, b_label = (label, t) if pos == 1 else (t, label)
+                ai, ao = by_label[a_label]
+                bi, bo = by_label[b_label]
+                canon = (norm(ft["name"]), a_label, b_label)
+                if canon in seen_links:
+                    continue
+                seen_links.add(canon)
+                if role_standing(doc, ao, ft, r1) == "input" and role_standing(doc, bo, ft, r0) == "input":
+                    out.append(("link", a_label, json.dumps([ft["name"], b_label]),
+                                lambda c, doc=doc, ft_n=norm(ft["name"]), ai=ai, ao=ao, al=a_label, bi=bi, bo=bo, bl=b_label:
+                                drop_link(doc, c, ft_n, ai, ao, al, bi, bo, bl)))
     return out
 
 
-sample_case = {"input": {"instances": [{"label": "V1", "objectType": "Vondst",
-                                        "attributes": {"gewicht": {"number": "10"}},
-                                        "attributesEmpty": ["ophaalwens", "Ophaalwens"], "roles": {},
-                                        "characteristics": ["gemeld"],
-                                        "characteristicsAbsent": ["drijfhout", "Drijfhout"]}]}}
+sample_doc = {
+    "model": {
+        "objectTypes": [{"name": "Vondst", "attributes": [], "characteristics": []},
+                        {"name": "Jutter", "attributes": [], "characteristics": []},
+                        {"name": "Rapport", "attributes": [], "characteristics": []},
+                        {"name": "Dossier", "attributes": [], "characteristics": []}],
+        "factTypes": [
+            {"name": "vangst", "reciprocal": False,
+             "roles": [{"name": "vinder", "objectType": "Jutter", "many": False},
+                       {"name": "vondst", "plural": "vondsten", "objectType": "Vondst", "many": True}]},
+            {"name": "rapportage", "reciprocal": False,
+             "roles": [{"name": "vondst", "objectType": "Vondst", "many": False},
+                       {"name": "rapport", "objectType": "Rapport", "many": False}]},
+            {"name": "dossiervoering", "reciprocal": False,
+             "roles": [{"name": "houder", "objectType": "Jutter", "many": False},
+                       {"name": "dossier", "objectType": "Dossier", "many": False, "complete": True}]}]},
+    "rules": {}}
+sample_case = {"input": {"instances": [
+    {"label": "V1", "objectType": "Vondst",
+     "attributes": {"gewicht": {"number": "10"}},
+     "attributesEmpty": ["ophaalwens", "Ophaalwens"],
+     "roles": {"rapport": ["R1"]},
+     "rolesEmpty": ["vinder", "Vinder"],
+     "characteristics": ["gemeld"],
+     "characteristicsAbsent": ["drijfhout", "Drijfhout"]},
+    {"label": "J1", "objectType": "Jutter",
+     "attributes": {}, "roles": {"vondsten": ["V2"], "dossier": ["D1"]}, "characteristics": []},
+    {"label": "V2", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": []},
+    {"label": "R1", "objectType": "Rapport", "attributes": {}, "roles": {"vondst": ["V1"]}, "characteristics": []},
+    {"label": "D1", "objectType": "Dossier", "attributes": {}, "roles": {}, "characteristics": []}]}}
 got_drops = []
-for kind, label, member, drop in drop_inputs(sample_case):
+for kind, label, member, drop in drop_inputs(sample_doc, sample_case):
     sample_copy = copy.deepcopy(sample_case)
     drop(sample_copy)
     inst0 = sample_copy["input"]["instances"][0]
+    inst3 = sample_copy["input"]["instances"][3]
     got_drops.append((kind, label, member, list(inst0["attributes"]), list(inst0["attributesEmpty"]),
+                      dict(inst0["roles"]), list(inst0["rolesEmpty"]), dict(inst3["roles"]),
                       list(inst0["characteristics"]), list(inst0["characteristicsAbsent"])))
 want_drops = [
-    ("attribute", "V1", "gewicht", [], ["ophaalwens", "Ophaalwens"], ["gemeld"], ["drijfhout", "Drijfhout"]),
-    ("attribute", "V1", "ophaalwens", ["gewicht"], [], ["gemeld"], ["drijfhout", "Drijfhout"]),
-    ("characteristic", "V1", "gemeld", ["gewicht"], ["ophaalwens", "Ophaalwens"], [], ["drijfhout", "Drijfhout"]),
-    ("characteristic", "V1", "drijfhout", ["gewicht"], ["ophaalwens", "Ophaalwens"], ["gemeld"], []),
+    ("attribute", "V1", "gewicht", [], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder"], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
+    ("attribute", "V1", "ophaalwens", ["gewicht"], [], {"rapport": ["R1"]}, ["vinder", "Vinder"], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
+    ("roleEmpty", "V1", "vinder", ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, [], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
+    ("characteristic", "V1", "gemeld", ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder"], {"vondst": ["V1"]}, [], ["drijfhout", "Drijfhout"]),
+    ("characteristic", "V1", "drijfhout", ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder"], {"vondst": ["V1"]}, ["gemeld"], []),
+    ("link", "V1", json.dumps(["rapportage", "R1"]), ["gewicht"], ["ophaalwens", "Ophaalwens"], {}, ["vinder", "Vinder"], {}, ["gemeld"], ["drijfhout", "Drijfhout"]),
 ]
 if got_drops != want_drops:
     sys.stderr.write("check-oracle: FAIL (monotonicity) — drop_inputs self-test got %r, want %r\n"
@@ -406,12 +575,14 @@ with open(os.path.join(work, "mono", "tasks.tsv"), "w", encoding="utf-8") as tas
             doc = closed[name][0]
         else:
             continue
+        with open(doc, encoding="utf-8") as f:
+            ir_doc = json.load(f)
         for m, case_path in enumerate(cases, 1):
             case_file = os.path.basename(case_path)
             tasks.write("f%d.%d\t%s\t%s\t-\t%s\t%s\n" % (n, m, name, case_file, doc, case_path))
             with open(case_path, encoding="utf-8") as f:
                 case = json.load(f, object_pairs_hook=collections.OrderedDict)
-            for j, (kind, label, member, drop) in enumerate(drop_inputs(case), 1):
+            for j, (kind, label, member, drop) in enumerate(drop_inputs(ir_doc, case), 1):
                 reduced = copy.deepcopy(case)
                 drop(reduced)
                 path = os.path.join(work, "mono", "cases", "%d.%d.%d.json" % (n, m, j))
@@ -436,6 +607,8 @@ if ! monotone=$(python3 -I - "$work" "$MONOTONE_MUTANT" "$MONOTONE_GAPS" "$EXPEC
 import collections, json, os, re, sys
 
 work, mutant, gaps_text = sys.argv[1], sys.argv[2], sys.argv[3]
+sys.path.insert(0, work)
+from mono_lib import chain, norm, open_link_line, quote, resolve_role_ft, role_standing
 min_runs = int(sys.argv[4])
 problems = []
 
@@ -459,20 +632,18 @@ def is_open(line):
     return (m is not None and "open" in (m.group(3), m.group(5))) or (line.endswith(" open") and member_key(line) is not None)
 
 
-def open_on(reduced, fact_type, objects):
-    # whether the end state [reduced] has the relation of [fact_type] open on one of [objects]
-    for line in reduced:
-        m = LINK.match(line)
-        if m and m.group(1) == fact_type and "open" in (m.group(3), m.group(5)) \
-                and ({m.group(3), m.group(5)} - {"open"}) & set(objects):
-            return True
-    return False
+def open_on(reduced_set, m):
+    # whether the end state [reduced_set] has the relation of the concrete link [m] open in either of its two role slots
+    ft, r0, a, r1, b = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)
+    return ("link %s %s %s %s open" % (ft, r0, a, r1) in reduced_set
+            or "link %s %s open %s %s" % (ft, r0, r1, b) in reduced_set)
 
 
 def lost(reduced, full):
     # the outcomes of the end state [reduced] that [full] does not keep
     out = []
     full_set = set(full)
+    reduced_set = set(reduced)
     reduced_keys = {member_key(l): l for l in reduced if member_key(l)}
     objects = {OBJECT.match(l).group(1) for l in reduced if OBJECT.match(l)}
 
@@ -499,7 +670,7 @@ def lost(reduced, full):
             elif before != line and not is_open(before):
                 out.append("changed: %s -> %s" % (before, line))
         m = LINK.match(line)
-        if m and line not in reduced and not open_on(reduced, m.group(1), [m.group(3), m.group(5)]) \
+        if m and not is_open(line) and line not in reduced_set and not open_on(reduced_set, m) \
                 and not any(o not in objects and made_on_open(o) for o in (m.group(3), m.group(5))):
             out.append("a link on no open relation: " + line)
         o = OBJECT.match(line)
@@ -527,6 +698,16 @@ rows = [
     ("a fact added", [], ['channel "r" "V1" EF-005'], True),
     ("a link on an open relation", ['object "J1" "Jutter"', 'link "vangst" "jutter" "J1" "vondst" open'],
      ['object "J1" "Jutter"', 'link "vangst" "jutter" "J1" "vondst" open', 'link "vangst" "jutter" "J1" "vondst" "V1"'], True),
+    ("a 1:1 link resolving both open ends",
+     ['object "V1" "Vondst"', 'object "R1" "Rapport"',
+      'link "rapportage" "vondst" "V1" "rapport" open', 'link "rapportage" "vondst" open "rapport" "R1"'],
+     ['object "V1" "Vondst"', 'object "R1" "Rapport"', 'link "rapportage" "vondst" "V1" "rapport" "R1"'], True),
+    ("a self-relation link on the closed direction (slot mismatch)",
+     ['object "V1" "Vergunning"', 'object "V2" "Vergunning"',
+      'link "opvolging" "vorige" open "volgende" "V1"'],
+     ['object "V1" "Vergunning"', 'object "V2" "Vergunning"',
+      'link "opvolging" "vorige" open "volgende" "V1"',
+      'link "opvolging" "vorige" "V1" "volgende" "V2"'], False),
     ("a link on no open relation", ['object "J1" "Jutter"'], ['object "J1" "Jutter"', 'link "vangst" "jutter" "J1" "vondst" "V1"'], False),
     ("a made object on an open relation",
      ['object "J1" "Jutter"', 'link "proefvangst" "jutter" "J1" "proefvondst" open'],
@@ -543,23 +724,7 @@ for name, reduced, full, keeps in rows:
         problems.append('the comparison fails its row "%s": it says %s' % (name, "keeps" if not keeps else "loses"))
 
 
-# --- whether a member left out is an open input member, read off the document (RUNTIME-SEMANTICS ch. 1.5) ---
-def norm(s):
-    return " ".join(s.split()).lower()
-
-
-def chain(doc, otype):
-    # the object type [otype] and its supertypes, nearest first
-    types = {norm(o["name"]): o for o in doc["model"]["objectTypes"]}
-    out, t = [], norm(otype)
-    while t is not None:
-        if t not in types or types[t] in out:
-            raise ValueError("no object type %r, or a cycle of supertypes through it" % t)
-        out.append(types[t])
-        t = norm(types[t]["supertype"]) if "supertype" in types[t] else None
-    return out
-
-
+# --- whether a member or role left out is an open input, read off the document (RUNTIME-SEMANTICS ch. 1.5) ---
 def writers(doc):
     # (subject type, kind, member, derives) of every writer: a rule version (one that is neither an initialisation nor
     # carries a presentation assigns a characteristic, WF-022) and a defaults group. Every writer derives the member
@@ -578,10 +743,17 @@ def writers(doc):
 
 
 def standing(doc, otype, kind, member):
-    # what the member [member] of an object of [otype] is without a value — "derived"; "input"; "complete", declared
-    # complete with no writer, settled leeg; or "initialised", declared complete with an initialisation as its one
-    # writer, settled leeg below the initialisation, which then gives its value — and the name its declaration gives
-    # it, by which the end state names it (a case may spell it otherwise)
+    # what the member or role [member] of an object of [otype] is without a value or link — "derived"; "input";
+    # "complete", declared complete with no writer, settled leeg / settled absent; or "initialised", declared complete
+    # with an initialisation as its one writer, settled leeg below the initialisation, which then gives its value — and
+    # the declared name (or expected open-link line(s) for a role or 1:1 link)
+    if kind == "roleEmpty":
+        ft, pos, far, _ = resolve_role_ft(doc, otype, member)
+        return role_standing(doc, otype, ft, far), (ft["name"], ft["roles"][0]["name"], ft["roles"][1]["name"], pos)
+    if kind == "link":
+        ft_name, b_label = json.loads(member)
+        ft = next(f for f in doc["model"]["factTypes"] if norm(f["name"]) == norm(ft_name))
+        return "input", (ft["name"], ft["roles"][0]["name"], ft["roles"][1]["name"], b_label)
     declared = [m for o in chain(doc, otype) for m in o["attributes" if kind == "attribute" else "characteristics"]
                 if norm(m["name"]) == norm(member)]
     if not declared:
@@ -615,8 +787,21 @@ row_doc = {
         ot("Vondst", [{"name": "taxatie"}, {"name": "toeslag", "complete": True}, {"name": "strandloon"},
                       {"name": "meldloon"}, {"name": "vindloon"}, {"name": "bergloon"},
                       {"name": "premie", "complete": True}, {"name": "keurloon"}], ["kostbaar", "gemeld", "Gekeurd"]),
-        ot("Strandvondst", [], [], "Vondst")]},
+        ot("Strandvondst", [], [], "Vondst"),
+        ot("Jutter", [], [])],
+     "factTypes": [
+         {"name": "vangst", "reciprocal": False,
+          "roles": [{"name": "vinder", "objectType": "Jutter", "many": False},
+                    {"name": "vondst", "plural": "vondsten", "objectType": "Vondst", "many": True}]},
+         {"name": "toezicht", "reciprocal": False,
+          "roles": [{"name": "toezichthouder", "objectType": "Jutter", "many": False, "complete": True},
+                    {"name": "bewaakte vondst", "objectType": "Vondst", "many": True}]},
+         {"name": "hulp", "reciprocal": False,
+          "roles": [{"name": "helper", "objectType": "Jutter", "many": False},
+                    {"name": "hulpvondst", "objectType": "Vondst", "many": True}]}]},
     "rules": {
+        "factCreations": [
+            {"versions": [{"factType": "hulp", "anchorRole": "helper", "targetRole": "hulpvondst", "anchor": "Jutter"}]}],
         "rules": [
             {"versions": [{"target": target("Vondst", "strandloon"), "initialisation": True}]},
             {"versions": [{"target": target("Vondst", "vindloon"), "presentation": "calculation"}]},
@@ -649,6 +834,12 @@ standing_rows = [
     ("a member a rule on a subtype writes, on the supertype", "Vondst", "attribute", "bergloon", "input", "bergloon"),
     ("a member a rule on a subtype writes, on the subtype", "Strandvondst", "attribute", "bergloon", "derived",
      "bergloon"),
+    ("a to-one input role, on a subtype", "Strandvondst", "roleEmpty", "vinder", "input",
+     ("vangst", "vinder", "vondst", 0)),
+    ("a to-one role declared complete", "Vondst", "roleEmpty", "toezichthouder", "complete",
+     ("toezicht", "toezichthouder", "bewaakte vondst", 0)),
+    ("a to-one role a fact creation writes", "Vondst", "roleEmpty", "helper", "derived",
+     ("hulp", "helper", "hulpvondst", 0)),
 ]
 for name, otype, kind, member, want, want_declared in standing_rows:
     got, declared = standing(row_doc, otype, kind, member)
@@ -657,12 +848,21 @@ for name, otype, kind, member, want, want_declared in standing_rows:
 
 
 def judge(standing_of, state, kind, label, member):
-    # what a run without the input does in the comparison: "compare"; "apart" (a member that is not open without its
-    # value); or a failure, "closed" (an open input member ref does not name open) or "opened" (a member declared
-    # complete that no writer writes, which ref names open). A derived member, and a complete member below an
-    # initialisation, which reads what it reads, that ref names open is compared all the same: its run can only add to
-    # the comparison
-    named_open = "%s %s %s open" % (kind, quote(label), quote(member)) in state
+    # what a run without the input does in the comparison: "compare"; "apart" (a member or role that is not open without
+    # its value or link); or a failure, "closed" (an open input member, role or 1:1 link ref does not name open) or
+    # "opened" (a member or role declared complete that no writer writes, which ref names open)
+    if kind == "roleEmpty":
+        ft_name, r0, r1, pos = member
+        line = ("link %s %s %s %s open" % (quote(ft_name), quote(r0), quote(label), quote(r1)) if pos == 1
+                else "link %s %s open %s %s" % (quote(ft_name), quote(r0), quote(r1), quote(label)))
+        named_open = line in state
+    elif kind == "link":
+        ft_name, r0, r1, b_label = member
+        line0 = "link %s %s %s %s open" % (quote(ft_name), quote(r0), quote(label), quote(r1))
+        line1 = "link %s %s open %s %s" % (quote(ft_name), quote(r0), quote(r1), quote(b_label))
+        named_open = line0 in state and line1 in state
+    else:
+        named_open = "%s %s %s open" % (kind, quote(label), quote(member)) in state
     if standing_of == "input":
         return "compare" if named_open else "closed"
     if standing_of == "complete":
@@ -670,24 +870,29 @@ def judge(standing_of, state, kind, label, member):
     return "compare" if named_open else "apart"
 
 
-def quote(s):
-    return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
-
-
 judge_rows = [
-    ("an open input member ref names open", "input", ['attribute "V1" "strandloon" open'], "compare"),
-    ("an open input member ref closes (red)", "input", ['attribute "V1" "strandloon" 5'], "closed"),
-    ("a member declared complete", "complete", [], "apart"),
-    ("a member declared complete ref names open (red)", "complete", ['attribute "V1" "strandloon" open'], "opened"),
-    ("a complete member below an initialisation ref names open", "initialised", ['attribute "V1" "strandloon" open'],
+    ("an open input member ref names open", "input", "attribute", "V1", "strandloon", ['attribute "V1" "strandloon" open'], "compare"),
+    ("an open input member ref closes (red)", "input", "attribute", "V1", "strandloon", ['attribute "V1" "strandloon" 5'], "closed"),
+    ("a member declared complete", "complete", "attribute", "V1", "strandloon", [], "apart"),
+    ("a member declared complete ref names open (red)", "complete", "attribute", "V1", "strandloon", ['attribute "V1" "strandloon" open'], "opened"),
+    ("a complete member below an initialisation ref names open", "initialised", "attribute", "V1", "strandloon", ['attribute "V1" "strandloon" open'],
      "compare"),
-    ("a complete member below an initialisation ref does not name open", "initialised",
+    ("a complete member below an initialisation ref does not name open", "initialised", "attribute", "V1", "strandloon",
      ['attribute "V1" "strandloon" 5'], "apart"),
-    ("a derived member ref names open", "derived", ['attribute "V1" "strandloon" open'], "compare"),
-    ("a derived member ref does not name open", "derived", ['attribute "V1" "strandloon" 5'], "apart"),
+    ("a derived member ref names open", "derived", "attribute", "V1", "strandloon", ['attribute "V1" "strandloon" open'], "compare"),
+    ("a derived member ref does not name open", "derived", "attribute", "V1", "strandloon", ['attribute "V1" "strandloon" 5'], "apart"),
+    ("an open to-one role ref names open", "input", "roleEmpty", "V1", ("vangst", "vinder", "vondst", 0),
+     ['link "vangst" "vinder" open "vondst" "V1"'], "compare"),
+    ("an open to-one role ref closes (red)", "input", "roleEmpty", "V1", ("vangst", "vinder", "vondst", 0), [], "closed"),
+    ("a complete to-one role ref names open (red)", "complete", "roleEmpty", "V1", ("toezicht", "toezichthouder", "bewaakte vondst", 0),
+     ['link "toezicht" "toezichthouder" open "bewaakte vondst" "V1"'], "opened"),
+    ("an openable 1:1 link ref names open on both ends", "input", "link", "V1", ("rapportage", "vondst", "rapport", "R1"),
+     ['link "rapportage" "vondst" "V1" "rapport" open', 'link "rapportage" "vondst" open "rapport" "R1"'], "compare"),
+    ("an openable 1:1 link ref names open on one end only (red)", "input", "link", "V1", ("rapportage", "vondst", "rapport", "R1"),
+     ['link "rapportage" "vondst" "V1" "rapport" open'], "closed"),
 ]
-for name, standing_of, state, want in judge_rows:
-    got = judge(standing_of, state, "attribute", "V1", "strandloon")
+for name, standing_of, kind, label, member, state, want in judge_rows:
+    got = judge(standing_of, state, kind, label, member)
     if got != want:
         problems.append('the judgement of a run fails its row "%s": it says %s' % (name, got))
 
