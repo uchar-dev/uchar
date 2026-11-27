@@ -80,7 +80,8 @@
             "name": "vondst",
             "objectType": "Vondst",
             "plural": "vondsten",
-            "many": true
+            "many": true,
+            "complete": true
           }
         ]
       },
@@ -100,7 +101,8 @@
             "name": "klacht",
             "objectType": "Klacht",
             "plural": "klachten",
-            "many": true
+            "many": true,
+            "complete": true
           }
         ]
       }

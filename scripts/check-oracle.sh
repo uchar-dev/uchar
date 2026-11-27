@@ -59,7 +59,7 @@ BIN=_build/default/ref/bin/runner.exe
 # at an occasion. Accepted weakness, recorded rather than hidden: a count that stays equal while its
 # content shifted passes; the name-carrying lists are what cover that direction. A deliberate
 # removal lowers the floor in the same commit.
-EXPECTED_MIN_EXAMPLES=489   # 2026-09-10: measured 489 (ref/test/test_ref.ml worked examples)
+EXPECTED_MIN_EXAMPLES=4800  # 2026-11-27: measured 4808 (ref/test/test_ref.ml worked examples, raised from 489 with card open-to-many-roles)
 EXPECTED_MIN_CASES=427      # 2026-09-10: measured 427 (corpus/golden/**/case*.json)
 EXPECTED_MIN_PRESERVED_GOLDENS=279  # 2026-11-22: measured 279 (check 5: goldens whose forms ref carries strictly, the folds over a set, the quantifier fold, the defaults group, the creations off a cycle and the IfThenElse among them; 280 before jutterswet-grens-per-jutter, whose Lets are read in the filter and the matrix of a quantifier fold, was refused as let-in-composite)
 EXPECTED_MIN_PRESERVED_CASES=782    # 2026-11-22: measured 782 (check 5: their case files; 784 before that golden's two)
@@ -70,7 +70,7 @@ EXPECTED_MIN_PRESERVED_CASES=782    # 2026-11-22: measured 782 (check 5: their c
 # strict reading from the ordinary one, and the gate fails.
 PRESERVATION_MUTANT=jutterswet-leeg-deeltal
 
-EXPECTED_MIN_MONOTONE_RUNS=2652     # 2026-11-23: measured 2652 (check 6: runs without one input compared with the case), raised from 2226 with the card one-empty, part 2: a test on leeg or gevuld, the filled-value count, a fold filter on gevuld and an initialisation read over an open value as every other read is, so the 396 runs in which a closure decided, until then counted apart, are compared; 2648 until the member left out was read off the document, which compares the 4 runs of jutterswet-keurunie case2, whose case spells the characteristics otherwise than their declaration
+EXPECTED_MIN_MONOTONE_RUNS=3600     # 2026-11-27: measured 3609 (check 6: runs without one input compared with the case), raised from 2652 with card open-to-many-roles: rolesClosed entries and openable unclosed non-reciprocal links across both 0..1 and 0..n roles are dropped individually; previously 2652 (2026-11-23, raised from 2226 with card one-empty, part 2)
 
 # check 6's own red row: a run whose member left out is not open without its value, compared all the same, must lose
 # an outcome. Measured 2026-11-23: jutterswet-volledig-gegeven case2 without the toeslag of V1, which is declared
@@ -296,12 +296,14 @@ PYEOF
 fi
 
 # check 6: monotonicity (RUNTIME-SEMANTICS ch. 1.5, "The two requirements"): giving an open input member a value —
-# stating that it has no value (`attributesEmpty`), does not hold (`characteristicsAbsent`) or has no link on a
-# non-reciprocal to-one role (`rolesEmpty`), or supplying a link on a non-reciprocal to-one–to-one fact type both of
-# whose roles are openable input roles — adds outcomes and changes none, without exception. A link where at least one
-# side is `many: true`, declared `complete: true`, or written by a creation is not left out: dropping a `1:n` link
-# changes the closed `to-many` collection on the `many` side (e.g. its count from 1 to 0), which is no open-input
-# relaxation. Per golden that check 5 carries (every case of its strict copy plays) and per golden
+# stating that it has no value (`attributesEmpty`), does not hold (`characteristicsAbsent`), has no link on a
+# non-reciprocal to-one role (`rolesEmpty`), or is closed on a non-reciprocal to-many role (`rolesClosed`), or
+# supplying a link on a non-reciprocal fact type both of whose directed role positions on the linked instances are
+# openable and unclosed input roles — adds outcomes and changes none, without exception. A link where at least one
+# end is declared `complete: true`, written by a creation on its instance's type, or (for a `many: true` end) closed in
+# `rolesClosed` on its instance is not left out: dropping a link while `rolesClosed` or `complete: true` holds the
+# `to-many` end shrinks a closed collection, whereas when both ends are openable and unclosed leaving the link out
+# leaves both directed role positions open. Per golden that check 5 carries (every case of its strict copy plays) and per golden
 # that carries the property itself, per case file and per input the case gives, the case without that input
 # runs beside the case as it is, both with `runner --end-state`: the end state of ch. 5.12a with its open members and
 # open relations.
@@ -399,7 +401,7 @@ def written_role_on(doc, otype, ft, far):
 
 
 def role_standing(doc, otype, ft, far):
-    if ft.get("reciprocal") or far.get("many"):
+    if ft.get("reciprocal"):
         return "closed"
     if written_role_on(doc, otype, ft, far):
         return "derived"
@@ -443,14 +445,14 @@ def drop_list_member(c, i, field, target):
     inst[field] = [x for x in inst[field] if norm(x) != target]
 
 
-def role_empty_slot(doc, otype, r):
+def role_slot(doc, otype, r):
     ft, pos, _, _ = resolve_role_ft(doc, otype, r)
     return (norm(ft["name"]), pos)
 
 
-def drop_role_empty(doc, c, i, otype, slot):
+def drop_role_field(doc, c, i, otype, field, slot):
     inst = c["input"]["instances"][i]
-    inst["rolesEmpty"] = [x for x in inst["rolesEmpty"] if role_empty_slot(doc, otype, x) != slot]
+    inst[field] = [x for x in inst[field] if role_slot(doc, otype, x) != slot]
 
 
 def drop_link(doc, c, ft_n, ai, ao, al, bi, bo, bl):
@@ -469,6 +471,10 @@ def drop_link(doc, c, ft_n, ai, ao, al, bi, bo, bl):
 def drop_inputs(doc, case):
     out = []
     by_label = {inst["label"]: (idx, inst["objectType"]) for idx, inst in enumerate(case["input"]["instances"])}
+    closed_slots = {
+        inst["label"]: {role_slot(doc, inst["objectType"], r) for r in (inst.get("rolesClosed") or [])}
+        for inst in case["input"]["instances"]
+    }
     for i, inst in enumerate(case["input"]["instances"]):
         label, otype = inst["label"], inst["objectType"]
         for a in (inst.get("attributes") or {}):
@@ -482,15 +488,16 @@ def drop_inputs(doc, case):
             seen_empty.add(na)
             out.append(("attribute", label, a,
                         lambda c, i=i, na=na: drop_list_member(c, i, "attributesEmpty", na)))
-        seen_roles = set()
-        for r in (inst.get("rolesEmpty") or []):
-            slot = role_empty_slot(doc, otype, r)
-            if slot in seen_roles:
-                continue
-            seen_roles.add(slot)
-            out.append(("roleEmpty", label, r,
-                        lambda c, doc=doc, i=i, otype=otype, slot=slot:
-                        drop_role_empty(doc, c, i, otype, slot)))
+        for field, kind in (("rolesEmpty", "roleEmpty"), ("rolesClosed", "roleClosed")):
+            seen_roles = set()
+            for r in (inst.get(field) or []):
+                slot = role_slot(doc, otype, r)
+                if slot in seen_roles:
+                    continue
+                seen_roles.add(slot)
+                out.append((kind, label, r,
+                            lambda c, doc=doc, i=i, otype=otype, field=field, slot=slot:
+                            drop_role_field(doc, c, i, otype, field, slot)))
         for field in ("characteristics", "characteristicsAbsent"):
             seen = set()
             for k in (inst.get(field) or []):
@@ -505,20 +512,23 @@ def drop_inputs(doc, case):
         label, otype = inst["label"], inst["objectType"]
         for rkey, targets in (inst.get("roles") or {}).items():
             ft, pos, _, _ = resolve_role_ft(doc, otype, rkey)
-            if ft.get("reciprocal") or len(ft["roles"]) != 2 or ft["roles"][0]["many"] or ft["roles"][1]["many"]:
+            if ft.get("reciprocal") or len(ft["roles"]) != 2:
                 continue
             r0, r1 = ft["roles"]
+            ft_n = norm(ft["name"])
             for t in targets:
                 a_label, b_label = (label, t) if pos == 1 else (t, label)
                 ai, ao = by_label[a_label]
                 bi, bo = by_label[b_label]
-                canon = (norm(ft["name"]), a_label, b_label)
+                canon = (ft_n, a_label, b_label)
                 if canon in seen_links:
                     continue
                 seen_links.add(canon)
-                if role_standing(doc, ao, ft, r1) == "input" and role_standing(doc, bo, ft, r0) == "input":
+                a_open = role_standing(doc, ao, ft, r1) == "input" and not (r1["many"] and (ft_n, 1) in closed_slots[a_label])
+                b_open = role_standing(doc, bo, ft, r0) == "input" and not (r0["many"] and (ft_n, 0) in closed_slots[b_label])
+                if a_open and b_open:
                     out.append(("link", a_label, json.dumps([ft["name"], b_label]),
-                                lambda c, doc=doc, ft_n=norm(ft["name"]), ai=ai, ao=ao, al=a_label, bi=bi, bo=bo, bl=b_label:
+                                lambda c, doc=doc, ft_n=ft_n, ai=ai, ao=ao, al=a_label, bi=bi, bo=bo, bl=b_label:
                                 drop_link(doc, c, ft_n, ai, ao, al, bi, bo, bl)))
     return out
 
@@ -550,7 +560,10 @@ sample_case = {"input": {"instances": [
      "characteristicsAbsent": ["drijfhout", "Drijfhout"]},
     {"label": "J1", "objectType": "Jutter",
      "attributes": {}, "roles": {"vondsten": ["V2"], "dossier": ["D1"]}, "characteristics": []},
+    {"label": "J2", "objectType": "Jutter",
+     "attributes": {}, "roles": {"vondsten": ["V3"]}, "rolesClosed": ["vondst", "vondsten"], "characteristics": []},
     {"label": "V2", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": []},
+    {"label": "V3", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": []},
     {"label": "R1", "objectType": "Rapport", "attributes": {}, "roles": {"vondst": ["V1"]}, "characteristics": []},
     {"label": "D1", "objectType": "Dossier", "attributes": {}, "roles": {}, "characteristics": []}]}}
 got_drops = []
@@ -558,17 +571,22 @@ for kind, label, member, drop in drop_inputs(sample_doc, sample_case):
     sample_copy = copy.deepcopy(sample_case)
     drop(sample_copy)
     inst0 = sample_copy["input"]["instances"][0]
-    inst3 = sample_copy["input"]["instances"][3]
+    inst1 = sample_copy["input"]["instances"][1]
+    inst2 = sample_copy["input"]["instances"][2]
+    inst5 = sample_copy["input"]["instances"][5]
     got_drops.append((kind, label, member, list(inst0["attributes"]), list(inst0["attributesEmpty"]),
-                      dict(inst0["roles"]), list(inst0["rolesEmpty"]), dict(inst3["roles"]),
+                      dict(inst0["roles"]), list(inst0["rolesEmpty"]), dict(inst1["roles"]),
+                      dict(inst2["roles"]), list(inst2["rolesClosed"]), dict(inst5["roles"]),
                       list(inst0["characteristics"]), list(inst0["characteristicsAbsent"])))
 want_drops = [
-    ("attribute", "V1", "gewicht", [], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder", "vinders"], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
-    ("attribute", "V1", "ophaalwens", ["gewicht"], [], {"rapport": ["R1"]}, ["vinder", "Vinder", "vinders"], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
-    ("roleEmpty", "V1", "vinder", ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, [], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
-    ("characteristic", "V1", "gemeld", ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder", "vinders"], {"vondst": ["V1"]}, [], ["drijfhout", "Drijfhout"]),
-    ("characteristic", "V1", "drijfhout", ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder", "vinders"], {"vondst": ["V1"]}, ["gemeld"], []),
-    ("link", "V1", json.dumps(["rapportage", "R1"]), ["gewicht"], ["ophaalwens", "Ophaalwens"], {}, ["vinder", "Vinder", "vinders"], {}, ["gemeld"], ["drijfhout", "Drijfhout"]),
+    ("attribute", "V1", "gewicht", [], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder", "vinders"], {"vondsten": ["V2"], "dossier": ["D1"]}, {"vondsten": ["V3"]}, ["vondst", "vondsten"], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
+    ("attribute", "V1", "ophaalwens", ["gewicht"], [], {"rapport": ["R1"]}, ["vinder", "Vinder", "vinders"], {"vondsten": ["V2"], "dossier": ["D1"]}, {"vondsten": ["V3"]}, ["vondst", "vondsten"], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
+    ("roleEmpty", "V1", "vinder", ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, [], {"vondsten": ["V2"], "dossier": ["D1"]}, {"vondsten": ["V3"]}, ["vondst", "vondsten"], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
+    ("characteristic", "V1", "gemeld", ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder", "vinders"], {"vondsten": ["V2"], "dossier": ["D1"]}, {"vondsten": ["V3"]}, ["vondst", "vondsten"], {"vondst": ["V1"]}, [], ["drijfhout", "Drijfhout"]),
+    ("characteristic", "V1", "drijfhout", ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder", "vinders"], {"vondsten": ["V2"], "dossier": ["D1"]}, {"vondsten": ["V3"]}, ["vondst", "vondsten"], {"vondst": ["V1"]}, ["gemeld"], []),
+    ("roleClosed", "J2", "vondst", ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder", "vinders"], {"vondsten": ["V2"], "dossier": ["D1"]}, {"vondsten": ["V3"]}, [], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
+    ("link", "V1", json.dumps(["rapportage", "R1"]), ["gewicht"], ["ophaalwens", "Ophaalwens"], {}, ["vinder", "Vinder", "vinders"], {"vondsten": ["V2"], "dossier": ["D1"]}, {"vondsten": ["V3"]}, ["vondst", "vondsten"], {}, ["gemeld"], ["drijfhout", "Drijfhout"]),
+    ("link", "J1", json.dumps(["vangst", "V2"]), ["gewicht"], ["ophaalwens", "Ophaalwens"], {"rapport": ["R1"]}, ["vinder", "Vinder", "vinders"], {"dossier": ["D1"]}, {"vondsten": ["V3"]}, ["vondst", "vondsten"], {"vondst": ["V1"]}, ["gemeld"], ["drijfhout", "Drijfhout"]),
 ]
 if got_drops != want_drops:
     sys.stderr.write("check-oracle: FAIL (monotonicity) — drop_inputs self-test got %r, want %r\n"
@@ -643,10 +661,10 @@ def is_open(line):
 
 
 def open_on(reduced_set, m):
-    # whether the end state [reduced_set] has the relation of the concrete link [m] open in either of its two role slots
+    # whether the end state [reduced_set] has the relation of the concrete link [m] open in both of its two role slots
     ft, r0, a, r1, b = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)
     return ("link %s %s %s %s open" % (ft, r0, a, r1) in reduced_set
-            or "link %s %s open %s %s" % (ft, r0, r1, b) in reduced_set)
+            and "link %s %s open %s %s" % (ft, r0, r1, b) in reduced_set)
 
 
 def lost(reduced, full):
@@ -709,8 +727,15 @@ rows = [
      ['object "V1" "Vondst"'], True),
     ("a fact lost", ['channel "r" "V1" EF-005'], [], False),
     ("a fact added", [], ['channel "r" "V1" EF-005'], True),
-    ("a link on an open relation", ['object "J1" "Jutter"', 'link "vangst" "jutter" "J1" "vondst" open'],
-     ['object "J1" "Jutter"', 'link "vangst" "jutter" "J1" "vondst" open', 'link "vangst" "jutter" "J1" "vondst" "V1"'], True),
+    ("a link on an open relation (both role positions open)",
+     ['object "J1" "Jutter"', 'object "V1" "Vondst"',
+      'link "vangst" "jutter" "J1" "vondst" open', 'link "vangst" "jutter" open "vondst" "V1"'],
+     ['object "J1" "Jutter"', 'object "V1" "Vondst"',
+      'link "vangst" "jutter" "J1" "vondst" open', 'link "vangst" "jutter" "J1" "vondst" "V1"'], True),
+    ("a link where only one role position was open",
+     ['object "J1" "Jutter"', 'object "V1" "Vondst"', 'link "vangst" "jutter" "J1" "vondst" open'],
+     ['object "J1" "Jutter"', 'object "V1" "Vondst"',
+      'link "vangst" "jutter" "J1" "vondst" open', 'link "vangst" "jutter" "J1" "vondst" "V1"'], False),
     ("a 1:1 link resolving both open ends",
      ['object "V1" "Vondst"', 'object "R1" "Rapport"',
       'link "rapportage" "vondst" "V1" "rapport" open', 'link "rapportage" "vondst" open "rapport" "R1"'],
@@ -764,7 +789,7 @@ def standing(doc, otype, kind, member):
     # "complete", declared complete with no writer, settled leeg / settled absent; or "initialised", declared complete
     # with an initialisation as its one writer, settled leeg below the initialisation, which then gives its value — and
     # the declared name (or expected open-link line(s) for a role or 1:1 link)
-    if kind == "roleEmpty":
+    if kind in ("roleEmpty", "roleClosed"):
         ft, pos, far, _ = resolve_role_ft(doc, otype, member)
         return role_standing(doc, otype, ft, far), (ft["name"], ft["roles"][0]["name"], ft["roles"][1]["name"], pos)
     if kind == "link":
@@ -812,7 +837,7 @@ row_doc = {
                     {"name": "vondst", "plural": "vondsten", "objectType": "Vondst", "many": True}]},
          {"name": "toezicht", "reciprocal": False,
           "roles": [{"name": "toezichthouder", "objectType": "Jutter", "many": False, "complete": True},
-                    {"name": "bewaakte vondst", "objectType": "Vondst", "many": True}]},
+                    {"name": "bewaakte vondst", "objectType": "Vondst", "many": True, "complete": True}]},
          {"name": "hulp", "reciprocal": False,
           "roles": [{"name": "helper", "objectType": "Jutter", "many": False},
                     {"name": "hulpvondst", "objectType": "Vondst", "many": True}]}]},
@@ -857,6 +882,12 @@ standing_rows = [
      ("toezicht", "toezichthouder", "bewaakte vondst", 0)),
     ("a to-one role a fact creation writes", "Vondst", "roleEmpty", "helper", "derived",
      ("hulp", "helper", "hulpvondst", 0)),
+    ("a to-many input role", "Jutter", "roleClosed", "vondsten", "input",
+     ("vangst", "vinder", "vondst", 1)),
+    ("a to-many role declared complete", "Jutter", "roleClosed", "bewaakte vondst", "complete",
+     ("toezicht", "toezichthouder", "bewaakte vondst", 1)),
+    ("a to-many role a fact creation writes", "Jutter", "roleClosed", "hulpvondst", "derived",
+     ("hulp", "helper", "hulpvondst", 1)),
 ]
 for name, otype, kind, member, want, want_declared in standing_rows:
     got, declared = standing(row_doc, otype, kind, member)
@@ -866,9 +897,9 @@ for name, otype, kind, member, want, want_declared in standing_rows:
 
 def judge(standing_of, state, kind, label, member):
     # what a run without the input does in the comparison: "compare"; "apart" (a member or role that is not open without
-    # its value or link); or a failure, "closed" (an open input member, role or 1:1 link ref does not name open) or
-    # "opened" (a member or role declared complete that no writer writes, which ref names open)
-    if kind == "roleEmpty":
+    # its value or link); or a failure, "closed" (an open input member, role or non-reciprocal link ref does not name open)
+    # or "opened" (a member or role declared complete that no writer writes, which ref names open)
+    if kind in ("roleEmpty", "roleClosed"):
         ft_name, r0, r1, pos = member
         named_open = open_link_line(ft_name, r0, r1, pos, label) in state
     elif kind == "link":
@@ -900,9 +931,18 @@ judge_rows = [
     ("an open to-one role ref closes (red)", "input", "roleEmpty", "V1", ("vangst", "vinder", "vondst", 0), [], "closed"),
     ("a complete to-one role ref names open (red)", "complete", "roleEmpty", "V1", ("toezicht", "toezichthouder", "bewaakte vondst", 0),
      ['link "toezicht" "toezichthouder" open "bewaakte vondst" "V1"'], "opened"),
+    ("an open to-many role ref names open alongside a concrete link", "input", "roleClosed", "J1", ("vangst", "vinder", "vondst", 1),
+     ['link "vangst" "vinder" "J1" "vondst" "V1"', 'link "vangst" "vinder" "J1" "vondst" open'], "compare"),
+    ("an open to-many role ref closes (red)", "input", "roleClosed", "J1", ("vangst", "vinder", "vondst", 1),
+     ['link "vangst" "vinder" "J1" "vondst" "V1"'], "closed"),
+    ("a complete to-many role ref names open (red)", "complete", "roleClosed", "J1", ("toezicht", "toezichthouder", "bewaakte vondst", 1),
+     ['link "toezicht" "toezichthouder" "J1" "bewaakte vondst" open'], "opened"),
     ("an openable 1:1 link ref names open on both ends", "input", "link", "V1", ("rapportage", "vondst", "rapport", "R1"),
      ['link "rapportage" "vondst" "V1" "rapport" open', 'link "rapportage" "vondst" open "rapport" "R1"'], "compare"),
-    ("an openable 1:1 link ref names open on one end only (red)", "input", "link", "V1", ("rapportage", "vondst", "rapport", "R1"),
+    ("an openable 1:n link ref names open on both ends", "input", "link", "J1", ("vangst", "vinder", "vondst", "V1"),
+     ['link "vangst" "vinder" "J1" "vondst" "V2"', 'link "vangst" "vinder" "J1" "vondst" open',
+      'link "vangst" "vinder" open "vondst" "V1"'], "compare"),
+    ("an openable link ref names open on one end only (red)", "input", "link", "V1", ("rapportage", "vondst", "rapport", "R1"),
      ['link "rapportage" "vondst" "V1" "rapport" open'], "closed"),
 ]
 for name, standing_of, kind, label, member, state, want in judge_rows:

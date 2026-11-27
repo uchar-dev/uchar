@@ -526,7 +526,7 @@ let cells_of_json (doc : document) ~label ~attr ~(dims : string list) (decl : da
   cells
 
 let load_instance (doc : document) ~at (j : Yojson.Safe.t) :
-    World.instance * string list * string list * (string * role_ref * string) list =
+    World.instance * string list * string list * (string * role_ref * string) list * (string * role_ref) list =
   let kvs = obj ~at j in
   let label = str_field ~at kvs "label" in
   (* the schema asks minLength 1, and every later position of this instance
@@ -738,6 +738,35 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) :
             (ft_name, far, r))
           (list_ ~at:(child label "rolesEmpty") j)
   in
+  (* the non-reciprocal to-many roles the case states are complete on this
+     instance (RUNTIME-SEMANTICS ch. 1.5, ch. 5.7): resolved from [otype_name]
+     as "roles" is (EF-040 undeclared, EF-001 ambiguous), restricted to
+     non-reciprocal to-many roles, and valid alongside links on the same role
+     position *)
+  let closed_roles =
+    match List.assoc_opt "rolesClosed" kvs with
+    | None -> []
+    | Some j ->
+        List.mapi
+          (fun i rj ->
+            let r = str ~at:(Printf.sprintf "%s.rolesClosed[%d]" label i) rj in
+            if not (role_declared doc r) then undeclared r "role key %S names no declared role" r;
+            let ft_name, far, _ = resolve_role_ft doc ~otype:otype_name ~key:r in
+            (match Ir_v0.Checks.find_ci doc.fact_types ft_name with
+            | Some ft when ft.reciprocal ->
+                fail
+                  "%s: role %S in \"rolesClosed\" belongs to the reciprocal fact type %S: \"rolesClosed\" \
+                   applies only to a non-reciprocal to-many role"
+                  label r ft_name
+            | _ -> ());
+            if not far.role_many then
+              fail
+                "%s: role %S in \"rolesClosed\" is a to-one role of fact type %S: \"rolesClosed\" applies \
+                 only to a non-reciprocal to-many role"
+                label r ft_name;
+            (ft_name, far))
+          (list_ ~at:(child label "rolesClosed") j)
+  in
   let ctls =
     match List.assoc_opt "characteristicTimelines" kvs with
     | None -> SMap.empty
@@ -793,7 +822,7 @@ let load_instance (doc : document) ~at (j : Yojson.Safe.t) :
           SMap.empty
           (obj ~at:(child label "characteristicTimelines") j)
   in
-  ({ label; otype = otype_name; attrs; chars; left_side; tls; ctls }, empty_attrs, absent, empty_roles)
+  ({ label; otype = otype_name; attrs; chars; left_side; tls; ctls }, empty_attrs, absent, empty_roles, closed_roles)
 
 (* ch. 5.7a: a supplied role link ESTABLISHES the relation instance, and
    BOTH roles read it — a relation is symmetric, so the reader arriving
@@ -1254,7 +1283,7 @@ let load_file (doc : document) path : t =
   let world, empty_role_checks =
     List.fold_left
       (fun ((w : World.t), checks) (n, ij) ->
-        let i, empty_attrs, absent, empty_roles =
+        let i, empty_attrs, absent, empty_roles, closed_roles =
           load_instance doc ~at:(Printf.sprintf "input.instances[%d]" n) ij
         in
         (* label uniqueness is this loader's cross-check (see the header);
@@ -1272,6 +1301,11 @@ let load_file (doc : document) path : t =
                 (fun acc (ft_name, far, _) ->
                   World.Key.add (i.label, World.link_key ~fact_type:ft_name far) () acc)
                 w.stated_roles_empty empty_roles;
+            stated_roles_closed =
+              List.fold_left
+                (fun acc (ft_name, far) ->
+                  World.Key.add (i.label, World.link_key ~fact_type:ft_name far) () acc)
+                w.stated_roles_closed closed_roles;
           },
           checks @ List.map (fun (ft_name, far, written) -> (i.label, ft_name, far, written)) empty_roles ))
       (World.empty, [])

@@ -159,13 +159,17 @@ type t = {
       (* by (label, link_key ~fact_type far): the non-reciprocal to-one roles
          the case states have no link on that instance (`rolesEmpty`), set by
          the case reader (RUNTIME-SEMANTICS ch. 1.5) *)
+  stated_roles_closed : unit Key.t;
+      (* by (label, link_key ~fact_type far): the non-reciprocal to-many roles
+         the case states are complete on that instance (`rolesClosed`), set by
+         the case reader (RUNTIME-SEMANTICS ch. 1.5) *)
 }
 
 let empty =
   { instances = SMap.empty; order = []; channel = []; outcomes = []; evaluating = []; owners = Key.empty;
     holders = Key.empty; mints = SMap.empty; written = Key.empty; char_writes = Key.empty; parts = Key.empty;
     open_input = Member.empty; opening = []; opened = Member.empty; stated_empty = Key.empty;
-    stated_absent = Key.empty; stated_roles_empty = Key.empty }
+    stated_absent = Key.empty; stated_roles_empty = Key.empty; stated_roles_closed = Key.empty }
 
 let add_instance w inst =
   if SMap.mem inst.label w.instances then
@@ -297,13 +301,24 @@ let role_spelling (r : Ir_v0.Ast.role_ref) =
 
 (* Whether the relation over [role] of [fact_type] is open on [i]: an unlinked
    non-reciprocal to-one input role in [open_input] that [rolesEmpty] does not
-   close, or a relation a creation whose condition is undetermined could link
-   [i] over (RUNTIME-SEMANTICS ch. 1.5) *)
-let links_open w (i : instance) ~fact_type role =
+   close, a non-reciprocal to-many input role in [open_input] that [rolesClosed]
+   does not close (even when standing links already hold [i] there), or a
+   relation a creation whose condition is undetermined could link [i] over
+   (RUNTIME-SEMANTICS ch. 1.5) *)
+let links_open w (i : instance) ~fact_type (role : Ir_v0.Ast.role_ref) =
   let key = link_key ~fact_type role in
   let m = (i.label, Relation key) in
-  (links i ~fact_type role = [] && Member.mem m w.open_input && not (Key.mem (i.label, key) w.stated_roles_empty))
-  || Member.mem m w.opened
+  let input_open =
+    if role.role_many then Member.mem m w.open_input && not (Key.mem (i.label, key) w.stated_roles_closed)
+    else links i ~fact_type role = [] && Member.mem m w.open_input && not (Key.mem (i.label, key) w.stated_roles_empty)
+  in
+  input_open || Member.mem m w.opened
+
+(* The standing labels linked to [i] over [role] of [fact_type] together with
+   whether the relation is open on [i] (RUNTIME-SEMANTICS ch. 1.5) *)
+let peek_links w (i : instance) ~fact_type role =
+  let key = link_key ~fact_type role in
+  (links i ~fact_type role, if links_open w i ~fact_type role then Some (i.label, Relation key) else None)
 
 (* The labels linked to [i] over [role] of [fact_type] as an evaluation reads
    them: the links that stand, and [Open_read] where the relation is open on

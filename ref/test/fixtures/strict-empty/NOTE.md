@@ -38,7 +38,11 @@ the case gives no strandloon, 7 where it gives 7; and open where gemeld is open,
 `ploeg`): their settled-absent cases (`absent-link` case1, `absent-link-path` case1 and case2, `navigated-read` case3)
 close the unlinked role in `rolesEmpty`, while `absent-link` case5 (`case5-vinder-open`), `absent-link-path` case5 and
 case6 (`case5-vinder-open`, `case6-ploeg-open`) and `navigated-read` case5 (`case5-vinder-open`) omit the link without
-`rolesEmpty` so that the role is open (1-step and 2-step).
+`rolesEmpty` so that the role is open (1-step and 2-step). The fold and join-path fixtures (`contributor-filter`,
+`empty-by-fault`, `fact-creation`, `let-closure`, `listed-fold`, `quantifier-fold`, `set-fold`, `settled-empty-fold`)
+test member-level open/settled behaviour over a closed `to-many` collection (`"complete": true` on `vondst` / `klacht`);
+open versus `rolesClosed` `to-many` collections are held in `WV-1.5-many-*` and `WV-1.5-case-roles-closed*` in
+`ref/test/test_ref.ml`.
 
 `contributor-filter` does not come from `spec/proposals/STRICT-EMPTY.md`: it is the worked example of the filter of a
 contributor in RUNTIME-SEMANTICS ch. 5.12 (`WV-5.12-contributor-filter`), its IR emitted by the RegelSpraak frontend.

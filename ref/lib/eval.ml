@@ -1160,6 +1160,50 @@ let fold_members ?binding ?path env world (self : World.instance) ~element =
   in
   List.filter (fun (i : World.instance) -> isa env i.otype element) reached
 
+(* ch. 1.5, "A read over a link": walk a single-step [binding] or multi-step
+   [path] in breadth-first step and list order (ch. 5.11, ch. 5.7a), collecting
+   both the deduplicated standing reached instances of [element] and the first
+   directed relation position [(holder, Relation key)] encountered along the
+   walk that is open ([World.peek_links]). *)
+let walk_range ?binding ?path env world (self : World.instance) ~element =
+  let steps =
+    match (path, binding) with
+    | Some trail, _ -> trail
+    | None, Some rb -> [ rb ]
+    | None, None ->
+        Value.fault
+          "an instance fold over %S carries no range: its relation is written as a range (sourceRole \
+           or sourcePath) and never derived"
+          element
+  in
+  let first_open = ref None in
+  let step acc (rb : role_binding) =
+    let role = bound_role env rb in
+    List.concat_map
+      (fun (i : World.instance) ->
+        let labels, open_rel = World.peek_links world i ~fact_type:rb.rb_fact_type role in
+        if !first_open = None then first_open := open_rel;
+        List.map (World.get world) labels)
+      acc
+  in
+  let reached = List.fold_left step [ self ] steps in
+  let seen = Hashtbl.create 16 in
+  let deduped =
+    filter_in_order
+      (fun (i : World.instance) ->
+        if Hashtbl.mem seen i.label then false
+        else (
+          Hashtbl.add seen i.label ();
+          true))
+      reached
+  in
+  (List.filter (fun (i : World.instance) -> isa env i.otype element) deduped, !first_open)
+
+let require_closed_range (members, first_open) =
+  match first_open with
+  | Some (label, member) -> raise (World.Open_read { label; member })
+  | None -> members
+
 (* the navigated scalar read's hop walk (WF-053, RUNTIME-SEMANTICS
    ch. 5.8): the hop roles are the node's bindings (D10), walked link by
    link. An absent link at any hop short-circuits the whole read to
@@ -1739,6 +1783,17 @@ let count_verdict (q : quantifier_kind) ~cutoff ~n ~hits ~fails : truth =
       if hits >= k + 1 || fails >= n - k + 1 then Established false
       else if hits >= k && fails >= n - k then Established true
       else Undetermined
+
+(* Under an open range (first_open_rel = Some _, u = infinity, ch. 1.5):
+   arbitrarily many further contributors may enter the range, so only a side
+   that no added contributor can overturn is established *)
+let open_count_verdict (q : quantifier_kind) ~cutoff ~hits ~fails : truth =
+  let k = cutoff in
+  match q with
+  | The | All -> if fails >= 1 then Established false else Undetermined
+  | None_of -> if hits >= 1 then Established false else Undetermined
+  | At_least -> if k <= 0 || hits >= k then Established true else Undetermined
+  | At_most | Exactly -> if k < 0 || hits >= k + 1 then Established false else Undetermined
 
 (* The judgement of a count of members, [counts] the (hits, fails) read so
    far, carrying [first] — the open read of its first undetermined member —
@@ -2806,10 +2861,10 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
     | Some el, [ Attribute_reference { navigation_bindings = None; _ } ] when ranged && kind = Count ->
         (* a source that names a member of the element type was refused at
            the head of this function (WF-093 (b)), so this one names a role *)
-        `Instances
-          (contributing
-             (filter_in_order keep
-                (fold_members ?binding:source_role ?path:source_path env world self ~element:el)))
+        let members =
+          require_closed_range (walk_range ?binding:source_role ?path:source_path env world self ~element:el)
+        in
+        `Instances (contributing (filter_in_order keep members))
     | Some el, [ Attribute_reference { attribute_ref; navigation_bindings = None; _ } ] when ranged ->
         let name = req "fold attribute" attribute_ref in
         let el_decl = object_type env el in
@@ -2843,7 +2898,7 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
               name el;
         let members =
           filter_in_order keep
-            (fold_members ?binding:source_role ?path:source_path env world self ~element:el)
+            (require_closed_range (walk_range ?binding:source_role ?path:source_path env world self ~element:el))
         in
         (* §7.1: a set read of a TEMPORAL attribute folds TWICE — each
            member's own timeline collapses over time first (ch. 3.6, at
@@ -2983,6 +3038,16 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                      answer"
                     el0 el)
               rest);
+        let branch_ranges =
+          List.map
+            (fun (b : instance_set_branch) ->
+              let el = req "instance-set branch element type" b.isb_element_type in
+              (b, el, walk_range ~binding:b.isb_source_role env world self ~element:el))
+            branches
+        in
+        (match List.find_map (fun (_, _, (_, open_rel)) -> open_rel) branch_ranges with
+        | Some (label, member) -> raise (World.Open_read { label; member })
+        | None -> ());
         let seen = Hashtbl.create 16 in
         `Instances
           (contributing @@ filter_in_order
@@ -2992,17 +3057,14 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
                  Hashtbl.add seen i.label ();
                  true))
              (List.concat_map
-                (fun (b : instance_set_branch) ->
-                  let el = req "instance-set branch element type" b.isb_element_type in
-                  let binding = b.isb_source_role in
+                (fun ((b : instance_set_branch), el, (branch_members, _)) ->
                   let bkeep (i : World.instance) =
                     match b.isb_filter with
                     | None -> true
                     | Some c -> value_verdict (judge_cond (at_member env self (Some el)) world i ~err c)
                   in
-                  filter_in_order bkeep
-                    (fold_members ~binding env world self ~element:el))
-                branches))
+                  filter_in_order bkeep branch_members)
+                branch_ranges))
     | None, args ->
         if filter <> None then
           Value.fault "a filter on a listed-operand fold has no v0 form (the subselection \
@@ -3044,7 +3106,8 @@ and eval_function_call env world self ~err ~kind ~call_arguments ~element_object
               | _ -> false) ->
         let member = cell_member env ~ot:el ~attr:name (List.map (req "DimensionCellRead.labels") labels) in
         let members =
-          filter_in_order keep (fold_members ?binding:source_role ?path:source_path env world self ~element:el)
+          filter_in_order keep
+            (require_closed_range (walk_range ?binding:source_role ?path:source_path env world self ~element:el))
         in
         `Values
           (contributing_values members
@@ -3602,30 +3665,35 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
           "role check: the subject %S does not fill the role %S of %S, so no link of it can \
            hold the subject there"
           self.otype role fact_type;
-      (* the relation is complete, or open where a creation could still link
-         the subject there (ch. 1.5): read as one atomic condition *)
-      atomic ~err (fun _ ->
-      let linked = role_linked_instances world self ~fact_type other in
+      (match counterpart_type with
+      | None -> ()
+      | Some ct ->
+          (* a counterpart outside the other role's declared filler would
+             narrow to nobody and answer a silent false: refused by name *)
+          if Ir_v0.Checks.effective_ot env.doc ct = None then
+            Value.fault "role check: the counterpart type %S is no declared object type" ct;
+          if not (fills env ct other) then
+            Value.fault
+              "role check: the counterpart type %S is no subtype of %S, the filler the role %S \
+               declares"
+              ct
+              (Option.value other.role_object_type_name ~default:"?")
+              (Option.value other.role_identifier ~default:"?"));
+      (* ch. 1.5, "A read over a link": a standing matching link settles
+         existence even when the relation is open; only an empty matching set on
+         an open relation is undetermined *)
+      let labels, open_rel = World.peek_links world self ~fact_type other in
       let linked =
+        let all = List.map (World.get world) labels in
         match counterpart_type with
-        | None -> linked
-        | Some ct ->
-            (* a counterpart outside the other role's declared filler would
-               narrow to nobody and answer a silent false: refused by name *)
-            if Ir_v0.Checks.effective_ot env.doc ct = None then
-              Value.fault "role check: the counterpart type %S is no declared object type"
-                ct;
-            if not (fills env ct other) then
-              Value.fault
-                "role check: the counterpart type %S is no subtype of %S, the filler the role %S \
-                 declares"
-                ct
-                (Option.value other.role_object_type_name ~default:"?")
-                (Option.value other.role_identifier ~default:"?");
-            List.filter (fun (i : World.instance) -> isa env i.otype ct) linked
+        | None -> all
+        | Some ct -> List.filter (fun (i : World.instance) -> isa env i.otype ct) all
       in
-      let exists = linked <> [] in
-      if negated then not exists else exists)
+      if linked <> [] then established (not negated)
+      else (
+        match open_rel with
+        | Some r -> undetermined r
+        | None -> established negated)
   (* ch. 3.9a, the QUANTIFIER FOLD: a condition quantified over the members
      of a linked instance set. The contributors are the instance fold's,
      down to the helper — [fold_members] decides the population once, for
@@ -3664,21 +3732,29 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
         quantifier_fold_shape ~quantifier_kind:kv_quantifier ~cutoff:kv_threshold ~test:kv_test
           ~source_role:kv_source_role ~source_path:kv_source_path
       in
-      (* the range is read as one judgement: where its relation is open, the
-         fold is undetermined (ch. 1.5) *)
-      match open_read_boundary ~err (fun _ -> fold_members ?binding:kv_source_role ?path:kv_source_path env world self ~element:el) with
-      | Error read -> undetermined read
-      | Ok range ->
+      (* ch. 1.5, "A quantifier fold": walk the range for its standing members
+         [range] and its first open relation hop [first_open_rel]. Under an open
+         range (u = infinity), filter deposits are held back until the fold
+         reaches an established verdict, every matrix is read provisionally with
+         [past = first_open_rel], and the fold short-circuits monotonically via
+         [open_count_verdict] *)
+      let range, first_open_rel = walk_range ?binding:kv_source_role ?path:kv_source_path env world self ~element:el in
+      let filter_deposits = ref [] in
+      let ferr = if first_open_rel = None then err else fun d -> filter_deposits := d :: !filter_deposits in
       let filters =
         map_in_order
           (fun (i : World.instance) ->
             match kv_filter with
             | None -> (i, established true)
-            | Some c -> (i, judge_cond (at_member env self (Some el)) world i ~err c))
+            | Some c -> (i, judge_cond (at_member env self (Some el)) world i ~err:ferr c))
           range
       in
       let n = List.length range in
-      let verdict = count_verdict kv_quantifier ~cutoff ~n in
+      let verdict =
+        match first_open_rel with
+        | None -> count_verdict kv_quantifier ~cutoff ~n
+        | Some _ -> open_count_verdict kv_quantifier ~cutoff
+      in
       let implication = match kv_quantifier with The | All -> true | None_of | At_least | At_most | Exactly -> false in
       (* the truth of a member in one walk, its filter not false there *)
       let member f t =
@@ -3746,30 +3822,37 @@ and judge_cond_node env world (self : World.instance) ~err (c : condition_expr) 
                 contribute ~reached:false ~filter_undetermined:(f.truth = Undetermined) m.label found)
               parts
       in
-      (* the filters are read before every matrix: where one of them is
-         undetermined, whether ch. 3.9a reads a matrix does not stand
-         either — its own filter may be false, a later one may stop the read
-         by being false — so each matrix is read provisionally, as a member
-         past an undetermined one is ([judge_cond ~past], ch. 1.5) *)
+      (* the filters are read before every matrix: where the range is open, or
+         where one of the filters is undetermined, whether ch. 3.9a reads a
+         matrix does not stand — an unstated member may come before it, its own
+         filter may be false, a later one may stop the read by being false — so
+         each matrix is read provisionally ([judge_cond ~past], ch. 1.5) *)
       let filter_past = List.find_map (fun (_, (f : judgement)) -> if f.truth = Undetermined then f.open_read else None) filters in
-      (* [first]: the open read of the first undetermined member — of its
-         filter where that is undetermined, else of its matrix — which the
-         fold carries where it is undetermined *)
+      (* [first]: where the range is open, [first_open_rel]; else the open read
+         of the first undetermined member — of its filter where that is
+         undetermined, else of its matrix — which the fold carries where it is
+         undetermined *)
       let rec read counts first (parts : (World.instance * judgement) list) =
-        let j = judged ~verdict ~counts ~first in
+        let j = judged ~verdict ~counts ~first:(if first_open_rel <> None then first_open_rel else first) in
         match (j, parts) with
         | { truth = Established _; _ }, _ ->
             unreached parts;
+            List.iter err (List.rev !filter_deposits);
             j
         | _, [] -> j
         | _, (m, f) :: rest ->
-            let past = if filter_past <> None then filter_past else first in
+            let past =
+              if first_open_rel <> None then first_open_rel
+              else if filter_past <> None then filter_past
+              else first
+            in
             let filter_undetermined = f.truth = Undetermined in
             let t =
               try judge_cond ?past (at_member env self (Some el)) world m ~err test
               with Value.Fault { code; _ } as fault ->
                 contribute ~filter_undetermined m.label (Member_fault code);
                 unreached rest;
+                List.iter err (List.rev !filter_deposits);
                 raise fault
             in
             (match !observer with None -> () | Some _ -> contribute ~filter_undetermined m.label (Member_verdict t));
@@ -6411,14 +6494,14 @@ let open_inputs env ~closed_inputs (world : World.t) =
                 | [ r0; r1 ] ->
                     List.fold_left
                       (fun acc (near, far) ->
-                        if far.role_many || not (fills env i.otype near) then acc
+                        if not (fills env i.otype near) then acc
                         else
                           let key = World.link_key ~fact_type:ftn far in
-                          let given =
-                            World.links i ~fact_type:ftn far <> []
-                            || World.Key.mem (label, key) world.stated_roles_empty
+                          let closed =
+                            if far.role_many then World.Key.mem (label, key) world.stated_roles_closed
+                            else World.links i ~fact_type:ftn far <> [] || World.Key.mem (label, key) world.stated_roles_empty
                           in
-                          if given || far.role_complete || written_role_on env.doc ~otype:i.otype ~fact_type:ftn ~far
+                          if closed || far.role_complete || written_role_on env.doc ~otype:i.otype ~fact_type:ftn ~far
                           then acc
                           else World.Member.add (label, World.Relation key) () acc)
                       acc

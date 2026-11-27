@@ -14805,15 +14805,19 @@ let () =
         ((role_at d "vangst" 0).role_complete
         && (not (role_at d "vangst" 1).role_complete)
         && not (role_at d "samenwerking" 0).role_complete);
+      let d_many = Ir_v0.Loader.document ~reader (mk_doc ~vondst_field:[ ("complete", `Bool true) ] ()) in
+      check (ident ("true-on-to-many-is-read-" ^ who))
+        ((not (role_at d_many "vangst" 0).role_complete)
+        && (role_at d_many "vangst" 1).role_complete
+        && not (role_at d_many "samenwerking" 0).role_complete);
       let d0 = Ir_v0.Loader.document ~reader (mk_doc ()) in
-      check (ident ("absent-is-false-" ^ who)) (not (role_at d0 "vangst" 0).role_complete))
+      check (ident ("absent-is-false-" ^ who))
+        ((not (role_at d0 "vangst" 0).role_complete) && not (role_at d0 "vangst" 1).role_complete))
     readers;
   check (ident "verifier-clean-on-non-reciprocal-to-one")
     (Ir_v0.Checks.all (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (mk_doc ~vinder_field:[ ("complete", `Bool true) ] ())) = []);
-  (match Ir_v0.Checks.all (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (mk_doc ~vondst_field:[ ("complete", `Bool true) ] ())) with
-  | [ { Ir_v0.Checks.wf; at; _ } ] ->
-      check (ident "wf130-to-many-role") (wf = "WF-130" && at = "/model/factTypes/0/roles/1/complete")
-  | fs -> check (ident (Printf.sprintf "wf130-to-many-role (got %d findings)" (List.length fs))) false);
+  check (ident "verifier-clean-on-non-reciprocal-to-many")
+    (Ir_v0.Checks.all (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (mk_doc ~vondst_field:[ ("complete", `Bool true) ] ())) = []);
   (match Ir_v0.Checks.all (Ir_v0.Loader.document ~reader:Ir_v0.Loader.Verifier (mk_doc ~partner_field:[ ("complete", `Bool true) ] ())) with
   | [ { Ir_v0.Checks.wf; at; _ } ] ->
       check (ident "wf130-reciprocal-role") (wf = "WF-130" && at = "/model/factTypes/1/roles/0/complete")
@@ -14837,7 +14841,7 @@ let () =
   let module Emit = Ir_v0.Emit.Make (struct
     let producer = "ref suite"
   end) in
-  let j_true = mk_doc ~vinder_field:[ ("complete", `Bool true) ] () in
+  let j_true = mk_doc ~vinder_field:[ ("complete", `Bool true) ] ~vondst_field:[ ("complete", `Bool true) ] () in
   check (ident "written-back")
     (Yojson.Safe.to_string (Emit.document (Ir_v0.Loader.document j_true)) = Yojson.Safe.to_string j_true);
   let j_absent = mk_doc () in
@@ -14870,11 +14874,12 @@ type ov_scenario = {
   sc_input : ov_input list;
   sc_empty : (string * string) list;
   sc_roles_empty : (string * string) list;
+  sc_roles_closed : (string * string) list;
 }
 
 let ov_registered : ov_scenario list ref = ref []
 
-let ov_world ?(empty = []) ?(roles_empty = []) (doc : Ir_v0.Ast.document) input =
+let ov_world ?(empty = []) ?(roles_empty = []) ?(roles_closed = []) (doc : Ir_v0.Ast.document) input =
   let w =
     List.fold_left
       (fun w i ->
@@ -14885,19 +14890,22 @@ let ov_world ?(empty = []) ?(roles_empty = []) (doc : Ir_v0.Ast.document) input 
       World.empty input
   in
   let w = Case.materialise_relations doc w in
+  let add_role_slots acc slots =
+    List.fold_left
+      (fun acc (l, key) ->
+        let otype = (World.get w l).otype in
+        let fact_type, far, _ = Case.resolve_role_ft doc ~otype ~key in
+        World.Key.add (l, World.link_key ~fact_type far) () acc)
+      acc slots
+  in
   { w with
     stated_empty =
       List.fold_left (fun acc (l, a) -> World.Key.add (l, Ir_v0.Checks.norm a) () acc) w.stated_empty empty;
-    stated_roles_empty =
-      List.fold_left
-        (fun acc (l, key) ->
-          let otype = (World.get w l).otype in
-          let fact_type, far, _ = Case.resolve_role_ft doc ~otype ~key in
-          World.Key.add (l, World.link_key ~fact_type far) () acc)
-        w.stated_roles_empty roles_empty }
+    stated_roles_empty = add_role_slots w.stated_roles_empty roles_empty;
+    stated_roles_closed = add_role_slots w.stated_roles_closed roles_closed }
 
-let ov_eval ?(closed_inputs = false) ?(empty = []) ?(roles_empty = []) doc input =
-  Eval.evaluate ~closed_inputs (env_of doc) (ov_world ~empty ~roles_empty doc input)
+let ov_eval ?(closed_inputs = false) ?(empty = []) ?(roles_empty = []) ?(roles_closed = []) doc input =
+  Eval.evaluate ~closed_inputs (env_of doc) (ov_world ~empty ~roles_empty ~roles_closed doc input)
 
 (* the state of an attribute and of a characteristic, as the header says *)
 let ov_attr w label a =
@@ -14911,8 +14919,8 @@ let ov_channel w =
   List.map (fun (f : World.error_fact) -> f.rule ^ " " ^ f.subject ^ " " ^ String.concat "," f.codes) w.World.channel
 
 (* every outcome of a run: a value, a settled leeg attribute, a characteristic
-   that holds or that stands not to hold, a settled non-reciprocal to-one role
-   (linked or settled absent), a §9.5 fact; an open member or open relation is
+   that holds or that stands not to hold, a concrete link, a settled/closed
+   non-reciprocal role position, a §9.5 fact; an open member or open relation is
    no outcome *)
 let ov_outcomes (doc : Ir_v0.Ast.document) w =
   let env = env_of doc in
@@ -14931,17 +14939,21 @@ let ov_outcomes (doc : Ir_v0.Ast.document) w =
             else
               match ft.role_names with
               | [ r0; r1 ] ->
-                  List.filter_map
+                  List.concat_map
                     (fun ((near : Ir_v0.Ast.role_ref), (far : Ir_v0.Ast.role_ref)) ->
                       let fits =
                         match near.role_object_type_name with Some t -> Eval.isa env i.otype t | None -> false
                       in
-                      if far.role_many || not fits || World.links_open w i ~fact_type:ftn far then None
+                      if not fits then []
                       else
-                        let state =
-                          match World.links i ~fact_type:ftn far with [] -> "absent" | ls -> String.concat "," ls
+                        let key = World.link_key ~fact_type:ftn far in
+                        let targets = List.sort compare (World.links i ~fact_type:ftn far) in
+                        let concrete = List.map (fun t -> Printf.sprintf "link %s %s %s" label key t) targets in
+                        let settled =
+                          if World.links_open w i ~fact_type:ftn far then []
+                          else [ Printf.sprintf "closed %s %s %s" label key (String.concat "," targets) ]
                         in
-                        Some (Printf.sprintf "role %s %s %s" label (World.link_key ~fact_type:ftn far) state))
+                        concrete @ settled)
                     [ (r0, r1); (r1, r0) ]
               | _ -> [])
           doc.fact_types
@@ -14959,12 +14971,15 @@ let ov_outcomes (doc : Ir_v0.Ast.document) w =
   @ List.map (fun c -> "channel " ^ c) (ov_channel w)
 
 (* run a scenario, and register it where its document has the property *)
-let ov_run ?(empty = []) ?(roles_empty = []) name (doc : Ir_v0.Ast.document) input =
+let ov_run ?(empty = []) ?(roles_empty = []) ?(roles_closed = []) name (doc : Ir_v0.Ast.document) input =
   if not doc.infer_from_empty then
     ov_registered :=
       !ov_registered
-      @ [ { sc_name = name; sc_doc = doc; sc_input = input; sc_empty = empty; sc_roles_empty = roles_empty } ];
-  ov_eval ~empty ~roles_empty doc input
+      @ [
+          { sc_name = name; sc_doc = doc; sc_input = input; sc_empty = empty; sc_roles_empty = roles_empty;
+            sc_roles_closed = roles_closed };
+        ];
+  ov_eval ~empty ~roles_empty ~roles_closed doc input
 
 let ov_expect name got want =
   if got = want then check name true else check (Printf.sprintf "%s (got %s, want %s)" name got want) false
@@ -15446,8 +15461,11 @@ let () =
   ov_expect "WV-1.5-link-present-filled"
     (summary (ov_run "link-present-filled" (doc true) (input ~bonus:[ ("bonus", "20") ] ~chars:[ "ervaren" ] true)))
     "120 holds not holds not not";
-  (* WV-1.5-link-one-to-many: on the same 1:n fact type, V1 without a Jutter
-     has vinder open, while J1 without Vondsten has vondsten closed *)
+  (* WV-1.5-link-one-to-many: on the same 1:n fact type, both directions are
+     independently open unless closed: J1 without rolesClosed or complete has
+     vondsten open even when V1 is linked (RoleMembership and atLeast 1
+     short-circuit on V1 while count and all stay open), and closing J1.vondsten
+     in rolesClosed leaves an unlinked V2's vinder open *)
   let vondst_rb : Ir_v0.Ast.role_binding = { rb_fact_type = "vinding"; rb_role = "vondst" } in
   let one_to_many_doc =
     { (ov_doc
@@ -15482,15 +15500,40 @@ let () =
       with
       fact_types = (doc true).fact_types }
   in
-  let w =
-    ov_run "link-one-to-many" one_to_many_doc
-      [ { ov_label = "V1"; ov_type = "Vondst"; ov_attrs = [ ("gewicht", "20") ]; ov_chars = []; ov_links = [] };
-        { ov_label = "J1"; ov_type = "Jutter"; ov_attrs = []; ov_chars = []; ov_links = [] } ]
+  let otm_summary v_label w =
+    String.concat " "
+      [ ov_char w v_label "toegewezen"; ov_attr w "J1" "vondstaantal"; ov_char w "J1" "vindend";
+        ov_char w "J1" "alle zwaar"; ov_char w "J1" "een zwaar" ]
   in
-  ov_expect "WV-1.5-link-one-to-many"
-    (String.concat " "
-       [ ov_char w "V1" "toegewezen"; ov_attr w "J1" "vondstaantal"; ov_char w "J1" "vindend";
-         ov_char w "J1" "alle zwaar"; ov_char w "J1" "een zwaar" ])
+  let otm_unlinked =
+    [ { ov_label = "V1"; ov_type = "Vondst"; ov_attrs = [ ("gewicht", "20") ]; ov_chars = []; ov_links = [] };
+      { ov_label = "J1"; ov_type = "Jutter"; ov_attrs = []; ov_chars = []; ov_links = [] } ]
+  in
+  let otm_linked =
+    [ { ov_label = "V1"; ov_type = "Vondst"; ov_attrs = [ ("gewicht", "20") ]; ov_chars = []; ov_links = [] };
+      { ov_label = "V2"; ov_type = "Vondst"; ov_attrs = [ ("gewicht", "5") ]; ov_chars = []; ov_links = [] };
+      { ov_label = "J1"; ov_type = "Jutter"; ov_attrs = []; ov_chars = []; ov_links = [ ("vondsten", [ "V1" ]) ] } ]
+  in
+  ov_expect "WV-1.5-link-one-to-many (both unlinked and open)"
+    (otm_summary "V1" (ov_run "link-one-to-many-open-empty" one_to_many_doc otm_unlinked))
+    "open open open open open";
+  ov_expect "WV-1.5-link-one-to-many (V1 linked on open vondsten)"
+    (otm_summary "V1" (ov_run "link-one-to-many-open-linked" one_to_many_doc otm_linked))
+    "holds open holds open holds";
+  ov_expect "WV-1.5-link-one-to-many (J1 rolesClosed empty, V1 vinder still open)"
+    (otm_summary "V1"
+       (ov_run ~roles_closed:[ ("J1", "vondsten") ] "link-one-to-many-closed-empty" one_to_many_doc otm_unlinked))
+    "open 0 not holds not";
+  let w_closed_linked =
+    ov_run ~roles_closed:[ ("J1", "vondsten") ] "link-one-to-many-closed-linked" one_to_many_doc otm_linked
+  in
+  ov_expect "WV-1.5-link-one-to-many (J1 rolesClosed with V1)"
+    (otm_summary "V1" w_closed_linked) "holds 1 holds holds holds";
+  ov_expect "WV-1.5-link-one-to-many (unlinked V2 vinder still open beside closed J1.vondsten)"
+    (ov_char w_closed_linked "V2" "toegewezen") "open";
+  ov_expect "WV-1.5-link-one-to-many (vondst declared complete, empty)"
+    (otm_summary "V1"
+       (ov_run "link-one-to-many-complete-empty" (ov_role_complete "vinding" "vondst" one_to_many_doc) otm_unlinked))
     "open 0 not holds not";
   (* WV-1.5-link-two-step: Vondst -> vinder -> ploeg (1:1 lidmaatschap so
      WV-1.5-monotone also exercises dropping an openable 1:1 link) *)
@@ -15645,16 +15688,23 @@ let () =
          ov_char w "V3" "alle vinders ervaren"; ov_char w "V3" "een vinder ervaren" ])
     "open open open open";
   ov_expect "WV-1.5-link-fold-range (1-step linked on V1)" (fold_v1 w) "1 10 holds holds";
-  ov_expect "WV-1.5-link-fold-range (2-step hop 2 open on V2)" (fold_j1 w) "open open open open";
+  ov_expect "WV-1.5-link-fold-range (2-step open vondsten + hop 2 open on V2, atLeast 1 short-circuits on L1)"
+    (fold_j1 w) "open open open holds";
+  let w_hop1_closed =
+    ov_run ~roles_closed:[ ("J1", "vondsten") ] "link-fold-range-hop2-open" fold_range_doc fold_objs
+  in
+  ov_expect "WV-1.5-link-fold-range (2-step vondsten closed, hop 2 open on V2, atLeast 1 short-circuits on L1)"
+    (fold_j1 w_hop1_closed) "open open open holds";
   let w_settled =
-    ov_run ~roles_empty:[ ("V2", "bewaarplaats"); ("V3", "vinder") ] "link-fold-range-settled" fold_range_doc fold_objs
+    ov_run ~roles_empty:[ ("V2", "bewaarplaats"); ("V3", "vinder") ] ~roles_closed:[ ("J1", "vondsten") ]
+      "link-fold-range-settled" fold_range_doc fold_objs
   in
   ov_expect "WV-1.5-link-fold-range (1-step empty on V3)"
     (String.concat " "
        [ ov_attr w_settled "V3" "vinderaantal"; ov_attr w_settled "V3" "vinderbonus";
          ov_char w_settled "V3" "alle vinders ervaren"; ov_char w_settled "V3" "een vinder ervaren" ])
     "0 leeg holds not";
-  ov_expect "WV-1.5-link-fold-range (2-step V2 empty, L1 counted)" (fold_j1 w_settled) "1 12 holds holds";
+  ov_expect "WV-1.5-link-fold-range (2-step V2 empty and vondsten closed, L1 counted)" (fold_j1 w_settled) "1 12 holds holds";
   (* WV-1.5-link-self-relation: non-reciprocal opvolging on Vergunning with
      vorige vergunning and volgende vergunning — independent directions *)
   let vorige_rb : Ir_v0.Ast.role_binding = { rb_fact_type = "opvolging"; rb_role = "vorige vergunning" } in
@@ -15768,21 +15818,54 @@ let () =
   in
   ov_expect "WV-1.5-link-complete (beside open creation writer)" (ov_char w_writer_open "J1" "heeft proef") "open";
   (* when the creation fires (ervaren stands not to hold via complete), oc0::J1
-     is minted and its unassigned bewaarplaats is settled absent, whereas V9's
-     bewaarplaats is open *)
+     is minted and its unassigned to-one role (bewaarplaats) and unassigned
+     to-many role (brokstukken) are settled absent / closed [], whereas case V9
+     has both open *)
+  let brok_rb : Ir_v0.Ast.role_binding = { rb_fact_type = "samenstelling"; rb_role = "brokstuk" } in
+  let made_many_doc =
+    { made_doc with
+      object_types =
+        [ ot "Jutter" [] [ "ervaren"; "heeft proef" ];
+          ov_vondst [ "bewaarhuur"; "brokstukaantal" ] [ "opgeslagen"; "onopgeslagen"; "brokstukvrij" ];
+          ot "Loods" [ ("huur", Some num0) ] [];
+          ot "Brokstuk" [] [] ];
+      fact_types =
+        made_doc.fact_types
+        @ [ ( "samenstelling",
+              { ft_name = Some "samenstelling"; reciprocal = false;
+                role_names =
+                  [ { role_identifier = Some "bronvondst"; role_object_type_name = Some "Vondst"; role_plural = None;
+                      role_many = false; role_complete = false };
+                    { role_identifier = Some "brokstuk"; role_object_type_name = Some "Brokstuk";
+                      role_plural = Some "brokstukken"; role_many = true; role_complete = false } ] } ) ];
+      resolved_rules =
+        made_doc.resolved_rules
+        @ [ ov_calc "brokstukaantal"
+              (Function_call
+                 { kind = Count; call_arguments = [ aref "brokstukken" "Vondst" ]; element_object_type = Some "Brokstuk";
+                   empty_fallback = None; filter = None; dimension_selections = None; typ = Some num0; source_name = None;
+                   grain = None; source_role = Some brok_rb; source_path = None; anchor = None });
+            ov_attribution "brokstukvrij"
+              (Role_membership
+                 { fact_type = "samenstelling"; role = "bronvondst"; counterpart_type = None; negated = true;
+                   source_name = None }) ] }
+  in
   let w_made =
-    ov_run "link-made-object" (ov_complete ~otype:"Jutter" [ "ervaren" ] made_doc)
+    ov_run "link-made-object" (ov_complete ~otype:"Jutter" [ "ervaren" ] made_many_doc)
       [ { ov_label = "J1"; ov_type = "Jutter"; ov_attrs = []; ov_chars = []; ov_links = [] };
         { ov_label = "V9"; ov_type = "Vondst"; ov_attrs = []; ov_chars = []; ov_links = [] } ]
   in
-  ov_expect "WV-1.5-link-made-object (minted oc0::J1 settled absent)"
+  ov_expect "WV-1.5-link-made-object (minted oc0::J1 settled absent and closed [])"
     (String.concat " "
-       [ ov_attr w_made "oc0::J1" "bewaarhuur"; ov_char w_made "oc0::J1" "opgeslagen"; ov_char w_made "oc0::J1" "onopgeslagen" ])
-    "leeg not holds";
+       [ ov_attr w_made "oc0::J1" "bewaarhuur"; ov_char w_made "oc0::J1" "opgeslagen";
+         ov_char w_made "oc0::J1" "onopgeslagen"; ov_attr w_made "oc0::J1" "brokstukaantal";
+         ov_char w_made "oc0::J1" "brokstukvrij" ])
+    "leeg not holds 0 holds";
   ov_expect "WV-1.5-link-made-object (case V9 open)"
     (String.concat " "
-       [ ov_attr w_made "V9" "bewaarhuur"; ov_char w_made "V9" "opgeslagen"; ov_char w_made "V9" "onopgeslagen" ])
-    "open open open"
+       [ ov_attr w_made "V9" "bewaarhuur"; ov_char w_made "V9" "opgeslagen"; ov_char w_made "V9" "onopgeslagen";
+         ov_attr w_made "V9" "brokstukaantal"; ov_char w_made "V9" "brokstukvrij" ])
+    "open open open open open"
 
 (* WV-1.5-complete-*: a member whose declaration says that its input is
    complete (IR-SPEC ch. 2.2) is settled leeg where it is input and the case
@@ -16282,10 +16365,18 @@ let () =
           ("vorige vergunning of V1 open", vorige_open_case) ])
     [ [ 0; 1; 2 ]; [ 2; 1; 0 ] ]
 
-(* The folds of ch. 1.5 range over the vondsten of a Jutter: "vinding", its
-   vinder a Jutter and its vondsten Vondsten. A scenario gives J1 and its
-   vondsten, each with its attributes and characteristics *)
+(* The closed-collection folds of ch. 1.5 range over the vondsten of a Jutter:
+   "vinding", its vinder a Jutter and its vondsten Vondsten declared complete;
+   [ov_vinding_open] / [ov_open_jdoc] below test the open-collection counterpart *)
 let ov_vinding : string * Ir_v0.Ast.fact_type_name =
+  ( "vinding",
+    { ft_name = Some "vinding"; reciprocal = false;
+      role_names =
+        [ { role_identifier = Some "vinder"; role_object_type_name = Some "Jutter"; role_plural = None; role_many = false; role_complete = false };
+          { role_identifier = Some "vondst"; role_object_type_name = Some "Vondst"; role_plural = Some "vondsten";
+            role_many = true; role_complete = true } ] } )
+
+let ov_vinding_open : string * Ir_v0.Ast.fact_type_name =
   ( "vinding",
     { ft_name = Some "vinding"; reciprocal = false;
       role_names =
@@ -16293,9 +16384,9 @@ let ov_vinding : string * Ir_v0.Ast.fact_type_name =
           { role_identifier = Some "vondst"; role_object_type_name = Some "Vondst"; role_plural = Some "vondsten";
             role_many = true; role_complete = false } ] } )
 
-let ov_jdoc ?(jutter = []) ?(jchars = []) ?(vondst = []) ?(vchars = []) rules =
+let ov_jdoc ?(open_many = false) ?(jutter = []) ?(jchars = []) ?(vondst = []) ?(vchars = []) rules =
   { (ov_doc [ ot "Jutter" (List.map (fun a -> (a, Some num0)) jutter) jchars; ov_vondst vondst vchars ] rules) with
-    fact_types = [ ov_vinding ] }
+    fact_types = [ (if open_many then ov_vinding_open else ov_vinding) ] }
 
 let ov_j1 vondsten =
   { ov_label = "J1"; ov_type = "Jutter"; ov_attrs = []; ov_chars = [];
@@ -17378,7 +17469,7 @@ let () =
   row "creation-condition" "makes" [ ("ervaring", "2") ] "1 3 holds 3";
   row "creation-condition" "makes-nothing" [ ("ervaring", "8") ] "0 leeg not none";
   row "creation-open" "no-vondst" [] "open open open none";
-  row "creation-open" "beside-a-vondst" ~vondsten:[ ("V1", [ ("gewicht", "4") ], []) ] [] "open open open none"
+  row "creation-open" "beside-a-vondst" ~vondsten:[ ("V1", [ ("gewicht", "4") ], []) ] [] "open open holds none"
 
 (* WV-1.5-creation-member: a member value is the input of the object made: an
    attribute the creation assigns is filled, settled leeg (a settled leeg value
@@ -17722,7 +17813,16 @@ let () =
      its value, and the golden without it plays its cases *)
   let dir = "corpus/golden/jutterswet-grens-per-jutter/" in
   let golden = Ir_v0.Loader.load_file (corpus_file (dir ^ "ir.json")) in
-  let only n = { golden with infer_from_empty = false; resolved_rules = [ List.nth golden.resolved_rules n ] } in
+  let only n =
+    { golden with
+      infer_from_empty = false;
+      fact_types =
+        List.map
+          (fun (fn, (ft : Ir_v0.Ast.fact_type_name)) ->
+            (fn, { ft with role_names = List.map (fun (r : Ir_v0.Ast.role_ref) -> if r.role_many then { r with role_complete = true } else r) ft.role_names }))
+          golden.fact_types;
+      resolved_rules = [ List.nth golden.resolved_rules n ] }
+  in
   refused "WV-1.5-let-in-composite-quantifier-fold-matrix" (only 0);
   refused "WV-1.5-let-in-composite-quantifier-fold-filter" (only 1);
   refused "WV-1.5-let-in-composite-quantifier-fold-matrix (a nested Let)" (only 2);
@@ -17993,6 +18093,188 @@ let () =
   ov_expect "WV-1.5-filled-test-past-undetermined"
     (ov_attr (ov_run "filled-test-past-undetermined" doc (ov_v1 [ ("taxatie", "50"); ("schade", "3") ])) "V1" "schadetoeslag")
     "leeg"
+
+(* WV-1.5-many-*: open versus closed non-reciprocal to-many collections (ch.
+   1.5): quantifier folds under u = infinity short-circuiting, provisional
+   matrices on open ranges (dropping matrix deposits and catching matrix
+   faults), filter deposits held back until the quantifier fold establishes its
+   verdict and dropped when it stays undetermined, aggregations (including
+   count over InstanceSetUnion) breaking off on any open range hop before
+   member filters or values fault or deposit, and closing via rolesClosed or
+   complete: true *)
+let () =
+  let qdoc =
+    ov_jdoc ~open_many:true
+      ~jchars:[ "alle"; "geen"; "min1"; "min2"; "max1"; "precies1" ]
+      ~vondst:[ "gewicht" ]
+      [ ov_jattribution "alle" (ov_qfold All (ov_cmp Greater "gewicht" "10"));
+        ov_jattribution "geen" (ov_qfold None_of (ov_cmp Greater "gewicht" "10"));
+        ov_jattribution "min1" (ov_qfold ~cutoff:1 At_least (ov_cmp Greater "gewicht" "10"));
+        ov_jattribution "min2" (ov_qfold ~cutoff:2 At_least (ov_cmp Greater "gewicht" "10"));
+        ov_jattribution "max1" (ov_qfold ~cutoff:1 At_most (ov_cmp Greater "gewicht" "10"));
+        ov_jattribution "precies1" (ov_qfold ~cutoff:1 Exactly (ov_cmp Greater "gewicht" "10")) ]
+  in
+  let qsummary w =
+    String.concat " " (List.map (ov_char w "J1") [ "alle"; "geen"; "min1"; "min2"; "max1"; "precies1" ])
+  in
+  let qrow name ?(closed = false) vondsten want =
+    let id = "many-quantifier-" ^ name in
+    let roles_closed = if closed then [ ("J1", "vondsten") ] else [] in
+    ov_row ("WV-1.5-" ^ id) (fun () -> ov_run ~roles_closed id qdoc (ov_j1 vondsten)) qsummary want
+  in
+  qrow "open-0" [] "open open open open open open";
+  qrow "closed-0" ~closed:true [] "holds holds not not holds not";
+  qrow "open-T" [ ("V1", [ ("gewicht", "20") ], []) ] "open not holds open open open";
+  qrow "closed-T" ~closed:true [ ("V1", [ ("gewicht", "20") ], []) ] "holds not holds not holds holds";
+  qrow "open-F" [ ("V1", [ ("gewicht", "5") ], []) ] "not open open open open open";
+  qrow "closed-F" ~closed:true [ ("V1", [ ("gewicht", "5") ], []) ] "not holds not not holds not";
+  qrow "open-TT" [ ("V1", [ ("gewicht", "20") ], []); ("V2", [ ("gewicht", "30") ], []) ] "open not holds holds not not";
+  qrow "closed-TT" ~closed:true [ ("V1", [ ("gewicht", "20") ], []); ("V2", [ ("gewicht", "30") ], []) ] "holds not holds holds not not";
+  qrow "open-U" [ ("V1", [], []) ] "open open open open open open";
+  (* degenerate thresholds under open range: atLeast 0 holds immediately, atMost -1 and exactly -1 fail immediately *)
+  let deg_doc =
+    ov_jdoc ~open_many:true ~jchars:[ "min0"; "max_neg"; "exact_neg" ] ~vondst:[ "gewicht" ]
+      [ ov_jattribution "min0" (ov_qfold ~cutoff:0 At_least (ov_cmp Greater "gewicht" "10"));
+        ov_jattribution "max_neg" (ov_qfold ~cutoff:(-1) At_most (ov_cmp Greater "gewicht" "10"));
+        ov_jattribution "exact_neg" (ov_qfold ~cutoff:(-1) Exactly (ov_cmp Greater "gewicht" "10")) ]
+  in
+  let w_deg = ov_run "many-quantifier-degenerate" deg_doc (ov_j1 []) in
+  ov_expect "WV-1.5-many-quantifier-degenerate"
+    (String.concat " " (List.map (ov_char w_deg "J1") [ "min0"; "max_neg"; "exact_neg" ]))
+    "holds not not";
+  (* provisional matrix reading on open range: matrix deposit (EF-005) dropped
+     and matrix fault (EF-011 Rekenjaar without asOfDate) caught to undetermined
+     while range is open, and raised once rolesClosed closes the range *)
+  let rekenjaar : Ir_v0.Ast.expr =
+    Context_value { ident = Some Ir_v0.Spelling.evaluation_year; typ = Some num0; source_name = None }
+  in
+  let prov_dep_doc =
+    ov_jdoc ~open_many:true ~jchars:[ "gelijkmatig" ] ~vondst:[ "gewicht"; "deelnemers" ]
+      [ ov_jattribution "gelijkmatig"
+          (ov_qfold All (ov_greater (ov_bin Divided_by (ov_ref "gewicht") (ov_ref "deelnemers")) "2")) ]
+  in
+  let w_prov_dep =
+    ov_run "many-provisional-matrix-deposit-open" prov_dep_doc
+      (ov_j1 [ ("V1", [ ("gewicht", "10"); ("deelnemers", "2") ], []); ("V2", [ ("gewicht", "9"); ("deelnemers", "0") ], []) ])
+  in
+  ov_expect "WV-1.5-many-provisional-matrix (short-circuits to not, matrix deposit dropped)"
+    (ov_char w_prov_dep "J1" "gelijkmatig" ^ " [" ^ String.concat "; " (ov_channel w_prov_dep) ^ "]")
+    "not []";
+  let w_prov_dep_closed =
+    ov_run ~roles_closed:[ ("J1", "vondsten") ] "many-provisional-matrix-deposit-closed" prov_dep_doc
+      (ov_j1 [ ("V1", [ ("gewicht", "10"); ("deelnemers", "2") ], []); ("V2", [ ("gewicht", "9"); ("deelnemers", "0") ], []) ])
+  in
+  ov_expect "WV-1.5-many-provisional-matrix (rolesClosed commits matrix deposit)"
+    (ov_char w_prov_dep_closed "J1" "gelijkmatig" ^ " [" ^ String.concat "; " (ov_channel w_prov_dep_closed) ^ "]")
+    "not [gelijkmatig J1 EF-005]";
+  (* not registered: with every input complete vondsten stands closed and EF-011 arises *)
+  let prov_fault_doc =
+    ov_jdoc ~open_many:true ~jchars:[ "jaarkeur" ] ~vondst:[ "gewicht" ]
+      [ ov_jattribution "jaarkeur"
+          (ov_qfold All (ov_greater (ov_bin Plus (ov_ref "gewicht") rekenjaar) "2020")) ]
+  in
+  let w_prov_fault = ov_eval prov_fault_doc (ov_j1 [ ("V1", [ ("gewicht", "10") ], []) ]) in
+  ov_expect "WV-1.5-many-provisional-matrix (open range catches EF-011 to undetermined)"
+    (ov_char w_prov_fault "J1" "jaarkeur")
+    "open";
+  ov_expect "WV-1.5-many-provisional-matrix (rolesClosed raises EF-011)"
+    (ov_fault_of (fun () -> ov_eval ~roles_closed:[ ("J1", "vondsten") ] prov_fault_doc (ov_j1 [ ("V1", [ ("gewicht", "10") ], []) ])))
+    "EF-011";
+  (* filter deposit on open range: dropped when QuantifierFold stays undetermined,
+     committed when QuantifierFold reaches an established verdict *)
+  let fdep_doc =
+    ov_jdoc ~open_many:true ~jchars:[ "keur" ] ~vondst:[ "gewicht"; "deelnemers" ] ~vchars:[ "gemerkt" ]
+      [ ov_jattribution "keur"
+          (ov_qfold
+             ~filter:(ov_compound At_least 1 [ ov_greater (ov_bin Divided_by (ov_ref "gewicht") (ov_ref "deelnemers")) "2"; ov_check "gemerkt" ])
+             All (ov_cmp Greater "gewicht" "10")) ]
+  in
+  let w_fdep_open =
+    ov_run "many-filter-deposit-undetermined" fdep_doc
+      (ov_j1 [ ("V1", [ ("gewicht", "20"); ("deelnemers", "0") ], [ "gemerkt" ]) ])
+  in
+  ov_expect "WV-1.5-many-filter-deposit (undetermined fold drops filter deposit)"
+    (ov_char w_fdep_open "J1" "keur" ^ " [" ^ String.concat "; " (ov_channel w_fdep_open) ^ "]")
+    "open []";
+  let w_fdep_false =
+    ov_run "many-filter-deposit-established-open" fdep_doc
+      (ov_j1 [ ("V1", [ ("gewicht", "5"); ("deelnemers", "0") ], [ "gemerkt" ]) ])
+  in
+  ov_expect "WV-1.5-many-filter-deposit (short-circuited fold commits filter deposit)"
+    (ov_char w_fdep_false "J1" "keur" ^ " [" ^ String.concat "; " (ov_channel w_fdep_false) ^ "]")
+    "not [keur J1 EF-005]";
+  let w_fdep_closed =
+    ov_run ~roles_closed:[ ("J1", "vondsten") ] "many-filter-deposit-closed" fdep_doc
+      (ov_j1 [ ("V1", [ ("gewicht", "20"); ("deelnemers", "0") ], [ "gemerkt" ]) ])
+  in
+  ov_expect "WV-1.5-many-filter-deposit (closed fold commits filter deposit)"
+    (ov_char w_fdep_closed "J1" "keur" ^ " [" ^ String.concat "; " (ov_channel w_fdep_closed) ^ "]")
+    "holds [keur J1 EF-005]";
+  (* aggregations (including count over InstanceSetUnion) break off immediately on
+     any open range hop before filters or values can fault or deposit *)
+  let vangst_ft : string * Ir_v0.Ast.fact_type_name =
+    ( "vangst",
+      { ft_name = Some "vangst"; reciprocal = false;
+        role_names =
+          [ { role_identifier = Some "vanger"; role_object_type_name = Some "Jutter"; role_plural = None;
+              role_many = false; role_complete = false };
+            { role_identifier = Some "gevangen vondst"; role_object_type_name = Some "Vondst";
+              role_plural = Some "gevangen vondsten"; role_many = true; role_complete = false } ] } )
+  in
+  let agg_doc =
+    let base =
+      ov_jdoc ~open_many:true ~jutter:[ "aantal"; "som"; "unietal" ] ~vondst:[ "gewicht"; "deelnemers" ]
+        [ ov_jcalc "aantal"
+            (Function_call
+               { kind = Count; call_arguments = [ aref "vondsten" "Jutter" ]; element_object_type = Some "Vondst";
+                 empty_fallback = None;
+                 filter = Some (ov_greater (ov_bin Divided_by (ov_ref "gewicht") (ov_ref "deelnemers")) "2");
+                 dimension_selections = None; typ = Some num0; source_name = None; grain = None;
+                 source_role = Some ov_range; source_path = None; anchor = None });
+          ov_jcalc "som"
+            (ov_fold ~fallback:(ov_lit "0") Sum_function "gewicht");
+          ov_jcalc "unietal"
+            (Function_call
+               { kind = Count;
+                 call_arguments =
+                   [ Instance_set_union
+                       { branches =
+                           [ { isb_element_type = Some "Vondst";
+                               isb_filter = Some (ov_greater (ov_bin Divided_by (ov_ref "gewicht") (ov_ref "deelnemers")) "2");
+                               isb_source_role = ov_range;
+                               isb_source = None };
+                             { isb_element_type = Some "Vondst";
+                               isb_filter = Some (ov_greater rekenjaar "2020");
+                               isb_source_role = { rb_fact_type = "vangst"; rb_role = "gevangen vondst" };
+                               isb_source = None } ];
+                         source_name = None } ];
+                 element_object_type = None; empty_fallback = None; filter = None; dimension_selections = None;
+                 typ = Some num0; source_name = None; grain = None; source_role = None; source_path = None;
+                 anchor = None }) ]
+    in
+    { base with fact_types = base.fact_types @ [ vangst_ft ] }
+  in
+  let agg_in =
+    [ { ov_label = "J1"; ov_type = "Jutter"; ov_attrs = []; ov_chars = []; ov_links = [ ("vondsten", [ "V1" ]) ] };
+      { ov_label = "V1"; ov_type = "Vondst"; ov_attrs = [ ("gewicht", "10"); ("deelnemers", "0") ]; ov_chars = []; ov_links = [] } ]
+  in
+  let w_agg_open = ov_run "many-set-fold-open" agg_doc agg_in in
+  ov_expect "WV-1.5-many-set-fold (open range breaks off before filter deposit or branch 2 fault)"
+    (String.concat " " (List.map (ov_attr w_agg_open "J1") [ "aantal"; "som"; "unietal" ]) ^ " [" ^ String.concat "; " (ov_channel w_agg_open) ^ "]")
+    "open open open []";
+  (* even when branch 1 (vondsten) is closed, an open branch 2 (gevangen vondsten) breaks InstanceSetUnion off before branch 1's filter deposits *)
+  let w_agg_branch2_open = ov_run ~roles_closed:[ ("J1", "vondsten") ] "many-union-count-branch2-open" agg_doc agg_in in
+  ov_expect "WV-1.5-many-union-count (open branch 2 suppresses branch 1 filter deposit)"
+    (String.concat " " (List.map (ov_attr w_agg_branch2_open "J1") [ "aantal"; "som"; "unietal" ])
+    ^ " [" ^ String.concat "; " (ov_channel w_agg_branch2_open) ^ "]")
+    "0 10 open [aantal J1 EF-005]";
+  let w_agg_both_closed =
+    ov_run ~roles_closed:[ ("J1", "vondsten"); ("J1", "gevangen vondsten") ] "many-union-count-closed" agg_doc agg_in
+  in
+  ov_expect "WV-1.5-many-union-count (both branches closed, branch 2 empty)"
+    (String.concat " " (List.map (ov_attr w_agg_both_closed "J1") [ "aantal"; "som"; "unietal" ])
+    ^ " [" ^ String.concat "; " (ov_channel w_agg_both_closed) ^ "]")
+    "0 10 0 [aantal J1 EF-005; unietal J1 EF-005]"
 
 (* WV-1.5-direct-reads: every read of a member while a form is evaluated goes
    through World.read_attr, read_char, read_timeline or read_char_periods,
@@ -18572,6 +18854,113 @@ let () =
   check_role_refusal "WV-1.5-case-roles-empty-refused (reciprocal fact type)"
     {|{ "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {}, "rolesEmpty": [ "partner" ], "characteristics": [] }|}
     (fun c p t -> c = None && p = [] && Case.contains ~needle:"reciprocal" t);
+  (* WV-1.5-case-roles-closed: rolesClosed validation, idempotence, and coexistence with links *)
+  let closed_case_doc ?(strict = true) () =
+    let base = role_case_doc ~strict () in
+    let vondst_rb : Ir_v0.Ast.role_binding = { rb_fact_type = "vangst"; rb_role = "vondst" } in
+    { base with
+      object_types =
+        [ ov_vondst [ "waarde"; "vindpremie" ] [ "toegewezen"; "verweesd" ];
+          ot "Jutter" [ ("bonus", Some num0); ("vondstaantal", Some num0) ] [ "vindend"; "alle kostbaar" ];
+          ot "Loods" [] [];
+          ot "Vergunning" [] [ "heeft vorige"; "heeft volgende" ] ];
+      resolved_rules =
+        base.resolved_rules
+        @ [ rr "vondstaantal" Calculation (Some (aref "vondstaantal" "Jutter"))
+              (Some
+                 (Function_call
+                    { kind = Count; call_arguments = [ aref "vondsten" "Jutter" ]; element_object_type = Some "Vondst";
+                      empty_fallback = None; filter = None; dimension_selections = None; typ = Some num0;
+                      source_name = None; grain = None; source_role = Some vondst_rb; source_path = None; anchor = None }))
+              None;
+            rr "vindend" Characteristic_attribution (Some (aref "vindend" "Jutter")) (Some (litv "waar" Boolean))
+              (Some
+                 (Role_membership
+                    { fact_type = "vangst"; role = "vinder"; counterpart_type = None; negated = false; source_name = None }));
+            rr "alle kostbaar" Characteristic_attribution (Some (aref "alle kostbaar" "Jutter")) (Some (litv "waar" Boolean))
+              (Some
+                 (Quantifier_fold
+                    { kv_quantifier = All; kv_threshold = None; kv_element_object_type = Some "Vondst"; kv_filter = None;
+                      kv_test = Some (ov_cmp Greater "waarde" "50"); kv_source = None; kv_source_role = Some vondst_rb;
+                      kv_source_path = None; kv_anchor = None })) ] }
+  in
+  let run_closed ?(strict = true) instances expected =
+    let d = closed_case_doc ~strict () in
+    match load_multi d instances expected with
+    | Error (_, _, text) -> [ "CASE ERROR: " ^ text ]
+    | Ok c -> Case.check c (Eval.evaluate (env_of d) c.world)
+  in
+  let check_closed_refusal id instances want =
+    match load_multi (closed_case_doc ()) instances {|{ "kind": "consistent" }|} with
+    | Ok _ -> check (id ^ " (loaded)") false
+    | Error (code, params, text) -> check (id ^ " (got: " ^ text ^ ")") (want code params text)
+  in
+  holds "WV-1.5-case-roles-closed (omitted: open even with link)"
+    (run_closed
+       {|{ "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": { "vondsten": [ "V1" ] }, "characteristics": [] },
+         { "label": "V1", "objectType": "Vondst", "attributes": { "waarde": { "number": "100" } }, "roles": {}, "characteristics": [] }|}
+       {|{ "kind": "attributeOpen", "label": "J1", "attribute": "vondstaantal" },
+         { "kind": "characteristicPresent", "label": "J1", "characteristic": "vindend" },
+         { "kind": "characteristicOpen", "label": "J1", "characteristic": "alle kostbaar" }|});
+  holds "WV-1.5-case-roles-closed (closed empty)"
+    (run_closed
+       {|{ "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {}, "rolesClosed": [ "vondsten" ], "characteristics": [] }|}
+       {|{ "kind": "attributeValue", "label": "J1", "attribute": "vondstaantal", "value": { "number": "0" } },
+         { "kind": "characteristicAbsent", "label": "J1", "characteristic": "vindend" },
+         { "kind": "characteristicPresent", "label": "J1", "characteristic": "alle kostbaar" }|});
+  holds "WV-1.5-case-roles-closed (valid alongside own and counterpart links, idempotent singular + plural)"
+    (run_closed
+       {|{ "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": { "vondsten": [ "V1" ] }, "rolesClosed": [ "  VONDST ", "vondsten" ], "characteristics": [] },
+         { "label": "V1", "objectType": "Vondst", "attributes": { "waarde": { "number": "100" } }, "roles": {}, "characteristics": [] },
+         { "label": "V2", "objectType": "Vondst", "attributes": { "waarde": { "number": "80" } }, "roles": { "vinder": [ "J1" ] }, "characteristics": [] }|}
+       {|{ "kind": "attributeValue", "label": "J1", "attribute": "vondstaantal", "value": { "number": "2" } },
+         { "kind": "characteristicPresent", "label": "J1", "characteristic": "vindend" },
+         { "kind": "characteristicPresent", "label": "J1", "characteristic": "alle kostbaar" }|});
+  holds "WV-1.5-case-roles-closed (without the property, changes nothing)"
+    (run_closed ~strict:false
+       {|{ "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {}, "rolesClosed": [ "vondsten" ], "characteristics": [] }|}
+       {|{ "kind": "attributeValue", "label": "J1", "attribute": "vondstaantal", "value": { "number": "0" } }|});
+  check_closed_refusal "WV-1.5-case-roles-closed-refused (EF-040 undeclared)"
+    {|{ "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {}, "rolesClosed": [ "vondstenz" ], "characteristics": [] }|}
+    (fun c p _ -> (c, p) = (Some "EF-040", [ ("label", "J1"); ("name", "vondstenz") ]));
+  let ambig_many_doc =
+    let base = closed_case_doc () in
+    { base with
+      fact_types =
+        base.fact_types
+        @ [ ( "archiefA",
+              { ft_name = Some "archiefA"; reciprocal = false;
+                role_names =
+                  [ { role_identifier = Some "eigenaarA"; role_object_type_name = Some "Jutter"; role_plural = None;
+                      role_many = false; role_complete = false };
+                    { role_identifier = Some "stuk"; role_object_type_name = Some "Vondst"; role_plural = Some "stukken";
+                      role_many = true; role_complete = false } ] } );
+            ( "archiefB",
+              { ft_name = Some "archiefB"; reciprocal = false;
+                role_names =
+                  [ { role_identifier = Some "eigenaarB"; role_object_type_name = Some "Jutter"; role_plural = None;
+                      role_many = false; role_complete = false };
+                    { role_identifier = Some "stuk"; role_object_type_name = Some "Loods"; role_plural = Some "stukken";
+                      role_many = true; role_complete = false } ] } ) ] }
+  in
+  (match
+     load_multi ambig_many_doc
+       {|{ "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {}, "rolesClosed": [ "stukken" ], "characteristics": [] }|}
+       {|{ "kind": "consistent" }|}
+   with
+  | Ok _ -> check "WV-1.5-case-roles-closed-refused (EF-001 ambiguous) (loaded)" false
+  | Error (c, p, _) ->
+      check "WV-1.5-case-roles-closed-refused (EF-001 ambiguous)"
+        ((c, p) = (Some "EF-001", [ ("roleKey", "stukken"); ("objectType", "Jutter") ])));
+  check_closed_refusal "WV-1.5-case-roles-closed-refused (0 matching roles from objectType)"
+    {|{ "label": "L1", "objectType": "Loods", "attributes": {}, "roles": {}, "rolesClosed": [ "vondsten" ], "characteristics": [] }|}
+    (fun c p t -> c = None && p = [] && Case.contains ~needle:"does not resolve to a declared role" t);
+  check_closed_refusal "WV-1.5-case-roles-closed-refused (to-one role)"
+    {|{ "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "rolesClosed": [ "vinder" ], "characteristics": [] }|}
+    (fun c p t -> c = None && p = [] && Case.contains ~needle:"is a to-one role" t);
+  check_closed_refusal "WV-1.5-case-roles-closed-refused (reciprocal fact type)"
+    {|{ "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {}, "rolesClosed": [ "partner" ], "characteristics": [] }|}
+    (fun c p t -> c = None && p = [] && Case.contains ~needle:"reciprocal" t);
   (* WV-1.5-case-raw-input *)
   fails "WV-1.5-case-raw-input (attributeOpen)" "V1.vindloon = leeg, expected open"
     (run ~raw:true none (attribute "attributeOpen"));
@@ -18604,14 +18993,14 @@ let on_object form subject cells = List.map (fun c -> Printf.sprintf "%s \"%s\" 
 
 (* The readings of a document built here, written to the wire and read back, so
    that its forms carry their pointers, on the input of its objects *)
-let ov_readings ?(empty = []) ?(roles_empty = []) (doc : Ir_v0.Ast.document) input =
+let ov_readings ?(empty = []) ?(roles_empty = []) ?(roles_closed = []) (doc : Ir_v0.Ast.document) input =
   let module Emit = Ir_v0.Emit.Make (struct
     let producer = "ref suite"
   end) in
   let json = Emit.document doc in
   let doc = Ir_v0.Loader.document ~reader:Ir_v0.Loader.Executor json in
   let env = env_of doc in
-  let world0 = ov_world ~empty ~roles_empty doc input in
+  let world0 = ov_world ~empty ~roles_empty ~roles_closed doc input in
   let final = Eval.evaluate env world0 in
   Reading.lines env ~world:final (Reading.readings json env ~world0 ~world:final)
 
@@ -19148,17 +19537,107 @@ let () =
       "link \"opvolging\" \"vorige vergunning\" \"V2\" \"volgende vergunning\" open";
       "link \"opvolging\" \"vorige vergunning\" open \"volgende vergunning\" \"V1\"";
       "object \"V1\" \"Vergunning\"";
-      "object \"V2\" \"Vergunning\"" ]
+      "object \"V2\" \"Vergunning\"" ];
+  (* WV-5.12-open-many & WV-5.12a-open-many: readings and end state on open vs
+     rolesClosed to-many collections — undetermined QuantifierFold with and
+     without contributors carrying open "J1" "vondst", unreached contributor
+     after open-range atLeast 1 short-circuit, Aggregation broken off on open
+     "J1" "vondst" without contributors, and EndState emitting link ... open
+     alongside concrete links until rolesClosed closes J1's side while leaving
+     an unlinked V2's vinder open *)
+  let many_reading_doc =
+    ov_jdoc ~open_many:true ~jutter:[ "aantal" ] ~jchars:[ "alle"; "min1" ] ~vondst:[ "gewicht" ]
+      [ ov_jcalc "aantal"
+          (Function_call
+             { kind = Count; call_arguments = [ aref "vondsten" "Jutter" ]; element_object_type = Some "Vondst";
+               empty_fallback = None; filter = None; dimension_selections = None; typ = Some num0; source_name = None;
+               grain = None; source_role = Some ov_range; source_path = None; anchor = None });
+        ov_jattribution "alle" (ov_qfold All (ov_cmp Greater "gewicht" "10"));
+        ov_jattribution "min1" (ov_qfold ~cutoff:1 At_least (ov_cmp Greater "gewicht" "10")) ]
+  in
+  let role_reading_json =
+    Yojson.Safe.from_string
+      {|{"format": "uchar-ir-v1", "inferFromEmpty": false,
+         "model": {"objectTypes": [{"node": "ObjectType", "name": "Jutter", "animate": true, "attributes": [],
+                                    "characteristics": [{"node": "Characteristic", "name": "vindend", "kind": "adjectival"}]},
+                                   {"node": "ObjectType", "name": "Vondst", "animate": false,
+                                    "attributes": [{"node": "Attribute", "name": "gewicht",
+                                                    "datatype": {"node": "Number", "whole": true, "decimals": 0, "sign": "unspecified"}}],
+                                    "characteristics": []}],
+                   "factTypes": [{"node": "FactType", "name": "vinding", "reciprocal": false,
+                                  "roles": [{"node": "Role", "name": "vinder", "objectType": "Jutter", "many": false},
+                                            {"node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true}]}],
+                   "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []},
+         "rules": {"rules": [{"node": "Rule", "name": "vindend",
+                              "versions": [{"validity": {"node": "Validity"},
+                                            "target": {"node": "AttributeReference", "attribute": "vindend", "subjectType": "Jutter"},
+                                            "value": {"node": "Literal", "value": {"boolean": true}, "type": {"node": "Boolean"}},
+                                            "condition": {"node": "RoleMembership", "factType": "vinding", "role": "vinder", "negated": false},
+                                            "initialisation": false}]}],
+                   "dayKindDefinitions": [], "objectCreations": [], "allocations": [], "consistencies": [],
+                   "uniquenesses": [], "factCreations": [], "startPointDeterminations": [], "ruleGroups": []},
+         "diagnostics": []}|}
+  in
+  let role_readings input =
+    let doc = Ir_v0.Loader.document ~reader:Ir_v0.Loader.Executor role_reading_json in
+    let env = env_of doc in
+    let world0 = ov_world doc input in
+    let final = Eval.evaluate env world0 in
+    Reading.lines env ~world:final (Reading.readings role_reading_json env ~world0 ~world:final)
+  in
+  lines_equal "WV-5.12-open-many (0 links: open \"J1\" \"vondst\" without contributors)"
+    (ov_readings many_reading_doc (ov_j1 []))
+    (on_object (rule_form 0) "J1" [ "0 Aggregation undetermined open \"J1\" \"vondst\""; "OPEN" ]
+    @ on_object (rule_form 1) "J1" [ "0 QuantifierFold undetermined open \"J1\" \"vondst\""; "OPEN" ]
+    @ on_object (rule_form 2) "J1" [ "0 QuantifierFold undetermined open \"J1\" \"vondst\""; "OPEN" ]);
+  lines_equal "WV-5.12-open-many (0 links: RoleMembership undetermined open \"J1\" \"vondst\")"
+    (role_readings (ov_j1 []))
+    (on_object (rule_form 0) "J1" [ "0 RoleMembership undetermined open \"J1\" \"vondst\""; "OPEN" ]);
+  lines_equal "WV-5.12-open-many (2 links: contributors on undetermined all, unreached on short-circuited min1)"
+    (ov_readings many_reading_doc (ov_j1 [ ("V1", [ ("gewicht", "20") ], []); ("V2", [ ("gewicht", "30") ], []) ]))
+    (on_object (rule_form 0) "J1" [ "0 Aggregation undetermined open \"J1\" \"vondst\""; "OPEN" ]
+    @ on_object (rule_form 1) "J1"
+        [ "0 QuantifierFold undetermined open \"J1\" \"vondst\" contributors [\"V1\" true reached; \"V2\" true reached]"; "OPEN" ]
+    @ on_object (rule_form 2) "J1"
+        [ "0 QuantifierFold true contributors [\"V1\" true reached; \"V2\" true unreached]"; "HOLDS" ]);
+  lines_equal "WV-5.12-open-many (2 links: RoleMembership true over open collection)"
+    (role_readings (ov_j1 [ ("V1", [ ("gewicht", "20") ], []); ("V2", [ ("gewicht", "30") ], []) ]))
+    (on_object (rule_form 0) "J1" [ "0 RoleMembership true"; "HOLDS" ]);
+  let many_es_input =
+    [ { ov_label = "J1"; ov_type = "Jutter"; ov_attrs = []; ov_chars = []; ov_links = [ ("vondsten", [ "V1" ]) ] };
+      { ov_label = "V1"; ov_type = "Vondst"; ov_attrs = [ ("gewicht", "20") ]; ov_chars = []; ov_links = [] };
+      { ov_label = "V2"; ov_type = "Vondst"; ov_attrs = [ ("gewicht", "5") ]; ov_chars = []; ov_links = [] } ]
+  in
+  let many_es_doc = ov_jdoc ~open_many:true ~vondst:[ "gewicht" ] [] in
+  lines_equal "WV-5.12a-open-many (open to-many emits link ... open alongside concrete link)"
+    (End_state.lines (env_of many_es_doc) ~world:(ov_eval many_es_doc many_es_input))
+    [ "attribute \"V1\" \"gewicht\" 20";
+      "attribute \"V2\" \"gewicht\" 5";
+      "link \"vinding\" \"vinder\" \"J1\" \"vondst\" \"V1\"";
+      "link \"vinding\" \"vinder\" \"J1\" \"vondst\" open";
+      "link \"vinding\" \"vinder\" open \"vondst\" \"V2\"";
+      "object \"J1\" \"Jutter\"";
+      "object \"V1\" \"Vondst\"";
+      "object \"V2\" \"Vondst\"" ];
+  lines_equal "WV-5.12a-open-many (rolesClosed omits open on J1 while V2.vinder stays open)"
+    (End_state.lines (env_of many_es_doc) ~world:(ov_eval ~roles_closed:[ ("J1", "vondsten") ] many_es_doc many_es_input))
+    [ "attribute \"V1\" \"gewicht\" 20";
+      "attribute \"V2\" \"gewicht\" 5";
+      "link \"vinding\" \"vinder\" \"J1\" \"vondst\" \"V1\"";
+      "link \"vinding\" \"vinder\" open \"vondst\" \"V2\"";
+      "object \"J1\" \"Jutter\"";
+      "object \"V1\" \"Vondst\"";
+      "object \"V2\" \"Vondst\"" ]
 
 (* WV-1.5-monotone: for every scenario above and every attribute value,
-   attributesEmpty entry, characteristic, rolesEmpty entry and openable 1:1
-   link its case gives an open input member or role, the run without that input
-   has no outcome the full run lacks: filling or closing an open input adds
-   outcomes and never changes one, without exception. A member or role declared
-   complete is not left out, nor a link where either end is to-many, complete
-   or written by a creation (dropping a 1:n link changes the closed to-many
-   set on the other end), nor a value the case gives a member a rule writes on
-   the object's type (ch. 7.8). An initialisation is no such writer. *)
+   attributesEmpty entry, characteristic, rolesEmpty entry, rolesClosed entry
+   and openable unclosed non-reciprocal link its case gives an open input
+   member or role, the run without that input has no outcome the full run
+   lacks: filling or closing an open input adds outcomes and never changes one,
+   without exception. A member or role declared complete is not left out, nor a
+   link where either end is complete, written by a creation or closed in
+   rolesClosed, nor a value the case gives a member a rule writes on the
+   object's type (ch. 7.8). An initialisation is no such writer. *)
 let () =
   let written (doc : Ir_v0.Ast.document) (i : ov_input) ~characteristic member =
     let named m = Ir_v0.Checks.norm m = Ir_v0.Checks.norm member in
@@ -19190,18 +19669,33 @@ let () =
           (if characteristic then ot.characteristic_complete else ot.attribute_complete)
     | None -> invalid_arg ("ref/test/test_ref.ml: no object type " ^ i.ov_type)
   in
-  let compared = ref 0 and role_empty_drops = ref 0 and link_drops = ref 0 in
+  let compared = ref 0 and role_empty_drops = ref 0 and role_closed_drops = ref 0 and link_drops = ref 0 in
   List.iter
     (fun sc ->
-      let full = ov_outcomes sc.sc_doc (ov_eval ~empty:sc.sc_empty ~roles_empty:sc.sc_roles_empty sc.sc_doc sc.sc_input) in
+      let full =
+        ov_outcomes sc.sc_doc
+          (ov_eval ~empty:sc.sc_empty ~roles_empty:sc.sc_roles_empty ~roles_closed:sc.sc_roles_closed sc.sc_doc sc.sc_input)
+      in
+      let role_slot otype k =
+        let ftn', far', _ = Case.resolve_role_ft sc.sc_doc ~otype ~key:k in
+        World.link_key ~fact_type:ftn' far'
+      in
       let open_role_on otype fact_type (far : Ir_v0.Ast.role_ref) =
-        not (far.role_many || far.role_complete || Eval.written_role_on sc.sc_doc ~otype ~fact_type ~far)
+        not (far.role_complete || Eval.written_role_on sc.sc_doc ~otype ~fact_type ~far)
+      in
+      let unclosed_role_on label otype fact_type (far : Ir_v0.Ast.role_ref) =
+        open_role_on otype fact_type far
+        && not
+             (far.role_many
+             && List.exists
+                  (fun (l', k') -> l' = label && role_slot otype k' = World.link_key ~fact_type far)
+                  sc.sc_roles_closed)
       in
       List.iter
         (fun (i : ov_input) ->
-          let without ?(empty = sc.sc_empty) ?(roles_empty = sc.sc_roles_empty) what input =
+          let without ?(empty = sc.sc_empty) ?(roles_empty = sc.sc_roles_empty) ?(roles_closed = sc.sc_roles_closed) what input =
             incr compared;
-            let reduced = ov_outcomes sc.sc_doc (ov_eval ~empty ~roles_empty sc.sc_doc input) in
+            let reduced = ov_outcomes sc.sc_doc (ov_eval ~empty ~roles_empty ~roles_closed sc.sc_doc input) in
             let added = List.sort compare (List.filter (fun l -> not (List.mem l full)) reduced) in
             let id = Printf.sprintf "WV-1.5-monotone %s without %s" sc.sc_name what in
             if added = [] then check id true else check (id ^ " (adds " ^ String.concat "; " added ^ ")") false
@@ -19221,10 +19715,6 @@ let () =
               if l = i.ov_label && open_input ~characteristic:false a then
                 without ~empty:(List.filter (( <> ) (l, a)) sc.sc_empty) (l ^ "." ^ a ^ " (attributesEmpty)") sc.sc_input)
             sc.sc_empty;
-          let role_slot otype k =
-            let ftn', far', _ = Case.resolve_role_ft sc.sc_doc ~otype ~key:k in
-            World.link_key ~fact_type:ftn' far'
-          in
           let seen_roles = ref [] in
           List.iter
             (fun (l, key) ->
@@ -19241,15 +19731,31 @@ let () =
                   without ~roles_empty (l ^ "." ^ key ^ " (rolesEmpty)") sc.sc_input
                 end)
             sc.sc_roles_empty;
+          let seen_closed = ref [] in
+          List.iter
+            (fun (l, key) ->
+              if l = i.ov_label then
+                let ftn, far, _ = Case.resolve_role_ft sc.sc_doc ~otype:i.ov_type ~key in
+                let slot = World.link_key ~fact_type:ftn far in
+                let ft = List.assoc ftn sc.sc_doc.fact_types in
+                if (not (List.mem slot !seen_closed)) && (not ft.reciprocal) && open_role_on i.ov_type ftn far then begin
+                  seen_closed := slot :: !seen_closed;
+                  incr role_closed_drops;
+                  let roles_closed =
+                    List.filter (fun (l', k') -> l' <> l || role_slot i.ov_type k' <> slot) sc.sc_roles_closed
+                  in
+                  without ~roles_closed (l ^ "." ^ key ^ " (rolesClosed)") sc.sc_input
+                end)
+            sc.sc_roles_closed;
           List.iter
             (fun (key, targets) ->
               let ftn, far, near = Case.resolve_role_ft sc.sc_doc ~otype:i.ov_type ~key in
               let ft = List.assoc ftn sc.sc_doc.fact_types in
-              if (not ft.reciprocal) && open_role_on i.ov_type ftn far then
+              if (not ft.reciprocal) && unclosed_role_on i.ov_label i.ov_type ftn far then
                 List.iter
                   (fun t ->
                     let ti = List.find (fun (o : ov_input) -> o.ov_label = t) sc.sc_input in
-                    if open_role_on ti.ov_type ftn near then begin
+                    if unclosed_role_on ti.ov_label ti.ov_type ftn near then begin
                       incr link_drops;
                       let drop_leg (o : ov_input) want_role drop_target =
                         { o with
@@ -19282,8 +19788,10 @@ let () =
         sc.sc_input)
     !ov_registered;
   check (Printf.sprintf "WV-1.5-monotone (%d runs without one input compared)" !compared) (!compared > 200);
-  check (Printf.sprintf "WV-1.5-monotone (rolesEmpty drops: %d, 1:1 link drops: %d)" !role_empty_drops !link_drops)
-    (!role_empty_drops >= 4 && !link_drops >= 3)
+  check
+    (Printf.sprintf "WV-1.5-monotone (rolesEmpty drops: %d, rolesClosed drops: %d, link drops: %d)"
+       !role_empty_drops !role_closed_drops !link_drops)
+    (!role_empty_drops >= 4 && !role_closed_drops >= 8 && !link_drops >= 10)
 
 (* WV-1.5-preserved: every scenario above with every input member complete,
    the session setting of runner --closed-inputs, has the outcomes of the same
@@ -19293,11 +19801,13 @@ let () =
     (fun sc ->
       let strict =
         ov_outcomes sc.sc_doc
-          (ov_eval ~closed_inputs:true ~empty:sc.sc_empty ~roles_empty:sc.sc_roles_empty sc.sc_doc sc.sc_input)
+          (ov_eval ~closed_inputs:true ~empty:sc.sc_empty ~roles_empty:sc.sc_roles_empty ~roles_closed:sc.sc_roles_closed
+             sc.sc_doc sc.sc_input)
       in
       let ordinary_doc = { sc.sc_doc with infer_from_empty = true } in
       let ordinary =
-        ov_outcomes ordinary_doc (ov_eval ~empty:sc.sc_empty ~roles_empty:sc.sc_roles_empty ordinary_doc sc.sc_input)
+        ov_outcomes ordinary_doc
+          (ov_eval ~empty:sc.sc_empty ~roles_empty:sc.sc_roles_empty ~roles_closed:sc.sc_roles_closed ordinary_doc sc.sc_input)
       in
       check ("WV-1.5-preserved " ^ sc.sc_name) (strict = ordinary))
     !ov_registered
