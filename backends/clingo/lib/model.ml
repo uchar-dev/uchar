@@ -234,6 +234,19 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
   let without_value label attr =
     if not strict then "underived (leeg)" else if settled label attr then "settled leeg" else "open"
   in
+  let role_state label ~fact_type far =
+    let rel = arg_of_term (parse_term (Translate.role_term ~fact_type far)) in
+    let is_open = strict && has model "ropen" [ A_str label; rel ] in
+    let targets =
+      List.filter_map
+        (function
+          | { name = "role"; args = [ A_str l; r; t ] } when String.equal l label && r = rel -> Some t
+          | _ -> None)
+        model
+    in
+    (is_open, targets)
+  in
+  let render_filler = function A_str s -> s | a -> render_arg a in
   let scaled_expect ~label ~attr (v : Value.t) =
     let i = Uchar_ref.World.SMap.find label case.world.Uchar_ref.World.instances in
     let ot = i.Uchar_ref.World.otype in
@@ -507,8 +520,44 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
           else if strict && not (has model "hasnot" [ A_str label; A_str (norm char) ]) then
             Some (Printf.sprintf "%s: characteristic %S is open, expected absent" label char)
           else None
-      | Role_empty _ | Role_count _ | Role_target _ | Role_open _ ->
-          fault "a role expectation is not checked here yet"
+      | Role_empty { label; role; fact_type; far } ->
+          let is_open, targets = role_state label ~fact_type far in
+          if is_open then Some (Printf.sprintf "%s.%s is open, expected empty" label role)
+          else if targets = [] then None
+          else
+            Some
+              (Printf.sprintf "%s.%s = [%s], expected empty" label role
+                 (String.concat ", " (List.map render_filler targets)))
+      | Role_count { label; role; fact_type; far; count } ->
+          let is_open, targets = role_state label ~fact_type far in
+          if is_open then Some (Printf.sprintf "%s.%s is open, expected count %d" label role count)
+          else if List.length targets = count then None
+          else
+            Some
+              (Printf.sprintf "%s.%s count = %d ([%s]), expected %d" label role
+                 (List.length targets)
+                 (String.concat ", " (List.map render_filler targets))
+                 count)
+      | Role_target { label; role; fact_type; far; target } -> (
+          let is_open, targets = role_state label ~fact_type far in
+          if is_open then Some (Printf.sprintf "%s.%s is open, expected %s" label role target)
+          else
+            match targets with
+            | [ A_str actual ] when String.equal actual target -> None
+            | [] -> Some (Printf.sprintf "%s.%s is empty, expected %s" label role target)
+            | _ ->
+                Some
+                  (Printf.sprintf "%s.%s = [%s], expected %s" label role
+                     (String.concat ", " (List.map render_filler targets))
+                     target))
+      | Role_open { label; role; fact_type; far } ->
+          let is_open, targets = role_state label ~fact_type far in
+          if is_open then None
+          else if targets = [] then Some (Printf.sprintf "%s.%s is empty, expected open" label role)
+          else
+            Some
+              (Printf.sprintf "%s.%s = [%s], expected open" label role
+                 (String.concat ", " (List.map render_filler targets)))
       | Consistent -> (
           match List.filter (fun a -> a.name = "inconsistent") model with
           | [] -> None

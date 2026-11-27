@@ -23625,6 +23625,289 @@ let () =
          [ ov_consistent ])
     "EF-014"
 
+(* --- Role expectations: roleEmpty, roleCount, roleTarget, roleOpen (RUNTIME-SEMANTICS ch. 1.5, ch. 5.7, S20) --- *)
+let () =
+  work @@ fun () ->
+  let role_empty label role = Printf.sprintf {|{"kind": "roleEmpty", "label": "%s", "role": "%s"}|} label role in
+  let role_count label role count =
+    Printf.sprintf {|{"kind": "roleCount", "label": "%s", "role": "%s", "count": %d}|} label role count
+  in
+  let role_target label role target =
+    Printf.sprintf {|{"kind": "roleTarget", "label": "%s", "role": "%s", "target": "%s"}|} label role target
+  in
+  let role_open label role = Printf.sprintf {|{"kind": "roleOpen", "label": "%s", "role": "%s"}|} label role in
+  (* 0. Document with no fact types at all: #show role/3. (and #show ropen/2. in strict mode)
+     causes no undefined-atom warning or failure in clingo *)
+  List.iter
+    (fun strict ->
+      let ir = ov_doc ~strict [ ov_vondst [ "gewicht" ] [] ] [] in
+      let doc, case = load_pair ~ir ~case_text:(ov_case [ ov_obj "V1" [ ("gewicht", "5") ] ] [ ov_attr_is "gewicht" "5" ]) in
+      match Solve.run_clingo (Translate.translate doc case) with
+      | out, Unix.WEXITED (10 | 30) ->
+          check
+            (Printf.sprintf "role expectations: 0 fact types clean in clingo (strict=%b)" strict)
+            ((not (Uchar_ref.Case.contains ~needle:"atom does not occur" out))
+            && Model.check doc case (Model.model_of_text out) = [])
+      | _ -> check (Printf.sprintf "role expectations: 0 fact types clean in clingo (strict=%b)" strict) false)
+    [ false; true ];
+  (* Shared model with to-one, to-many, reciprocal, self-relation, subtypes, ObjectCreation and FactCreation *)
+  let ft_vangst ?(complete_one = false) ?(complete_many = false) () =
+    Printf.sprintf
+      {|{"node": "FactType", "name": "vangst", "reciprocal": false, "roles": [{"node": "Role", "name": "vinder", "objectType": "Jutter", "plural": "vinders", "many": false%s}, {"node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true%s}]}|}
+      (if complete_one then {|, "complete": true|} else "")
+      (if complete_many then {|, "complete": true|} else "")
+  in
+  let ft_rapportage =
+    {|{"node": "FactType", "name": "rapportage", "reciprocal": false, "roles": [{"node": "Role", "name": "gekeurde jutter", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "rapport", "objectType": "Rapport", "many": false}]}|}
+  in
+  let ft_penning =
+    {|{"node": "FactType", "name": "penningtoekenning", "reciprocal": false, "roles": [{"node": "Role", "name": "begunstigde", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "besluit", "objectType": "Penningbesluit", "plural": "besluiten", "many": true}]}|}
+  in
+  let ft_hulp =
+    {|{"node": "FactType", "name": "hulp", "reciprocal": false, "roles": [{"node": "Role", "name": "hulpjutter", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "hulpvondst", "objectType": "Vondst", "plural": "hulpvondsten", "many": true}]}|}
+  in
+  let ft_keuring =
+    {|{"node": "FactType", "name": "keuring", "reciprocal": false, "roles": [{"node": "Role", "name": "keurder", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "gekeurde vondst", "objectType": "Vondst", "plural": "gekeurde vondsten", "many": true}]}|}
+  in
+  let ft_samenwerking =
+    {|{"node": "FactType", "name": "samenwerking", "reciprocal": true, "roles": [{"node": "Role", "name": "partner", "objectType": "Jutter", "plural": "partners", "many": false}]}|}
+  in
+  let ft_opvolging =
+    {|{"node": "FactType", "name": "opvolging", "reciprocal": false, "roles": [{"node": "Role", "name": "vorige vergunning", "objectType": "Vergunning", "many": false}, {"node": "Role", "name": "volgende vergunning", "objectType": "Vergunning", "many": false}]}|}
+  in
+  let oc_rapport =
+    Printf.sprintf
+      {|{"node": "ObjectCreation", "name": "maak rapport", "versions": [{"createdType": "Rapport", "subject": "Jutter", "assignments": [], "condition": %s, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "rapportage", "role": "rapport"}}]}|}
+      (ov_cmp "greater" (ov_attr ~ty:"Jutter" "ervaring") (ov_lit "5"))
+  in
+  let oc_basisbesluit =
+    Printf.sprintf
+      {|{"node": "ObjectCreation", "name": "basisbesluit", "versions": [{"createdType": "Penningbesluit", "subject": "Jutter", "assignments": [], "condition": %s, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "penningtoekenning", "role": "besluit"}}]}|}
+      (ov_cmp "greater" (ov_attr ~ty:"Jutter" "ervaring") (ov_lit "5"))
+  in
+  let oc_bonusbesluit =
+    Printf.sprintf
+      {|{"node": "ObjectCreation", "name": "bonusbesluit", "versions": [{"createdType": "Penningbesluit", "subject": "Jutter", "assignments": [], "condition": %s, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "penningtoekenning", "role": "besluit"}}]}|}
+      (ov_check "bijzonder")
+  in
+  let fc_hulp =
+    Printf.sprintf
+      {|{"node": "FactCreation", "name": "wijs hulp toe", "versions": [{"factType": "hulp", "anchorRole": "hulpjutter", "targetRole": "hulpvondst", "anchor": "Jutter", "path": [{"node": "RoleBinding", "factType": "vangst", "role": "vondst"}], "condition": %s, "validity": {"node": "Validity"}}]}|}
+      (ov_check ~negated:true "gemeld")
+  in
+  let fc_keuring_target =
+    {|{"node": "FactCreation", "name": "keur kostbare vondsten", "versions": [{"factType": "keuring", "anchorRole": "keurder", "targetRole": "gekeurde vondst", "anchor": "Jutter", "path": [{"node": "RoleBinding", "factType": "vangst", "role": "vondst"}], "condition": {"node": "CharacteristicCheck", "characteristic": "kostbaar", "negated": false, "host": "Vondst", "source": {"snippet": "kostbaar"}}, "validity": {"node": "Validity"}}]}|}
+  in
+  let make_ir ?(strict = true) ?(complete_one = false) ?(complete_many = false) () =
+    ov_doc ~strict
+      ~fact_types:
+        [ ft_vangst ~complete_one ~complete_many (); ft_rapportage; ft_penning; ft_hulp; ft_keuring;
+          ft_samenwerking; ft_opvolging ]
+      ~object_creations:[ oc_rapport; oc_basisbesluit; oc_bonusbesluit ]
+      ~fact_creations:[ fc_hulp; fc_keuring_target ]
+      [ ov_type "Jutter" [ "ervaring" ] [ "bijzonder"; "gemeld" ];
+        ov_type ~supertype:"Jutter" "Hoofdjutter" [] [];
+        ov_type "Vondst" [ "waarde" ] [ "kostbaar" ];
+        ov_type ~supertype:"Vondst" "Strandvondst" [] [];
+        ov_type "Rapport" [] [];
+        ov_type "Penningbesluit" [] [];
+        ov_type "Vergunning" [] [] ]
+      []
+  in
+  (* 1. Ordinary document: to-one, to-many, reciprocal, self-relation, subtype target, ObjectCreation, FactCreation *)
+  ov_frame ~name:"WV-5.7-role-expectations (ordinary document)" ~ir:(make_ir ~strict:false ())
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~chars:[ "bijzonder" ] ~roles:[ ("vondsten", [ "V1"; "S1" ]); ("partner", [ "H1" ]) ]
+             "J1" [ ("ervaring", "10") ];
+           ov_obj ~ty:"Jutter" ~chars:[ "gemeld" ] "J2" [ ("ervaring", "2") ];
+           ov_obj ~ty:"Hoofdjutter" ~chars:[ "gemeld" ] "H1" [ ("ervaring", "0") ];
+           ov_obj ~chars:[ "kostbaar" ] "V1" [];
+           ov_obj ~ty:"Strandvondst" "S1" [];
+           ov_obj ~ty:"Vergunning" "G1" [];
+           ov_obj ~ty:"Vergunning" ~roles:[ ("vorige vergunning", [ "G1" ]) ] "G2" [] ]
+         [ role_count "J1" "vondsten" 2;
+           role_count "J1" "  VONDST " 2;
+           role_empty "J2" "vondsten";
+           role_count "J2" "vondsten" 0;
+           role_target "V1" "vinder" "J1";
+           role_target "S1" "vinders" "J1";
+           role_count "J1" "partners" 1;
+           role_count "H1" "partner" 1;
+           role_empty "J2" "partner";
+           role_empty "G1" "vorige vergunning";
+           role_target "G1" "volgende vergunning" "G2";
+           role_target "G2" "vorige vergunning" "G1";
+           role_empty "G2" "volgende vergunning";
+           role_count "J1" "rapport" 1;
+           role_empty "J2" "rapport";
+           role_count "J1" "besluiten" 2;
+           role_empty "J2" "besluiten";
+           role_count "J1" "hulpvondsten" 2;
+           role_target "V1" "hulpjutter" "J1";
+           role_target "S1" "hulpjutter" "J1";
+           role_empty "J2" "hulpvondsten";
+           role_count "J1" "gekeurde vondsten" 1;
+           role_target "V1" "keurder" "J1";
+           role_empty "S1" "keurder" ])
+    ();
+  (* 2. 1:1 ObjectCreation inputrole guard: input rapport R1 stands and blocks minted oc0("J1") *)
+  ov_frame ~name:"WV-5.7-role-expectations (1:1 ObjectCreation inputrole guard)" ~ir:(make_ir ~strict:true ())
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~chars:[ "bijzonder"; "gemeld" ] ~roles:[ ("rapport", [ "R1" ]) ] ~roles_closed:[ "vondsten" ]
+             "J1" [ ("ervaring", "10") ];
+           ov_obj ~ty:"Rapport" "R1" [] ]
+         [ role_target "J1" "rapport" "R1"; role_count "J1" "rapport" 1 ])
+    ();
+  (* 3. Strict input roles: open to-one, rolesEmpty, complete: true, --closed-inputs,
+        open to-many with >= 1 elements, and rolesClosed *)
+  let strict_ir = make_ir ~strict:true () in
+  ov_frame ~name:"WV-1.5-case-role (open to-one and open to-many with 2 standing links)" ~ir:strict_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~chars:[ "gemeld" ] ~absent:[ "bijzonder" ] ~roles:[ ("vondsten", [ "V1"; "S1" ]) ]
+             "J1" [ ("ervaring", "0") ];
+           ov_obj ~chars:[ "kostbaar" ] "V1" [];
+           ov_obj ~ty:"Strandvondst" ~absent:[ "kostbaar" ] "S1" [];
+           ov_obj ~absent:[ "kostbaar" ] "V2" [];
+           ov_obj ~ty:"Vergunning" "G1" [];
+           ov_obj ~ty:"Vergunning" ~roles:[ ("vorige vergunning", [ "G1" ]) ] ~roles_empty:[ "volgende vergunning" ] "G2" [] ]
+         [ role_open "J1" "vondsten";
+           role_target "V1" "vinder" "J1";
+           role_target "S1" "vinder" "J1";
+           role_open "V2" "vinder";
+           role_empty "J1" "partner";
+           role_open "G1" "vorige vergunning";
+           role_target "G1" "volgende vergunning" "G2";
+           role_target "G2" "vorige vergunning" "G1";
+           role_empty "G2" "volgende vergunning" ])
+    ();
+  ov_frame ~name:"WV-1.5-case-role (closed via rolesEmpty and rolesClosed)" ~ir:strict_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~chars:[ "gemeld" ] ~absent:[ "bijzonder" ] ~roles:[ ("vondsten", [ "V1"; "S1" ]) ]
+             ~roles_closed:[ "vondsten" ] "J1" [ ("ervaring", "0") ];
+           ov_obj ~chars:[ "kostbaar" ] "V1" [];
+           ov_obj ~ty:"Strandvondst" ~absent:[ "kostbaar" ] "S1" [];
+           ov_obj ~absent:[ "kostbaar" ] ~roles_empty:[ "vinder" ] "V2" [] ]
+         [ role_count "J1" "vondsten" 2;
+           role_empty "V2" "vinder";
+           role_count "V2" "vinder" 0;
+           role_count "J1" "gekeurde vondsten" 1;
+           role_target "V1" "keurder" "J1";
+           role_empty "S1" "keurder" ])
+    ();
+  ov_frame ~name:"WV-1.5-case-role (closed via Role.complete)" ~ir:(make_ir ~strict:true ~complete_one:true ~complete_many:true ())
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~chars:[ "gemeld" ] ~absent:[ "bijzonder" ] "J1" [ ("ervaring", "0") ];
+           ov_obj ~absent:[ "kostbaar" ] "V1" [] ]
+         [ role_empty "J1" "vondsten"; role_count "J1" "vondsten" 0;
+           role_empty "V1" "vinder"; role_count "V1" "vinder" 0 ])
+    ();
+  ov_frame ~closed:true ~name:"WV-1.5-case-role (closed via --closed-inputs)" ~ir:strict_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~chars:[ "gemeld" ] ~absent:[ "bijzonder" ] "J1" [ ("ervaring", "0") ];
+           ov_obj ~absent:[ "kostbaar" ] "V1" [] ]
+         [ role_empty "J1" "vondsten"; role_count "J1" "vondsten" 0;
+           role_empty "V1" "vinder"; role_count "V1" "vinder" 0 ])
+    ();
+  (* 4. Strict ObjectCreation & FactCreation: established true, established false, open condition,
+        1 minted + 1 open ObjectCreation, target-hosted open FactCreation, and open join-chain hop *)
+  ov_frame ~name:"WV-1.5-case-role-creations (established false settles empty without rolesEmpty/rolesClosed)" ~ir:strict_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~chars:[ "gemeld" ] ~absent:[ "bijzonder" ] ~roles:[ ("vondsten", [ "V1" ]) ]
+             ~roles_closed:[ "vondsten" ] "J1" [ ("ervaring", "2") ];
+           ov_obj ~absent:[ "kostbaar" ] "V1" [] ]
+         [ role_empty "J1" "rapport"; role_count "J1" "rapport" 0;
+           role_empty "J1" "besluiten"; role_count "J1" "besluiten" 0;
+           role_empty "J1" "hulpvondsten"; role_empty "V1" "hulpjutter";
+           role_empty "J1" "gekeurde vondsten"; role_empty "V1" "keurder" ])
+    ();
+  ov_frame ~name:"WV-1.5-case-role-creations (open ObjectCreation, 1 minted + 1 open, and open FactCreation)" ~ir:strict_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~chars:[ "gemeld" ] ~roles_closed:[ "vondsten" ] "J1" [];
+           ov_obj ~ty:"Jutter" ~chars:[ "gemeld" ] ~roles_closed:[ "vondsten" ] "J2" [ ("ervaring", "10") ];
+           ov_obj ~ty:"Jutter" ~absent:[ "bijzonder" ] ~roles:[ ("vondsten", [ "V1" ]) ] ~roles_closed:[ "vondsten" ]
+             "J3" [ ("ervaring", "0") ];
+           ov_obj "V1" [] ]
+         [ role_open "J1" "rapport";
+           role_open "J1" "besluiten";
+           role_count "J2" "rapport" 1;
+           role_open "J2" "besluiten";
+           role_open "J3" "hulpvondsten";
+           role_open "V1" "hulpjutter";
+           role_open "J3" "gekeurde vondsten";
+           role_open "V1" "keurder" ])
+    ();
+  ov_frame ~name:"WV-1.5-case-role-creations (open join-chain hop in FactCreation)" ~ir:strict_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~absent:[ "gemeld"; "bijzonder" ] ~roles:[ ("vondsten", [ "V1" ]) ] "J1" [ ("ervaring", "0") ];
+           ov_obj ~chars:[ "kostbaar" ] "V1" [];
+           ov_obj ~absent:[ "kostbaar" ] "V2" [] ]
+         [ role_open "J1" "hulpvondsten";
+           role_open "V1" "hulpjutter";
+           role_open "V2" "hulpjutter" ])
+    ();
+  (* 5. Mismatch messages in Model.check match Case.check *)
+  let check_mismatch label_test ir objs exp want =
+    let doc, case = load_pair ~ir ~case_text:(ov_case objs [ exp ]) in
+    let env =
+      { Uchar_ref.Eval.doc; params = case.params; param_tls = case.param_tls; as_of = case.as_of;
+        locals = Uchar_ref.World.SMap.empty; btypes = Uchar_ref.World.SMap.empty; subj = None; form = None }
+    in
+    let ref_got = Uchar_ref.Case.check case (Uchar_ref.Eval.evaluate env case.world) in
+    let clingo_got =
+      match Solve.run_clingo (Translate.translate doc case) with
+      | out, Unix.WEXITED (10 | 30) -> Model.check doc case (Model.model_of_text out)
+      | _ -> [ "clingo failed" ]
+    in
+    check
+      (Printf.sprintf "role mismatch (%s): ref=%s clingo=%s" label_test
+         (String.concat ";" ref_got) (String.concat ";" clingo_got))
+      (clingo_got = [ want ] && List.length ref_got = 1)
+  in
+  let open_objs =
+    [ ov_obj ~ty:"Jutter" ~chars:[ "gemeld" ] ~roles:[ ("vondsten", [ "V1" ]) ] "J1" [ ("ervaring", "10") ];
+      ov_obj ~chars:[ "kostbaar" ] "V1" [];
+      ov_obj ~absent:[ "kostbaar" ] "V2" [];
+      ov_obj ~ty:"Rapport" "R1" [] ]
+  in
+  check_mismatch "open to-many fails roleCount 1" strict_ir open_objs
+    (role_count "J1" "vondsten" 1) "J1.vondsten is open, expected count 1";
+  check_mismatch "1 minted + 1 open creation fails roleCount 1" strict_ir open_objs
+    (role_count "J1" "besluiten" 1) "J1.besluiten is open, expected count 1";
+  check_mismatch "open to-one fails roleEmpty" strict_ir open_objs
+    (role_empty "V2" "vinder") "V2.vinder is open, expected empty";
+  check_mismatch "open to-one fails roleTarget" strict_ir open_objs
+    (role_target "V2" "vinder" "J1") "V2.vinder is open, expected J1";
+  check_mismatch "minted target fails roleTarget" strict_ir open_objs
+    (role_target "J1" "rapport" "R1") "J1.rapport = [oc0(\"J1\")], expected R1";
+  let closed_objs =
+    [ ov_obj ~ty:"Jutter" ~chars:[ "gemeld" ] ~absent:[ "bijzonder" ] ~roles:[ ("vondsten", [ "V1" ]) ]
+        ~roles_closed:[ "vondsten" ] "J1" [ ("ervaring", "0") ];
+      ov_obj ~ty:"Jutter" ~chars:[ "gemeld" ] ~absent:[ "bijzonder" ] ~roles_closed:[ "vondsten" ] "J2" [ ("ervaring", "0") ];
+      ov_obj ~chars:[ "kostbaar" ] "V1" [];
+      ov_obj ~ty:"Rapport" "R1" [] ]
+  in
+  check_mismatch "closed empty fails roleOpen" strict_ir closed_objs
+    (role_open "J2" "vondsten") "J2.vondsten is empty, expected open";
+  check_mismatch "closed linked fails roleOpen" strict_ir closed_objs
+    (role_open "J1" "vondsten") "J1.vondsten = [V1], expected open";
+  check_mismatch "closed linked fails roleEmpty" strict_ir closed_objs
+    (role_empty "J1" "vondsten") "J1.vondsten = [V1], expected empty";
+  check_mismatch "closed wrong count fails roleCount" strict_ir closed_objs
+    (role_count "J1" "vondsten" 2) "J1.vondsten count = 1 ([V1]), expected 2";
+  check_mismatch "closed empty fails roleTarget" strict_ir closed_objs
+    (role_target "J2" "rapport" "R1") "J2.rapport is empty, expected R1";
+  check_mismatch "closed wrong target fails roleTarget" strict_ir closed_objs
+    (role_target "V1" "vinder" "J2") "V1.vinder = [J1], expected J2"
+
 let () =
   Option.iter
     (fun (_, _, log) ->

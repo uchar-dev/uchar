@@ -17470,9 +17470,9 @@ let translate_guarded ?(closed_inputs = false) (doc : document) (case : Case.t) 
   emit_barriers ctx;
   refuse_order_dependent ctx;
   translate_case ctx case;
-  emit ctx "#show val/3. #show has/2. #show inconsistent/2. #show tl/5.";
+  emit ctx "#show val/3. #show has/2. #show role/3. #show inconsistent/2. #show tl/5.";
   emit ctx "#show inconsistent_code/3.";
-  if strict then emit ctx "#show settled/2. #show hasnot/2.";
+  if strict then emit ctx "#show settled/2. #show hasnot/2. #show ropen/2.";
   (Buffer.contents ctx.buf, ctx.guards)
 
 (* the program alone *)

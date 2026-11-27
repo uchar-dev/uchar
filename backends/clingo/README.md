@@ -470,7 +470,10 @@ spec bug.
   `rolesEmpty`, or settled absent otherwise, and a non-reciprocal
   `to-many` input role is open (`ropen/2`) — even alongside standing
   `role/3` links — unless declared `complete` or listed in `rolesClosed`
-  (every unassigned input role on a made instance is closed). Settled leeg is derived
+  (every unassigned input role on a made instance is closed). `#show role/3.`
+  projects standing links in every document and `#show ropen/2.` open role
+  slots in a strict document, so `Model.check` checks `roleEmpty`,
+  `roleCount`, `roleTarget` and `roleOpen` on the resolved directed role slot. Settled leeg is derived
   positively: for an input member from the case (a member whose
   declaration says `complete`, `attributesEmpty`, `characteristicsAbsent`,
   and every input member — non-reciprocal `to-one` and `to-many` input
