@@ -464,14 +464,17 @@ spec bug.
 - A document that carries `inferFromEmpty: false` (IR-SPEC ch. 2) is
   read as RUNTIME-SEMANTICS ch. 1.5 lays down. A member is filled
   (`val/3`, `has/2`), settled leeg (`settled/2`, `hasnot/2`) or open,
-  which is the absence of all of them; a non-reciprocal `to-one` input
-  role on a case instance is linked (`role/3`), open (`ropen/2`) where
-  unlinked, not declared `complete`, and not listed in `rolesEmpty`, or
-  settled absent otherwise (including on every made instance). Settled leeg is derived
+  which is the absence of all of them; on a case instance a
+  non-reciprocal `to-one` input role is linked (`role/3`), open
+  (`ropen/2`) where unlinked, not declared `complete`, and not listed in
+  `rolesEmpty`, or settled absent otherwise, and a non-reciprocal
+  `to-many` input role is open (`ropen/2`) — even alongside standing
+  `role/3` links — unless declared `complete` or listed in `rolesClosed`
+  (every unassigned input role on a made instance is closed). Settled leeg is derived
   positively: for an input member from the case (a member whose
   declaration says `complete`, `attributesEmpty`, `characteristicsAbsent`,
-  and every input member — non-reciprocal `to-one` input roles included —
-  where the session treats it as complete, the
+  and every input member — non-reciprocal `to-one` and `to-many` input
+  roles included — where the session treats it as complete, the
   runner's `--closed-inputs`); for a member a rule or a defaults group
   writes, per
   concrete type, from its writers, each of which states where it fills
@@ -503,8 +506,18 @@ spec bug.
   - *A condition* is judged (`judge`) as one value of Kleene's strong
     table, established true, established false, or neither: an atomic
     condition, the test on leeg and gevuld among them, by its boundary;
-    a composite by the table over its members, a quantifier fold by the
-    same table over the members of its range. A member read after one
+    a role check (`RoleMembership`) stands immediately (`true` positive,
+    `false` negated) as soon as one matching `role/3` link stands, even
+    when `ropen/2` holds, and with no matching link stands only where
+    `not ropen/2` holds; a composite by the table over its members; a
+    quantifier fold by the same table over the members of its range when
+    every hop of its range is closed (`not qf_ro`), and under an open
+    range (`qf_ro`, $u = \infty$) by monotone short-circuit over the
+    standing members (`all`/`the` false at $F \ge 1$, `none` false at
+    $H \ge 1$, `atLeast k` true at $k \le 0$ or $H \ge k$, `atMost k`
+    and `exactly k` false at $k < 0$ or $H \ge k + 1$, undetermined
+    otherwise), reading every matrix provisionally and gating filter
+    deposits on `qf_dg` (closed range or established fold verdict). A member read after one
     that is undetermined is read provisionally: its
     deposits and its faults wait for the gate that says it is read as
     ch. 5.10 reads it (`member_gate`), and a fault leaves the member
@@ -515,13 +528,16 @@ spec bug.
     anchor, an identity check, a binder of an enclosing Let), so a
     judgement and a boundary there hold of the pair of form subject and
     member (`judged_at`).
-  - *A fold over a set* reads the filter of every member and then its
-    value (`fold_reads`); a filter that is undetermined or a value that
+  - *A fold over a set* breaks off immediately as an open read of its
+    boundary whenever any hop of its range (across all branches of an
+    `InstanceSetUnion`) crosses `ropen/2`, before any filter fault or
+    deposit can fire; otherwise it reads the filter of every member and
+    then its value (`fold_reads`); a filter that is undetermined or a value that
     is open is an open read of the fold's boundary, the value of the
     filled-value count and a filter on gevuld over an open value among
     them, and the fold counts the members its filter holds of. What a filter
     deposits waits until the fold's boundary reaches no open value, and a
-    fault of it until no filter of a member before it is undetermined.
+    fault of it until no range hop and no filter of a member before it is undetermined.
   - *A stack* reads each default with three outcomes: it decides, it
     stands that it gives way (`<chain>_gw<n>`), or it is open, and a
     default is reached where every higher one gave way, the

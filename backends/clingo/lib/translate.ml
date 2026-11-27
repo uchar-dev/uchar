@@ -5550,8 +5550,8 @@ let range_open_reads ctx ~subject ~source_role ~source_path read =
    ([emit_before]) is undetermined. The result is the
    filter's own truth as an atom over a member, with which the fold itself is
    translated ([fold_filter]) *)
-let fold_reads ctx ~subject ~subject_ot ~el ~kind ~call_arguments ~filter ~source_role ~source_path :
-    string -> string list =
+let fold_reads ?(range_already_read = false) ctx ~subject ~subject_ot ~el ~kind ~call_arguments ~filter ~source_role
+    ~source_path : string -> string list =
   let b =
     match ctx.boundary with
     | Some b -> b
@@ -5559,8 +5559,9 @@ let fold_reads ctx ~subject ~subject_ot ~el ~kind ~call_arguments ~filter ~sourc
   in
   let x = fresh ctx "X" in
   let join = source_join ctx ~subject ~subject_ot ~el ~source_role ~source_path ~x in
-  range_open_reads ctx ~subject ~source_role ~source_path (fun body ->
-      boundary_read ctx ~what:"the range of a fold" body);
+  if not range_already_read then
+    range_open_reads ctx ~subject ~source_role ~source_path (fun body ->
+        boundary_read ctx ~what:"the range of a fold" body);
   let before_fold = b.bd_reads in
   let member body = b.bd_base @ ctx.reach @ join @ body in
   let read body =
@@ -5818,6 +5819,15 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
         if ctx.strict then judged_at ctx ~subject ~subject_ot
         else (subject, [ Printf.sprintf "isa(%s,%s)" subject (str subject_ot) ])
       in
+      (* ch. 1.5: in a strict document every branch's range hop is checked
+         before any branch filter runs, so an open hop on a later selection
+         gates faults and deposits in earlier selections too *)
+      if ctx.strict then
+        List.iter
+          (fun (b : instance_set_branch) ->
+            range_open_reads ctx ~subject ~source_role:(Some b.isb_source_role) ~source_path:None (fun body ->
+                boundary_read ctx ~what:"the range of an instance-set selection" body))
+          branches;
       List.iter
         (fun (b : instance_set_branch) ->
           let el =
@@ -5836,8 +5846,8 @@ let rec expr_term ctx ~subject ~subject_ot (e : expr) : string list * string * i
           let fatoms =
             match b.isb_filter with
             | filter when ctx.strict ->
-                fold_reads ctx ~subject ~subject_ot ~el ~kind:Count ~call_arguments:[] ~filter ~source_role:(Some rb)
-                  ~source_path:None bx
+                fold_reads ~range_already_read:true ctx ~subject ~subject_ot ~el ~kind:Count ~call_arguments:[] ~filter
+                  ~source_role:(Some rb) ~source_path:None bx
             | None -> []
             | Some c ->
                 with_member_reach ctx ~subject ~subject_ot ~member:bx ~join:(fun () -> join) (fun () ->
@@ -9854,7 +9864,6 @@ and cond_atoms_raw ctx ~subject ~subject_ot (c : condition_expr) : string list =
            the subject there"
           subject_ot role fact_type;
       let canonical = role_term ~fact_type other in
-      open_relation ctx ~holder:subject ~rel:canonical [];
       (match counterpart_type with
       | None -> ()
       | Some ct ->
@@ -13103,6 +13112,56 @@ let rec judge ctx ~subject ~subject_ot (c : condition_expr) : judgement =
         else same (helper [ holds ]) (helper [ none; absent ])
       in
       same (j.holds @ closed) (j.fails @ closed)
+  (* ch. 1.5: a role check stands as soon as one matching link exists (true
+     positive, false negated), even over an open relation; with no matching
+     link it stands only when the relation is closed, and is undetermined
+     otherwise *)
+  | Role_membership { fact_type; role; counterpart_type; negated; _ } ->
+      let own, other =
+        match
+          Ir_v0.Checks.resolve_binding (Ir_v0.Checks.ctx_of ctx.doc) { rb_fact_type = fact_type; rb_role = role }
+        with
+        | Ok (_, own, other) -> (own, other)
+        | Error e -> fault "role check: %s" e
+      in
+      if
+        not
+          (Ir_v0.Checks.subtype_of ctx.doc ~sub:subject_ot
+             ~super:(Option.value own.role_object_type_name ~default:""))
+      then
+        fault
+          "role check: the subject %S does not fill the role %S of %S, so no link of it can hold \
+           the subject there"
+          subject_ot role fact_type;
+      (match counterpart_type with
+      | None -> ()
+      | Some ct ->
+          if Ir_v0.Checks.effective_ot ctx.doc ct = None then
+            fault "role check: the counterpart type %S is no declared object type" ct;
+          if
+            not
+              (Ir_v0.Checks.subtype_of ctx.doc ~sub:ct
+                 ~super:(Option.value other.role_object_type_name ~default:""))
+          then
+            fault
+              "role check: the counterpart type %S is no subtype of %S, the filler the role %S \
+               declares"
+              ct
+              (Option.value other.role_object_type_name ~default:"?")
+              (Option.value other.role_identifier ~default:"?"));
+      let narrow n =
+        match counterpart_type with
+        | None -> []
+        | Some ct -> [ Printf.sprintf "isa(%s,%s)" n (str ct) ]
+      in
+      let canonical = role_term ~fact_type other in
+      let n = fresh ctx "N" in
+      let present = helper [ Printf.sprintf "role(%s,%s,%s)" subject canonical n :: narrow n ] in
+      let absent =
+        ("not " ^ List.hd present)
+        :: (if ctx.strict then [ Printf.sprintf "not ropen(%s,%s)" subject canonical ] else [])
+      in
+      if negated then same absent present else same present absent
   (* a composite by Kleene's strong table over its members' judgements (ch.
      1.5); each member is read as ch. 5.10 reads it where every member before
      it is established, and provisionally after one that is not
@@ -13180,13 +13239,14 @@ let rec judge ctx ~subject ~subject_ot (c : condition_expr) : judgement =
   (* the quantifier fold (ch. 1.5, "A quantifier fold"): per member of its range
      the filter and the matrix as judgements, the member true for `all` and
      `the` where its filter is false or its matrix true, for the others where
-     both are true, by Kleene's table, and the fold the table of a composite
-     over those members. The range is a relation, and complete. Every filter is
-     read; the matrices in the order of the range ([use_ro]) while the fold's
-     judgement is not established, as ch. 5.10 reads them where every filter
-     and every member before is established, and provisionally otherwise: a
-     deposit of the matrix waits for that ([member_gate]), and a fault leaves
-     the member undetermined *)
+     both are true, by Kleene's table. Over a closed range (`not range_open`)
+     the fold uses the composite table over N members; over an open range
+     (`range_open`, u = infinity) it short-circuits monotonically on the
+     standing members (`all`/`the` false at F >= 1, `none` false at H >= 1,
+     `atLeast k` true at k <= 0 or H >= k, `atMost k`/`exactly k` false at
+     k < 0 or H >= k + 1, undetermined otherwise), reads every matrix
+     provisionally (`read` requires `not range_open`), and commits filter
+     deposits only where the fold reaches an established verdict (`qf_dg`) *)
   | Quantifier_fold
       { kv_quantifier; kv_threshold; kv_element_object_type; kv_filter; kv_test; kv_source_role; kv_source_path;
         kv_source; _ } ->
@@ -13209,18 +13269,24 @@ let rec judge ctx ~subject ~subject_ot (c : condition_expr) : judgement =
       let arity = key_arity key in
       List.iter
         (fun p -> emit ctx "#defined %s_%s/%d." q p (arity + 1))
-        [ "ft"; "ff"; "tt"; "tf"; "ot"; "of"; "pv" ];
+        [ "m"; "ft"; "ff"; "tt"; "tf"; "ot"; "of"; "pv"; "k"; "rch"; "rd" ];
+      List.iter
+        (fun p -> emit ctx "#defined %s_%s/%d." q p arity)
+        [ "ro"; "h"; "f"; "dg" ];
       emit_rule ctx ~head:(at "m") ~body:(base @ join);
-      (* the range is read as one judgement: where a creation left its relation
-         open, the fold is undetermined, and reads no member *)
       let range_open = Printf.sprintf "%s_ro(%s)" q key in
-      emit ctx "#defined %s_ro/%d." q arity;
       range_open_reads ctx ~subject ~source_role:kv_source_role ~source_path:kv_source_path (fun body ->
           emit_rule ctx ~head:range_open ~body:(base @ body));
+      let qf_holds = Printf.sprintf "%s_h(%s)" q key
+      and qf_fails = Printf.sprintf "%s_f(%s)" q key
+      and qf_dg = Printf.sprintf "%s_dg(%s)" q key in
+      emit_rule ctx ~head:qf_dg ~body:(base @ [ "not " ^ range_open ]);
+      emit_rule ctx ~head:qf_dg ~body:[ qf_holds ];
+      emit_rule ctx ~head:qf_dg ~body:[ qf_fails ];
       let side name body = emit_rule ctx ~head:(at name) ~body:(at "m" :: body) in
       (* [c] judged on a member; [read] holds where ch. 3.9a reads it, and
          [reached] also where that reading is provisional *)
-      let filters_read = [ at "m"; "not " ^ range_open ] in
+      let filters_read = [ at "m" ] in
       let member ~read ~reached c =
         let saved = ctx.member_gate and saved_l = ctx.limit_gate in
         ctx.member_gate <- saved @ read;
@@ -13233,14 +13299,22 @@ let rec judge ctx ~subject ~subject_ot (c : condition_expr) : judgement =
             with_member_reach ctx ~subject ~subject_ot ~member:x ~join:(fun () -> join) ~part:(new_part ctx ro) (fun () ->
                 judge ctx ~subject:x ~subject_ot:el c))
       in
-      let filter = Option.map (member ~read:filters_read ~reached:filters_read) kv_filter in
+      let filter =
+        Option.map
+          (fun c ->
+            let saved_d = ctx.deposit_guard in
+            ctx.deposit_guard <- saved_d @ [ qf_dg ];
+            Fun.protect ~finally:(fun () -> ctx.deposit_guard <- saved_d) (fun () ->
+                member ~read:filters_read ~reached:filters_read c))
+          kv_filter
+      in
       (* read as ch. 5.10 reads it: reached, and not provisional *)
       let read = at "rd" in
       if ro.ro_dynamic then
         ctx.order_atoms <-
           (read, Fold_reach (Printf.sprintf "the quantifier fold %S over %s" (Option.value kv_source ~default:"") el))
           :: ctx.order_atoms;
-      let matrix = member ~read:[ read ] ~reached:[ at "rch"; "not " ^ range_open ] test in
+      let matrix = member ~read:[ read ] ~reached:[ at "rch" ] test in
       (* the filter (true ft, false ff), the matrix (tt, tf) and the member
          (ot, of) *)
       (match filter with
@@ -13279,12 +13353,33 @@ let rec judge ctx ~subject ~subject_ot (c : condition_expr) : judgement =
               [ [ Printf.sprintf "H >= %d" (k + 1) ]; [ fn ">=" (k - 1) ] ],
               [ [ Printf.sprintf "H < %d" k; fn "<=" k ]; [ fn "<" k; Printf.sprintf "H <= %d" k ] ] )
       in
+      let open_holds, open_fails, open_undetermined =
+        match kv_quantifier with
+        | All | The -> ([], [ [ "F >= 1" ] ], [ [ "F < 1" ] ])
+        | None_of -> ([], [ [ "H >= 1" ] ], [ [ "H < 1" ] ])
+        | At_least ->
+            if k <= 0 then ([ [] ], [], [])
+            else ([ [ Printf.sprintf "H >= %d" k ] ], [], [ [ Printf.sprintf "H < %d" k ] ])
+        | At_most | Exactly ->
+            if k < 0 then ([], [ [] ], [])
+            else ([], [ [ Printf.sprintf "H >= %d" (k + 1) ] ], [ [ Printf.sprintf "H <= %d" k ] ])
+      in
       let count mt mf =
         [ n;
           Printf.sprintf "H = #count { %s : %s }" x (at mt);
           Printf.sprintf "F = #count { %s : %s }" x (at mf) ]
+      and open_count mt mf =
+        [ Printf.sprintf "H = #count { %s : %s }" x (at mt);
+          Printf.sprintf "F = #count { %s : %s }" x (at mf) ]
       in
-      let verdict bodies = helper (List.map (fun b -> (count "ot" "of" @ b) @ [ "not " ^ range_open ]) bodies) in
+      let emit_verdict head closed_bodies open_bodies =
+        List.iter
+          (fun b -> emit_rule ctx ~head ~body:(base @ count "ot" "of" @ b @ [ "not " ^ range_open ]))
+          closed_bodies;
+        List.iter
+          (fun b -> emit_rule ctx ~head ~body:(base @ open_count "ot" "of" @ b @ [ range_open ]))
+          open_bodies
+      in
       (* the stop and the provisional read of a matrix: the members whose filter
          is false are counted first, then the members that may stand
          before it in the order of the range ([use_ro]), so that a matrix counts
@@ -13300,8 +13395,15 @@ let rec judge ctx ~subject ~subject_ot (c : condition_expr) : judgement =
           (String.concat ", " (of_y walk :: of_y "k" :: before))
       in
       List.iter
-        (fun b -> emit_rule ctx ~head:(at "rch") ~body:([ at "k"; n; prefix "ot"; prefix "of" ] @ b))
+        (fun b ->
+          emit_rule ctx ~head:(at "rch")
+            ~body:([ at "k"; n; prefix "ot"; prefix "of"; "not " ^ range_open ] @ b))
         undetermined;
+      List.iter
+        (fun b ->
+          emit_rule ctx ~head:(at "rch")
+            ~body:([ at "k"; prefix "ot"; prefix "of"; range_open ] @ b))
+        open_undetermined;
       let filter_open = Printf.sprintf "%s_fp(%s)" q key in
       emit ctx "#defined %s_fp/%d." q arity;
       emit_rule ctx ~head:filter_open ~body:[ of_member "m" "Y"; "not " ^ of_member "ft" "Y"; "not " ^ of_member "ff" "Y" ];
@@ -13309,13 +13411,15 @@ let rec judge ctx ~subject ~subject_ot (c : condition_expr) : judgement =
       side "pv"
         ([ at "k"; of_member "k" "Y" ] @ before @ [ "not " ^ of_member "ot" "Y"; "not " ^ of_member "of" "Y" ]);
       emit_rule ctx ~head:read ~body:[ at "rch"; "not " ^ at "pv"; "not " ^ range_open ];
-      same (verdict holds) (verdict fails)
+      emit_verdict qf_holds holds open_holds;
+      emit_verdict qf_fails fails open_fails;
+      same [ qf_holds ] [ qf_fails ]
   (* every other atomic condition, the test on leeg and gevuld among them,
      reads its values as in any other document, and stands where none of the
      reads it reaches is open (ch. 1.5, "The test on leeg and gevuld") *)
   | Comparison { time_period = None; _ }
   | Predicate { time_period = None; day_kind = None; _ }
-  | Role_membership _ | Identity_check _ ->
+  | Identity_check _ ->
       let atoms, opened = within_boundary ctx ~subject ~subject_ot (fun () -> cond_atoms ctx ~subject ~subject_ot c) in
       let holds = helper [ atoms ] in
       same (holds @ [ "not " ^ opened ]) [ "not " ^ List.hd holds; "not " ^ opened ]
@@ -15796,7 +15900,11 @@ let case_only_attributes (doc : document) =
 let written_role_on ctx ~otype ~fact_type ~(far : role_ref) =
   let key = role_term ~fact_type far in
   let role_is rname =
-    match far.role_identifier with Some n -> norm n = norm rname | None -> false
+    let matches (r : role_ref) =
+      Option.fold ~none:false ~some:(fun n -> norm n = norm rname) r.role_identifier
+      || Option.fold ~none:false ~some:(fun n -> norm n = norm rname) r.role_plural
+    in
+    matches far
   in
   let target_ot (fc : resolved_fact_creation) =
     match fc.fc_target with
@@ -15805,7 +15913,8 @@ let written_role_on ctx ~otype ~fact_type ~(far : role_ref) =
         match Option.map snd (List.find_opt (fun (n, _) -> norm n = norm fc.fc_fact_type) ctx.doc.fact_types) with
         | Some { role_names = [ a; b ]; reciprocal = false; _ } ->
             let matches (r : role_ref) =
-              match r.role_identifier with Some n -> norm n = norm fc.objective_role | None -> false
+              Option.fold ~none:false ~some:(fun n -> norm n = norm fc.objective_role) r.role_identifier
+              || Option.fold ~none:false ~some:(fun n -> norm n = norm fc.objective_role) r.role_plural
             in
             if matches a && not (matches b) then a.role_object_type_name
             else if matches b && not (matches a) then b.role_object_type_name
@@ -15871,18 +15980,18 @@ let input_states ctx (i : Uchar_ref.World.instance) =
           | [ r0; r1 ] ->
               List.iter
                 (fun (near, far) ->
-                  if
-                    (not far.role_many)
-                    && isa ctx i.otype (Option.value near.role_object_type_name ~default:"")
-                  then
+                  if isa ctx i.otype (Option.value near.role_object_type_name ~default:"") then
                     let key = Uchar_ref.World.link_key ~fact_type:ftn far in
-                    let given =
-                      Uchar_ref.World.links i ~fact_type:ftn far <> []
-                      || Uchar_ref.World.Key.mem (i.label, key) ctx.case.world.stated_roles_empty
+                    let closed =
+                      if far.role_many then
+                        Uchar_ref.World.Key.mem (i.label, key) ctx.case.world.stated_roles_closed
+                      else
+                        Uchar_ref.World.links i ~fact_type:ftn far <> []
+                        || Uchar_ref.World.Key.mem (i.label, key) ctx.case.world.stated_roles_empty
                     in
                     if
                       not
-                        (given || far.role_complete
+                        (closed || far.role_complete
                        || written_role_on ctx ~otype:i.otype ~fact_type:ftn ~far)
                     then emit ctx "ropen(%s,%s)." (str_raw i.label) (role_term ~fact_type:ftn far))
                 [ (r0, r1); (r1, r0) ]

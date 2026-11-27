@@ -20135,14 +20135,16 @@ let ov_stack ?(subject = "Vondst") ?(unordered = false) ?name ?characteristic ?a
 (* an object of the case: its attributes (number lexemes), those it names in
    attributesEmpty, the characteristics it names, those it names in
    characteristicsAbsent, and its links *)
-let ov_obj ?(ty = "Vondst") ?(empty = []) ?(chars = []) ?(absent = []) ?(roles = []) ?(roles_empty = []) label attrs =
+let ov_obj ?(ty = "Vondst") ?(empty = []) ?(chars = []) ?(absent = []) ?(roles = []) ?(roles_empty = [])
+    ?(roles_closed = []) label attrs =
   Printf.sprintf
-    {|{"label": "%s", "objectType": "%s", "attributes": {%s}%s, "roles": {%s}%s, "characteristics": [%s]%s}|}
+    {|{"label": "%s", "objectType": "%s", "attributes": {%s}%s, "roles": {%s}%s%s, "characteristics": [%s]%s}|}
     label ty
     (String.concat ", " (List.map (fun (a, v) -> Printf.sprintf {|"%s": {"number": "%s"}|} a v) attrs))
     (if empty = [] then "" else Printf.sprintf {|, "attributesEmpty": [%s]|} (String.concat ", " (List.map (Printf.sprintf "%S") empty)))
     (String.concat ", " (List.map (fun (r, ls) -> Printf.sprintf {|"%s": [%s]|} r (String.concat ", " (List.map (Printf.sprintf "%S") ls))) roles))
     (if roles_empty = [] then "" else Printf.sprintf {|, "rolesEmpty": [%s]|} (String.concat ", " (List.map (Printf.sprintf "%S") roles_empty)))
+    (if roles_closed = [] then "" else Printf.sprintf {|, "rolesClosed": [%s]|} (String.concat ", " (List.map (Printf.sprintf "%S") roles_closed)))
     (String.concat ", " (List.map (Printf.sprintf "%S") chars))
     (if absent = [] then "" else Printf.sprintf {|, "characteristicsAbsent": [%s]|} (String.concat ", " (List.map (Printf.sprintf "%S") absent)))
 
@@ -20850,10 +20852,16 @@ let () =
   ov_frame ~name:"WV-1.5-link-present-filled" ~ir:(ir ())
     ~case_text:(ov_case [ v1 [ ("vinder", [ "J1" ]) ]; ov_obj ~ty:"Jutter" ~chars:[ "ervaren" ] "J1" [ ("bonus", "20") ] ]
                   (expect "120" "holds" "not" "holds" "not" "not")) ();
-  (* 1:n fact type: V1 without Jutter has vinder open, while J1 without Vondsten has vondsten closed *)
+  (* 1:n fact type: V1 without Jutter has vinder open, and J1 without rolesClosed
+     or complete has vondsten open too — even alongside links — until closed *)
   let count_type = {|{"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}|} in
-  let one_to_many_ir =
-    ov_doc ~fact_types:[ ov_vangst ]
+  let one_to_many_ir ?(complete_many = false) () =
+    let ft =
+      Printf.sprintf
+        {|{"node": "FactType", "name": "vangst", "reciprocal": false, "roles": [{"node": "Role", "name": "vinder", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true%s}]}|}
+        (if complete_many then {|, "complete": true|} else "")
+    in
+    ov_doc ~fact_types:[ ft ]
       [ ov_type "Jutter" [ "vondstaantal" ] [ "vindend"; "alle zwaar"; "een zwaar" ];
         ov_vondst [ "gewicht" ] [ "toegewezen" ] ]
       [ ov_rule ~name:"toegewezen"
@@ -20880,7 +20888,34 @@ let () =
                (ov_gt "gewicht" "10") (ov_src "een"))
           "een zwaar" None ]
   in
-  ov_frame ~name:"WV-1.5-link-one-to-many" ~ir:one_to_many_ir
+  ov_frame ~name:"WV-1.5-link-one-to-many (open empty)" ~ir:(one_to_many_ir ())
+    ~case_text:
+      (ov_case
+         [ ov_obj "V1" [ ("gewicht", "20") ]; ov_obj ~ty:"Jutter" "J1" [] ]
+         [ ov_char_is "toegewezen" "open"; ov_attr_is ~label:"J1" "vondstaantal" "open"; ov_char_is ~label:"J1" "vindend" "open";
+           ov_char_is ~label:"J1" "alle zwaar" "open"; ov_char_is ~label:"J1" "een zwaar" "open" ]) ();
+  ov_frame ~name:"WV-1.5-link-one-to-many (open with V1=20: vindend & een zwaar short-circuit)" ~ir:(one_to_many_ir ())
+    ~case_text:
+      (ov_case
+         [ ov_obj "V1" [ ("gewicht", "20") ]; ov_obj "V2" [ ("gewicht", "5") ]; ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1" ]) ] "J1" [] ]
+         [ ov_char_is "toegewezen" "holds"; ov_char_is ~label:"V2" "toegewezen" "open";
+           ov_attr_is ~label:"J1" "vondstaantal" "open"; ov_char_is ~label:"J1" "vindend" "holds";
+           ov_char_is ~label:"J1" "alle zwaar" "open"; ov_char_is ~label:"J1" "een zwaar" "holds" ]) ();
+  ov_frame ~name:"WV-1.5-link-one-to-many (rolesClosed empty)" ~ir:(one_to_many_ir ())
+    ~case_text:
+      (ov_case
+         [ ov_obj "V1" [ ("gewicht", "20") ]; ov_obj ~ty:"Jutter" ~roles_closed:[ "vondsten" ] "J1" [] ]
+         [ ov_char_is "toegewezen" "open"; ov_attr_is ~label:"J1" "vondstaantal" "0"; ov_char_is ~label:"J1" "vindend" "not";
+           ov_char_is ~label:"J1" "alle zwaar" "holds"; ov_char_is ~label:"J1" "een zwaar" "not" ]) ();
+  ov_frame ~name:"WV-1.5-link-one-to-many (rolesClosed with V1=20 leaves unlinked V2.vinder open)" ~ir:(one_to_many_ir ())
+    ~case_text:
+      (ov_case
+         [ ov_obj "V1" [ ("gewicht", "20") ]; ov_obj "V2" [ ("gewicht", "5") ];
+           ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1" ]) ] ~roles_closed:[ "vondsten" ] "J1" [] ]
+         [ ov_char_is "toegewezen" "holds"; ov_char_is ~label:"V2" "toegewezen" "open";
+           ov_attr_is ~label:"J1" "vondstaantal" "1"; ov_char_is ~label:"J1" "vindend" "holds";
+           ov_char_is ~label:"J1" "alle zwaar" "holds"; ov_char_is ~label:"J1" "een zwaar" "holds" ]) ();
+  ov_frame ~name:"WV-1.5-link-one-to-many (complete: true)" ~ir:(one_to_many_ir ~complete_many:true ())
     ~case_text:
       (ov_case
          [ ov_obj "V1" [ ("gewicht", "20") ]; ov_obj ~ty:"Jutter" "J1" [] ]
@@ -21000,11 +21035,12 @@ let () =
            ov_attr_is ~label:"V1" "vinderaantal" "1"; ov_attr_is ~label:"V1" "vinderbonus" "10";
            ov_attr_is ~label:"J1" "loodsaantal" "open"; ov_attr_is ~label:"J1" "loodscapaciteit" "open";
            ov_attr_is ~label:"J1" "unieloodsen" "open";
-           ov_char_is ~label:"J1" "alle loodsen ruim" "open"; ov_char_is ~label:"J1" "een loods ruim" "open" ]) ();
-  ov_frame ~name:"WV-1.5-link-fold-range (settled via rolesEmpty)" ~ir:fold_range_ir
+           ov_char_is ~label:"J1" "alle loodsen ruim" "open"; ov_char_is ~label:"J1" "een loods ruim" "holds" ]) ();
+  ov_frame ~name:"WV-1.5-link-fold-range (settled via rolesEmpty and rolesClosed)" ~ir:fold_range_ir
     ~case_text:
       (ov_case
-         [ ov_obj ~ty:"Jutter" ~chars:[ "ervaren" ] ~roles:[ ("vondsten", [ "V1"; "V2" ]); ("reserveloodsen", [ "L1" ]) ] ~roles_empty:[ "hoofdloods" ] "J1" [ ("bonus", "10") ];
+         [ ov_obj ~ty:"Jutter" ~chars:[ "ervaren" ] ~roles:[ ("vondsten", [ "V1"; "V2" ]); ("reserveloodsen", [ "L1" ]) ]
+             ~roles_empty:[ "hoofdloods" ] ~roles_closed:[ "vondsten"; "reserveloodsen" ] "J1" [ ("bonus", "10") ];
            ov_obj ~roles:[ ("bewaarplaats", [ "L1" ]) ] "V1" [];
            ov_obj ~roles_empty:[ "bewaarplaats" ] "V2" [];
            ov_obj ~roles_empty:[ "vinder" ] "V3" [];
@@ -21058,10 +21094,13 @@ let () =
   let proef_oc =
     {|{"node": "ObjectCreation", "name": "proefvondst", "versions": [{"createdType": "Vondst", "subject": "Jutter", "assignments": [], "condition": {"node": "CharacteristicCheck", "characteristic": "ervaren", "negated": true, "source": {"snippet": "niet ervaren"}}, "validity": {"node": "Validity"}, "connectingRole": {"node": "RoleBinding", "factType": "proefvangst", "role": "proefvondst"}}]}|}
   in
+  let made_keuring_ft =
+    {|{"node": "FactType", "name": "keuring", "reciprocal": false, "roles": [{"node": "Role", "name": "gekeurde vondst", "objectType": "Vondst", "many": false}, {"node": "Role", "name": "keurrapport", "objectType": "Loods", "plural": "keurrapporten", "many": true}]}|}
+  in
   let made_ir =
-    ov_doc ~fact_types:[ proef_complete_ft; bewaring_ft ] ~object_creations:[ proef_oc ]
-      [ ov_type "Jutter" [ "proefhuur" ] [ "ervaren"; "heeft proef"; "proef onopgeslagen" ];
-        ov_vondst [ "bewaarhuur" ] [ "opgeslagen"; "onopgeslagen" ];
+    ov_doc ~fact_types:[ proef_complete_ft; bewaring_ft; made_keuring_ft ] ~object_creations:[ proef_oc ]
+      [ ov_type "Jutter" [ "proefhuur" ] [ "ervaren"; "heeft proef"; "proef onopgeslagen"; "proef zonder rapporten" ];
+        ov_vondst [ "bewaarhuur" ] [ "opgeslagen"; "onopgeslagen"; "zonder rapporten" ];
         ov_type "Loods" [ "huur" ] [] ]
       [ ov_rule ~ty:"Jutter" ~name:"heeft proef"
           ~cond:{|{"node": "RoleMembership", "factType": "proefvangst", "role": "jutter", "negated": false, "source": {"snippet": "proef"}}|}
@@ -21073,26 +21112,32 @@ let () =
         ov_rule ~name:"onopgeslagen"
           ~cond:{|{"node": "RoleMembership", "factType": "bewaring", "role": "opgeslagen vondst", "negated": true, "source": {"snippet": "onopgeslagen"}}|}
           "onopgeslagen" None;
+        ov_rule ~name:"zonder rapporten"
+          ~cond:{|{"node": "RoleMembership", "factType": "keuring", "role": "gekeurde vondst", "negated": true, "source": {"snippet": "zonder rapporten"}}|}
+          "zonder rapporten" None;
         ov_rule ~ty:"Jutter" ~name:"proefhuur" "proefhuur"
           (Some (ov_attr ~ty:"Loods" ~path:[ ("proefvangst", "proefvondst"); ("bewaring", "bewaarplaats") ] "huur"));
         ov_rule ~ty:"Jutter" ~name:"proef onopgeslagen"
           ~cond:(ov_check ~navigation:("proefvangst", "proefvondst") "onopgeslagen")
-          "proef onopgeslagen" None ]
+          "proef onopgeslagen" None;
+        ov_rule ~ty:"Jutter" ~name:"proef zonder rapporten"
+          ~cond:(ov_check ~navigation:("proefvangst", "proefvondst") "zonder rapporten")
+          "proef zonder rapporten" None ]
   in
   ov_frame ~name:"WV-1.5-link-complete (beside open creation writer)" ~ir:made_ir
     ~case_text:
       (ov_case
          [ ov_obj ~ty:"Jutter" ~roles_empty:[ "proefvondst" ] "J1" []; ov_obj "V9" [] ]
          [ ov_char_is ~label:"J1" "heeft proef" "open"; ov_attr_is ~label:"J1" "proefhuur" "open";
-           ov_char_is ~label:"J1" "proef onopgeslagen" "open" ]) ();
+           ov_char_is ~label:"J1" "proef onopgeslagen" "open"; ov_char_is ~label:"J1" "proef zonder rapporten" "open" ]) ();
   ov_frame ~name:"WV-1.5-link-made-object (minted settled absent vs case V9 open)" ~ir:made_ir
     ~case_text:
       (ov_case
          [ ov_obj ~ty:"Jutter" ~absent:[ "ervaren" ] "J1" []; ov_obj "V9" [] ]
          [ ov_char_is ~label:"J1" "heeft proef" "holds"; ov_attr_is ~label:"J1" "proefhuur" "leeg";
-           ov_char_is ~label:"J1" "proef onopgeslagen" "holds";
+           ov_char_is ~label:"J1" "proef onopgeslagen" "holds"; ov_char_is ~label:"J1" "proef zonder rapporten" "holds";
            ov_attr_is ~label:"V9" "bewaarhuur" "open"; ov_char_is ~label:"V9" "opgeslagen" "open";
-           ov_char_is ~label:"V9" "onopgeslagen" "open" ]) ();
+           ov_char_is ~label:"V9" "onopgeslagen" "open"; ov_char_is ~label:"V9" "zonder rapporten" "open" ]) ();
   (* Case-reader refusals & idempotence on rolesEmpty *)
   let check_role_refusal name ~ir ~case_text want =
     let irf = write_temp ".ir.json" ir in
@@ -21156,6 +21201,36 @@ let () =
     (fun c p t -> c = None && p = [] && Uchar_ref.Case.contains ~needle:"is a to-many role" t);
   check_role_refusal "WV-1.5-case-roles-empty-refused (reciprocal)" ~ir:refusal_ir
     ~case_text:(ov_case [ ov_obj ~ty:"Jutter" ~roles_empty:[ "partner" ] "J1" [] ] [ ov_consistent ])
+    (fun c p t -> c = None && p = [] && Uchar_ref.Case.contains ~needle:"reciprocal" t);
+  (* Case-reader acceptance, coexistence with links, and refusals on rolesClosed *)
+  ov_frame ~name:"WV-1.5-case-roles-closed (duplicate singular + plural alongside links)" ~ir:refusal_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1" ]) ] ~roles_closed:[ "  VONDST "; "vondsten" ] "J1" [];
+           ov_obj "V1" [] ]
+         [ ov_consistent ]) ();
+  check_role_refusal "WV-1.5-case-roles-closed-refused (EF-040 undeclared)" ~ir:refusal_ir
+    ~case_text:(ov_case [ ov_obj ~ty:"Jutter" ~roles_closed:[ "vondstz" ] "J1" [] ] [ ov_consistent ])
+    (fun c p _ -> (c, p) = (Some "EF-040", [ ("label", "J1"); ("name", "vondstz") ]));
+  let ambig_many_ir =
+    ov_doc
+      ~fact_types:
+        [ {|{"node": "FactType", "name": "opslagA", "reciprocal": false, "roles": [{"node": "Role", "name": "houderA", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "stuk", "objectType": "Vondst", "plural": "stukken", "many": true}]}|};
+          {|{"node": "FactType", "name": "opslagB", "reciprocal": false, "roles": [{"node": "Role", "name": "houderB", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "stuk", "objectType": "Loods", "plural": "stukken", "many": true}]}|} ]
+      [ ov_vondst [] []; ov_type "Jutter" [] []; ov_type "Loods" [] [] ]
+      []
+  in
+  check_role_refusal "WV-1.5-case-roles-closed-refused (EF-001 ambiguous)" ~ir:ambig_many_ir
+    ~case_text:(ov_case [ ov_obj ~ty:"Jutter" ~roles_closed:[ "stukken" ] "J1" [] ] [ ov_consistent ])
+    (fun c p _ -> (c, p) = (Some "EF-001", [ ("roleKey", "stukken"); ("objectType", "Jutter") ]));
+  check_role_refusal "WV-1.5-case-roles-closed-refused (0 matching roles)" ~ir:refusal_ir
+    ~case_text:(ov_case [ ov_obj ~ty:"Loods" ~roles_closed:[ "vondsten" ] "L1" [] ] [ ov_consistent ])
+    (fun c p t -> c = None && p = [] && Uchar_ref.Case.contains ~needle:"does not resolve to a declared role" t);
+  check_role_refusal "WV-1.5-case-roles-closed-refused (to-one)" ~ir:refusal_ir
+    ~case_text:(ov_case [ ov_obj ~roles_closed:[ "vinder" ] "V1" [] ] [ ov_consistent ])
+    (fun c p t -> c = None && p = [] && Uchar_ref.Case.contains ~needle:"is a to-one role" t);
+  check_role_refusal "WV-1.5-case-roles-closed-refused (reciprocal)" ~ir:refusal_ir
+    ~case_text:(ov_case [ ov_obj ~ty:"Jutter" ~roles_closed:[ "partner" ] "J1" [] ] [ ov_consistent ])
     (fun c p t -> c = None && p = [] && Uchar_ref.Case.contains ~needle:"reciprocal" t)
 
 (* WV-1.5-closed-*: the uitbetaling of the first example, with every input
@@ -21866,6 +21941,9 @@ let () =
 (* --- the folds (ch. 1.5, "A quantifier fold" to "An IfThenElse in a value")
    A Jutter and his vondsten, linked by the aanmelding *)
 let ov_aanmelding =
+  {|{"node": "FactType", "name": "aanmelding", "reciprocal": false, "roles": [{"node": "Role", "name": "aanmeldende jutter", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true, "complete": true}]}|}
+
+let ov_aanmelding_open =
   {|{"node": "FactType", "name": "aanmelding", "reciprocal": false, "roles": [{"node": "Role", "name": "aanmeldende jutter", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true}]}|}
 
 let ov_range = {|"sourceRole": {"node": "RoleBinding", "factType": "aanmelding", "role": "vondst"}|}
@@ -22101,7 +22179,7 @@ let () =
     [ ("WV-1.5-creation-condition (makes)", [ ("ervaring", "2") ], [], ("1", "3", "holds"));
       ("WV-1.5-creation-condition (makes nothing)", [ ("ervaring", "8") ], [], ("0", "leeg", "not"));
       ("WV-1.5-creation-open (no vondst)", [], [], ("open", "open", "open"));
-      ("WV-1.5-creation-open (beside a vondst)", [], [ "V1" ], ("open", "open", "open")) ]
+      ("WV-1.5-creation-open (beside a vondst)", [], [ "V1" ], ("open", "open", "holds")) ]
 
 (* WV-1.5-creation-member: "een Jutter heeft een proefvondst met gewicht
    gelijk aan zijn ervaring en taxatie gelijk aan zijn bonus", "de bonus van
@@ -22276,7 +22354,7 @@ let () =
       (branch ?filter "vangst" "gevangen vondst") (ov_src "unie") (ov_src "aantal")
   in
   let vangst =
-    {|{"node": "FactType", "name": "vangst", "reciprocal": false, "roles": [{"node": "Role", "name": "vanger", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "gevangen vondst", "objectType": "Vondst", "plural": "gevangen vondsten", "many": true}]}|}
+    {|{"node": "FactType", "name": "vangst", "reciprocal": false, "roles": [{"node": "Role", "name": "vanger", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "gevangen vondst", "objectType": "Vondst", "plural": "gevangen vondsten", "many": true, "complete": true}]}|}
   in
   let ir =
     ov_doc ~fact_types:[ ov_aanmelding; vangst ]
@@ -23316,6 +23394,236 @@ let () =
            ov_obj "V2" [ ("gewicht", "5"); ("bedrag", "4.00") ] ]
          [ ov_attr_is ~label:"J1" "toezichttotaal" "20"; ov_attr_is ~label:"J2" "toezichttotaal" "leeg" ])
     ~form:"toezichttotaal" ~read:"binder t"
+
+(* --- Open vs closed 0..n collections (RUNTIME-SEMANTICS ch. 1.5, S20) ----- *)
+let () =
+  work @@ fun () ->
+  let zwaar = ov_gt "gewicht" "10" in
+  let qs =
+    [ ("alle", "all", 0); ("geen", "none", 0); ("een", "atLeast", 1); ("twee", "atLeast", 2);
+      ("hoogstens een", "atMost", 1); ("precies een", "exactly", 1) ]
+  in
+  let q_ir =
+    ov_doc ~fact_types:[ ov_aanmelding_open ]
+      [ ov_type "Jutter" [] (List.map (fun (k, _, _) -> k) qs); ov_type "Vondst" [ "gewicht" ] [] ]
+      (List.map (fun (k, q, n) -> ov_rule ~ty:"Jutter" ~name:k ~cond:(ov_qf q n zwaar) k None) qs)
+  in
+  let j_case ?(closed = false) vs want =
+    let labels = List.map fst vs in
+    ov_case
+      (ov_obj ~ty:"Jutter" ~roles:(if labels = [] then [] else [ ("vondsten", labels) ])
+         ~roles_closed:(if closed then [ "vondsten" ] else []) "J1" []
+      :: List.map (fun (l, a) -> ov_obj l a) vs)
+      (List.map2 (fun (k, _, _) s -> ov_char_is ~label:"J1" k s) qs want)
+  in
+  List.iter
+    (fun (name, closed, vs, want) ->
+      ov_frame ~name:("WV-1.5-many-quantifier (" ^ name ^ ")") ~ir:q_ir ~case_text:(j_case ~closed vs want) ())
+    [ ("open 0", false, [], [ "open"; "open"; "open"; "open"; "open"; "open" ]);
+      ("closed 0", true, [], [ "holds"; "holds"; "not"; "not"; "holds"; "not" ]);
+      ("open T", false, [ ("V1", [ ("gewicht", "20") ]) ], [ "open"; "not"; "holds"; "open"; "open"; "open" ]);
+      ("closed T", true, [ ("V1", [ ("gewicht", "20") ]) ], [ "holds"; "not"; "holds"; "not"; "holds"; "holds" ]);
+      ("open F", false, [ ("V1", [ ("gewicht", "5") ]) ], [ "not"; "open"; "open"; "open"; "open"; "open" ]);
+      ("closed F", true, [ ("V1", [ ("gewicht", "5") ]) ], [ "not"; "holds"; "not"; "not"; "holds"; "not" ]);
+      ("open TT", false, [ ("V1", [ ("gewicht", "20") ]); ("V2", [ ("gewicht", "30") ]) ],
+        [ "open"; "not"; "holds"; "holds"; "not"; "not" ]);
+      ("closed TT", true, [ ("V1", [ ("gewicht", "20") ]); ("V2", [ ("gewicht", "30") ]) ],
+        [ "holds"; "not"; "holds"; "holds"; "not"; "not" ]);
+      ("open U", false, [ ("V1", []) ], [ "open"; "open"; "open"; "open"; "open"; "open" ]) ];
+  (* Degenerate thresholds under an open range: atLeast 0 holds immediately,
+     atMost -1 and exactly -1 fail immediately *)
+  let deg_ir =
+    ov_doc ~fact_types:[ ov_aanmelding_open ]
+      [ ov_type "Jutter" [] [ "min0"; "max neg"; "exact neg" ]; ov_type "Vondst" [ "gewicht" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"min0" ~cond:(ov_qf "atLeast" 0 zwaar) "min0" None;
+        ov_rule ~ty:"Jutter" ~name:"max neg" ~cond:(ov_qf "atMost" (-1) zwaar) "max neg" None;
+        ov_rule ~ty:"Jutter" ~name:"exact neg" ~cond:(ov_qf "exactly" (-1) zwaar) "exact neg" None ]
+  in
+  ov_frame ~verify:false ~name:"WV-1.5-many-quantifier-degenerate" ~ir:deg_ir
+    ~case_text:
+      (ov_case [ ov_obj ~ty:"Jutter" "J1" [] ]
+         [ ov_char_is ~label:"J1" "min0" "holds"; ov_char_is ~label:"J1" "max neg" "not";
+           ov_char_is ~label:"J1" "exact neg" "not" ]) ();
+  (* RoleMembership with counterpartType narrowing on open vs closed collection *)
+  let role_ct_ir =
+    ov_doc ~fact_types:[ ov_aanmelding_open ]
+      [ ov_type "Jutter" [] [ "heeft strandvondst"; "geen strandvondst" ];
+        ov_vondst [] [];
+        ov_type ~supertype:"Vondst" "Strandvondst" [] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"heeft strandvondst"
+          ~cond:
+            {|{"node": "RoleMembership", "factType": "aanmelding", "role": "aanmeldende jutter", "counterpartType": "Strandvondst", "negated": false, "source": {"snippet": "strandvondst"}}|}
+          "heeft strandvondst" None;
+        ov_rule ~ty:"Jutter" ~name:"geen strandvondst"
+          ~cond:
+            {|{"node": "RoleMembership", "factType": "aanmelding", "role": "aanmeldende jutter", "counterpartType": "Strandvondst", "negated": true, "source": {"snippet": "geen strandvondst"}}|}
+          "geen strandvondst" None ]
+  in
+  ov_frame ~name:"WV-1.5-many-role-membership-counterpart (only plain Vondst linked, open -> undetermined)" ~ir:role_ct_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1" ]) ] "J1" []; ov_obj "V1" [] ]
+         [ ov_char_is ~label:"J1" "heeft strandvondst" "open"; ov_char_is ~label:"J1" "geen strandvondst" "open" ]) ();
+  ov_frame ~name:"WV-1.5-many-role-membership-counterpart (Strandvondst linked, open -> stands)" ~ir:role_ct_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1"; "S1" ]) ] "J1" [];
+           ov_obj "V1" []; ov_obj ~ty:"Strandvondst" "S1" [] ]
+         [ ov_char_is ~label:"J1" "heeft strandvondst" "holds"; ov_char_is ~label:"J1" "geen strandvondst" "not" ]) ();
+  ov_frame ~name:"WV-1.5-many-role-membership-counterpart (only plain Vondst linked, rolesClosed -> absent)" ~ir:role_ct_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1" ]) ] ~roles_closed:[ "vondsten" ] "J1" []; ov_obj "V1" [] ]
+         [ ov_char_is ~label:"J1" "heeft strandvondst" "not"; ov_char_is ~label:"J1" "geen strandvondst" "holds" ]) ();
+  (* Provisional matrix reading under an open range:
+     1. matrix EF-005 deposit dropped when open, committed when rolesClosed;
+     2. matrix EF-014 fault caught to undetermined when open, raised when rolesClosed;
+     3. CLINGO-034 31-bit integer limit in a reached provisional matrix still fires,
+        and is suppressed after an earlier member already short-circuited! *)
+  let quotient = ov_div (ov_attr "gewicht") (ov_attr "getuigen") in
+  let prov_dep_ir =
+    ov_doc ~fact_types:[ ov_aanmelding_open ]
+      [ ov_type "Jutter" [] [ "gelijkmatig" ]; ov_type "Vondst" [ "gewicht"; "getuigen" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"gelijkmatig" ~cond:(ov_qf "all" 0 (ov_cmp "greater" quotient (ov_lit "2"))) "gelijkmatig" None ]
+  in
+  ov_frame ~name:"WV-1.5-many-provisional-matrix (open range drops matrix deposit)" ~ir:prov_dep_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1"; "V2" ]) ] "J1" [];
+           ov_obj "V1" [ ("gewicht", "10"); ("getuigen", "2") ];
+           ov_obj "V2" [ ("gewicht", "9"); ("getuigen", "0") ] ]
+         [ ov_char_is ~label:"J1" "gelijkmatig" "not"; ov_consistent ]) ();
+  ov_frame ~name:"WV-1.5-many-provisional-matrix (rolesClosed commits matrix deposit)" ~ir:prov_dep_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1"; "V2" ]) ] ~roles_closed:[ "vondsten" ] "J1" [];
+           ov_obj "V1" [ ("gewicht", "10"); ("getuigen", "2") ];
+           ov_obj "V2" [ ("gewicht", "9"); ("getuigen", "0") ] ]
+         [ ov_char_is ~label:"J1" "gelijkmatig" "not"; ov_inconsistent ~label:"J1" ~code:"EF-005" "gelijkmatig" ]) ();
+  let prov_fault_ir =
+    ov_doc ~fact_types:[ ov_aanmelding_open ] ~parameters:[ "TARIEF" ]
+      [ ov_type "Jutter" [] [ "boven tarief" ]; ov_type "Vondst" [ "gewicht" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"boven tarief"
+          ~cond:(ov_qf "all" 0 (ov_cmp "greater" (ov_attr "gewicht") (ov_param "TARIEF"))) "boven tarief" None ]
+  in
+  ov_frame ~name:"WV-1.5-many-provisional-matrix (open range catches EF-014 to undetermined)" ~ir:prov_fault_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1" ]) ] "J1" []; ov_obj "V1" [ ("gewicht", "10") ] ]
+         [ ov_char_is ~label:"J1" "boven tarief" "open"; ov_consistent ]) ();
+  ov_fault_frame ~name:"WV-1.5-many-provisional-matrix (rolesClosed raises EF-014)" ~ir:prov_fault_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1" ]) ] ~roles_closed:[ "vondsten" ] "J1" [];
+           ov_obj "V1" [ ("gewicht", "10") ] ]
+         [ ov_consistent ])
+    "EF-014";
+  let prov_limit_ir =
+    ov_doc ~fact_types:[ ov_aanmelding_open ]
+      [ ov_type "Jutter" [] [ "een reus" ]; ov_type "Vondst" [ "gewicht" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"een reus"
+          ~cond:(ov_qf "atLeast" 1 (ov_cmp "greater" (ov_bin "plus" (ov_attr "gewicht") (ov_attr "gewicht")) (ov_lit "10")))
+          "een reus" None ]
+  in
+  (let doc, case =
+     load_pair ~ir:prov_limit_ir
+       ~case_text:
+         (ov_case
+            [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1" ]) ] "J1" []; ov_obj "V1" [ ("gewicht", "2000000000") ] ]
+            [ ov_consistent ])
+   in
+   let program, guards = Translate.translate_guarded doc case in
+   check "WV-1.5-many-provisional-matrix (encoding limit fires in reached open-range matrix)"
+     (match Solve.run_clingo program with
+      | _, Unix.WEXITED 20 ->
+          List.exists (fun w -> match Translate.viol_code guards w with Some (c, _) -> c = "CLINGO-034" | None -> false)
+            (Solve.diagnostic program)
+      | _ -> false));
+  ov_frame ~name:"WV-1.5-many-provisional-matrix (short-circuit before overflow member skips limit)" ~ir:prov_limit_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1"; "V2" ]) ] "J1" [];
+           ov_obj "V1" [ ("gewicht", "20") ];
+           ov_obj "V2" [ ("gewicht", "2000000000") ] ]
+         [ ov_char_is ~label:"J1" "een reus" "holds"; ov_consistent ]) ();
+  (* Filter deposit and filter fault under an open range:
+     - filter deposit dropped when QuantifierFold stays undetermined (even when
+       an enclosing Compound decides via another true part!);
+     - filter deposit committed when QuantifierFold reaches an established verdict;
+     - filter EF-014 fault raises immediately even on an open range *)
+  let fdep_qfold =
+    ov_qf
+      ~filter:(ov_compound "atLeast" 1 [ ov_cmp "greater" quotient (ov_lit "2"); ov_check "gemerkt" ])
+      "all" 0 zwaar
+  in
+  let fdep_ir =
+    ov_doc ~fact_types:[ ov_aanmelding_open ]
+      [ ov_type "Jutter" [] [ "keur"; "keur of altijd" ]; ov_type "Vondst" [ "gewicht"; "getuigen" ] [ "gemerkt" ] ]
+      [ ov_rule ~ty:"Jutter" ~name:"keur" ~cond:fdep_qfold "keur" None;
+        ov_rule ~ty:"Jutter" ~name:"keur of altijd" ~cond:(ov_compound "atLeast" 1 [ fdep_qfold; ov_always ])
+          "keur of altijd" None ]
+  in
+  ov_frame ~name:"WV-1.5-many-filter-deposit (undetermined fold drops filter deposit even inside deciding Compound)" ~ir:fdep_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1" ]) ] "J1" [];
+           ov_obj ~chars:[ "gemerkt" ] "V1" [ ("gewicht", "20"); ("getuigen", "0") ] ]
+         [ ov_char_is ~label:"J1" "keur" "open"; ov_char_is ~label:"J1" "keur of altijd" "holds"; ov_consistent ]) ();
+  ov_frame ~name:"WV-1.5-many-filter-deposit (short-circuited fold commits filter deposit)" ~ir:fdep_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1" ]) ] "J1" [];
+           ov_obj ~chars:[ "gemerkt" ] "V1" [ ("gewicht", "5"); ("getuigen", "0") ] ]
+         [ ov_char_is ~label:"J1" "keur" "not"; ov_char_is ~label:"J1" "keur of altijd" "holds";
+           ov_inconsistent ~label:"J1" ~code:"EF-005" "keur";
+           ov_inconsistent ~label:"J1" ~code:"EF-005" "keur of altijd" ]) ();
+  let ffault_ir =
+    ov_doc ~fact_types:[ ov_aanmelding_open ] ~parameters:[ "TARIEF" ]
+      [ ov_type "Jutter" [] [ "keur" ]; ov_type "Vondst" [ "gewicht" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"keur"
+          ~cond:(ov_qf ~filter:(ov_cmp "greater" (ov_attr "gewicht") (ov_param "TARIEF")) "all" 0 zwaar) "keur" None ]
+  in
+  ov_fault_frame ~name:"WV-1.5-many-filter-fault (open range still raises filter EF-014)" ~ir:ffault_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1" ]) ] "J1" []; ov_obj "V1" [ ("gewicht", "20") ] ]
+         [ ov_consistent ])
+    "EF-014";
+  (* Aggregation & InstanceSetUnion count break off immediately on any open range
+     hop before filter deposits OR filter faults on closed earlier branches *)
+  let vangst_open =
+    {|{"node": "FactType", "name": "vangst", "reciprocal": false, "roles": [{"node": "Role", "name": "vanger", "objectType": "Jutter", "many": false}, {"node": "Role", "name": "gevangen vondst", "objectType": "Vondst", "plural": "gevangen vondsten", "many": true}]}|}
+  in
+  let union_open_ir =
+    ov_doc ~fact_types:[ ov_aanmelding_open; vangst_open ] ~parameters:[ "TARIEF" ]
+      [ ov_type "Jutter" [ "deptal"; "fouttal" ] []; ov_type "Vondst" [ "gewicht"; "getuigen" ] [] ]
+      [ ov_rule ~ty:"Jutter" ~name:"deptal" "deptal"
+          (Some
+             (Printf.sprintf
+                {|{"node": "Aggregation", "kind": "count", "arguments": [{"node": "InstanceSetUnion", "branches": [{"node": "InstanceSetBranch", "elementType": "Vondst", "sourceRole": {"node": "RoleBinding", "factType": "aanmelding", "role": "vondst"}, "filter": %s, %s}, {"node": "InstanceSetBranch", "elementType": "Vondst", "sourceRole": {"node": "RoleBinding", "factType": "vangst", "role": "gevangen vondst"}, "filter": null, %s}], %s}], "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}, %s}|}
+                (ov_cmp "greater" quotient (ov_lit "2")) (ov_src "b1") (ov_src "b2") (ov_src "unie") (ov_src "aantal")));
+        ov_rule ~ty:"Jutter" ~name:"fouttal" "fouttal"
+          (Some
+             (Printf.sprintf
+                {|{"node": "Aggregation", "kind": "count", "arguments": [{"node": "InstanceSetUnion", "branches": [{"node": "InstanceSetBranch", "elementType": "Vondst", "sourceRole": {"node": "RoleBinding", "factType": "aanmelding", "role": "vondst"}, "filter": %s, %s}, {"node": "InstanceSetBranch", "elementType": "Vondst", "sourceRole": {"node": "RoleBinding", "factType": "vangst", "role": "gevangen vondst"}, "filter": null, %s}], %s}], "type": {"node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative"}, %s}|}
+                (ov_cmp "greater" (ov_attr "gewicht") (ov_param "TARIEF")) (ov_src "b1") (ov_src "b2") (ov_src "unie")
+                (ov_src "aantal"))) ]
+  in
+  ov_frame ~name:"WV-1.5-many-union-count (open branch 2 suppresses branch 1 filter deposit and EF-014 fault)"
+    ~ir:union_open_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1" ]) ] ~roles_closed:[ "vondsten" ] "J1" [];
+           ov_obj "V1" [ ("gewicht", "9"); ("getuigen", "0") ] ]
+         [ ov_attr_is ~label:"J1" "deptal" "open"; ov_attr_is ~label:"J1" "fouttal" "open"; ov_consistent ]) ();
+  ov_fault_frame ~name:"WV-1.5-many-union-count (closing branch 2 too exposes branch 1 EF-014 fault)"
+    ~ir:union_open_ir
+    ~case_text:
+      (ov_case
+         [ ov_obj ~ty:"Jutter" ~roles:[ ("vondsten", [ "V1" ]) ] ~roles_closed:[ "vondsten"; "gevangen vondsten" ] "J1" [];
+           ov_obj "V1" [ ("gewicht", "9"); ("getuigen", "0") ] ]
+         [ ov_consistent ])
+    "EF-014"
 
 let () =
   Option.iter
