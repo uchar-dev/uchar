@@ -1,3 +1,0 @@
-WF-130.to-many-role
-factType=vangst
-role=vondst

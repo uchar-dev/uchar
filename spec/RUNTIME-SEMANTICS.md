@@ -498,27 +498,39 @@ with `reciprocal` false, including the to-one side of a one-to-many fact type)
 on an object whose type fills the opposite role has the same three states:
 *linked* (a link of the case or of a creation whose condition is established
 true holds the object in the opposite role), *settled absent* (it stands that
-no link holds the object there), or *open* (neither stands). A to-many role and
-a role of a reciprocal fact type have no open input state: without a creation
-that leaves them open (below), their links in the case are complete. An input member — an attribute or a characteristic that nothing but
+no link holds the object there), or *open* (neither stands). A non-reciprocal
+to-many role (`Role.many` true on a binary `FactType` with `reciprocal` false)
+on an object whose type fills the opposite role carries its standing links
+$S_{\text{known}}$ — the links given by the case, materialised in both
+directions (ch. 5.7a), or laid by creations whose conditions are established
+true — together with whether further elements may still join: *closed*
+($S_{\text{known}} = S_{\text{actual}}$, settled empty `[]` where no link holds
+the object there) or *open* ($S_{\text{known}} \subseteq S_{\text{actual}}$,
+further unstated links may still join, even when one or more standing links
+already hold the object there). A role of a reciprocal fact type (`reciprocal`
+true) has no open input state: without a creation that leaves it open (below),
+its links in the case are complete. An input member — an attribute or a characteristic that nothing but
 an initialisation writes on the object's type: no rule other than an
 initialisation, and no defaults group with a default other than its
 initialisation default or with an exception group — is open where the case
 gives it no value and does not state that it has none, or does not name the
 characteristic as holding or as not holding, unless its declaration says that
 its input is complete (**Complete input**, **The case**, below). Likewise, on a
-case instance whose type fills the opposite role, an input non-reciprocal
-to-one role — one that no creation writes there (an object creation whose
-subject covers the instance's type and whose made object fills the role, or a
-fact creation on the fact type placing the instance's type in the opposite
-role) — is open where no link in the case holds the instance there and
-`rolesEmpty` does not name the role on the instance, unless the role's
-declaration carries `complete: true` (IR-SPEC ch. 2.6, WF-130). An initialisation — a rule, or the initialisation
+case instance whose type fills the opposite role, where no creation writes the
+role on the instance's type (an object creation whose subject covers the
+instance's type and whose made object fills the role, or a fact creation on the
+fact type placing the instance's type in the opposite role), an input
+non-reciprocal to-one role is open where no link in the case holds the instance
+there and `rolesEmpty` does not name the role on the instance, and an input
+non-reciprocal to-many role is open unless `rolesClosed` names the role on the
+instance (whether zero or more links already hold the instance there), unless
+in either case the role's declaration carries `complete: true` (IR-SPEC ch. 2.6,
+WF-130). An initialisation — a rule, or the initialisation
 default of a stack — is the lowest writer of its target, below the input, and
 makes no member derived (below); an exception group of the initialisation
 default decides above the input (ch. 7.9), so a stack with one makes its member
 derived. A document without the property has no open member or role: a member without
-a value is settled leeg, an unlinked role is settled absent, and the rest of this section then reads as ch.
+a value is settled leeg, an unlinked to-one role is settled absent, every to-many role is closed at its standing links, and the rest of this section then reads as ch.
 1.2–1.4. Example
 (WV-1.5-open-input, WV-1.5-no-open-without-the-property): "de uitbetaling van
 een Vondst is zijn vindloon plus zijn bergloon", with bergloon 3 and no
@@ -1065,8 +1077,10 @@ established true; where its condition is established false, it stands that it
 makes nothing. Where its condition is undetermined, what it would make is
 open: the relation over which it would link its object to the subject, or lay
 its links, is open on the subject, and for a fact creation on every object it
-could reach, so a count, a fold, a quantifier fold, a role check and a
-navigated read over that relation from there are open reads. Example
+could reach, so a navigated read and an `Aggregation` (a `count` included) over
+that relation from there are open reads, while a `RoleMembership` check and a
+`QuantifierFold` evaluate over whatever standing links already hold alongside
+the open relation (**A read over a link**, **A quantifier fold**, below). Example
 (WV-1.5-creation-condition, WV-1.5-creation-open): "een Jutter heeft een
 proefvondst met gewicht gelijk aan 3 indien hij niet ervaren is", with "een
 Jutter is ervaren indien zijn ervaring groter is dan 5", the number of his
@@ -1074,11 +1088,12 @@ vondsten, the sum of their gewicht and "een Jutter is vindend indien hij een
 vondst heeft": at ervaring 2 the proefvondst is made, the number is 1, the sum
 3 and vindend holds; at ervaring 8 none is made, the number is 0, the sum
 settled leeg and vindend stands not to hold; without an ervaring all three are
-open, also beside a vondst the case links to the Jutter. Example
+open when no vondst is linked, and beside a vondst the case links to the Jutter
+the number and the sum stay open while vindend holds. Example
 (WV-1.5-fact-creation): "een hulpvondst van een Jutter is een vondst van de
 Jutter indien de Jutter niet gemeld is", "het hulptal van een Jutter is het
 aantal hulpvondsten" and "een Vondst is geholpen indien hij een hulpjutter
-heeft", over two vondsten: the hulptal is 2 and V1 is geholpen where gemeld
+heeft", over two vondsten (with `vondsten` declared complete): the hulptal is 2 and V1 is geholpen where gemeld
 stands not to hold, 0 and not geholpen where gemeld holds, and both are open
 where the case does not name gemeld.
 
@@ -1086,8 +1101,10 @@ where the case does not name gemeld.
 of an object (ch. 7.8): an attribute it assigns is filled, settled leeg where
 the value is settled leeg (it assigns nothing), and open where the value has
 an open read; a member that no one assigns and no form writes is settled
-leeg, and a non-reciprocal to-one role on it that no creation assigns or leaves
-open is settled absent, since no case gives an object made its input. On an object the case
+leeg, a non-reciprocal to-one role on it that no creation assigns or leaves
+open is settled absent, and a non-reciprocal to-many role on it that no
+creation assigns or leaves open is closed (`[]`), since no case gives an object
+made its input. On an object the case
 gives, a member that a creation assigns on the objects it makes is an input
 member, and the back-link role of an object creation on a case instance of the
 created type is an input role as well (the creation links only the fresh object
@@ -1096,41 +1113,63 @@ met gewicht gelijk aan zijn ervaring en taxatie gelijk aan zijn bonus", with
 "de bonus van een Jutter is 5 indien zijn ervaring groter is dan 10": at
 ervaring 12 the proefvondst has gewicht 12 and taxatie 5, at ervaring 2
 gewicht 2 and a settled leeg taxatie, and without an ervaring both are open;
-its schade is settled leeg in each, and an unassigned to-one role on the made
-proefvondst (such as its bewaarplaats) is settled absent while on a case-supplied
-Vondst without a link it is open (WV-1.5-link-made-object). The gewicht of a Vondst the case gives
+its schade is settled leeg in each, and an unassigned to-one role (such as its
+bewaarplaats) or unassigned to-many role on the made proefvondst is settled
+absent or closed (`[]`) while on a case-supplied object without closure it is
+open (WV-1.5-link-made-object). The gewicht of a Vondst the case gives
 without one is open. A creation on a cycle, a member of a recursive group
 (ch. 6), is not defined here: a read on the cycle answers to the absence of a
 mark, and what it answers would depend on the order of the rounds
 (WV-1.5-creation-cycle-refused).
 
-**A read over a link.** On a step from an object `x` over `(factType, far)`,
-where `(x, factType, far)` is open — an unlinked input non-reciprocal to-one
-role not declared `complete` and not closed in `rolesEmpty`, or a relation a
-creation leaves open on `x` (above) — every read of that step is broken off as
-an open read on `(x, far)`: a `RoleMembership` check over `(factType, far)` (in
-both polarities), a navigated `AttributeReference` or `CharacteristicCheck` at
-the first open hop along its `path` (before later hops or the endpoint member
-are reached), and an `Aggregation` (a `count` included) or a `QuantifierFold`
-whose `sourceRole` or `sourcePath` reaches `(x, factType, far)` at its first or
-a subsequent step. Where a hop is settled absent — `far` is declared `complete`,
-`rolesEmpty` names `far` on `x`, `x` is a made object with no link there, every
-creation writing `(factType, far)` on `x` failed, or `far` is a to-many or
-reciprocal role with no link and no undetermined creation — the walk stops at
-that absent link: a navigated `AttributeReference` evaluates settled `leeg` as
-ch. 1.2 and 5.8 lay down (even if a later hop would have been open), a
-navigated `CharacteristicCheck` is established `false` in both polarities, a
-`RoleMembership` check is two-valued (`false`, or `true` when negated), and a
-fold step contributes no instances. Over a link that is
-present, an open attribute, characteristic or further to-one hop on the object
-it reaches is an open read on that reached object. On a non-reciprocal
+**A read over a link.** A navigated `AttributeReference` or `CharacteristicCheck`
+walks to-one hops (WF-053): at the first hop `(x, factType, far)` along its
+`path` that is open — an unlinked input non-reciprocal to-one role not declared
+`complete` and not closed in `rolesEmpty`, or a relation a creation leaves open
+on `x` — the read breaks off on `(x, far)` before later hops or the endpoint
+member are reached; where a hop is settled absent (`far` declared `complete`,
+`rolesEmpty` naming `far` on `x`, `x` a made object with no link there, every
+creation writing `(factType, far)` on `x` failed, or a reciprocal role with no
+link and no undetermined creation), the walk stops at that absent link, so a
+navigated `AttributeReference` evaluates settled `leeg` as ch. 1.2 and 5.8 lay
+down (even if a later hop would have been open) and a navigated
+`CharacteristicCheck` is established `false` in both polarities; over a present
+link, an open attribute, characteristic or further to-one hop on the reached
+object is an open read on that object. A `RoleMembership` check, an
+`Aggregation` with a range (`sourceRole`, `sourcePath`, or the branches of an
+`InstanceSetUnion` for `count`) and a `QuantifierFold` walk their range in the
+breadth-first step and list order of ch. 5.11 and ch. 5.7a, collecting both the
+standing reached instances $M = [m_1, \dots, m_n]$ (deduplicated in first-reach
+order and filtered by `counterpartType` or `elementType`) and `first_open_rel`,
+the first directed relation position `(holder, far)` encountered along the walk
+that is open — whether an open non-reciprocal to-one input role, an open
+non-reciprocal to-many input role (with zero or more standing links already on
+it), or a relation left open by a creation:
+- **`RoleMembership`** (`hij heeft een <rol>` and its negation `hij heeft geen
+  <rol>`): where $M \neq []$, the existence of a counterpart stands even if
+  `first_open_rel = Some r` (`true`, or `false` when negated), because further
+  links cannot remove a standing one; where $M = []$ and `first_open_rel = Some
+  r`, both polarities are `undetermined` with open read `r`; where $M = []$ and
+  `first_open_rel = None`, non-existence stands (`false`, or `true` when
+  negated).
+- **`Aggregation`** and **`QuantifierFold`** evaluate over `(M, first_open_rel)`
+  as laid down in the two subsections below: an `Aggregation` breaks off on any
+  `first_open_rel = Some r`, while a `QuantifierFold` short-circuits
+  monotonically over $M$ under `first_open_rel = Some r` (recorded both on a
+  single-step to-many range and across multi-step paths where one branch
+  reaches a qualifying target and another branch leaves a hop open).
+
+Closure of a role position is local to its directed side: on a non-reciprocal
 self-relation (`Vergunning` with `vorige vergunning` and `volgende vergunning`),
-the two roles are distinct directed positions: closing `vorige vergunning` in
-`rolesEmpty` on `V1` leaves `volgende vergunning` open or linked on `V1`
-independently (WV-1.5-link-self-relation). On a one-to-many fact type (`Jutter`
-has many `vondsten`, each `Vondst` has one `vinder`), an unlinked `Vondst` has
-`vinder` open unless closed, while a `Jutter` with no `vondsten` has a closed
-empty set (`count` 0, `all` true; WV-1.5-link-one-to-many). Example (WV-1.5-link-*): "de vindpremie van een Vondst is zijn
+closing `vorige vergunning` in `rolesEmpty` on `V1` leaves `volgende vergunning`
+open or linked on `V1` independently (WV-1.5-link-self-relation); and on a
+one-to-many fact type (`Jutter` has many `vondsten`, each `Vondst` has one
+`vinder`), closing `vondsten` on `J1` (in `rolesClosed` or via `complete: true`
+on `vondst`) closes only `J1`'s collection and leaves `vinder` open on an
+unlinked `V2` in the case (which could in an extension stand absent or link to
+another `Jutter`), while without `complete: true` and without `rolesClosed`
+`J1`'s `vondsten` is open whether zero or more `Vondsten` are linked to `J1`
+(WV-1.5-link-one-to-many). Example (WV-1.5-link-*): "de vindpremie van een Vondst is zijn
 waarde plus de bonus van de vinder van de Vondst", waarde 100, is open where the
 case gives V1 no vinder (vinder is open), 100 where `rolesEmpty` names `vinder`
 on V1 or `vinder` carries `complete: true`, open with a vinder without a bonus,
@@ -1143,28 +1182,71 @@ ervaren is settled. A role check ("een Vondst is toegewezen indien hij een
 vinder heeft", and its negation "vrij indien hij geen vinder heeft") is open in
 both polarities where `vinder` is open, stands not to hold (resp. holds) where
 `vinder` is settled absent, and holds (resp. stands not to hold) with a linked
-vinder even when the vinder's bonus is open. Over a two-step path (`Vondst ->
+vinder even when the vinder's bonus is open; conversely, on a `Jutter` whose
+`vondsten` is not closed, "vindend indien hij een vondst heeft" is open with no
+linked vondst and holds as soon as one vondst is linked, while his vondst count
+stays open until `rolesClosed` or `complete: true` closes `vondsten`. Over a two-step path (`Vondst ->
 vinder -> ploeg`, WV-1.5-link-two-step) and over a fold or quantifier fold whose
-`sourceRole` or `sourcePath` walks a to-one role (WV-1.5-link-fold-range), an
-open first or second to-one hop leaves the read open on the object whose to-one
-role is open, while a settled-absent first hop settles the read without reaching
-the second hop.
+`sourceRole` or `sourcePath` walks several hops (`Jutter -> vondsten ->
+bewaarplaats`, WV-1.5-link-fold-range), an open hop leaves an `Aggregation` open
+on the first open relation along the walk, while on a `QuantifierFold` `atLeast
+1` ("ten minste één van zijn bewaarplaatsen heeft capaciteit groter dan 5")
+holds as soon as one reached `Loods` qualifies even when another `Vondst` still
+has an open `bewaarplaats` or `vondsten` itself is open, and a settled-empty
+first hop settles the read without reaching the second hop.
 
-**A quantifier fold** (ch. 3.9a) reads the filter of every member of its
-range first, in order, and then the matrix of each member whose filter is not
-false, each as a judgement; the set is complete, as a relation is. Each member
-of the range is a member of a composite: for `all` and `the` it is true where
-its filter is false or its matrix true, for the other quantifiers where both
-are true, by Kleene's table, and the fold is the table of the composite over
-those members, read until its judgement stands. An open read in the filter or
-the matrix of one member leaves that member undetermined, not the fold. Where
-every filter stands this is the count of ch. 3.9a over the contributors, with
-its stop. A matrix is read provisionally, as a member of a composite is (**The
-judgement of a condition**), where a member before it is undetermined, and
-also where a filter is: every filter is read before every matrix, and whether
+**A quantifier fold** (ch. 3.9a) walks its range to obtain `(M, first_open_rel)`
+(**A read over a link**, above). Where the range is closed (`first_open_rel =
+None`), the set $M$ of *n* members is complete: it reads the filter of every
+member of $M$ first, in order, and then the matrix of each member whose filter
+is not false, each as a judgement. Each member of $M$ is a member of a
+composite: for `all` and `the` it is true where its filter is false or its
+matrix true, for the other quantifiers where both are true, by Kleene's table,
+and the fold is the table of the composite over those *n* members, read until
+its judgement stands. An open read in the filter or the matrix of one member
+leaves that member undetermined, not the fold. Where every filter stands this
+is the count of ch. 3.9a over the contributors, with its stop. Under a closed
+range a matrix is read provisionally, as a member of a composite is (**The
+judgement of a condition**), where a member before it is undetermined, and also
+where a filter is: every filter is read before every matrix, and whether
 ch. 3.9a reads a matrix depends on its own filter and, through the members it
-excludes, on every other. Example (WV-1.5-past-undetermined-fold,
-WV-1.5-past-undetermined-filter): "een Jutter is gelijkmatig indien al zijn
+excludes, on every other.
+
+Where the range is open (`first_open_rel = Some r_range`), an arbitrary number
+of unstated elements may still enter the range at any position ($u = \infty$),
+before or after the known members $M$. Over the known members $M$:
+- Every filter on $M$ is read first, in order. Because the fold may remain
+  `undetermined` (whose condition boundary drops §9.5 deposits), any §9.5
+  deposits emitted while evaluating filters on $M$ are held back and committed
+  only if the `QuantifierFold` reaches an established verdict (`true` or
+  `false`); if the `QuantifierFold` ends `undetermined`, its filter deposits
+  are dropped. A filter fault (`EF-*`) still faults where it arises.
+- Every matrix reached on $M$ (on contributors whose filter is not established
+  `false`) is read **provisionally** with `past = Some r_range`: what the
+  matrix deposits in the §9.5 channel is dropped, and an evaluation fault of
+  the matrix leaves that contributor `undetermined` without ending the session,
+  because an unstated element earlier in the range could stop the fold before
+  that matrix is reached.
+- With *h* known members established true (filter `false` or matrix `true` for
+  `all` and `the`; filter `true` and matrix `true` for the other quantifiers)
+  and *f* known members established false (filter `true` and matrix `false` for
+  `all` and `the`), the fold short-circuits monotonically under $u = \infty$:
+
+  | quantifier | established true when | established false when |
+  |---|---|---|
+  | `all`, `the` | never | *f* ≥ 1 |
+  | `none` | never | *h* ≥ 1 |
+  | `atLeast` *k* | *k* ≤ 0, or *h* ≥ *k* | never |
+  | `atMost` *k* | never | *k* < 0, or *h* ≥ *k* + 1 |
+  | `exactly` *k* | never | *k* < 0, or *h* ≥ *k* + 1 |
+
+  and is `undetermined` otherwise. It stops at the first contributor in $M$
+  where a column establishes `true` or `false` (leaving any remaining
+  contributors in $M$ unreached); if all of $M$ is read without establishing a
+  verdict, the fold is `undetermined` with open read `r_range`.
+
+Example (WV-1.5-past-undetermined-fold,
+WV-1.5-past-undetermined-filter, with `vondsten` declared complete): "een Jutter is gelijkmatig indien al zijn
 vondsten een gewicht gedeeld door hun deelnemers groter dan 2 hebben", over V1
 with 2 deelnemers and V2 with gewicht 9 and 0 deelnemers: without the gewicht
 of V1, V2 is false and gelijkmatig stands not to hold, without the EF-005 fact
@@ -1176,7 +1258,7 @@ minste twee van zijn vondsten die gemerkt zijn …", with that V1 gemerkt and a
 V2 of gewicht 10 and 2 deelnemers whose gemerkt the case does not name, stands
 not to hold without the fact; where V2 is gemerkt it stands not to hold with
 the fact, and where it stands that V2 is not gemerkt the read stops before the
-matrix of V1. Example (WV-1.5-quantifier-fold-*): "een Jutter is [Q] indien
+matrix of V1. Example (WV-1.5-quantifier-fold-*, closed `vondsten`): "een Jutter is [Q] indien
 [Q] van zijn vondsten een gewicht groter dan 10 hebben", over vondsten of 20,
 30 and one without a gewicht: `all` is open, `none` stands not to hold,
 `atLeast` 1 and 2 hold, `atMost` 1 and `exactly` 1 stand not to hold; over 5,
@@ -1186,11 +1268,27 @@ decide as they do. "Een Jutter is keurder indien al zijn vondsten die gemerkt
 zijn een gewicht groter dan 10 hebben", with a gemerkt vondst of 20 and one of
 5 whose gemerkt the case does not name, is open, where the document without
 the property attributes keurder; with that second vondst at 30 it holds. Over
-no vondst `all` holds and `atLeast` 1 stands not to hold.
+no vondst `all` holds and `atLeast` 1 stands not to hold. Example
+(WV-1.5-many-quantifier-*): with `vondsten` left open (neither `complete: true`
+nor in `rolesClosed`), over no linked vondst every quantifier (`all`, `none`,
+`atLeast` 1, `atMost` 1, `exactly` 1) is open; over one linked vondst of gewicht
+20, `atLeast` 1 holds and `none` stands not to hold while `all`, `atLeast` 2,
+`atMost` 1 and `exactly` 1 stay open; over one linked vondst of gewicht 5,
+`all` stands not to hold while `none`, `atLeast` 1, `atMost` 1 and `exactly` 1
+stay open; over two linked vondsten of gewicht 20 and 30, `atLeast` 2 holds and
+`atMost` 1 and `exactly` 1 stand not to hold while `all` stays open; naming
+`vondsten` in `rolesClosed` settles each of those open outcomes to its
+closed-collection verdict.
 
 **A fold over a set** — the sum, the minimum, the maximum, the first, the
 last, the count and the filled-value count over the members of a range (ch.
-3.4a), and a listed fold over such folds — reads the filter of each member
+3.4a, including `count` over an `InstanceSetUnion` of ch. 3.4d), and a listed
+fold over such folds — walks its range first (**A read over a link**, above).
+Where any relation step along the range (or any branch of an `InstanceSetUnion`)
+is open (`first_open_rel = Some r`), the fold breaks off immediately as an open
+read on `r` before any member filter or member value is read, with no interval
+arithmetic, no contributors, no §9.5 deposits and no filter or member faults
+(WV-1.5-many-set-fold). Where the range is closed (`first_open_rel = None`), it reads the filter of each member
 first and then its value. A member whose filter is false does not count, a
 settled leeg value is skipped as ch. 1.2 skips a leeg value, and a member
 whose filter is undetermined or whose value is open makes the fold open; a
@@ -1199,16 +1297,18 @@ filled-value count reads the value of each member, so an open value makes it
 open as it makes a sum open. A filter that tests on gevuld or leeg is
 undetermined for a member whose value is open (**The test on leeg and
 gevuld**), and makes the fold open as well. A fold over no contribution is
-settled leeg, or its fallback. Example (WV-1.5-set-fold): "het totaalgewicht
+settled leeg, or its fallback. Example (WV-1.5-set-fold, closed `vondsten`): "het totaalgewicht
 van een Jutter is de som van het gewicht van zijn vondsten", "het zwaargewicht
 … van zijn vondsten die een gewicht groter dan 10 hebben", their minimum, "het
 zwaaraantal" and "het vondstaantal": over vondsten of 20 and 5 they are 25,
 20, 5, 1 and 2; over 20 and a vondst without a gewicht all are open but the
 vondstaantal, 2; over no vondst the sums and the minimum are settled leeg and
-the counts 0, and "de som … of 0 als die er niet zijn" is 0. The sum of the
+the counts 0, and "de som … of 0 als die er niet zijn" is 0; where `vondsten`
+is open instead, all five are open even over vondsten of 20 and 5 until
+`rolesClosed` or `complete: true` closes `vondsten`. The sum of the
 vindloon of the card over a vondst of taxatie 2000 and one of taxatie 50 is
 10, the settled leeg vindloon skipped; with the second taxatie missing it is
-open. Example (WV-1.5-filled-in-a-fold): "het aantal gewogen vondsten van een
+open. Example (WV-1.5-filled-in-a-fold, closed `vondsten`): "het aantal gewogen vondsten van een
 Jutter is het aantal gevulde gewichten van zijn vondsten", over vondsten of
 20, without a gewicht and of 30, is open, and so are "een Jutter is volledig
 gewogen indien het aantal gevulde gewichten van zijn vondsten gelijk is aan
@@ -1243,12 +1343,14 @@ Vondst is gewoon indien (1 als zijn taxatie leeg is, anders 0) gelijk is aan
 
 **Complete input.** The declaration of an attribute or a characteristic can
 say that its input is complete (`complete`, IR-SPEC ch. 2.2), and a subtype
-inherits the member with it; the declaration of a non-reciprocal to-one role
-can say the same (`complete`, IR-SPEC ch. 2.6, WF-130). On an object where the member is input, a
+inherits the member with it; the declaration of a role of a non-reciprocal fact
+type, to-one or to-many, can say the same (`complete`, IR-SPEC ch. 2.6, WF-130). On an object where the member is input, a
 complete member without a value is settled leeg, and a complete
 characteristic the case does not name stands not to hold; on a case instance
-where no creation writes a non-reciprocal to-one role, a complete role without
-a link is settled absent (WV-1.5-link-complete). On an object where a
+where no creation writes a non-reciprocal role, a complete to-one role without
+a link is settled absent and a complete to-many role's standing links form the
+closed collection, empty (`[]`) where none holds (WV-1.5-link-complete,
+WV-1.5-many-complete). On an object where a
 rule other than an initialisation, or a defaults group with a default other
 than its initialisation default or with an exception group, writes the member,
 or where a creation writes the role, it follows its writers and
@@ -1257,8 +1359,8 @@ input, and declared complete it is settled leeg above the initialisation,
 which gives its value (WV-1.5-initialisation-input,
 WV-1.5-stack-initialisation-alone); in a
 document without the property nothing is open, and the field changes no
-outcome. A session can treat every input member and every non-reciprocal to-one
-input role as complete (`--closed-inputs`), the measurement
+outcome. A session can treat every input member and every non-reciprocal
+input role (to-one and to-many) as complete (`--closed-inputs`), the measurement
 of preservation below. Example (WV-1.5-complete-*): the uitbetaling of the
 first example, with the vindloon declared complete and bergloon 3, is 3, and
 so with the vindloon and the bergloon declared complete, and in a session that
@@ -1278,10 +1380,15 @@ that carry links (`roles`) and the
 characteristics that hold (`characteristics`), the input of an object can name
 the scalar, non-time-dependent, undimensioned attributes that stand to have no
 value (`attributesEmpty`, ch. 5.7), the non-reciprocal to-one roles that stand
-to have no link (`rolesEmpty`, ch. 5.7) and the characteristics that stand not to
+to have no link (`rolesEmpty`, ch. 5.7), the non-reciprocal to-many roles whose
+linked instances on this object form the complete set (`rolesClosed`, ch. 5.7)
+and the characteristics that stand not to
 hold (`characteristicsAbsent`, ch. 5.7). Where the member or role is an unwritten input,
-an attribute in `attributesEmpty` is settled `leeg`, a role in `rolesEmpty` is
-settled absent and a
+an attribute in `attributesEmpty` is settled `leeg`, a to-one role in `rolesEmpty` is
+settled absent, a to-many role in `rolesClosed` is closed at its standing links
+(settled empty `[]` where no link holds it, or closed over the concrete links
+given under `roles` or materialised from the counterpart side — unlike
+`rolesEmpty`, `rolesClosed` is valid alongside links) and a
 characteristic in `characteristicsAbsent` stands not to hold, instead of being
 open; where its declaration already says that its input is complete, the field
 changes nothing. Where only an initialisation writes an attribute — an
@@ -1292,8 +1399,8 @@ initialisation**, **The initialisation of a stack**, above). On an object where
 a rule other than an initialisation, or a defaults group with a default other
 than its initialisation default or with an exception group, writes the member,
 or where a creation writes the role, the member or role follows its writers — an initialisation below them included — and
-`attributesEmpty`, `rolesEmpty` and `characteristicsAbsent` change nothing, as under
-`complete`: it is settled `leeg` (or settled absent, or stands not to hold) where it stands of
+`attributesEmpty`, `rolesEmpty`, `rolesClosed` and `characteristicsAbsent` change nothing, as under
+`complete`: it is settled `leeg` (or settled absent, or closed, or stands not to hold) where it stands of
 every writer that it fills nothing, takes its initialisation's value where one
 stands below them, stays open while a writer leaves it open, and takes the
 writer's value (or link, or holds) where a writer decides. An expectation
@@ -1301,8 +1408,8 @@ writer's value (or link, or holds) where a writer decides. An expectation
 `characteristicAbsent` where the characteristic stands not to hold, and
 `attributeOpen` and `characteristicOpen` where the member is open.
 In a document without the property nothing is open: the first two read as
-ch. 1.2 does, the last two hold nowhere, and `attributesEmpty`, `rolesEmpty` and
-`characteristicsAbsent` change no outcome. On the input before any rule is
+ch. 1.2 does, the last two hold nowhere, and `attributesEmpty`, `rolesEmpty`,
+`rolesClosed` and `characteristicsAbsent` change no outcome. On the input before any rule is
 evaluated nothing is open either.
 Example (WV-1.5-case-*): with the vindloon of the examples above and no
 taxatie, `attributeOpen` holds for the vindloon and `attributeEmpty` does
@@ -1333,34 +1440,40 @@ The golden `jutterswet-afleiden-uit-leeg` has a case per state.
 **The two requirements.** *Monotonicity*: giving an open input member a value —
 stating in the case that it has no value (`attributesEmpty`) or does not
 hold (`characteristicsAbsent`), stating that an openable non-reciprocal to-one
-input role has no link (`rolesEmpty`), or supplying a link on a non-reciprocal
-to-one–to-one fact type both of whose roles are openable input roles — adds outcomes and changes none — an outcome
+input role has no link (`rolesEmpty`), stating that an openable non-reciprocal
+to-many input role is closed (`rolesClosed`), or supplying a link on a
+non-reciprocal fact type both of whose directed role positions on the linked
+instances are openable and unclosed input roles — adds outcomes and changes none — an outcome
 being a value, a settled leeg attribute, a characteristic that holds or stands
-not to hold, a concrete link, or a §9.5 fact — without exception. A member or to-one role declared complete is not open: without a value or link it
-is settled leeg or settled absent, and a value or link the case gives it can change an outcome; that is
-the author's closing at the edge. Likewise, a link on a fact type where at least
-one side is to-many (`many: true`), declared `complete`, or written by a
-creation is not an open-input relaxation on both ends: dropping a link `(J1, V1)`
-where `Jutter.vondsten` is `many: true` changes the closed collection
-`J1.vondsten` (for example its `count` from 1 to 0), whereas on a non-reciprocal
-to-one–to-one fact type whose two roles are both unwritten and not `complete`,
-leaving the link out leaves both role positions open. A value the case gives a derived member is
+not to hold, a concrete link, or a §9.5 fact — without exception. A member or non-reciprocal role declared complete is not open: without a value or link it
+is settled leeg, settled absent or closed (`[]`), and a value or link the case gives it can change an outcome; that is
+the author's closing at the edge. Likewise, a link on a reciprocal fact type, or
+on a non-reciprocal fact type where at least one end is declared `complete`,
+written by a creation on its instance's type, or (for a to-many end) closed in
+`rolesClosed` on its instance, is not an open-input relaxation on both ends:
+dropping `(J1, V1)` while `J1` keeps `vondsten` in `rolesClosed` (or while
+`vondsten` carries `complete: true`) shrinks a closed collection `[V1]` to the
+closed collection `[]` (changing `count` from 1 to 0), whereas when `J1.vondsten`
+is unclosed and `V1.vinder` is unwritten and not `complete`, leaving the link
+out leaves **both** directed role positions (`J1.vondsten` and `V1.vinder`) open. A value the case gives a derived member is
 no input member's: where every writer fills nothing it stands in place of
 settled leeg. Adding or removing an object is not giving a member or role a value. It holds where both
 sessions end: an input given can make a session fault that ended without it,
 where an evaluation then reaches a fault, or a member of a composite or a
 default of a stack that faults is no longer read provisionally. *Preservation with complete knowledge*: where nothing is
-open, every input member and non-reciprocal to-one input role given or complete, the outcomes are those of ch.
+open, every input member and non-reciprocal input role (to-one and to-many) given, closed or complete, the outcomes are those of ch.
 1.2–1.4. Example (WV-1.5-monotone, WV-1.5-preserved): every example of this
-section, run once with each open input (including `rolesEmpty` entries and
-openable `1:1` links) left out, and once with
+section, run once with each open input (including `rolesEmpty` entries,
+`rolesClosed` entries and openable unclosed non-reciprocal links) left out, and once with
 every input complete against the same document without the property.
 Gate 5 holds both over the corpus: every golden whose forms the reference
 interpreter carries, with the property, plays its own cases with every input
-complete; and per case and per input member, `rolesEmpty` entry or openable
-`1:1` link it gives, the end state
+complete; and per case and per input member, `rolesEmpty` entry, `rolesClosed`
+entry or openable unclosed non-reciprocal link it gives, the end state
 without that input (ch. 5.12a) keeps its every outcome in the end state with
-it. Whether the member or role left out is an open input is read off the
+it, and any new concrete link between two case instances in the full end state
+stands only where **both** directed role positions of that link were open in the
+reduced end state. Whether the member or role left out is an open input is read off the
 document: an open input is open in the end state without its input, and
 a member or role declared complete that nothing writes is not. A run that leaves out a
 derived member or role, or a member declared complete that an initialisation writes, is
@@ -5850,14 +5963,17 @@ error (ch. 5.8c). A characteristic the input names as holding
 (`characteristics`) and as not holding (`characteristicsAbsent`, ch. 1.5) is
 refused, since the case states both (EF-047). An attribute the input gives a
 value (`attributes`) and names as having none (`attributesEmpty`, ch. 1.5) is
-refused for the same reason (EF-048). Each entry of `rolesEmpty` (ch. 1.5)
+refused for the same reason (EF-048). Each entry of `rolesEmpty` and of `rolesClosed` (ch. 1.5)
 resolves from the instance's object type as `roles` does: a name no fact type
 declares is EF-040 (`label`, `name`), a role key that resolves to no role
-opposite the instance's object type is a case error without a code, a role key
-that resolves to two roles from the instance's object type is EF-001 (`roleKey`,
-`objectType`), and a to-many role or a role of a reciprocal fact type in
-`rolesEmpty` is a case error without a code (`rolesEmpty` closes only a
-non-reciprocal to-one role). Where a role named in `rolesEmpty` on an instance
+opposite the instance's object type is a case error without a code, and a role
+key that resolves to two roles from the instance's object type is EF-001
+(`roleKey`, `objectType`). In `rolesEmpty`, a to-many role (`many: true`) or a
+role of a reciprocal fact type (`reciprocal: true`) is a case error without a
+code (`rolesEmpty` closes only a non-reciprocal to-one role); in `rolesClosed`,
+a to-one role (`many: false`) or a role of a reciprocal fact type (`reciprocal:
+true`) is a case error without a code (`rolesClosed` closes only a
+non-reciprocal to-many role). Where a role named in `rolesEmpty` on an instance
 is also linked in that same directed role position on the instance — whether
 through `roles` on the instance itself or through the opposite role on the
 counterpart instance after reverse legs are materialised (ch. 5.7a) — the case
@@ -5865,10 +5981,14 @@ input is refused with EF-049 (`label`, `role`, where `role` is the entry as
 written in `rolesEmpty`, or the first conflicting entry in list order when
 several entries name that role); on a non-reciprocal
 self-relation the two roles occupy distinct positions, so linking one role on an
-instance does not conflict with naming the other in `rolesEmpty`. Naming one item twice within
-`attributesEmpty`, `rolesEmpty` (by singular or declared plural of the same role)
-or `characteristicsAbsent` states the same absence and
-is idempotent. An `attributeValue`, `attributeEmpty` or `attributeOpen`
+instance does not conflict with naming the other in `rolesEmpty`. In contrast,
+naming a non-reciprocal to-many role in `rolesClosed` alongside links in that
+same role position (under `roles` on the instance or from a counterpart
+instance) is valid and states that those links form the complete collection on
+the instance (`[]` when no link holds it). Naming one item twice within
+`attributesEmpty`, `rolesEmpty` (by singular or declared plural of the same
+role), `rolesClosed` (by singular or declared plural of the same role) or
+`characteristicsAbsent` states the same closure and is idempotent. An `attributeValue`, `attributeEmpty` or `attributeOpen`
 expectation or an `attributesEmpty` entry on a time-dependent attribute, an
 `attributesEmpty` entry on a dimensioned attribute, and a
 `characteristicPresent`, `characteristicAbsent` or `characteristicOpen`
@@ -7842,31 +7962,37 @@ has there:
 - after `undetermined` stands the open read that left the node so: `open`, the
   object, and the member read open by the name its object's type declares, an
   attribute and a characteristic of one name each by its own declaration, or a
-  relation open on the object (ch. 1.5: an open non-reciprocal to-one input role
-  or a relation left open by a creation) by the declared name of the far role
-  (`Role.name`). At a node broken
+  relation open on the object (ch. 1.5: an open non-reciprocal input role,
+  to-one or to-many, or a relation left open by a creation) by the declared
+  name of the far role (`Role.name`). At a node broken
   off and at an atomic condition that is the member or role the evaluation read open (on
   a navigated `AttributeReference` or `CharacteristicCheck`, the first open hop
   along the path, with no reached target object after `on`);
   at a composite, the open read of its first undetermined member; at an
   aggregation or a
   quantifier fold, the first open relation hop of its `sourceRole` or `sourcePath`
+  (or, for `count` over an `InstanceSetUnion`, of its branches in branch order)
   where one is open, and else (for a quantifier fold) the
   open read of its first undetermined member, of its filter where the filter
   is undetermined and else of its matrix; at a node that an undetermined
   condition broke off, that condition's; at a member of a composite or a
   matrix of a quantifier fold that a fault left undetermined (ch. 1.5, read
-  provisionally), the open read of the first member or filter read before it
-  that is undetermined. Inside such a member
+  provisionally), the first open relation hop of the quantifier fold's range
+  where the range is open, and else the open read of the first member or filter
+  read before it that is undetermined. Inside such a member
   the node that faulted, and every node the fault passed on its way out to the
   member, carries `fault` with its code.
 
 A composite and a quantifier fold read their members until their judgement
-stands (ch. 1.5), and the members after that are not reached. A contributor
+stands (ch. 1.5), and the members after that are not reached (including the
+remaining known contributors of a quantifier fold that short-circuits on an
+open range). A contributor
 of a quantifier fold carries the truth of the matrix on it, `undetermined`
 among them, and says whether its filter is undetermined (**Folds over a
-set**, below); a fold over a set that an open read broke off carries no
-contributors. The status follows the three outcomes of ch. 1.5: `HOLDS` where
+set**, below), also when the quantifier fold's range is open (`first_open_rel
+= Some r`) and the quantifier fold itself stays `undetermined` with `open` on
+`r` (carrying no contributors when no known member passes its filter); an
+aggregation that an open read broke off carries no contributors. The status follows the three outcomes of ch. 1.5: `HOLDS` where
 the condition is true and the value has no open read, a leeg value and a
 value that faults included; `FAILS` where the condition is false; and `OPEN`
 where the form leaves its target open, its condition undetermined or its
@@ -8159,10 +8285,14 @@ number. A node with the form anchor there (ch. 3.4a) is read per member too
 and has none either, although its value does not depend on the member (card
 `subselection-reads-subject`, 2026-10-23, B7). The node of a fold over a set
 carries its **contributors** instead: the members of its range whose filter
-holds, and of a quantifier fold the members whose filter is true or
-undetermined, that is, not false (ch. 1.5; any other fold over a set whose
-filter is undetermined on a member is broken off and carries none, **Open
-values**, above). A member
+holds (when no open relation hop or undetermined filter broke the aggregation
+off; an aggregation broken off by an open range hop or undetermined filter
+carries none, **Open values**, above), and of a quantifier fold the known
+members of its range whose filter is true or undetermined, that is, not false
+(ch. 1.5, both when its range is closed and when its range is open: on an open
+range a quantifier fold that stays `undetermined` carries `open` on its first
+open range hop followed by the `contributors` of its known non-false-filter
+members, or no `contributors` suffix when none exists). A member
 whose filter is false is no contributor, also where the filter has an open
 part: "die aan alle volgende voorwaarden voldoen: hij is gemerkt, hij is
 drijfhout" is false on a vondst that stands not gemerkt, whatever its
@@ -8804,10 +8934,12 @@ link "<fact type>" "<role>" open "<role>" <object>
 - `channel`: the rule as the deposit names it, the subject, and the codes
   ascending, joined by `,`, or `-` where no deposit named one.
 - `open`: an open member, `open` in the place of its value; a relation open
-  on an object (ch. 1.5: an open non-reciprocal to-one input role or a relation
-  a creation leaves open), as a link with `open` in the place of the objects
-  that could fill the far role opposite the object's role position, the roles in
-  the order the fact type declares them, as for a link.
+  on an object (ch. 1.5: an open non-reciprocal input role, to-one or to-many,
+  or a relation a creation leaves open), as a link with `open` in the place of
+  the objects that could fill the far role opposite the object's role position,
+  the roles in the order the fact type declares them, as for a link (emitted
+  alongside any concrete `link` lines already standing on an open to-many role
+  or open creation).
 
 The text does not hold the order of the links of one object over one role
 (ch. 5.7a): the lines are sorted (*provisional decision of the builder of

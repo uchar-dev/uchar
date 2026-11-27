@@ -561,7 +561,7 @@ type role_ref = {
   role_many : bool;
   role_complete : bool;
       (* complete (IR-SPEC ch. 2.6, WF-130): written true or not at all on a
-         non-reciprocal to-one role *)
+         role of a non-reciprocal fact type *)
 }
 
 type fact_type_name = {

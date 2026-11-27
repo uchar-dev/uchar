@@ -1946,8 +1946,8 @@ let wf013 ctx =
       | _ -> [])
     ctx.doc.fact_types
 
-(* WF-130 (IR-SPEC ch. 2.6): only a to-one role of a non-reciprocal fact type
-   may declare its input complete (RUNTIME-SEMANTICS ch. 1.5). *)
+(* WF-130 (IR-SPEC ch. 2.6): only a role of a non-reciprocal fact type may
+   declare its input complete (RUNTIME-SEMANTICS ch. 1.5). *)
 let wf130 ctx =
   List.concat
     (List.mapi
@@ -1955,24 +1955,16 @@ let wf130 ctx =
          List.concat
            (List.mapi
               (fun j (r : role_ref) ->
-                if not r.role_complete then []
+                if not r.role_complete || not ft.reciprocal then []
                 else
                   let rname = Option.value r.role_identifier ~default:"" in
                   let at = Printf.sprintf "/model/factTypes/%d/roles/%d/complete" i j in
                   let params = [ ("factType", fn); ("role", rname) ] in
-                  if ft.reciprocal then
-                    [ v ~params "WF-130.reciprocal-role" at
-                        (Printf.sprintf
-                           "the role '%s' of the reciprocal fact type '%s' carries complete: only a to-one role of a \
-                            non-reciprocal fact type may declare its input complete"
-                           rname fn) ]
-                  else if r.role_many then
-                    [ v ~params "WF-130.to-many-role" at
-                        (Printf.sprintf
-                           "the to-many role '%s' of the fact type '%s' carries complete: only a to-one role of a \
-                            non-reciprocal fact type may declare its input complete"
-                           rname fn) ]
-                  else [])
+                  [ v ~params "WF-130.reciprocal-role" at
+                      (Printf.sprintf
+                         "the role '%s' of the reciprocal fact type '%s' carries complete: only a role of a \
+                          non-reciprocal fact type may declare its input complete"
+                         rname fn) ])
               ft.role_names))
        ctx.doc.fact_types)
 

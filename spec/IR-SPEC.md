@@ -1747,11 +1747,11 @@ A **Role**:
 | `objectType` | string | filler object-type name (resolves per WF-003) |
 | `plural` | string? | declared plural; absent = none |
 | `many` | boolean | cardinality: to-many (`meerdere`) vs to-one (`één`) |
-| `complete` | `true`? | the input of this non-reciprocal to-one role is complete (below; WF-130); written `true` or not at all |
+| `complete` | `true`? | the input of this role of a non-reciprocal fact type is complete (below; WF-130); written `true` or not at all |
 | `origin` | Origin? | extension field: the declaration a producer made this one from, and the form that made it (ch. 2.13); absent on a declaration the source declares |
 | `designations` | list of Designation? | extension field: the role's names in the vocabularies (ch. 2.12) |
 
-**complete** is the role declaration's statement that the input of a non-reciprocal to-one role is complete, `layer: core` (`RUNTIME-SEMANTICS.md` ch. 1.5, "Complete input"). In a document with `inferFromEmpty: false`, a non-reciprocal to-one role without the field is open on a case instance whose type fills the opposite role when no creation writes that role on the instance's type, no link holds the instance there, and `rolesEmpty` does not name the role on the instance; with the field it is settled absent there. On an object where a creation writes the role, the role follows its writers and the field changes nothing; in a document without `inferFromEmpty: false` nothing is open, and the field changes no outcome. The field is a boolean with one spelling, `true`, standing directly after `many` and before `origin`; `false`, `null` and every other value are a load error at the field for every reader, the verifier included. A to-many role and a role of a reciprocal fact type do not carry it (WF-130; the schema admits the field on every `Role` so that the verifier's own witnesses validate structurally).
+**complete** is the role declaration's statement that the input of a role of a non-reciprocal fact type is complete, `layer: core` (`RUNTIME-SEMANTICS.md` ch. 1.5, "Complete input"). In a document with `inferFromEmpty: false`, on a case instance whose type fills the opposite role and where no creation writes that role on the instance's type, a non-reciprocal to-one role without the field is open where no link holds the instance there and `rolesEmpty` does not name the role on the instance (with the field it is settled absent there), and a non-reciprocal to-many role without the field is open unless `rolesClosed` names the role on the instance, even when links already hold the instance there (with the field its standing links on the instance form the closed set, empty where none holds). On an object where a creation writes the role, the role follows its writers and the field changes nothing; in a document without `inferFromEmpty: false` nothing is open, and the field changes no outcome. The field is a boolean with one spelling, `true`, standing directly after `many` and before `origin`; `false`, `null` and every other value are a load error at the field for every reader, the verifier included. A role of a reciprocal fact type does not carry it (WF-130; the schema admits the field on every `Role` so that the verifier's own witness validates structurally).
 
 v0 names: `Feittype`, `Rol`. The v0 model layer is already symbolic — no
 bean-field names appear here; the bean-field leakage lives in the v0
@@ -1843,15 +1843,13 @@ longer exists.
   default as a requirement; for non-reciprocal roles v0 matches
   cardinality segments fail-open (an unmatched role silently stays
   to-one). **Delta (promotion)** for the fail-open part.
-- **WF-130** Only a to-one role (`many: false`) of a non-reciprocal fact
-  type (`reciprocal: false`) MUST carry `complete: true`: a role of a
-  reciprocal fact type (`WF-130.reciprocal-role`, negative
-  `wf130-reciprocal-role`) and a to-many role (`WF-130.to-many-role`,
-  negative `wf130-to-many-role`) are refused. Under `inferFromEmpty: false`,
-  open role input is defined on non-reciprocal to-one roles (`RUNTIME-SEMANTICS.md`
-  ch. 1.5); a to-many collection and a symmetric reciprocal relation are
-  outside that domain, so `complete: true` there would claim a closure
-  nothing reads.
+- **WF-130** Only a role of a non-reciprocal fact type (`reciprocal: false`,
+  whether `many: false` or `many: true`) MUST carry `complete: true`: a role of
+  a reciprocal fact type (`WF-130.reciprocal-role`, negative
+  `wf130-reciprocal-role`) is refused. Under `inferFromEmpty: false`, open role
+  input is defined on non-reciprocal roles (`RUNTIME-SEMANTICS.md` ch. 1.5); a
+  symmetric reciprocal relation is outside that domain, so `complete: true`
+  there would claim a closure nothing reads.
 
 **Roles and object-type members are separate namespaces.** WF-002 states
 that attributes and characteristics are separate namespaces; roles are a
@@ -10564,7 +10562,7 @@ reports; a key the verifier composes at run time is not counted.
 | WF-127 | removed 2026-11-23: a `PayloadAccess` read the payload of a sum-type value under a test of its constructor; the node and the absence markers of the RegelSpraak dialect, its only producer, were removed (ch. 4.7, history; card `one-empty`) | — | — | the negatives `wf127-*` were removed with it |
 | WF-128 | an allocation names no time-dependent attribute: not as its amount, share or rest, and not as its weight, cap or ordering key (ch. 3.2; card `timeline-initialisation-allocation-creation`, 2026-11-05) | gate 3 | every golden allocation, among them `jutterswet-berging` + `jutterswet-rangaflopend` (executed by gates 5–6) | `wf128-source-attribute` + `wf128-target-attribute` + `wf128-remainder-attribute` + `wf128-ratio-attribute` + `wf128-maximum-attribute` + `wf128-ordering-attribute` |
 | WF-129 | a text part that writes the unit of its number (`EmbeddedExpression.unit`) has a type with a unit — a number with a `unit`, a percentage among them (ch. 4.2; card `tekst-van-een-waarde-in-een-tekstsamenstelling`, 2026-11-06) | gate 3 | `jutterswet-tekst-van-een-waarde` (executed by gates 5 and 12) | `wf129-number-without-unit` + `wf129-not-a-number` |
-| WF-130 | only a to-one role (`many: false`) of a non-reciprocal fact type (`reciprocal: false`) may carry `complete: true` (ch. 2.6; card `open-to-one-roles`, 2026-11-26): a to-many role (`WF-130.to-many-role`) and a role of a reciprocal fact type (`WF-130.reciprocal-role`) are closed collections or symmetric pairs outside the open-to-one input domain of `RUNTIME-SEMANTICS.md` ch. 1.5 | gate 3 | every golden with a role declaration (and the strict goldens carrying `(volledig gegeven)` on a to-one role) | `wf130-to-many-role` + `wf130-reciprocal-role` |
+| WF-130 | only a role of a non-reciprocal fact type (`reciprocal: false`, to-one or to-many) may carry `complete: true` (ch. 2.6; cards `open-to-one-roles` and `open-to-many-roles`, 2026-11-27): a role of a reciprocal fact type (`WF-130.reciprocal-role`) is a symmetric pair outside the open-role input domain of `RUNTIME-SEMANTICS.md` ch. 1.5 | gate 3 | every golden with a role declaration (and the strict goldens carrying `(volledig gegeven)` on a non-reciprocal role) | `wf130-reciprocal-role` |
 
 Promotion summary (v0 → v1), for the migration record. **Model layer
 (WF-001..019):** v0 enforces none of these as errors — that layer is

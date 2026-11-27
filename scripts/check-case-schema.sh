@@ -1,7 +1,7 @@
 #!/bin/sh
 # Gate 4: corpus case files (spec/schema/uchar-case-v0.schema.json).
 #
-# Five checks:
+# Six checks:
 #   1. the case schema is itself a valid draft 2020-12 schema (metaschema);
 #  1b. the schema's patterns are held against a fixed lexeme table, in both
 #      polarities and through the validator the corpus check uses, with no
@@ -12,7 +12,11 @@
 #   3. every case file sits beside an ir.json;
 #   4. zone discipline: a golden case carries `expected` (never
 #      `expectedFault`), a red case carries `expectedFault` — a red
-#      case can never hide inside the green corpus, or vice versa.
+#      case can never hide inside the green corpus, or vice versa;
+#   5. canonical key order: every object in every case file follows the
+#      `properties` order of its schema definition (`rolesClosed` directly
+#      after `rolesEmpty` and before `characteristics`), held by self-test
+#      rows in both polarities.
 # A zone without a case file fails: an empty input set is never silently green.
 #
 # NO monotone floor here (maintainer decision 2026-09-09, the counting-floors
@@ -315,6 +319,16 @@ STATE_ROWS = [
     ("#/$defs/instance", _v1(rolesEmpty="vinder"), False, "a list, never a single name"),
     ("#/$defs/instance", _v1(rolesEmpty={"vinder": None}), False,
      "a list of names, never an object of nulls"),
+    ("#/$defs/instance", _v1(rolesClosed=["vondsten"]), True,
+     "a non-reciprocal to-many role the case states is closed"),
+    ("#/$defs/instance", _v1(roles={"vondsten": ["V2"]}, rolesClosed=["vondsten"]), True,
+     "rolesClosed alongside linked labels closes the collection at those labels"),
+    ("#/$defs/instance", _v1(rolesClosed=[]), True, "an empty list states nothing, as 'rolesClosed' may"),
+    ("#/$defs/instance", _v1(rolesClosed=[""]), False, "a closed role is named"),
+    ("#/$defs/instance", _v1(rolesClosed=[None]), False, "a closed role is a non-empty string"),
+    ("#/$defs/instance", _v1(rolesClosed="vondsten"), False, "a list, never a single name"),
+    ("#/$defs/instance", _v1(rolesClosed={"vondsten": []}), False,
+     "a list of names, never an object of arrays"),
     ("#/$defs/instance", _v1(characteristicsAbsent=["gemeld"]), True,
      "a characteristic the case states does not hold"),
     ("#/$defs/instance", _v1(characteristicsAbsent=[]), True, "an empty list states nothing, as 'characteristics' may"),
@@ -347,6 +361,125 @@ if selftest_bad:
     sys.stderr.write("check-case-schema: FAIL (%d self-test row(s) bad)\n" % selftest_bad)
     sys.exit(1)
 
+
+def _deref(s):
+    while isinstance(s, dict) and "$ref" in s:
+        cur = schema
+        for seg in s["$ref"][2:].split("/"):
+            cur = cur[seg]
+        s = cur
+    return s
+
+
+def _candidates(inst, s):
+    s = _deref(s)
+    alts = s.get("oneOf") or s.get("anyOf")
+    out = [s] if alts is None or "properties" in s else [c for alt in alts for c in _candidates(inst, alt)]
+    if isinstance(inst, dict):
+        keep = []
+        for c in out:
+            props = c.get("properties")
+            if props is None:
+                if alts is None and isinstance(c.get("additionalProperties"), dict):
+                    keep.append(c)
+                continue
+            kind = props.get("kind")
+            if isinstance(kind, dict) and "const" in kind and inst.get("kind") != kind["const"]:
+                continue
+            if any(r not in inst for r in c.get("required", [])):
+                continue
+            if c.get("additionalProperties") is False and any(k not in props for k in inst):
+                continue
+            keep.append(c)
+        return keep
+    if isinstance(inst, list):
+        return [c for c in out if "items" in c]
+    return []
+
+
+def _ptr(path, key):
+    return "%s/%s" % (path, str(key).replace("~", "~0").replace("/", "~1"))
+
+
+ko_devs = []
+
+
+def _key_order(inst, s, path, doc):
+    if isinstance(inst, dict):
+        cs = _candidates(inst, s)
+        if not cs:
+            return
+        if "properties" not in cs[0]:
+            for k, v in inst.items():
+                _key_order(v, cs[0]["additionalProperties"], _ptr(path, k), doc)
+            return
+        follows = [c for c in cs if [k for k in c["properties"] if k in inst]
+                   == [k for k in inst if k in c["properties"]]]
+        if not follows:
+            ko_devs.append((doc, path or "<root>", list(inst),
+                            [k for k in cs[0]["properties"] if k in inst]))
+        c = (follows or cs)[0]
+        for k, v in inst.items():
+            if k in c["properties"]:
+                _key_order(v, c["properties"][k], _ptr(path, k), doc)
+            elif isinstance(c.get("additionalProperties"), dict):
+                _key_order(v, c["additionalProperties"], _ptr(path, k), doc)
+    elif isinstance(inst, list):
+        cs = _candidates(inst, s)
+        if cs:
+            for i, x in enumerate(inst):
+                _key_order(x, cs[0]["items"], _ptr(path, i), doc)
+
+
+def _case_with_instance_keys(pairs):
+    return {
+        "format": "uchar-case-v0",
+        "asOfDate": None,
+        "input": {"instances": [dict(pairs)], "parameters": {}},
+        "expected": [{"kind": "consistent"}],
+    }
+
+
+ORDER_ROWS = [
+    ("rolesClosed directly after rolesEmpty and before characteristics",
+     _case_with_instance_keys([
+         ("label", "J1"), ("objectType", "Jutter"), ("attributes", {}),
+         ("roles", {}), ("rolesEmpty", ["mentor"]), ("rolesClosed", ["vondsten"]),
+         ("characteristics", []),
+     ]), True),
+    ("rolesClosed directly after roles when rolesEmpty is absent",
+     _case_with_instance_keys([
+         ("label", "J1"), ("objectType", "Jutter"), ("attributes", {}),
+         ("roles", {"vondsten": ["V1"]}), ("rolesClosed", ["vondsten"]),
+         ("characteristics", []),
+     ]), True),
+    ("rolesClosed before rolesEmpty",
+     _case_with_instance_keys([
+         ("label", "J1"), ("objectType", "Jutter"), ("attributes", {}),
+         ("roles", {}), ("rolesClosed", ["vondsten"]), ("rolesEmpty", ["mentor"]),
+         ("characteristics", []),
+     ]), False),
+    ("rolesClosed after characteristics",
+     _case_with_instance_keys([
+         ("label", "J1"), ("objectType", "Jutter"), ("attributes", {}),
+         ("roles", {}), ("characteristics", []), ("rolesClosed", ["vondsten"]),
+     ]), False),
+]
+for row, doc, want_in_order in ORDER_ROWS:
+    n_selftest += 1
+    seen = len(ko_devs)
+    _key_order(doc, schema, "", "<self-test>")
+    got_in_order = len(ko_devs) == seen
+    del ko_devs[seen:]
+    if got_in_order != want_in_order:
+        selftest_bad += 1
+        sys.stderr.write("FAIL: key-order self-test, %s: case %s the schema's order, expected it %s\n"
+                         % (row, "follows" if got_in_order else "breaks",
+                            "to follow" if want_in_order else "to break"))
+if selftest_bad:
+    sys.stderr.write("check-case-schema: FAIL (%d self-test row(s) bad)\n" % selftest_bad)
+    sys.exit(1)
+
 failed = 0
 for path in files:
     try:
@@ -363,6 +496,7 @@ for path in files:
         sys.stderr.write("FAIL: %s\n  at: %s\n  %s\n" % (path, loc, be.message))
         failed += 1
         continue
+    _key_order(doc, schema, "", path)
     # zone discipline, checked structurally on the parsed keys: a red
     # case can never hide inside the green corpus, or vice versa.
     if path.startswith("corpus/golden/") and "expectedFault" in doc:
@@ -373,6 +507,10 @@ for path in files:
         sys.stderr.write("FAIL: %s carries no expectedFault inside corpus/red — "
                          "green cases live in corpus/golden\n" % path)
         failed += 1
+for doc_path, ptr, got, want in ko_devs:
+    sys.stderr.write("FAIL: %s at %s: the keys %s are not in the schema's order %s\n"
+                     % (doc_path, ptr, ", ".join(got), ", ".join(want)))
+    failed += 1
 if failed:
     sys.exit(1)
 print(n_selftest)

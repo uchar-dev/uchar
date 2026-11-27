@@ -3609,19 +3609,27 @@ on a supertype of `otype`):
   `ctx.closed_inputs`, `ot.characteristic_complete` (`complete: true`),
   or `characteristicsAbsent` (`case.world.stated_absent`) names it, emits
   `hasnot(label,k).`; otherwise emits nothing (open).
-- **Unwritten non-reciprocal to-one input role**: when `not ctx.closed_inputs`,
-  for each binary non-reciprocal `FactType` `ft` (`reciprocal = false`, roles
-  `[r0; r1]`) and each directed pair `(near, far)` with `far.role_many = false`
-  and `isa ctx i.otype near.objectType` that no creation writes on `i.otype`
+- **Unwritten non-reciprocal input role (to-one and to-many)**: when
+  `not ctx.closed_inputs`, for each binary non-reciprocal `FactType` `ft`
+  (`reciprocal = false`, roles `[r0; r1]`) and each directed pair `(near, far)`
+  with `isa ctx i.otype near.objectType` that no creation writes on `i.otype`
   (`not (written_role_on ctx ~otype:i.otype ~fact_type:ftn ~far)`, computed
-  independently in `translate.ml` without calling `Uchar_ref.Eval`),
-  if no link holds `(i, ftn, far)` in `case.world` (after reverse-leg
-  materialisation), `not far.role_complete`, and `rolesEmpty`
-  (`case.world.stated_roles_empty`) does not name `(i.label, link_key ~fact_type:ftn far)`,
-  `input_states` emits `ropen(label, role_term ~fact_type:ftn far).`. On an
-  object minted by `ObjectCreation`, `input_states` does not run, so an
-  unassigned to-one role on a minted object carries no `ropen/2` fact and is
-  settled absent unless a creation leaves it open.
+  independently in `translate.ml` without calling `Uchar_ref.Eval`) and
+  `not far.role_complete`:
+  - when `far.role_many = false`: if no link holds `(i, ftn, far)` in
+    `case.world` (after reverse-leg materialisation) and `rolesEmpty`
+    (`case.world.stated_roles_empty`) does not name
+    `(i.label, link_key ~fact_type:ftn far)`, `input_states` emits
+    `ropen(label, role_term ~fact_type:ftn far).`;
+  - when `far.role_many = true`: if `rolesClosed`
+    (`case.world.stated_roles_closed`) does not name
+    `(i.label, link_key ~fact_type:ftn far)`, `input_states` emits
+    `ropen(label, role_term ~fact_type:ftn far).` regardless of whether zero
+    or more `role/3` links already hold `(i, ftn, far)` in `case.world`.
+  On an object minted by `ObjectCreation`, `input_states` does not run, so an
+  unassigned non-reciprocal role on a minted object carries no `ropen/2` fact
+  and is settled absent (`many = false`) or closed `[]` (`many = true`) unless
+  a creation leaves it open.
 
 For written members, `member_states` derives `settled/2`, `hasnot/2` and
 `wnila/2` per concrete type `tname` in `doc.object_types`, from every
@@ -3678,9 +3686,11 @@ and appends `ob<n>_r<k>` to `b.bd_reads`. `open_read` calls
 settled-absent link fails `path`, so it derives no open read and evaluates as
 settled leeg. Whenever `ctx.strict` is `true`, `open_relation` calls
 `boundary_read` with `path @ [ropen(holder,rel)]` on each navigation hop
-in `member_read` and on `Role_membership`, and `range_open_reads` calls the
-same per hop of `source_role` / `source_path` in `fold_reads` and
-`Quantifier_fold`. `reached_after` extends
+in `member_read`, and `range_open_reads` calls the
+same per hop of `source_role` / `source_path` in `fold_reads`, across every
+branch of `Instance_set_union` (before any branch filter is lowered so an open
+hop on any branch opens the boundary before branch filters fault or deposit),
+and in `Quantifier_fold`. `reached_after` extends
 `ctx.reach` so only reached reads open the boundary: a division's divisor
 waits for its dividend's binding atoms (`translate_division`), an
 `IfThenElse` arm waits for its condition atoms and branch guard
@@ -3716,8 +3726,17 @@ derivable, the condition is undetermined:
   `true`, both `holds` and `fails` append `not ropen(S,rel)`, so an open
   non-reciprocal to-one role or a relation left open by a creation leaves both
   polarities undetermined.
+- **Role membership (`Role_membership`)**: reifies a helper `jd<n>(key)` over
+  `isa(S, subject_ot), role(S, canonical, N), narrow(N)` (while emitting the
+  static subject/counterpart declaration guards). Under the range law of
+  `RUNTIME-SEMANTICS.md` ch. 1.5, a standing matching link settles existence
+  even when `ropen(S, canonical)` holds, whereas the empty-set side requires
+  `not ropen(S, canonical)`: for `negated = false`,
+  `holds = [jd<n>(key)]` and
+  `fails = [not jd<n>(key); not ropen(S, canonical)]`; for `negated = true`,
+  `holds` and `fails` swap.
 - **Other atomic conditions** (`Comparison`, `Predicate` including
-  `Empty_predicate` and `Filled`, `Role_membership`, `Identity_check`):
+  `Empty_predicate` and `Filled`, `Identity_check`):
   `cond_atoms` runs inside `within_boundary` and reifies `jd<n>(key)`.
   The judgement is `{ holds = [jd<n>(key); not ob<m>(key)]; fails = [not jd<n>(key); not ob<m>(key)] }`.
   For `Empty_predicate` and `Filled` (`leeg`/`gevuld`), `cond_atoms`
@@ -3737,9 +3756,13 @@ derivable, the condition is undetermined:
   `range_open_reads`), filter (`ft`/`ff`) and matrix (`tt`/`tf`), and
   combines filter and matrix per member into `ot`/`of` by Kleene's table
   (for `all`/`the`: `ot` on `ff` or `tt`, `of` on `ft` and `tf`; for the
-  other quantifiers: `ot` on `ft` and `tt`, `of` on `ff` or `tf`). The
-  verdict applies the same `H`/`F`/`N` table over `qf<n>_ot`, `qf<n>_of`
-  and `qf<n>_n`, gated by `not qf<n>_ro(key)`.
+  other quantifiers: `ot` on `ft` and `tt`, `of` on `ff` or `tf`). When
+  `not qf<n>_ro(key)` holds (closed range), the verdict applies the closed
+  `H`/`F`/`N` table over `qf<n>_ot`, `qf<n>_of` and `qf<n>_n`; when
+  `qf<n>_ro(key)` holds (open range, $u = \infty$), the verdict adds the
+  monotone open-range short-circuit rules (`all`/`the` fails on `F >= 1`;
+  `none` fails on `H >= 1`; `atLeast k` holds on `k <= 0` or `H >= k`;
+  `atMost k` and `exactly k` fail on `k < 0` or `H >= k + 1`).
 
 **Provisional reading past an undetermined member (`member_gate` and `limit_gate`).**
 In a composite or quantifier fold, reading past an undetermined member
@@ -3757,17 +3780,24 @@ limits:
   of established true (`H`) and false (`F`) among prior members whenever
   `undecided q ~cutoff ~n` still holds (including after an undetermined
   member; at `i = 0`, `ctx.limit_gate` stays unchanged).
-- In `Quantifier_fold`, filters run with both `ctx.member_gate` and
-  `ctx.limit_gate` extended by `[qf<n>_m(key,X); not qf<n>_ro(key)]`.
-  Matrices compute `qf<n>_k` (filter not false), `qf<n>_rch` (reached
-  while the fold's own table over the counts `qf<n>_n` of the earlier
-  `k` members in range order `use_ro` leaves the verdict undetermined), `qf<n>_fp` (some filter undetermined),
-  `qf<n>_pv` (provisional: `qf<n>_fp` holds or an earlier `k` member is
-  undetermined), and `qf<n>_rd` (`qf<n>_rch`, `not qf<n>_pv`,
-  `not qf<n>_ro`). The matrix translates with `ctx.member_gate` extended
-  by `qf<n>_rd` (registered in `ctx.order_atoms` for `CLINGO-035` when
-  `ro.ro_dynamic`) and `ctx.limit_gate` extended by
-  `[qf<n>_rch(key,X); not qf<n>_ro(key)]`.
+- In `Quantifier_fold`, filters run on all known members `[qf<n>_m(key,X)]`
+  (both `ctx.member_gate` and `ctx.limit_gate`), while `ctx.deposit_guard`
+  inside filters extends with `qf<n>_dg(key)` — derived when
+  `not qf<n>_ro(key)` holds or when the `Quantifier_fold` itself establishes
+  its verdict (`holds` or `fails`), so filter deposits on an open range are
+  committed iff the fold settles and dropped if it remains undetermined.
+  Matrices compute `qf<n>_k` (filter not false), `qf<n>_rch` (reached either
+  under `not qf<n>_ro(key)` while the closed table over `qf<n>_n` of the
+  earlier `k` members in range order `use_ro` leaves the verdict undetermined,
+  or under `qf<n>_ro(key)` while the $u = \infty$ table over the earlier `k`
+  members leaves the verdict undetermined), `qf<n>_fp` (some filter
+  undetermined), `qf<n>_pv` (provisional: `qf<n>_fp` holds or an earlier `k`
+  member is undetermined), and `qf<n>_rd` (`qf<n>_rch`, `not qf<n>_pv`,
+  `not qf<n>_ro`). Because `qf<n>_rd` carries `not qf<n>_ro`, every matrix
+  under an open range is automatically provisional (`ctx.member_gate` extended
+  by `qf<n>_rd`, registered in `ctx.order_atoms` for `CLINGO-035` when
+  `ro.ro_dynamic`), while `ctx.limit_gate` extends by `[qf<n>_rch(key,X)]` so
+  encoding limits in reached matrices still fire.
 - Inside `emit_viol`, a guard whose registered code starts with `"EF-"`
   (an evaluation fault of `RUNTIME-SEMANTICS.md` ch. 5.7b) both derives
   `ob<n>(key)` under `body` — leaving a suppressed provisional member
