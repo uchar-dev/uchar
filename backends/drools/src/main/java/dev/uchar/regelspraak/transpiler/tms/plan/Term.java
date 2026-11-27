@@ -168,9 +168,9 @@ public sealed interface Term {
      * fold has none of that kind. The analysis adds no node where the fold has none of the three.
      */
     record FoldRead(Term outcome, int deposits, int depositFlag, int filterFault, int memberFault, int rangeOpen,
-                    int openMembers, String source) implements Term {
+                    boolean quantifier, String source) implements Term {
         public FoldRead(Term outcome, int deposits, int depositFlag, int filterFault, int memberFault, String source) {
-            this(outcome, deposits, depositFlag, filterFault, memberFault, -1, -1, source);
+            this(outcome, deposits, depositFlag, filterFault, memberFault, -1, false, source);
         }
     }
 
@@ -210,12 +210,25 @@ public sealed interface Term {
      * matrix faulted; one that is not reached does neither. Any other quantifier fold is an {@link Call} of
      * {@link StaticFunction#QUANTIFIER_VERDICT} over the count and the sum of the verdicts, where the order does not show.
      */
-    record QuantifierRead(StaticFunction function, Term count, Term contributions, Condition.Quantifier quantifier, int threshold, int depositFlag,
-                         String source) implements Term {
+    record QuantifierRead(StaticFunction function, Term count, Term contributions, Term rangeOpen,
+                          Condition.Quantifier quantifier, int threshold, int depositFlag,
+                          String source) implements Term {
         public QuantifierRead {
-            if (function != StaticFunction.QUANTIFIER_READ && function != StaticFunction.QUANTIFIER_READ_UNORDERED)
-                throw new IllegalArgumentException("a quantifier reading takes QUANTIFIER_READ or QUANTIFIER_READ_UNORDERED as"
-                        + " function, not " + function);
+            if (function != StaticFunction.QUANTIFIER_READ && function != StaticFunction.QUANTIFIER_READ_UNORDERED
+                    && function != StaticFunction.QUANTIFIER_READ_OVER_RANGE
+                    && function != StaticFunction.QUANTIFIER_READ_UNORDERED_OVER_RANGE)
+                throw new IllegalArgumentException("a quantifier reading takes QUANTIFIER_READ,"
+                        + " QUANTIFIER_READ_UNORDERED, QUANTIFIER_READ_OVER_RANGE or"
+                        + " QUANTIFIER_READ_UNORDERED_OVER_RANGE as function, not " + function);
+            if ((rangeOpen != null) != (function == StaticFunction.QUANTIFIER_READ_OVER_RANGE
+                    || function == StaticFunction.QUANTIFIER_READ_UNORDERED_OVER_RANGE))
+                throw new IllegalArgumentException("rangeOpen is present iff function reads over an openable range: "
+                        + function);
+        }
+
+        public QuantifierRead(StaticFunction function, Term count, Term contributions, Condition.Quantifier quantifier,
+                              int threshold, int depositFlag, String source) {
+            this(function, count, contributions, null, quantifier, threshold, depositFlag, source);
         }
     }
 

@@ -1,0 +1,53 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation undetermined open "J1" "vondst"
+reading /rules/rules/0/versions/0 "J1" OPEN
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation undetermined open "J1" "vondst"
+reading /rules/rules/1/versions/0 "J1" OPEN
+reading /rules/rules/10/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" true reached]
+reading /rules/rules/10/versions/0 "J1" FAILS
+reading /rules/rules/11/versions/0 "V1" 0 Binary 90
+reading /rules/rules/11/versions/0 "V1" 1 AttributeReference 80
+reading /rules/rules/11/versions/0 "V1" 2 AttributeReference 10 on "J1"
+reading /rules/rules/11/versions/0 "V1" HOLDS
+reading /rules/rules/11/versions/0 "V2" 0 Binary 70
+reading /rules/rules/11/versions/0 "V2" 1 AttributeReference 60
+reading /rules/rules/11/versions/0 "V2" 2 AttributeReference 10 on "J1"
+reading /rules/rules/11/versions/0 "V2" HOLDS
+reading /rules/rules/12/versions/0 "V1" 0 RoleMembership true
+reading /rules/rules/12/versions/0 "V1" HOLDS
+reading /rules/rules/12/versions/0 "V2" 0 RoleMembership true
+reading /rules/rules/12/versions/0 "V2" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 Aggregation 0
+reading /rules/rules/2/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 Aggregation empty
+reading /rules/rules/3/versions/0 "J1" HOLDS
+reading /rules/rules/4/versions/0 "J1" 0 RoleMembership true
+reading /rules/rules/4/versions/0 "J1" HOLDS
+reading /rules/rules/5/versions/0 "J1" 0 RoleMembership false
+reading /rules/rules/5/versions/0 "J1" FAILS
+reading /rules/rules/6/versions/0 "J1" 0 QuantifierFold undetermined open "J1" "vondst" contributors ["V1" true reached; "V2" true reached]
+reading /rules/rules/6/versions/0 "J1" OPEN
+reading /rules/rules/7/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" true unreached]
+reading /rules/rules/7/versions/0 "J1" FAILS
+reading /rules/rules/8/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V2" true reached]
+reading /rules/rules/8/versions/0 "J1" HOLDS
+reading /rules/rules/9/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V2" true reached]
+reading /rules/rules/9/versions/0 "J1" FAILS
+state attribute "J1" "bonus" 10
+state attribute "J1" "keuringenaantal" 0
+state attribute "J1" "totale waarde" open
+state attribute "J1" "vondstenaantal" open
+state attribute "V1" "vindpremie" 90
+state attribute "V1" "waarde" 80
+state attribute "V2" "vindpremie" 70
+state attribute "V2" "waarde" 60
+state characteristic "J1" "actief"
+state characteristic "J1" "louter kostbaar" open
+state characteristic "J1" "rijkelijk voorzien"
+state characteristic "V1" "toegewezen"
+state characteristic "V2" "toegewezen"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V2"
+state link "vinding" "vinder" "J1" "vondst" open
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"

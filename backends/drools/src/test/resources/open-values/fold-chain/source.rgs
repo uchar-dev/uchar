@@ -21,12 +21,12 @@ Objecttype de Vondst (mv: Vondsten)
 
 Feittype vinding
     de vinder Jutter
-    de vondst (mv: vondsten) Vondst
+    de vondst (mv: vondsten) Vondst (volledig gegeven)
 Eén vinder heeft meerdere vondsten
 
 Feittype strandbeheer
     de beheerder Strandvoogd
-    de beheerde jutter (mv: beheerde jutters) Jutter
+    de beheerde jutter (mv: beheerde jutters) Jutter (volledig gegeven)
 Eén beheerder heeft meerdere beheerde jutters
 
 Regel jutgewicht van een jutter

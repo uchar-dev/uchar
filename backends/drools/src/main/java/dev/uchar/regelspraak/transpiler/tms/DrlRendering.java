@@ -1252,13 +1252,38 @@ final class DrlRendering {
             if (v.rangeOpen() >= 0) {
                 if (v.depositFlag() >= 0 && v.deposits() < 0)
                     throw new IllegalStateException("a fold reading with a probe and without deposits in " + plan.name());
+                if (v.quantifier()) {
+                    String ro = slot(v.rangeOpen(), c);
+                    if (v.depositFlag() >= 0) {
+                        b.append("    if (").append(ro).append(" == null) {\n        ")
+                                .append(route(Route.REPORT_FILTER_DEPOSITS)).append("(")
+                                .append(depositFlag(v.depositFlag(), c).text()).append(", ")
+                                .append(slot(v.deposits(), c)).append(");\n    }\n");
+                    }
+                    if (v.filterFault() >= 0) {
+                        String f = slot(v.filterFault(), c);
+                        b.append("    if (").append(f).append(" != null) {\n        throw ((")
+                                .append(typeName(FilterFault.class)).append(") ").append(f).append(").fault();\n    }\n");
+                    }
+                    if (v.depositFlag() >= 0) {
+                        b.append("    Object uitkomst = ").append(value(v.outcome(), c).text()).append(";\n");
+                        b.append("    if (").append(ro).append(" != null) {\n        ")
+                                .append(route(Route.REPORT_FILTER_DEPOSITS)).append("(")
+                                .append(depositFlag(v.depositFlag(), c).text()).append(", ")
+                                .append(slot(v.deposits(), c)).append(");\n    }\n");
+                        b.append("    return uitkomst;\n");
+                    } else {
+                        b.append("    return ").append(value(v.outcome(), c).text()).append(";\n");
+                    }
+                    fill(place, v.source(), "Object " + name + "(" + c.declaration() + ")", b.toString());
+                    return name + "(" + c.pass() + ")";
+                }
                 b.append("    ").append(route(Route.BEFORE_FOLD_OUTCOME)).append("(")
                         .append(slot(v.rangeOpen(), c)).append(", ")
                         .append(v.depositFlag() < 0 ? "null" : depositFlag(v.depositFlag(), c).text()).append(", ")
                         .append(v.deposits() < 0 ? "null" : slot(v.deposits(), c)).append(", ")
                         .append(v.filterFault() < 0 ? "null" : slot(v.filterFault(), c)).append(", ")
-                        .append(v.memberFault() < 0 ? "null" : slot(v.memberFault(), c)).append(", ")
-                        .append(v.openMembers() < 0 ? "null" : slot(v.openMembers(), c)).append(");\n");
+                        .append(v.memberFault() < 0 ? "null" : slot(v.memberFault(), c)).append(");\n");
                 b.append("    return ").append(value(v.outcome(), c).text()).append(";\n");
                 fill(place, v.source(), "Object " + name + "(" + c.declaration() + ")", b.toString());
                 return name + "(" + c.pass() + ")";
@@ -1296,8 +1321,12 @@ final class DrlRendering {
         private String quantifierRead(Term.QuantifierRead q, Context c) {
             int place = reserveer();
             String name = name("kwantorlezing", place);
-            Expr call = call(q.function(), List.of(value(q.count(), c), value(q.contributions(), c),
-                    constant(q.quantifier()), constant(q.threshold()), depositFlag(q.depositFlag(), c)));
+            List<Expr> args = q.rangeOpen() == null
+                    ? List.of(value(q.count(), c), value(q.contributions(), c),
+                            constant(q.quantifier()), constant(q.threshold()), depositFlag(q.depositFlag(), c))
+                    : List.of(value(q.count(), c), value(q.contributions(), c), value(q.rangeOpen(), c),
+                            constant(q.quantifier()), constant(q.threshold()), depositFlag(q.depositFlag(), c));
+            Expr call = call(q.function(), args);
             fill(place, q.source(), "Object " + name + "(" + c.declaration() + ")", "    return " + call.text() + ";\n");
             return name + "(" + c.pass() + ")";
         }
@@ -2113,6 +2142,7 @@ final class DrlRendering {
                 case Term.QuantifierRead q -> {
                     dayKinds(q.count(), out);
                     dayKinds(q.contributions(), out);
+                    if (q.rangeOpen() != null) dayKinds(q.rangeOpen(), out);
                 }
                 case Term.WithoutFault z -> dayKinds(z.condition(), out);
                 case Term.Deferred x -> dayKinds(x.value(), out);

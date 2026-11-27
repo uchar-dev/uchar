@@ -176,10 +176,11 @@ public enum Route {
      *  first broken hop that is open in {@code OpenInput}, or null where that hop is settled absent
      *  ({@link Consequence.InsertOpenPathState}). */
     MISSING_LINK(ComputeHelpers.class, "missingLink"),
-    /** The pre-outcome check of a fold reading ({@link Term.FoldRead}) whose range can encounter an open single step:
-     *  throws the first {@code RangeOpen}, reports filter deposits and throws filter or member faults in ch. 5.11 order. */
+    /** The pre-outcome check of an aggregation reading ({@link Term.FoldRead}) whose range can encounter an open step:
+     *  throws {@code RangeOpen} immediately when present, and otherwise reports filter deposits and throws filter or
+     *  member faults in ch. 5.11 order. */
     BEFORE_FOLD_OUTCOME(ComputeHelpers.class, "beforeFoldOutcome"),
-    /** The place of an open single step in a fold's range ({@link Consequence.RangeOpen}). */
+    /** The place of an open step in a fold's range ({@link Consequence.RangeOpen}). */
     RANGE_PLACE(ComputeHelpers.class, "rangePlace"),
     /** The verdict of a matrix as a member's contribution, 1 or 0 ({@link Consequence.Input.Verdict}). */
     VERDICT(ComputeHelpers.class, "verdict"),

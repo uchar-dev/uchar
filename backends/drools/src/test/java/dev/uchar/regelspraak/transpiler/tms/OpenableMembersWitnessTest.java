@@ -185,4 +185,76 @@ class OpenableMembersWitnessTest {
         assertEquals(List.of("vorige vergunning#0:vergunning"), oneOpen.incomplete("Vergunning"));
         assertEquals(Set.of(), oneOpen.members(oneOpen.openable()::leftOpen));
     }
+
+    /** A non-reciprocal to-many role without a writer or {@code complete: true} is open input on its holder type,
+     *  propagates through role checks, aggregations, unions and quantifier folds, closes under {@code complete: true},
+     *  and is excluded from open input when an object creation or fact creation names its plural role spelling. */
+    @Test void open_to_many_roles_complete_and_plural_creation_writers() throws Exception {
+        JsonNode otmJson = fixture("link-one-to-many");
+        ((ObjectNode) otmJson.get("model").get("objectTypes").get(1).get("attributes").get(0)).put("complete", true);
+        Document otm = document(otmJson);
+        assertEquals(List.of("vinding#1:vondst"), otm.incomplete("Jutter"));
+        assertEquals(List.of("vinding#0:vinder"), otm.incomplete("Vondst"));
+        assertEquals(Set.of("vinding#0:vinder", "vinding#1:vondst"), otm.roles(otm.openable()::openInput));
+        assertEquals(Set.of("jutter.deels zwaar", "jutter.vindend", "jutter.volledig zwaar", "jutter.vondstaantal",
+                "vondst.toegewezen"), otm.members(otm.openable()::leftOpen));
+
+        ((ObjectNode) otmJson.get("model").get("factTypes").get(0).get("roles").get(1)).put("complete", true);
+        Document vondstComplete = document(otmJson);
+        assertEquals(List.of(), vondstComplete.incomplete("Jutter"));
+        assertEquals(Set.of("vondst.toegewezen"), vondstComplete.members(vondstComplete.openable()::leftOpen));
+
+        // ObjectCreation and FactCreation naming the plural of a to-many role mark that role slot as written
+        String pluralCreationDoc = """
+                {
+                  "format": "uchar-ir-v1",
+                  "inferFromEmpty": false,
+                  "model": {
+                    "objectTypes": [
+                      { "node": "ObjectType", "name": "Jutter", "animate": true, "plural": "Jutters",
+                        "attributes": [], "characteristics": [] },
+                      { "node": "ObjectType", "name": "Vondst", "animate": false, "plural": "Vondsten",
+                        "attributes": [], "characteristics": [] },
+                      { "node": "ObjectType", "name": "Melding", "animate": false, "plural": "Meldingen",
+                        "attributes": [], "characteristics": [] }
+                    ],
+                    "factTypes": [
+                      { "node": "FactType", "name": "vinding", "reciprocal": false, "roles": [
+                        { "node": "Role", "name": "vinder", "objectType": "Jutter", "many": false, "complete": true },
+                        { "node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true }
+                      ]},
+                      { "node": "FactType", "name": "registratie", "reciprocal": false, "roles": [
+                        { "node": "Role", "name": "indiener", "objectType": "Jutter", "plural": "indieners", "many": true },
+                        { "node": "Role", "name": "melding", "objectType": "Melding", "plural": "meldingen", "many": true }
+                      ]}
+                    ],
+                    "parameters": [], "domains": [], "unitSystems": [], "dimensions": [], "timelines": [], "dayKinds": []
+                  },
+                  "rules": {
+                    "rules": [], "dayKindDefinitions": [],
+                    "objectCreations": [{
+                      "node": "ObjectCreation", "name": "maak vondst", "versions": [{
+                        "validity": { "node": "Validity" }, "subject": "Jutter", "createdType": "Vondst",
+                        "connectingRole": { "node": "RoleBinding", "factType": "vinding", "role": "vondsten" },
+                        "assignments": []
+                      }]
+                    }],
+                    "allocations": [], "consistencies": [], "uniquenesses": [],
+                    "factCreations": [{
+                      "node": "FactCreation", "name": "koppel melding", "versions": [{
+                        "validity": { "node": "Validity" }, "factType": "registratie",
+                        "anchor": "Jutter", "anchorRole": "indiener",
+                        "targetRole": "melding",
+                        "path": [{ "node": "RoleBinding", "factType": "registratie", "role": "melding" }]
+                      }]
+                    }],
+                    "startPointDeterminations": [], "ruleGroups": []
+                  },
+                  "diagnostics": []
+                }
+                """;
+        Document created = document(JSON.readTree(pluralCreationDoc));
+        assertEquals(List.of(), created.incomplete("Jutter"));
+        assertEquals(List.of(), created.incomplete("Melding"));
+    }
 }

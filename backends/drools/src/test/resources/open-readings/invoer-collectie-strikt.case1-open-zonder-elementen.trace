@@ -1,0 +1,35 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation undetermined open "J1" "vondst"
+reading /rules/rules/0/versions/0 "J1" OPEN
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation undetermined open "J1" "vondst"
+reading /rules/rules/1/versions/0 "J1" OPEN
+reading /rules/rules/10/versions/0 "J1" 0 QuantifierFold undetermined open "J1" "vondst"
+reading /rules/rules/10/versions/0 "J1" OPEN
+reading /rules/rules/2/versions/0 "J1" 0 Aggregation 0
+reading /rules/rules/2/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 Aggregation empty
+reading /rules/rules/3/versions/0 "J1" HOLDS
+reading /rules/rules/4/versions/0 "J1" 0 RoleMembership undetermined open "J1" "vondst"
+reading /rules/rules/4/versions/0 "J1" OPEN
+reading /rules/rules/5/versions/0 "J1" 0 RoleMembership undetermined open "J1" "vondst"
+reading /rules/rules/5/versions/0 "J1" OPEN
+reading /rules/rules/6/versions/0 "J1" 0 QuantifierFold undetermined open "J1" "vondst"
+reading /rules/rules/6/versions/0 "J1" OPEN
+reading /rules/rules/7/versions/0 "J1" 0 QuantifierFold undetermined open "J1" "vondst"
+reading /rules/rules/7/versions/0 "J1" OPEN
+reading /rules/rules/8/versions/0 "J1" 0 QuantifierFold undetermined open "J1" "vondst"
+reading /rules/rules/8/versions/0 "J1" OPEN
+reading /rules/rules/9/versions/0 "J1" 0 QuantifierFold undetermined open "J1" "vondst"
+reading /rules/rules/9/versions/0 "J1" OPEN
+state attribute "J1" "bonus" 10
+state attribute "J1" "keuringenaantal" 0
+state attribute "J1" "totale waarde" open
+state attribute "J1" "vondstenaantal" open
+state characteristic "J1" "actief" open
+state characteristic "J1" "bescheiden" open
+state characteristic "J1" "enkelvoudig kostbaar" open
+state characteristic "J1" "louter kostbaar" open
+state characteristic "J1" "rijkelijk voorzien" open
+state characteristic "J1" "schaars kostbaar" open
+state characteristic "J1" "vondstloos" open
+state link "vinding" "vinder" "J1" "vondst" open
+state object "J1" "Jutter"

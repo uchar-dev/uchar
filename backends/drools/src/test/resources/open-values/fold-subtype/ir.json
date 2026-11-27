@@ -160,7 +160,8 @@
             "name": "vondst",
             "objectType": "Vondst",
             "plural": "vondsten",
-            "many": true
+            "many": true,
+            "complete": true
           }
         ]
       },
@@ -180,7 +181,8 @@
             "name": "beheerde jutter",
             "objectType": "Jutter",
             "plural": "beheerde jutters",
-            "many": true
+            "many": true,
+            "complete": true
           }
         ]
       }

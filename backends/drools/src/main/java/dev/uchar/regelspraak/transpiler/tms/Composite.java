@@ -28,6 +28,7 @@ public final class Composite {
     private final Condition.Quantifier kw;
     private final int threshold;
     private final int n;
+    private final boolean openRange;
     /** The probe the members report their deposits to, or null where the evaluation deposits nothing. */
     private final Object depositFlag;
     private int hits, fails;
@@ -40,21 +41,38 @@ public final class Composite {
     private boolean provisional;
 
     Composite(Condition.Quantifier kw, int threshold, int n, Object depositFlag) {
-        this(kw, threshold, n, null, depositFlag);
+        this(kw, threshold, n, false, null, depositFlag);
     }
 
     Composite(Condition.Quantifier kw, int threshold, int n, OpenMember past, Object depositFlag) {
+        this(kw, threshold, n, false, past, depositFlag);
+    }
+
+    private Composite(Condition.Quantifier kw, int threshold, int n, boolean openRange, OpenMember past,
+                      Object depositFlag) {
         this.kw = kw;
         this.threshold = threshold;
         this.n = n;
+        this.openRange = openRange;
         this.past = past;
         this.depositFlag = depositFlag;
+    }
+
+    /** A quantifier fold over an open range ({@code u = infinity}, RUNTIME-SEMANTICS ch. 1.5), whose first open
+     *  relation hop is {@code openRel}: every member's matrix is read provisionally under {@code openRel}, monotone
+     *  verdicts short-circuit via {@link #openTruth}, and an undetermined verdict carries {@code openRel}. */
+    static Composite openRange(Condition.Quantifier kw, int threshold, OpenMember openRel, Object depositFlag) {
+        return new Composite(kw, threshold, 0, true, openRel, depositFlag);
+    }
+
+    private Boolean currentTruth() {
+        return openRange ? openTruth(kw, threshold, hits, fails) : truth(kw, threshold, n, hits, fails);
     }
 
     /** Whether the judgement stands with the unread members undetermined, so that the read stops here; where not, the
      *  next member is under way. */
     public boolean stands() {
-        if (truth(kw, threshold, n, hits, fails) != null) return true;
+        if (currentTruth() != null) return true;
         provisional = past != null || first != null;
         mark = DepositFlag.mark(depositFlag);
         return false;
@@ -110,8 +128,8 @@ public final class Composite {
 
     /** The composite's truth where it is established; {@link Undetermined} where it is not. */
     public boolean verdict() {
-        Boolean truth = truth(kw, threshold, n, hits, fails);
-        if (truth == null) throw new Undetermined(first);
+        Boolean truth = currentTruth();
+        if (truth == null) throw new Undetermined(openRange ? past : first);
         return truth;
     }
 
@@ -121,6 +139,17 @@ public final class Composite {
             if (first == null) first = read;
         } else if (holds) hits++;
         else fails++;
+    }
+
+    /** Monotone short-circuit verdict of a quantifier fold over an open range ({@code u = infinity}, RUNTIME-SEMANTICS
+     *  ch. 1.5), where arbitrarily many further contributors may enter the range. */
+    static Boolean openTruth(Condition.Quantifier kw, int k, long hits, long fails) {
+        return switch (kw) {
+            case ALLE, DE -> fails >= 1 ? Boolean.FALSE : null;
+            case GEEN -> hits >= 1 ? Boolean.FALSE : null;
+            case TEN_MINSTE -> k <= 0 || hits >= k ? Boolean.TRUE : null;
+            case TEN_HOOGSTE, PRECIES -> k < 0 || hits >= k + 1 ? Boolean.FALSE : null;
+        };
     }
 
     /** Kleene's strong table of the quantifier {@code kw}, with the threshold {@code k} of a counting quantifier, over

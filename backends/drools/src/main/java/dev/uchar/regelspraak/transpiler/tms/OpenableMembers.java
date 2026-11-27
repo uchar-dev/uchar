@@ -143,7 +143,7 @@ public final class OpenableMembers {
             if (ft.reciprocal || ft.roles.size() != 2) continue;
             for (int farIdx = 0; farIdx < 2; farIdx++) {
                 RegelSpraakModel.Role far = ft.roles.get(farIdx), near = ft.roles.get(1 - farIdx);
-                if (far.many() || far.complete() || far.name() == null) continue;
+                if (far.complete() || far.name() == null) continue;
                 ObjectType nearFiller = model.objectTypeByName(near.objectTypeName());
                 if (nearFiller != null && type.isA(nearFiller)
                         && !writtenRoleOn(model, roleBindings, type, ft, farIdx))
@@ -201,8 +201,8 @@ public final class OpenableMembers {
 
     private static ObjectType targetTypeFromRole(RegelSpraakModel model, RegelSpraakModel.FactType ft, String roleName) {
         if (roleName == null || ft.roles.size() != 2) return null;
-        boolean m0 = ft.roles.get(0).name() != null && Namen.norm(ft.roles.get(0).name()).equals(Namen.norm(roleName));
-        boolean m1 = ft.roles.get(1).name() != null && Namen.norm(ft.roles.get(1).name()).equals(Namen.norm(roleName));
+        boolean m0 = matchesNameOrPlural(ft.roles.get(0), roleName);
+        boolean m1 = matchesNameOrPlural(ft.roles.get(1), roleName);
         if (m0 && !m1) return model.objectTypeByName(ft.roles.get(0).objectTypeName());
         if (m1 && !m0) return model.objectTypeByName(ft.roles.get(1).objectTypeName());
         return null;
@@ -230,7 +230,13 @@ public final class OpenableMembers {
             String n = ft.roles.get(i).name();
             if (n != null && Namen.norm(n).equals(norm)) return i;
         }
-        return -1;
+        int hit = -1;
+        for (int i = 0; i < ft.roles.size(); i++)
+            if (matchesNameOrPlural(ft.roles.get(i), roleName)) {
+                if (hit >= 0) return -1;
+                hit = i;
+            }
+        return hit;
     }
 
     /** Per form in the order of {@link ProducerConsumer#forms}, the non-reciprocal single-role keys it reads via role
@@ -294,7 +300,7 @@ public final class OpenableMembers {
             RegelSpraakModel.FactType ft = factType(model, rb.factType());
             if (ft == null || ft.reciprocal || ft.roles.size() != 2) return;
             int idx = roleIndexByDeclaredName(ft, rb.role());
-            if (idx >= 0 && !ft.roles.get(idx).many() && ft.roles.get(idx).name() != null)
+            if (idx >= 0 && ft.roles.get(idx).name() != null)
                 out.add(ElementKey.role(ft.name, idx, ft.roles.get(idx).name()));
         }
 
@@ -305,7 +311,7 @@ public final class OpenableMembers {
             int nearIdx = roleIndexByDeclaredName(ft, rb.role());
             if (nearIdx < 0) return;
             int farIdx = 1 - nearIdx;
-            if (!ft.roles.get(farIdx).many() && ft.roles.get(farIdx).name() != null)
+            if (ft.roles.get(farIdx).name() != null)
                 out.add(ElementKey.role(ft.name, farIdx, ft.roles.get(farIdx).name()));
         }
 

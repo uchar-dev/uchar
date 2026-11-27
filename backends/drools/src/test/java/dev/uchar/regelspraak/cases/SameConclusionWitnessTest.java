@@ -140,7 +140,8 @@ class SameConclusionWitnessTest {
 
     /** Provisional fold filter deposit (EF-005) and fold filter fault (EF-011) below a constant open default. */
     @Test void provisional_fold_filter_deposit_and_fault() throws Exception {
-        String ft = factTypeOneToMany("vondst van jutter", "vinder", "Jutter", "vondst", "Vondst", "vondsten");
+        String ft = factTypeOneToMany("vondst van jutter", "vinder", "Jutter", "vondst", "Vondst", "vondsten")
+                .replace("\"many\":true", "\"many\":true,\"complete\":true");
         String m = model(List.of(
                 objectType("Jutter", List.of(attribute("premie", WHOLE), attribute("toeslag", WHOLE)),
                         List.of("betwist")),

@@ -212,6 +212,9 @@ public final class CaseInput {
     /** The non-reciprocal single roles the case states to be empty ({@code rolesEmpty}, RUNTIME-SEMANTICS ch. 1.5), in
      *  the order of the case: what {@link #inputData()} names as such ({@link Input#roleEmpty}). */
     private final List<Input.EmptyRole> emptyRoles = new ArrayList<>();
+    /** The non-reciprocal to-many roles the case states to be closed ({@code rolesClosed}, RUNTIME-SEMANTICS ch. 1.5),
+     *  in the order of the case: what {@link #inputData()} names as such ({@link Input#roleClosed}). */
+    private final List<Input.ClosedRole> closedRoles = new ArrayList<>();
     /** Every directed non-reciprocal role slot {@code (bean, factType, farIndex)} that a link of {@code roles} fills,
      *  from either end: checked after {@link #setRoles} and {@link #mirrorReciprocalRoles} against {@code rolesEmpty}
      *  (EF-049). */
@@ -278,6 +281,7 @@ public final class CaseInput {
             for (JsonNode i : instances) inputData.setRoles(i);
             inputData.mirrorReciprocalRoles();
             for (JsonNode i : instances) inputData.readRolesEmpty(i);
+            for (JsonNode i : instances) inputData.readRolesClosed(i);
             inputData.refuseLinkCycles(build, instances);
             inputData.readParameters(input.get("parameters"));
             return inputData;
@@ -315,6 +319,7 @@ public final class CaseInput {
         for (Input.Link k : links) inputData.link(k.factType(), k.first(), k.second());
         for (Input.Empty e : emptyAttributes) inputData.attributeEmpty(e.bean(), e.attribute());
         for (Input.EmptyRole r : emptyRoles) inputData.roleEmpty(r.bean(), r.role());
+        for (Input.ClosedRole r : closedRoles) inputData.roleClosed(r.bean(), r.role());
         for (Input.Absent a : absentCharacteristics) inputData.characteristicAbsent(a.bean(), a.characteristic());
         for (Map.Entry<Object, Map<String, ToManyList>> perHolder : lists.entrySet())
             for (ToManyList l : perHolder.getValue().values()) {
@@ -396,7 +401,7 @@ public final class CaseInput {
         for (String section : new String[]{"attributes", "roles", "characteristicTimelines"})
             if (i.has(section) && !i.get(section).isObject())
                 throw new IllegalArgumentException(label + "." + section + ": expected an object, got " + i.get(section));
-        for (String section : new String[]{"attributesEmpty", "rolesEmpty", "characteristics", "characteristicsAbsent"}) {
+        for (String section : new String[]{"attributesEmpty", "rolesEmpty", "rolesClosed", "characteristics", "characteristicsAbsent"}) {
             JsonNode list = i.get(section);
             if (list == null) continue;
             if (!list.isArray())
@@ -1089,6 +1094,30 @@ public final class CaseInput {
                     || linkedField)
                 throw NameFault.roleLinkedAndEmpty(label, written);
             emptyRoles.add(new Input.EmptyRole(bean, written));
+        }
+    }
+
+    /** Reads and validates {@code rolesClosed} on instance {@code i} (RUNTIME-SEMANTICS ch. 1.5, 5.7): 1-to-1 with
+     *  {@code Case.load_file} in {@code ref}. */
+    private void readRolesClosed(JsonNode i) {
+        JsonNode list = i.get("rolesClosed");
+        if (list == null) return;
+        String label = i.get("label").asText();
+        Object bean = labelToBean.get(label);
+        ObjectType ot = labelType.get(label);
+        for (JsonNode item : list) {
+            String written = item.asText();
+            declaredRoleKey(label, written);
+            List<OppositeRole> hits = resolveOppositeRoles(model, ot, written);
+            if (hits.isEmpty())
+                throw new IllegalArgumentException("role key \"" + written + "\" in rolesClosed does not resolve to a"
+                        + " declared role opposite \"" + ot.name + "\"");
+            if (hits.size() > 1) throw new AmbiguousRoleFault(written, ot.name);
+            OppositeRole hit = hits.get(0);
+            if (hit.factType().reciprocal || !hit.role().many() || hit.factType().roles.size() != 2)
+                throw new IllegalArgumentException("role \"" + written + "\" on \"" + label
+                        + "\": \"rolesClosed\" applies only to a non-reciprocal to-many role");
+            closedRoles.add(new Input.ClosedRole(bean, written));
         }
     }
 

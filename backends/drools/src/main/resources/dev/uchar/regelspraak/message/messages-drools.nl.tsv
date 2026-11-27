@@ -451,6 +451,11 @@ DROOLS-376.undeclared	zijn type {objectType} heeft geen rol met die naam tegenov
 DROOLS-376.ambiguous	zijn type {objectType} heeft verscheidene rollen met die naam tegenover zich
 DROOLS-376.not-to-one	alleen een niet-wederkerige enkelvoudige rol mag op {objectType} leeg verklaard worden
 DROOLS-376.linked	een koppeling vult die rol al
+DROOLS-377	insert: de invoer zegt dat de rol "{role}" op {bean} gesloten is, en {reason}
+DROOLS-377.not-in-input	die bean is geen bean van de invoer
+DROOLS-377.undeclared	zijn type {objectType} heeft geen rol met die naam tegenover zich
+DROOLS-377.ambiguous	zijn type {objectType} heeft verscheidene rollen met die naam tegenover zich
+DROOLS-377.not-to-many	alleen een niet-wederkerige meervoudige rol mag op {objectType} gesloten verklaard worden
 EF-001	rolsleutel "{roleKey}" op "{objectType}" is dubbelzinnig over gedeclareerde feittypen
 EF-002	de rol "{role}" van "{label}" verwijst naar het onbekende label "{target}"
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})

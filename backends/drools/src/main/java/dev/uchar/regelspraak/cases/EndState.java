@@ -230,9 +230,11 @@ public record EndState(List<EndObject> objects, List<Link> links, List<OpenLink>
                 RegelSpraakModel.FactType ft = factType(model, key.factType());
                 if (ft.reciprocal || ft.roles.size() != 2) continue;
                 int farIdx = key.roleIndex(), nearIdx = 1 - farIdx;
-                boolean linked = links.stream().anyMatch(l -> l.factType().equals(ft.name)
-                        && (nearIdx == 0 ? l.first() == bean : l.second() == bean));
-                if (linked) continue;
+                if (!ft.roles.get(farIdx).many()) {
+                    boolean linked = links.stream().anyMatch(l -> l.factType().equals(ft.name)
+                            && (nearIdx == 0 ? l.first() == bean : l.second() == bean));
+                    if (linked) continue;
+                }
                 String r0 = ft.roles.get(0).name(), r1 = ft.roles.get(1).name();
                 out.add(nearIdx == 0 ? new OpenLink(ft.name, r0, bean, r1, null)
                         : new OpenLink(ft.name, r0, null, r1, bean));

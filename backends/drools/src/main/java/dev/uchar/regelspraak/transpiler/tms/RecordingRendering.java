@@ -129,13 +129,23 @@ final class RecordingRendering {
                 yield acc;
             }
             case Term.FoldRead v -> {
-                if (v.rangeOpen() >= 0)
+                if (v.rangeOpen() >= 0) {
+                    if (v.quantifier()) {
+                        Object ro = w[v.rangeOpen()];
+                        if (ro == null && v.depositFlag() >= 0)
+                            ComputeHelpers.reportFilterDeposits(w[v.depositFlag()], w[v.deposits()]);
+                        if (v.filterFault() >= 0 && w[v.filterFault()] != null)
+                            throw ((FilterFault) w[v.filterFault()]).fault();
+                        Object out = value(v.outcome(), w);
+                        if (ro != null && v.depositFlag() >= 0)
+                            ComputeHelpers.reportFilterDeposits(w[v.depositFlag()], w[v.deposits()]);
+                        yield out;
+                    }
                     ComputeHelpers.beforeFoldOutcome(w[v.rangeOpen()], v.depositFlag() < 0 ? null : w[v.depositFlag()],
                             v.deposits() < 0 ? null : w[v.deposits()],
                             v.filterFault() < 0 ? null : w[v.filterFault()],
-                            v.memberFault() < 0 ? null : w[v.memberFault()],
-                            v.openMembers() < 0 ? null : w[v.openMembers()]);
-                else {
+                            v.memberFault() < 0 ? null : w[v.memberFault()]);
+                } else {
                     if (v.depositFlag() >= 0) ComputeHelpers.reportFilterDeposits(w[v.depositFlag()], w[v.deposits()]);
                     if (v.filterFault() >= 0 && w[v.filterFault()] != null) throw ((FilterFault) w[v.filterFault()]).fault();
                     if (v.memberFault() >= 0 && w[v.memberFault()] != null) throw ((MemberFault) w[v.memberFault()]).fault();
@@ -145,8 +155,14 @@ final class RecordingRendering {
             case Term.Compound s -> compound(s, w);
             case Term.QuantifierRead k -> {
                 Object n = value(k.count(), w), b = value(k.contributions(), w);
+                Object flag = k.depositFlag() < 0 ? null : w[k.depositFlag()];
+                if (k.rangeOpen() != null) {
+                    Object ro = value(k.rangeOpen(), w);
+                    yield ClosureRendering.implementation(k.function()).of(new Object[]{n, b, ro, k.quantifier(),
+                            k.threshold(), flag});
+                }
                 yield ClosureRendering.implementation(k.function()).of(new Object[]{n, b, k.quantifier(), k.threshold(),
-                        k.depositFlag() < 0 ? null : w[k.depositFlag()]});
+                        flag});
             }
             case Term.WithoutFault z -> {
                 try {

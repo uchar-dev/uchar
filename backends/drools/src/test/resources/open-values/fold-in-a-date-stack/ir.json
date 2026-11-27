@@ -137,7 +137,8 @@
             "name": "lading",
             "objectType": "Lading in-een-maand",
             "plural": "ladingen",
-            "many": true
+            "many": true,
+            "complete": true
           }
         ]
       }

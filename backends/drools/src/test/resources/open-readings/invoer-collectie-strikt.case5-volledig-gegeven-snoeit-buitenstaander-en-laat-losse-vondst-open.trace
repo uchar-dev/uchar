@@ -1,0 +1,74 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation 2 contributors ["V1" empty reached; "V4" empty reached]
+reading /rules/rules/0/versions/0 "J1" HOLDS
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation 100 contributors ["V1" 80 reached; "V4" 20 reached]
+reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/10/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V4" false reached]
+reading /rules/rules/10/versions/0 "J1" HOLDS
+reading /rules/rules/11/versions/0 "V1" 0 Binary 90
+reading /rules/rules/11/versions/0 "V1" 1 AttributeReference 80
+reading /rules/rules/11/versions/0 "V1" 2 AttributeReference 10 on "J1"
+reading /rules/rules/11/versions/0 "V1" HOLDS
+reading /rules/rules/11/versions/0 "V2" 0 Binary undetermined open "V2" "vinder"
+reading /rules/rules/11/versions/0 "V2" 1 AttributeReference 30
+reading /rules/rules/11/versions/0 "V2" 2 AttributeReference undetermined open "V2" "vinder"
+reading /rules/rules/11/versions/0 "V2" OPEN
+reading /rules/rules/11/versions/0 "V3" 0 Binary undetermined open "V3" "vinder"
+reading /rules/rules/11/versions/0 "V3" 1 AttributeReference 40
+reading /rules/rules/11/versions/0 "V3" 2 AttributeReference undetermined open "V3" "vinder"
+reading /rules/rules/11/versions/0 "V3" OPEN
+reading /rules/rules/11/versions/0 "V4" 0 Binary 30
+reading /rules/rules/11/versions/0 "V4" 1 AttributeReference 20
+reading /rules/rules/11/versions/0 "V4" 2 AttributeReference 10 on "J1"
+reading /rules/rules/11/versions/0 "V4" HOLDS
+reading /rules/rules/12/versions/0 "V1" 0 RoleMembership true
+reading /rules/rules/12/versions/0 "V1" HOLDS
+reading /rules/rules/12/versions/0 "V2" 0 RoleMembership undetermined open "V2" "vinder"
+reading /rules/rules/12/versions/0 "V2" OPEN
+reading /rules/rules/12/versions/0 "V3" 0 RoleMembership undetermined open "V3" "vinder"
+reading /rules/rules/12/versions/0 "V3" OPEN
+reading /rules/rules/12/versions/0 "V4" 0 RoleMembership true
+reading /rules/rules/12/versions/0 "V4" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 Aggregation 0
+reading /rules/rules/2/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 Aggregation empty
+reading /rules/rules/3/versions/0 "J1" HOLDS
+reading /rules/rules/4/versions/0 "J1" 0 RoleMembership true
+reading /rules/rules/4/versions/0 "J1" HOLDS
+reading /rules/rules/5/versions/0 "J1" 0 RoleMembership false
+reading /rules/rules/5/versions/0 "J1" FAILS
+reading /rules/rules/6/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V4" false reached]
+reading /rules/rules/6/versions/0 "J1" FAILS
+reading /rules/rules/7/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V4" false unreached]
+reading /rules/rules/7/versions/0 "J1" FAILS
+reading /rules/rules/8/versions/0 "J1" 0 QuantifierFold false contributors ["V1" true reached; "V4" false reached]
+reading /rules/rules/8/versions/0 "J1" FAILS
+reading /rules/rules/9/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached; "V4" false reached]
+reading /rules/rules/9/versions/0 "J1" HOLDS
+state attribute "J1" "bonus" 10
+state attribute "J1" "keuringenaantal" 0
+state attribute "J1" "totale waarde" 100
+state attribute "J1" "vondstenaantal" 2
+state attribute "V1" "vindpremie" 90
+state attribute "V1" "waarde" 80
+state attribute "V2" "vindpremie" open
+state attribute "V2" "waarde" 30
+state attribute "V3" "vindpremie" open
+state attribute "V3" "waarde" 40
+state attribute "V4" "vindpremie" 30
+state attribute "V4" "waarde" 20
+state characteristic "J1" "actief"
+state characteristic "J1" "enkelvoudig kostbaar"
+state characteristic "J1" "schaars kostbaar"
+state characteristic "V1" "toegewezen"
+state characteristic "V2" "toegewezen" open
+state characteristic "V3" "toegewezen" open
+state characteristic "V4" "toegewezen"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" "V4"
+state link "vinding" "vinder" open "vondst" "V2"
+state link "vinding" "vinder" open "vondst" "V3"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"
+state object "V3" "Vondst"
+state object "V4" "Vondst"

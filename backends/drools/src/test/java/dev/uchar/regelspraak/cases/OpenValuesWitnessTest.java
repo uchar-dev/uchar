@@ -208,7 +208,7 @@ class OpenValuesWitnessTest {
     @Test void wv_1_5_link() throws Exception {
         assertEquals(2, play("link", "case"));
         assertEquals(2, play("link-complete", "case"));
-        assertEquals(1, play("link-one-to-many", "case"));
+        assertEquals(4, play("link-one-to-many", "case"));
         assertEquals(6, play("link-two-step", "case"));
         assertEquals(2, play("link-fold-range", "case"));
         assertEquals(2, play("link-self-relation", "case"));

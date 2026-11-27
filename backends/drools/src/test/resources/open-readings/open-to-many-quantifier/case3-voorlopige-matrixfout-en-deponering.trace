@@ -1,0 +1,30 @@
+reading /rules/rules/0/versions/0 "J1" 0 Aggregation undetermined open "J1" "vondst"
+reading /rules/rules/0/versions/0 "J1" OPEN
+reading /rules/rules/1/versions/0 "J1" 0 RoleMembership true
+reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 QuantifierFold false contributors ["V1" false reached]
+reading /rules/rules/2/versions/0 "J1" FAILS
+reading /rules/rules/3/versions/0 "J1" 0 QuantifierFold undetermined open "J1" "vondst" contributors ["V1" false reached]
+reading /rules/rules/3/versions/0 "J1" OPEN
+reading /rules/rules/4/versions/0 "J1" 0 QuantifierFold undetermined open "J1" "vondst" contributors ["V1" false reached]
+reading /rules/rules/4/versions/0 "J1" OPEN
+reading /rules/rules/5/versions/0 "J1" 0 QuantifierFold undetermined open "J1" "vondst" contributors ["V1" undetermined reached]
+reading /rules/rules/5/versions/0 "J1" OPEN
+reading /rules/rules/6/versions/0 "J1" 0 Compound true
+reading /rules/rules/6/versions/0 "J1" 1 QuantifierFold undetermined open "J1" "vondst" contributors ["V1" true reached]
+reading /rules/rules/6/versions/0 "J1" 10 Compound true
+reading /rules/rules/6/versions/0 "J1" HOLDS
+state attribute "J1" "vondstaantal" open
+state attribute "V1" "norm" 0
+state attribute "V1" "opbrengst" 30
+state attribute "V1" "uren" 0
+state characteristic "J1" "alle datumgeldig" open
+state characteristic "J1" "een rendabel" open
+state characteristic "J1" "hoogstens een rendabel" open
+state characteristic "J1" "samengesteld filterdeponering"
+state characteristic "J1" "vindend"
+state characteristic "V1" "gekeurd"
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" "J1" "vondst" open
+state object "J1" "Jutter"
+state object "V1" "Vondst"

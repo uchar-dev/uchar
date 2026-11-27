@@ -1046,7 +1046,8 @@ final class SessionReaders {
                 if (key.isRole()) {
                     RegelSpraakModel.FactType ft = analysis.factType(key.factType());
                     if (ft != null && !ft.reciprocal && ft.roles.size() == 2
-                            && !roleLinkedInSession(session, subject, ft, key.roleIndex()))
+                            && (ft.roles.get(key.roleIndex()).many()
+                                    || !roleLinkedInSession(session, subject, ft, key.roleIndex())))
                         out.add(Fixpoint.OpenValue.role(subject, name, ft.name, key.roleIndex()));
                     continue;
                 }
@@ -1328,10 +1329,11 @@ final class SessionReaders {
                 + FactNames.object(o) + ", on which the form runs without a guard on its turn and within its validity");
     }
 
-    /** What the members of the folds of a session gave them, by fold and subject: the contributions, and the members that
-     *  do not stand. */
+    /** What the members of the folds of a session gave them, by fold and subject: the contributions, the members that
+     *  do not stand, and the first open step in the range. */
     private record FoldFacts(Map<String, Map<Object, List<Contribution>>> contributions,
-                             Map<String, Map<Object, List<FoldOpen>>> open) {
+                             Map<String, Map<Object, List<FoldOpen>>> open,
+                             Map<String, Map<Object, RangeOpen>> rangeOpen) {
 
         List<Contribution> contributions(String fold, Object subject) {
             return contributions.getOrDefault(fold, Map.of()).getOrDefault(subject, List.of());
@@ -1340,10 +1342,14 @@ final class SessionReaders {
         List<FoldOpen> open(String fold, Object subject) {
             return open.getOrDefault(fold, Map.of()).getOrDefault(subject, List.of());
         }
+
+        RangeOpen rangeOpen(String fold, Object subject) {
+            return rangeOpen.getOrDefault(fold, Map.of()).get(subject);
+        }
     }
 
     private static FoldFacts foldFacts(KieSession session) {
-        FoldFacts out = new FoldFacts(new HashMap<>(), new HashMap<>());
+        FoldFacts out = new FoldFacts(new HashMap<>(), new HashMap<>(), new HashMap<>());
         for (Object f : session.getObjects(new ClassObjectFilter(Contribution.class))) {
             Contribution b = (Contribution) f;
             out.contributions.computeIfAbsent(b.fold(), k -> new HashMap<>())
@@ -1353,6 +1359,11 @@ final class SessionReaders {
             FoldOpen o = (FoldOpen) f;
             out.open.computeIfAbsent(o.fold(), k -> new HashMap<>())
                     .computeIfAbsent(o.subject(), k -> new ArrayList<>()).add(o);
+        }
+        for (Object f : session.getObjects(new ClassObjectFilter(RangeOpen.class))) {
+            RangeOpen ro = (RangeOpen) f;
+            out.rangeOpen.computeIfAbsent(ro.fold(), k -> new HashMap<>())
+                    .merge(ro.subject(), ro, (a, b) -> a.compareTo(b) <= 0 ? a : b);
         }
         return out;
     }
@@ -1435,7 +1446,8 @@ final class SessionReaders {
                 continue;
             }
             List<ConditionReading.Contributor> contributors = s.fold() == null ? List.of() : contributors(s, o, oc,
-                    folds.contributions(s.fold().key(), o), folds.open(s.fold().key(), o), rec, watch);
+                    folds.contributions(s.fold().key(), o), folds.open(s.fold().key(), o),
+                    folds.rangeOpen(s.fold().key(), o), rec, watch);
             boolean found = oc.fault() == null && !oc.undetermined();
             OpenMember open = oc.undetermined() ? named(oc.judgement().read(), folds, watch) : null;
             nodes.add(new ConditionReading.NodeReading(s.node(), s.kind(), true, RecordingRendering.given(oc.value()),
@@ -1607,7 +1619,7 @@ final class SessionReaders {
      *  {@code found}; the members of a fold the rules read without their order in the order of the fold ({@link #inOrder}). */
     private List<ConditionReading.Contributor> contributors(Site s, Object o, RecordingRendering.Outcome found,
                                                             List<Contribution> contributions, List<FoldOpen> open,
-                                                            RecordingRendering rec, Watch watch) {
+                                                            RangeOpen rangeOpen, RecordingRendering rec, Watch watch) {
         List<ConditionReading.Contributor> out = new ArrayList<>();
         // a fault of the fold's filter, or of a member's value, comes before the fold's value: its contributors are
         // not settled, and the node carries none (RUNTIME-SEMANTICS ch. 3.9a, 5.12)
@@ -1637,7 +1649,9 @@ final class SessionReaders {
         String key = s.fold().key();
         List<MemberTest> ordered = MemberTest.inOrder(foldOrders.containsKey(key) ? inOrder(key, o, tests, watch) : tests);
         Condition.QuantifierFold q = s.quantifier();
-        Composite reading = new Composite(q.quantifier(), q.threshold(), ordered.size(), MemberTest.past(ordered), null);
+        Composite reading = rangeOpen != null
+                ? Composite.openRange(q.quantifier(), q.threshold(), rangeOpen.read(), null)
+                : new Composite(q.quantifier(), q.threshold(), ordered.size(), MemberTest.past(ordered), null);
         boolean stopped = false;
         for (MemberTest m : ordered) {
             stopped = stopped || reading.stands();

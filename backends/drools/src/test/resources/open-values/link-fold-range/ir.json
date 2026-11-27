@@ -154,7 +154,8 @@
             "name": "vondst",
             "objectType": "Vondst",
             "plural": "vondsten",
-            "many": true
+            "many": true,
+            "complete": true
           }
         ]
       },
@@ -174,7 +175,8 @@
             "name": "opgeslagen vondst",
             "objectType": "Vondst",
             "plural": "opgeslagen vondsten",
-            "many": true
+            "many": true,
+            "complete": true
           }
         ]
       }

@@ -344,6 +344,9 @@ public enum StaticFunction {
     /** A role check over a count of links (ch. 5.8a): whether there is one, complemented where a {@code Boolean}
      *  constant says the check is negated. */
     ROLE_COUNT(ComputeHelpers.class, "roleCount", false),
+    /** A role check over a count of matching counterparts where the non-reciprocal to-many role can be open (ch. 1.5,
+     *  5.8a): at least one matching counterpart settles existence; zero on an open role breaks off. */
+    ROLE_COUNT_OPEN(ComputeHelpers.class, "roleCountOpen", false),
     /** A role check over the subject's own reference field, bound as whether it is set, complemented where a
      *  {@code Boolean} constant says the check is negated. */
     ROLE_FIELD(ComputeHelpers.class, "roleField", false),
@@ -371,6 +374,8 @@ public enum StaticFunction {
      *  {@code FoldOpen} facts after the sum, and no truth value but the judgement where Kleene's table over the
      *  contributors does not establish the verdict. */
     QUANTIFIER_VERDICT_OVER_OPEN(ComputeHelpers.class, "quantifierVerdictOverOpen", false),
+    /** As {@link #QUANTIFIER_VERDICT_OVER_OPEN}, where a step of the fold's range can be open (ch. 1.5). */
+    QUANTIFIER_VERDICT_OVER_RANGE(ComputeHelpers.class, "quantifierVerdictOverRange", false),
     /** The verdict of a quantifier fold whose matrix can fault or deposit, read over the outcome per contributor in
      *  the contributors' order and stopped as ch. 5.10 says; a contributor that is reached deposits to the probe and
      *  raises its fault. The function of a {@link Term.QuantifierRead}. */
@@ -379,6 +384,10 @@ public enum StaticFunction {
      *  fault nor deposit: the rule knows no order of its contributors, and an undetermined verdict names the fold, whose
      *  first open member a reading names (ch. 1.5, 5.12). The function of a {@link Term.QuantifierRead}. */
     QUANTIFIER_READ_UNORDERED(ComputeHelpers.class, "quantifierReadUnordered", true),
+    /** As {@link #QUANTIFIER_READ}, where a step of the fold's range can be open (ch. 1.5). */
+    QUANTIFIER_READ_OVER_RANGE(ComputeHelpers.class, "quantifierReadOverRange", true),
+    /** As {@link #QUANTIFIER_READ_UNORDERED}, where a step of the fold's range can be open (ch. 1.5). */
+    QUANTIFIER_READ_UNORDERED_OVER_RANGE(ComputeHelpers.class, "quantifierReadUnorderedOverRange", true),
     /** A test of the §9.5 channel of a form (ch. 5.6): whether the standing of its channel, bound off its
      *  {@code ChannelState}, says it is inconsistent. */
     CHANNEL(ComputeHelpers.class, "channel", false),
@@ -458,6 +467,7 @@ public enum StaticFunction {
     /** Whether a call is the read of a member or of a fold that can be open, which breaks the evaluation off where it
      *  is. */
     public boolean readsOpen() {
-        return this == READ || this == READ_INPUT || this == ROLE_FIELD_OPEN || this == STANDING_COUNT;
+        return this == READ || this == READ_INPUT || this == ROLE_FIELD_OPEN || this == ROLE_COUNT_OPEN
+                || this == STANDING_COUNT;
     }
 }

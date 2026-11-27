@@ -1,0 +1,25 @@
+reading /rules/rules/0/versions/0 "V1" 0 RoleMembership true
+reading /rules/rules/0/versions/0 "V1" HOLDS
+reading /rules/rules/0/versions/0 "V2" 0 RoleMembership undetermined open "V2" "vinder"
+reading /rules/rules/0/versions/0 "V2" OPEN
+reading /rules/rules/1/versions/0 "J1" 0 Aggregation 1 contributors ["V1" empty reached]
+reading /rules/rules/1/versions/0 "J1" HOLDS
+reading /rules/rules/2/versions/0 "J1" 0 RoleMembership true
+reading /rules/rules/2/versions/0 "J1" HOLDS
+reading /rules/rules/3/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached]
+reading /rules/rules/3/versions/0 "J1" HOLDS
+reading /rules/rules/4/versions/0 "J1" 0 QuantifierFold true contributors ["V1" true reached]
+reading /rules/rules/4/versions/0 "J1" HOLDS
+state attribute "J1" "vondstaantal" 1
+state attribute "V1" "gewicht" 20
+state attribute "V2" "gewicht" 20
+state characteristic "J1" "deels zwaar"
+state characteristic "J1" "vindend"
+state characteristic "J1" "volledig zwaar"
+state characteristic "V1" "toegewezen"
+state characteristic "V2" "toegewezen" open
+state link "vinding" "vinder" "J1" "vondst" "V1"
+state link "vinding" "vinder" open "vondst" "V2"
+state object "J1" "Jutter"
+state object "V1" "Vondst"
+state object "V2" "Vondst"

@@ -46,6 +46,7 @@ public final class Input {
     private final List<Link> links = new ArrayList<>();
     private final List<Empty> empty = new ArrayList<>();
     private final List<EmptyRole> emptyRoles = new ArrayList<>();
+    private final List<ClosedRole> closedRoles = new ArrayList<>();
     private final List<Absent> absent = new ArrayList<>();
     private boolean closedInputs;
 
@@ -67,6 +68,10 @@ public final class Input {
     /** A non-reciprocal single role the input states to be empty: {@code role} opposite {@code bean}, its declared name
      *  or plural in any spelling that is that name under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}. */
     record EmptyRole(Object bean, String role) {}
+
+    /** A non-reciprocal to-many role the input states to be closed: {@code role} opposite {@code bean}, its declared
+     *  name or plural in any spelling that is that name under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}. */
+    record ClosedRole(Object bean, String role) {}
 
     /** A characteristic the input states not to hold: {@code characteristic} of {@code bean}, its declared name in any
      *  spelling that is that name under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}. */
@@ -128,6 +133,15 @@ public final class Input {
         return this;
     }
 
+    /** States that the non-reciprocal to-many role {@code role} opposite {@code bean} is closed ({@code rolesClosed},
+     *  RUNTIME-SEMANTICS ch. 1.5): the links present in this input are all its elements on {@code bean}. {@code role} is
+     *  its declared name or plural, in any spelling that is that name under
+     *  {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}. */
+    public Input roleClosed(Object bean, String role) {
+        closedRoles.add(new ClosedRole(Objects.requireNonNull(bean, "bean"), Objects.requireNonNull(role, "role")));
+        return this;
+    }
+
     /** States that the characteristic {@code characteristic} of {@code bean} does not hold ({@code characteristicsAbsent},
      *  RUNTIME-SEMANTICS ch. 1.5): the bean must not hold it. {@code characteristic} is its declared name, in any spelling
      *  that is that name under {@link dev.uchar.regelspraak.transpiler.core.Namen#norm}, as a case names it. */
@@ -165,6 +179,10 @@ public final class Input {
 
     List<EmptyRole> emptyRoles() {
         return List.copyOf(emptyRoles);
+    }
+
+    List<ClosedRole> closedRoles() {
+        return List.copyOf(closedRoles);
     }
 
     List<Absent> absent() {

@@ -1,0 +1,294 @@
+{
+  "format": "uchar-ir-v1",
+  "inferFromEmpty": false,
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vondstaantal",
+            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative" }
+          }
+        ],
+        "characteristics": [
+          { "node": "Characteristic", "name": "vindend", "kind": "adjectival" },
+          { "node": "Characteristic", "name": "alle rendabel", "kind": "adjectival" },
+          { "node": "Characteristic", "name": "een rendabel", "kind": "adjectival" },
+          { "node": "Characteristic", "name": "hoogstens een rendabel", "kind": "adjectival" },
+          { "node": "Characteristic", "name": "alle datumgeldig", "kind": "adjectival" },
+          { "node": "Characteristic", "name": "samengesteld filterdeponering", "kind": "adjectival" }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vondst",
+        "animate": false,
+        "plural": "Vondsten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "opbrengst",
+            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }
+          },
+          {
+            "node": "Attribute",
+            "name": "uren",
+            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }
+          },
+          {
+            "node": "Attribute",
+            "name": "norm",
+            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }
+          }
+        ],
+        "characteristics": [
+          { "node": "Characteristic", "name": "gekeurd", "kind": "adjectival" },
+          { "node": "Characteristic", "name": "vrijgesteld", "kind": "adjectival" }
+        ]
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "vinding",
+        "reciprocal": false,
+        "roles": [
+          { "node": "Role", "name": "vinder", "objectType": "Jutter", "many": false, "complete": true },
+          { "node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "node": "Parameter",
+        "name": "minimumtarief",
+        "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }
+      }
+    ],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "vondstaantal",
+        "versions": [{
+          "validity": { "node": "Validity" },
+          "target": { "node": "AttributeReference", "attribute": "vondstaantal", "subjectType": "Jutter" },
+          "value": {
+            "node": "Aggregation",
+            "kind": "count",
+            "arguments": [{ "node": "AttributeReference", "attribute": "vondsten", "subjectType": "Jutter" }],
+            "elementType": "Vondst",
+            "sourceRole": { "node": "RoleBinding", "factType": "vinding", "role": "vondst" },
+            "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "nonNegative" }
+          },
+          "initialisation": false,
+          "presentation": "calculation"
+        }]
+      },
+      {
+        "node": "Rule",
+        "name": "vindend",
+        "versions": [{
+          "validity": { "node": "Validity" },
+          "target": { "node": "AttributeReference", "attribute": "vindend", "subjectType": "Jutter" },
+          "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Boolean" } },
+          "condition": { "node": "RoleMembership", "factType": "vinding", "role": "vinder", "negated": false },
+          "initialisation": false
+        }]
+      },
+      {
+        "node": "Rule",
+        "name": "alle rendabel",
+        "versions": [{
+          "validity": { "node": "Validity" },
+          "target": { "node": "AttributeReference", "attribute": "alle rendabel", "subjectType": "Jutter" },
+          "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Boolean" } },
+          "condition": {
+            "node": "QuantifierFold",
+            "quantifier": "all",
+            "elementType": "Vondst",
+            "sourceRole": { "node": "RoleBinding", "factType": "vinding", "role": "vondst" },
+            "test": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": { "node": "AttributeReference", "attribute": "opbrengst", "subjectType": "Vondst" },
+                "right": { "node": "AttributeReference", "attribute": "uren", "subjectType": "Vondst" },
+                "type": { "node": "Number", "whole": false, "decimals": 0, "sign": "unspecified" }
+              },
+              "right": { "node": "ParameterReference", "parameter": "minimumtarief" }
+            }
+          },
+          "initialisation": false
+        }]
+      },
+      {
+        "node": "Rule",
+        "name": "een rendabel",
+        "versions": [{
+          "validity": { "node": "Validity" },
+          "target": { "node": "AttributeReference", "attribute": "een rendabel", "subjectType": "Jutter" },
+          "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Boolean" } },
+          "condition": {
+            "node": "QuantifierFold",
+            "quantifier": "atLeast",
+            "threshold": 1,
+            "elementType": "Vondst",
+            "sourceRole": { "node": "RoleBinding", "factType": "vinding", "role": "vondst" },
+            "test": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": { "node": "AttributeReference", "attribute": "opbrengst", "subjectType": "Vondst" },
+                "right": { "node": "AttributeReference", "attribute": "uren", "subjectType": "Vondst" },
+                "type": { "node": "Number", "whole": false, "decimals": 0, "sign": "unspecified" }
+              },
+              "right": { "node": "ParameterReference", "parameter": "minimumtarief" }
+            }
+          },
+          "initialisation": false
+        }]
+      },
+      {
+        "node": "Rule",
+        "name": "hoogstens een rendabel",
+        "versions": [{
+          "validity": { "node": "Validity" },
+          "target": { "node": "AttributeReference", "attribute": "hoogstens een rendabel", "subjectType": "Jutter" },
+          "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Boolean" } },
+          "condition": {
+            "node": "QuantifierFold",
+            "quantifier": "atMost",
+            "threshold": 1,
+            "elementType": "Vondst",
+            "sourceRole": { "node": "RoleBinding", "factType": "vinding", "role": "vondst" },
+            "test": {
+              "node": "Comparison",
+              "op": "greater",
+              "left": {
+                "node": "Binary",
+                "op": "dividedBy",
+                "left": { "node": "AttributeReference", "attribute": "opbrengst", "subjectType": "Vondst" },
+                "right": { "node": "AttributeReference", "attribute": "uren", "subjectType": "Vondst" },
+                "type": { "node": "Number", "whole": false, "decimals": 0, "sign": "unspecified" }
+              },
+              "right": { "node": "ParameterReference", "parameter": "minimumtarief" }
+            }
+          },
+          "initialisation": false
+        }]
+      },
+      {
+        "node": "Rule",
+        "name": "alle datumgeldig",
+        "versions": [{
+          "validity": { "node": "Validity" },
+          "target": { "node": "AttributeReference", "attribute": "alle datumgeldig", "subjectType": "Jutter" },
+          "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Boolean" } },
+          "condition": {
+            "node": "QuantifierFold",
+            "quantifier": "all",
+            "elementType": "Vondst",
+            "sourceRole": { "node": "RoleBinding", "factType": "vinding", "role": "vondst" },
+            "test": {
+              "node": "Compound",
+              "quantifier": "atLeast",
+              "threshold": 1,
+              "parts": [
+                { "node": "CharacteristicCheck", "characteristic": "vrijgesteld", "negated": false },
+                {
+                  "node": "Comparison",
+                  "op": "greater",
+                  "left": {
+                    "node": "ContextValue",
+                    "name": "evaluationYear",
+                    "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }
+                  },
+                  "right": {
+                    "node": "Literal",
+                    "value": { "number": "2025" },
+                    "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }
+                  }
+                }
+              ]
+            }
+          },
+          "initialisation": false
+        }]
+      },
+      {
+        "node": "Rule",
+        "name": "samengesteld filterdeponering",
+        "versions": [{
+          "validity": { "node": "Validity" },
+          "target": { "node": "AttributeReference", "attribute": "samengesteld filterdeponering", "subjectType": "Jutter" },
+          "value": { "node": "Literal", "value": { "boolean": true }, "type": { "node": "Boolean" } },
+          "condition": {
+            "node": "Compound",
+            "quantifier": "atLeast",
+            "threshold": 1,
+            "parts": [
+              {
+                "node": "QuantifierFold",
+                "quantifier": "all",
+                "elementType": "Vondst",
+                "sourceRole": { "node": "RoleBinding", "factType": "vinding", "role": "vondst" },
+                "filter": {
+                  "node": "Compound",
+                  "quantifier": "atLeast",
+                  "threshold": 1,
+                  "parts": [
+                    {
+                      "node": "Comparison",
+                      "op": "greater",
+                      "left": {
+                        "node": "Binary",
+                        "op": "dividedBy",
+                        "left": { "node": "AttributeReference", "attribute": "opbrengst", "subjectType": "Vondst" },
+                        "right": { "node": "AttributeReference", "attribute": "norm", "subjectType": "Vondst" },
+                        "type": { "node": "Number", "whole": false, "decimals": 0, "sign": "unspecified" }
+                      },
+                      "right": {
+                        "node": "Literal",
+                        "value": { "number": "0" },
+                        "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }
+                      }
+                    },
+                    { "node": "Compound", "quantifier": "all", "threshold": 0, "parts": [] }
+                  ]
+                },
+                "test": { "node": "CharacteristicCheck", "characteristic": "gekeurd", "negated": false }
+              },
+              { "node": "Compound", "quantifier": "all", "threshold": 0, "parts": [] }
+            ]
+          },
+          "initialisation": false
+        }]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

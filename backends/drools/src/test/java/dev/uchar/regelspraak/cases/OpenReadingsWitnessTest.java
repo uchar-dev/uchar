@@ -274,6 +274,18 @@ class OpenReadingsWitnessTest {
         documents("open-settled-range-quantifier");
     }
 
+    /** Non-reciprocal to-many collections under {@code inferFromEmpty: false} against {@code ref --trace} on both
+     *  branches: {@code open-to-many-quantifier} (0 contributors without {@code contributors [...]}, monotone
+     *  short-circuiting with remaining {@code unreached} contributors, provisional matrix EF-014 fault and dropped
+     *  EF-005 deposit under open range, buffered filter deposit EF-005 dropped when {@code QuantifierFold} stays
+     *  undetermined inside {@code Compound} and flushed when it short-circuits to {@code false}, and {@code link ... open}
+     *  beside concrete links in {@code EndState}), {@code link-one-to-many}, and {@code jutterswet-invoer-collectie-strikt}. */
+    @Test void open_to_many_collections_readings_and_end_state_match_ref() throws Exception {
+        documents("open-to-many-quantifier");
+        pinned("open-link-one-to-many", VALUES.resolve("link-one-to-many"));
+        pinned("invoer-collectie-strikt", GOLDEN.resolve("jutterswet-invoer-collectie-strikt"));
+    }
+
     /** WV-5.12-open-creation and WV-5.12a-open-link: a creation is refused, with readings as without. */
     @Test void wv_5_12_open_creation_is_refused() {
         Path ir = Path.of("..", "..", "ref", "test", "fixtures", "strict-empty", "object-creation", "ir.json");
@@ -306,6 +318,9 @@ class OpenReadingsWitnessTest {
         Path golden = GOLDEN.resolve("jutterswet-ketenkwantor");
         var ir = (com.fasterxml.jackson.databind.node.ObjectNode) TmsDocuments.JSON.readTree(golden.resolve("ir.json").toFile());
         ir.put("inferFromEmpty", false);
+        for (var ft : ir.get("model").get("factTypes"))
+            for (var role : ft.get("roles"))
+                if (role.get("many").asBoolean()) ((com.fasterxml.jackson.databind.node.ObjectNode) role).put("complete", true);
         Path strict = dir.resolve("ir.json");
         Files.writeString(strict, ir.toString());
         List<Path> cases = cases(golden);

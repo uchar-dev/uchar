@@ -516,6 +516,22 @@ public final class DroolsBackend {
             closed.computeIfAbsent(r.bean(), k -> new HashSet<>())
                     .add(ProducerConsumer.ElementKey.role(ft.name, hit.roleIndex(), far.name()));
         }
+        for (Input.ClosedRole r : input.closedRoles()) {
+            ObjectType t = types.get(r.bean());
+            if (t == null) throw closedRoleRefused(r, DroolsCode.INSERT_CLOSED_ROLE.part("not-in-input"));
+            List<CaseInput.OppositeRole> hits = CaseInput.resolveOppositeRoles(build.model(), t, r.role());
+            if (hits.isEmpty())
+                throw closedRoleRefused(r, DroolsCode.INSERT_CLOSED_ROLE.part("undeclared", "objectType", t.name));
+            if (hits.size() > 1)
+                throw closedRoleRefused(r, DroolsCode.INSERT_CLOSED_ROLE.part("ambiguous", "objectType", t.name));
+            CaseInput.OppositeRole hit = hits.get(0);
+            RegelSpraakModel.FactType ft = hit.factType();
+            RegelSpraakModel.Role far = hit.role();
+            if (ft.reciprocal || !far.many() || ft.roles.size() != 2)
+                throw closedRoleRefused(r, DroolsCode.INSERT_CLOSED_ROLE.part("not-to-many", "objectType", t.name));
+            closed.computeIfAbsent(r.bean(), k -> new HashSet<>())
+                    .add(ProducerConsumer.ElementKey.role(ft.name, hit.roleIndex(), far.name()));
+        }
         OpenableMembers openable = build.execModelTranspiler().openableMembers();
         if (openable.isEmpty()) return null;
         Map<Object, Set<ProducerConsumer.ElementKey>> members = new IdentityHashMap<>();
@@ -546,6 +562,12 @@ public final class DroolsBackend {
     /** The refusal of the statement that a single role is empty, for {@code reason}. */
     private static IllegalArgumentException emptyRoleRefused(Input.EmptyRole r, Msg reason) {
         return new IllegalArgumentException(DroolsCode.INSERT_EMPTY_ROLE.reason("bean", name(r.bean()),
+                "role", r.role(), "reason", reason).text());
+    }
+
+    /** The refusal of the statement that a to-many role is closed, for {@code reason}. */
+    private static IllegalArgumentException closedRoleRefused(Input.ClosedRole r, Msg reason) {
+        return new IllegalArgumentException(DroolsCode.INSERT_CLOSED_ROLE.reason("bean", name(r.bean()),
                 "role", r.role(), "reason", reason).text());
     }
 

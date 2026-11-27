@@ -6,8 +6,8 @@ reading /rules/rules/1/versions/0 "S1" 0 Aggregation undetermined open "J2" "clu
 reading /rules/rules/1/versions/0 "S1" OPEN
 reading /rules/rules/1/versions/0 "S2" 0 Aggregation 1 contributors ["C2" empty reached]
 reading /rules/rules/1/versions/0 "S2" HOLDS
-reading /rules/rules/2/versions/0 "S1" 0 QuantifierFold undetermined open "J2" "club"
-reading /rules/rules/2/versions/0 "S1" OPEN
+reading /rules/rules/2/versions/0 "S1" 0 QuantifierFold false contributors ["C2" true reached; "C3" false reached]
+reading /rules/rules/2/versions/0 "S1" FAILS
 reading /rules/rules/2/versions/0 "S2" 0 QuantifierFold true contributors ["C2" true reached]
 reading /rules/rules/2/versions/0 "S2" HOLDS
 reading /rules/rules/3/versions/0 "S1" 0 Comparison undetermined open "J2" "club"
@@ -44,7 +44,6 @@ state characteristic "C3" "erkend" open
 state characteristic "C3" "groot" open
 state characteristic "C3" "verdeeld" open
 state characteristic "S1" "gedeeld" open
-state characteristic "S1" "keurig" open
 state characteristic "S1" "rijk" open
 state characteristic "S2" "gedeeld" open
 state characteristic "S2" "keurig"

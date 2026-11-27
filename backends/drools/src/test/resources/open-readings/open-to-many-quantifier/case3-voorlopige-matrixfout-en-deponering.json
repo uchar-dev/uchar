@@ -1,0 +1,35 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {},
+        "roles": {
+          "vondsten": ["V1"]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "opbrengst": { "number": "30" },
+          "uren": { "number": "0" },
+          "norm": { "number": "0" }
+        },
+        "roles": {},
+        "characteristics": ["gekeurd"],
+        "characteristicsAbsent": ["vrijgesteld"]
+      }
+    ],
+    "parameters": {
+      "minimumtarief": { "number": "10" }
+    }
+  },
+  "expected": [
+    { "kind": "consistent" }
+  ]
+}

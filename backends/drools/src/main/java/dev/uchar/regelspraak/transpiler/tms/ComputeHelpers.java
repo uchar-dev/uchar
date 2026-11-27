@@ -636,6 +636,20 @@ public final class ComputeHelpers {
         return negated;
     }
 
+    /** A role check over {@code countOf}, the number of matching counterparts linked to {@code subject}, where the
+     *  non-reciprocal to-many role {@code role} can be open (RUNTIME-SEMANTICS ch. 1.5, 5.8a): at least one matching
+     *  counterpart settles existence ({@code !negated}) even when the role is open; only zero matching counterparts on
+     *  an open role breaks off with {@link OpenRead}. */
+    public static boolean roleCountOpen(Object countOf, boolean negated, Object openInput, Object subject,
+                                        ElementKey role) {
+        if (((Number) countOf).longValue() > 0) return !negated;
+        if (openInput == null)
+            throw new IllegalStateException("the session has no OpenInput, which DroolsBackend.insert sets: the role "
+                    + FactNames.member(role) + " of " + FactNames.object(subject) + " reads it");
+        if (((OpenInput) openInput).incomplete(subject, role)) throw new OpenRead(new OpenMember(subject, role));
+        return negated;
+    }
+
     /** The value of a {@link PathState} at a missing link along {@code properties} from {@code subject}, where
      *  {@code roles} holds the {@link ElementKey} of each openable hop and {@code null} for any closed hop: at the
      *  first absent hop, its {@link OpenMember} when {@code openInput} leaves that hop open on the object reached
@@ -657,39 +671,17 @@ public final class ComputeHelpers {
         return null;
     }
 
-    /** Pre-outcome evaluation of a {@code Term.FoldRead} in ch. 5.11 order when a fold's range can meet an open
-     *  single step: when no step of the range is open ({@code rangeOpen == null}), runs the ordinary pre-outcome checks
-     *  and returns so {@code outcome} evaluates; otherwise throws the first {@link RangeOpen} before any filter fault,
-     *  undetermined filter or member fault of the same or a later selection, while an earlier selection's fault or
-     *  undetermined filter wins. */
+    /** Pre-outcome evaluation of an aggregation {@code Term.FoldRead} in ch. 5.11 order when its range (including all
+     *  branches of an {@code InstanceSetUnion}) can meet an open step: an open step ({@code rangeOpen != null}) breaks
+     *  the fold off immediately with {@link OpenRead} before any filter deposit, filter fault, member fault, contributor
+     *  or fallback; when every step of the range is closed ({@code rangeOpen == null}), runs the ordinary pre-outcome
+     *  checks and returns so {@code outcome} evaluates. */
     public static void beforeFoldOutcome(Object rangeOpen, Object depositFlag, Object deposits, Object filterFault,
-                                         Object memberFault, Object openMembers) {
-        RangeOpen ro = (RangeOpen) rangeOpen;
-        if (ro == null) {
-            if (depositFlag != null) reportFilterDeposits(depositFlag, deposits);
-            if (filterFault != null) throw ((FilterFault) filterFault).fault();
-            if (memberFault != null) throw ((MemberFault) memberFault).fault();
-            return;
-        }
-        FilterFault ff = (FilterFault) filterFault;
-        FoldOpen earliestOpen = null;
-        if (openMembers instanceof List<?> list)
-            for (Object o : list) {
-                FoldOpen fo = (FoldOpen) o;
-                if (earliestOpen == null || fo.place().get(1) < earliestOpen.place().get(1)) earliestOpen = fo;
-            }
-        int roSel = ro.selection();
-        int ffSel = ff == null ? Integer.MAX_VALUE : ff.place().get(0);
-        int openSel = earliestOpen == null ? Integer.MAX_VALUE : earliestOpen.place().get(1);
-        if (roSel <= ffSel && roSel <= openSel) {
-            throw ro.openRead();
-        }
+                                         Object memberFault) {
+        if (rangeOpen != null) throw ((RangeOpen) rangeOpen).openRead();
         if (depositFlag != null) reportFilterDeposits(depositFlag, deposits);
-        if (ff != null && ffSel <= openSel) throw ff.fault();
-        if (earliestOpen != null && openSel < roSel)
-            throw new OpenRead(OpenMember.ofFold(earliestOpen.fold(), earliestOpen.subject()));
+        if (filterFault != null) throw ((FilterFault) filterFault).fault();
         if (memberFault != null) throw ((MemberFault) memberFault).fault();
-        throw ro.openRead();
     }
 
     /** The read of that input ({@link #input}): an open member breaks the evaluation off. */
@@ -1008,6 +1000,51 @@ public final class ComputeHelpers {
             MemberTest first = (MemberTest) ((List<?>) contributions).get(0);
             throw new Undetermined(OpenMember.ofFold(first.fold(), first.subject()));
         }
+    }
+
+    /** Verdict of a quantifier fold whose matrix can neither fault nor deposit and whose filter is settled on each
+     *  known member, when the fold's range can be open ({@code rangeOpen != null}, {@code u = infinity},
+     *  RUNTIME-SEMANTICS ch. 1.5): short-circuits monotonically via {@link Composite#openTruth} or raises
+     *  {@link Undetermined} on {@code rangeOpen}; when {@code rangeOpen == null}, evaluates over the closed range. */
+    public static boolean quantifierVerdictOverRange(Object countOf, Object touch, Object open, Object rangeOpen,
+                                                     Condition.Quantifier kw, int threshold) {
+        long standing = ((Number) countOf).longValue();
+        long hits = standing == 0 ? 0 : ((BigDecimal) touch).longValueExact(), fails = standing - hits;
+        if (rangeOpen != null) {
+            Boolean truth = Composite.openTruth(kw, threshold, hits, fails);
+            if (truth == null) throw new Undetermined(((RangeOpen) rangeOpen).read());
+            return truth;
+        }
+        List<FoldOpen> members = FoldOpen.members(open);
+        Boolean truth = Composite.truth(kw, threshold, standing + members.size(), hits, fails);
+        if (truth == null) throw new Undetermined(OpenMember.ofFold(members.get(0).fold(), members.get(0).subject()));
+        return truth;
+    }
+
+    /** Ordered matrix replay of a quantifier fold whose range can be open: when {@code rangeOpen == null}, delegates to
+     *  {@link #quantifierRead}; when {@code rangeOpen != null}, reads every reached member provisionally under
+     *  {@code rangeOpen} ({@link Composite#openRange}) so matrix deposits are dropped and matrix faults become
+     *  undetermined, short-circuiting monotonically or raising {@link Undetermined} on {@code rangeOpen}. */
+    public static boolean quantifierReadOverRange(Object countOf, Object contributions, Object rangeOpen,
+                                                  Condition.Quantifier kw, int threshold, Object depositFlag) {
+        if (rangeOpen == null) return quantifierRead(countOf, contributions, kw, threshold, depositFlag);
+        List<MemberTest> members = MemberTest.inOrder(((Number) countOf).longValue() == 0 ? List.of()
+                : (List<?>) contributions);
+        Composite reading = Composite.openRange(kw, threshold, ((RangeOpen) rangeOpen).read(), depositFlag);
+        for (MemberTest member : members) {
+            if (reading.stands()) break;
+            reading.read(member.filter(), () -> member.replayed(depositFlag));
+        }
+        return reading.verdict();
+    }
+
+    /** As {@link #quantifierReadOverRange}, for a quantifier fold whose filter can be undetermined and whose matrix can
+     *  neither fault nor deposit: when {@code rangeOpen == null}, delegates to {@link #quantifierReadUnordered}; when
+     *  {@code rangeOpen != null}, evaluates under {@link Composite#openRange}. */
+    public static boolean quantifierReadUnorderedOverRange(Object countOf, Object contributions, Object rangeOpen,
+                                                           Condition.Quantifier kw, int threshold, Object depositFlag) {
+        if (rangeOpen == null) return quantifierReadUnordered(countOf, contributions, kw, threshold, depositFlag);
+        return quantifierReadOverRange(countOf, contributions, rangeOpen, kw, threshold, depositFlag);
     }
 
     /** A test of the §9.5 channel (RUNTIME-SEMANTICS ch. 5.6): whether {@code inconsistent}, the standing of a form's

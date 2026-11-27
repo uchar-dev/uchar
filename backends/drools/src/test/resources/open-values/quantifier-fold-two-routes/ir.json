@@ -114,7 +114,8 @@
             "name": "jutter",
             "objectType": "Jutter",
             "plural": "jutters",
-            "many": true
+            "many": true,
+            "complete": true
           }
         ]
       },
@@ -135,7 +136,8 @@
             "name": "lid",
             "objectType": "Jutter",
             "plural": "leden",
-            "many": true
+            "many": true,
+            "complete": true
           }
         ]
       }

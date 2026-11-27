@@ -608,7 +608,7 @@ class EmptyRoleInputWitnessTest {
                             Map.of("node", "Role", "name", r.name(), "objectType", "Jutter",
                                     "plural", r.plural(), "many", false),
                             Map.of("node", "Role", "name", r.nearRole(), "objectType", "Rolproef",
-                                    "plural", r.nearRole() + "en", "many", true))));
+                                    "plural", r.nearRole() + "en", "many", true, "complete", true))));
             rules.add(Map.of(
                     "node", "Rule",
                     "name", "regel " + r.factType(),

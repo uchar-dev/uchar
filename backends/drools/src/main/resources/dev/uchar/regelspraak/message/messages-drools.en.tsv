@@ -451,6 +451,11 @@ DROOLS-376.undeclared	its type {objectType} declares no role of that name opposi
 DROOLS-376.ambiguous	its type {objectType} has several roles of that name opposite itself
 DROOLS-376.not-to-one	only a non-reciprocal single role may be stated empty on {objectType}
 DROOLS-376.linked	a link already fills that role
+DROOLS-377	insert: the input states that the role "{role}" on {bean} is closed, and {reason}
+DROOLS-377.not-in-input	that bean is no bean of the input
+DROOLS-377.undeclared	its type {objectType} declares no role of that name opposite itself
+DROOLS-377.ambiguous	its type {objectType} has several roles of that name opposite itself
+DROOLS-377.not-to-many	only a non-reciprocal to-many role may be stated closed on {objectType}
 EF-001	role key "{roleKey}" on "{objectType}" is ambiguous across declared fact types
 EF-002	role "{role}" on "{label}" links unknown label "{target}"
 EF-003.calendar	malformed date '{lexeme}' on '{field}': the field widths are right but the calendar is not ({detail})

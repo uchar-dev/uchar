@@ -76,6 +76,8 @@ class CompleteLoaderWitnessTest {
         assertEquals(Set.of("gemeld"), twisted.completeCharacteristics);
         assertEquals(true, loaded.factTypes.get("vinding").roles.get(0).complete());
         assertEquals(false, loaded.factTypes.get("vinding").roles.get(1).complete());
+        ((ObjectNode) ir.get("model").get("factTypes").get(0).get("roles").get(1)).put("complete", true);
+        assertEquals(true, IrLoader.loadAll(ir).model().factTypes.get("vinding").roles.get(1).complete());
     }
 
     private static ObjectNode addFactType(ObjectNode ir) {

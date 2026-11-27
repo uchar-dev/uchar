@@ -40,7 +40,8 @@ final class TermTree {
             case Term.DayKind d -> "DayKind " + d.name();
             case Term.Compound s -> "Compound " + s.quantifier() + " " + s.threshold() + list(s.members());
             case Term.QuantifierRead k -> "QuantifierRead " + k.function() + " " + k.quantifier() + " " + k.threshold()
-                    + " probe " + k.depositFlag() + " (" + tree(k.count()) + ", " + tree(k.contributions()) + ")";
+                    + " probe " + k.depositFlag() + " (" + tree(k.count()) + ", " + tree(k.contributions())
+                    + (k.rangeOpen() == null ? "" : ", " + tree(k.rangeOpen())) + ")";
             case Term.WithoutFault z -> "WithoutFault(" + tree(z.condition()) + ")";
             case Term.Deferred x -> "Deferred (" + tree(x.value()) + ")";
         };
@@ -81,7 +82,8 @@ final class TermTree {
             case Term.FoldRead v -> List.of(v.outcome());
             case Term.DayKind d -> List.of();
             case Term.Compound s -> s.members();
-            case Term.QuantifierRead k -> List.of(k.count(), k.contributions());
+            case Term.QuantifierRead k -> k.rangeOpen() == null ? List.of(k.count(), k.contributions())
+                    : List.of(k.count(), k.contributions(), k.rangeOpen());
             case Term.WithoutFault z -> List.of(z.condition());
             case Term.Deferred x -> List.of(x.value());
         };

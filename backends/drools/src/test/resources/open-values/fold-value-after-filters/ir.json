@@ -108,7 +108,8 @@
             "name": "vondst",
             "objectType": "Vondst",
             "plural": "vondsten",
-            "many": true
+            "many": true,
+            "complete": true
           }
         ]
       }

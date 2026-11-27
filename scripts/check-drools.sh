@@ -1674,7 +1674,10 @@ EXPECTED_CHANNEL=(
 # 400 with jutterswet-invoer-rol and jutterswet-invoer-rol-strikt (card open-to-one-roles, 2026-11-26): non-reciprocal
 # to-one roles open without a link, closed by Role.complete or stated empty in rolesEmpty (RUNTIME-SEMANTICS ch. 1.5),
 # in an ordinary and in a strict document (PLAYED 3 and 6).
-EXPECTED_PLAYED=400
+# 402 with jutterswet-invoer-collectie and jutterswet-invoer-collectie-strikt (card open-to-many-roles, 2026-11-27):
+# non-reciprocal to-many roles open on case instances even beside supplied links, closed by Role.complete or stated
+# closed in rolesClosed (RUNTIME-SEMANTICS ch. 1.5), in an ordinary and in a strict document (PLAYED 4 and 7).
+EXPECTED_PLAYED=402
 
 
 # --- each list's own two guards (fixronde 2026-09-06; generalised over both lists 2026-09-19) ---

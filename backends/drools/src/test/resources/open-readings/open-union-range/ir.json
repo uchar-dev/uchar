@@ -12,12 +12,22 @@
           {
             "node": "Attribute",
             "name": "telling vooraan",
-            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
           },
           {
             "node": "Attribute",
             "name": "telling achteraan",
-            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
           }
         ],
         "characteristics": []
@@ -31,7 +41,12 @@
           {
             "node": "Attribute",
             "name": "waarde",
-            "datatype": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
           }
         ],
         "characteristics": []
@@ -43,8 +58,20 @@
         "name": "vondstmelding",
         "reciprocal": false,
         "roles": [
-          { "node": "Role", "name": "vinder", "objectType": "Jutter", "many": false },
-          { "node": "Role", "name": "vondst", "objectType": "Vondst", "plural": "vondsten", "many": true }
+          {
+            "node": "Role",
+            "name": "vinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vondst",
+            "objectType": "Vondst",
+            "plural": "vondsten",
+            "many": true,
+            "complete": true
+          }
         ]
       },
       {
@@ -52,8 +79,18 @@
         "name": "hoofdvangst",
         "reciprocal": false,
         "roles": [
-          { "node": "Role", "name": "hoofdvinder", "objectType": "Jutter", "many": false },
-          { "node": "Role", "name": "hoofdvondst", "objectType": "Vondst", "many": false }
+          {
+            "node": "Role",
+            "name": "hoofdvinder",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "hoofdvondst",
+            "objectType": "Vondst",
+            "many": false
+          }
         ]
       }
     ],
@@ -71,7 +108,9 @@
         "name": "vooraan gefilterd",
         "versions": [
           {
-            "validity": { "node": "Validity" },
+            "validity": {
+              "node": "Validity"
+            },
             "target": {
               "node": "AttributeReference",
               "attribute": "telling vooraan",
@@ -87,7 +126,11 @@
                     {
                       "node": "InstanceSetBranch",
                       "elementType": "Vondst",
-                      "sourceRole": { "node": "RoleBinding", "factType": "vondstmelding", "role": "vondst" },
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "vondstmelding",
+                        "role": "vondst"
+                      },
                       "filter": {
                         "node": "Comparison",
                         "op": "greater",
@@ -98,21 +141,42 @@
                         },
                         "right": {
                           "node": "Literal",
-                          "value": { "number": "10" },
-                          "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }
+                          "value": {
+                            "number": "10"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "unspecified"
+                          }
                         }
                       }
                     },
                     {
                       "node": "InstanceSetBranch",
                       "elementType": "Vondst",
-                      "sourceRole": { "node": "RoleBinding", "factType": "hoofdvangst", "role": "hoofdvondst" },
-                      "filter": { "node": "Compound", "quantifier": "all", "threshold": 0, "parts": [] }
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "hoofdvangst",
+                        "role": "hoofdvondst"
+                      },
+                      "filter": {
+                        "node": "Compound",
+                        "quantifier": "all",
+                        "threshold": 0,
+                        "parts": []
+                      }
                     }
                   ]
                 }
               ],
-              "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              }
             },
             "initialisation": false,
             "presentation": "calculation"
@@ -124,7 +188,9 @@
         "name": "achteraan gefilterd",
         "versions": [
           {
-            "validity": { "node": "Validity" },
+            "validity": {
+              "node": "Validity"
+            },
             "target": {
               "node": "AttributeReference",
               "attribute": "telling achteraan",
@@ -140,13 +206,26 @@
                     {
                       "node": "InstanceSetBranch",
                       "elementType": "Vondst",
-                      "sourceRole": { "node": "RoleBinding", "factType": "hoofdvangst", "role": "hoofdvondst" },
-                      "filter": { "node": "Compound", "quantifier": "all", "threshold": 0, "parts": [] }
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "hoofdvangst",
+                        "role": "hoofdvondst"
+                      },
+                      "filter": {
+                        "node": "Compound",
+                        "quantifier": "all",
+                        "threshold": 0,
+                        "parts": []
+                      }
                     },
                     {
                       "node": "InstanceSetBranch",
                       "elementType": "Vondst",
-                      "sourceRole": { "node": "RoleBinding", "factType": "vondstmelding", "role": "vondst" },
+                      "sourceRole": {
+                        "node": "RoleBinding",
+                        "factType": "vondstmelding",
+                        "role": "vondst"
+                      },
                       "filter": {
                         "node": "Comparison",
                         "op": "greater",
@@ -157,15 +236,27 @@
                         },
                         "right": {
                           "node": "Literal",
-                          "value": { "number": "10" },
-                          "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }
+                          "value": {
+                            "number": "10"
+                          },
+                          "type": {
+                            "node": "Number",
+                            "whole": true,
+                            "decimals": 0,
+                            "sign": "unspecified"
+                          }
                         }
                       }
                     }
                   ]
                 }
               ],
-              "type": { "node": "Number", "whole": true, "decimals": 0, "sign": "unspecified" }
+              "type": {
+                "node": "Number",
+                "whole": true,
+                "decimals": 0,
+                "sign": "unspecified"
+              }
             },
             "initialisation": false,
             "presentation": "calculation"
