@@ -797,16 +797,20 @@ RGS-470	het attribuut '{attribute}' van {label} heeft in één situatieblok zowe
 RGS-471	het attribuut '{attribute}' is met 'is leeg' gegeven, maar met een periode of als tijdsafhankelijk attribuut; een casebestand levert alleen een attribuut zonder tijdlijn als vaststaand leeg, zonder periode (attributesEmpty), en een tijdsafhankelijk attribuut is buiten de perioden die de situatie geeft leeg
 RGS-472	'{written}' is het gedimensioneerde attribuut '{attribute}' of een cel ervan en is met 'is leeg' gegeven, maar een casebestand levert alleen een attribuut zonder dimensies als vaststaand leeg (attributesEmpty), en een cel die de situatie niet noemt is leeg
 RGS-473	'{written}' verandert in een document zonder 'Afleiden uit leeg: nee' niets: daar is een attribuut dat de situatie niet noemt al leeg; de zin telt alleen in een document met 'Afleiden uit leeg: nee'
-RGS-474	rol '{role}' van feittype '{factType}': '{complete}' staat alleen op een niet-wederkerige naar-één-rol, {reason} (WF-130, dialect, Volledig gegeven)
-RGS-474.many	en '{role}' heeft kardinaliteit 'meerdere' — een naar-veel-rol draagt een verzameling en geen enkelvoudige referentie
-RGS-474.reciprocal	en '{factType}' is een wederkerig feittype — een wederkerig feittype heeft geen gerichte naar-één-rol
+RGS-474	rol '{role}' van feittype '{factType}': '{complete}' staat alleen op een rol van een niet-wederkerig feittype, en '{factType}' is een wederkerig feittype (WF-130, dialect, Volledig gegeven)
 RGS-475	rol '{role}' van feittype '{factType}': '{complete}' staat op een rol die {writer} op {nearType} zelf legt — de koppeling volgt dan op elk object van {nearType} haar schrijvers en is nergens zuivere invoer, dus de markering doet niets (RUNTIME-SEMANTICS ch. 1.5); laat '{complete}' weg, of zet het op de invoerleden die {writer} leest (dialect, Volledig gegeven)
 RGS-475.fact-creation	feitcreatie '{name}'
 RGS-475.object-creation	objectcreatie '{name}'
-RGS-476	'{written}' op {objectType} is met 'is leeg' gegeven, maar noemt zowel het attribuut '{attribute}' van {objectType} als de rol '{role}' van het feittype '{factType}'; maak de naam eenduidig zodat vaststaat of het attribuut (attributesEmpty) of de rol (rolesEmpty) leeg is
-RGS-477	de rol '{role}' van het feittype '{factType}' is met 'is leeg' gegeven, {reason}; een casebestand levert alleen een niet-wederkerige naar-één-rol als vaststaand leeg (rolesEmpty)
-RGS-477.many	maar heeft kardinaliteit 'meerdere'
-RGS-477.reciprocal	maar '{factType}' is een wederkerig feittype
-RGS-478	de rol '{role}' is met 'is leeg' gegeven, maar met een periode; een rol heeft geen tijdlijn en een casebestand levert een niet-wederkerige naar-één-rol alleen zonder periode als vaststaand leeg (rolesEmpty)
-RGS-479	de rol '{role}' van {label} heeft in één situatieblok zowel een koppeling als 'is leeg'; binnen een blok krijgt een rol een koppeling of is zij leeg, en een geërfde koppeling wordt alleen vervangen door een later blok: een volgende situatie waarop het scenario of de situatie gebaseerd is, of het eigen blok van het scenario of de situatie
-RGS-480	'{written}' verandert in een document zonder 'Afleiden uit leeg: nee' niets: daar heeft een rol die de situatie niet koppelt al geen koppeling; de zin telt alleen in een document met 'Afleiden uit leeg: nee' of waar zij een geërfde koppeling opheft
+RGS-476	'{written}' op {objectType} is met 'is leeg' of 'zijn leeg' gegeven, maar noemt zowel het attribuut '{attribute}' van {objectType} als de rol '{role}' van het feittype '{factType}'; maak de naam eenduidig zodat vaststaat of het attribuut (attributesEmpty) of de rol (rolesEmpty of rolesClosed) leeg is
+RGS-477	de rol '{role}' van het feittype '{factType}' {reason}
+RGS-477.complete-reciprocal	is met '(volledig gegeven)' gegeven, maar '{factType}' is een wederkerig feittype; een wederkerig feittype kent geen open of gesloten onderscheid en levert geen rol in rolesClosed
+RGS-477.is-many	is met 'is leeg' gegeven, maar heeft kardinaliteit 'meerdere'; schrijf 'zijn leeg' om een niet-wederkerige naar-veel-rol als vaststaand leeg te sluiten (rolesClosed)
+RGS-477.is-reciprocal	is met 'is leeg' gegeven, maar '{factType}' is een wederkerig feittype; alleen een niet-wederkerige naar-één-rol kan met 'is leeg' als vaststaand leeg worden geleverd (rolesEmpty)
+RGS-477.zijn-one	is met 'zijn leeg' gegeven, maar heeft kardinaliteit 'één'; schrijf 'is leeg' om een niet-wederkerige naar-één-rol als vaststaand leeg te leveren (rolesEmpty)
+RGS-477.zijn-reciprocal	is met 'zijn leeg' gegeven, maar '{factType}' is een wederkerig feittype; alleen een niet-wederkerige naar-veel-rol kan met 'zijn leeg' als vaststaand leeg worden gesloten (rolesClosed)
+RGS-478	de rol '{role}' is met 'is leeg' of 'zijn leeg' gegeven, maar met een periode; een rol heeft geen tijdlijn en een casebestand levert een rol alleen zonder periode als vaststaand leeg (rolesEmpty of rolesClosed)
+RGS-479	de rol '{role}' van {label} {conflict}; binnen één situatieblok krijgt een rol één samenhangende toewijzing, en een geërfde koppeling of sluiting wordt alleen vervangen door een later blok: een volgende situatie waarop het scenario of de situatie gebaseerd is, of het eigen blok van het scenario of de situatie
+RGS-479.conflicting-lists	krijgt in één situatieblok zowel een '(volledig gegeven)'-lijst als een open of afwijkende lijst
+RGS-479.linked-and-empty	heeft in één situatieblok zowel een koppeling als 'is leeg' of 'zijn leeg'
+RGS-479.outside-complete	is in één situatieblok met '(volledig gegeven)' gesloten zonder {target}, terwijl '{target}' in datzelfde blok naar {label} koppelt
+RGS-480	'{written}' verandert in een document zonder 'Afleiden uit leeg: nee' niets aan de sluiting van de rol: daar is elke rol al gesloten op de gegeven koppelingen; sluiting met 'is leeg', 'zijn leeg' of '(volledig gegeven)' telt alleen in een document met 'Afleiden uit leeg: nee' of waar zij een geërfde koppeling opheft

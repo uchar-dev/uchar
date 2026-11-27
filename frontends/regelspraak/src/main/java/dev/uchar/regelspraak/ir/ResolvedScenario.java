@@ -56,13 +56,20 @@ public record ResolvedScenario(String name, Scope scope, LocalDate asOfDate, Sit
     /** One instance: its label, its declared type, and its assignments. A later assignment of the same attribute,
      *  role or characteristic has replaced the earlier one in place, so each appears once; of a dimensioned attribute
      *  the same holds per cell. {@code rolesEmpty} holds the non-reciprocal to-one roles stated to have no link
-     *  ("de/het &lt;rol&gt; is leeg"), the case file's {@code rolesEmpty}. */
+     *  ("de/het &lt;rol&gt; is leeg"), the case file's {@code rolesEmpty}; {@code rolesClosed} holds the
+     *  non-reciprocal to-many roles closed as empty ("de/het &lt;rol-mv&gt; zijn leeg") or closed on their stated
+     *  elements ("de/het &lt;rol-mv&gt; zijn … (volledig gegeven)"), the case file's {@code rolesClosed}. */
     public record Instance(String label, ObjectType objectType, List<AttributeValue> attributes,
-                            List<RoleValue> roles, List<EmptyRole> rolesEmpty,
+                            List<RoleValue> roles, List<EmptyRole> rolesEmpty, List<ClosedRole> rolesClosed,
                             List<CharacteristicValue> characteristics) {
         public Instance(String label, ObjectType objectType, List<AttributeValue> attributes,
                         List<RoleValue> roles, List<CharacteristicValue> characteristics) {
-            this(label, objectType, attributes, roles, List.of(), characteristics);
+            this(label, objectType, attributes, roles, List.of(), List.of(), characteristics);
+        }
+        public Instance(String label, ObjectType objectType, List<AttributeValue> attributes,
+                        List<RoleValue> roles, List<EmptyRole> rolesEmpty,
+                        List<CharacteristicValue> characteristics) {
+            this(label, objectType, attributes, roles, rolesEmpty, List.of(), characteristics);
         }
     }
 
@@ -96,6 +103,13 @@ public record ResolvedScenario(String name, Scope scope, LocalDate asOfDate, Sit
      *  0-based far-role slot the role was resolved in, the declared target type of that far role, and the 1-based
      *  source line of the bullet. */
     public record EmptyRole(String key, FactType factType, int farIndex, ObjectType targetType, int line) {}
+
+    /** A non-reciprocal to-many role closed on this instance ("de/het &lt;rol-mv&gt; zijn leeg" or
+     *  "de/het &lt;rol-mv&gt; zijn … (volledig gegeven)"): the key as the case file writes it in {@code rolesClosed}
+     *  (the declared role name, or its declared plural where the source wrote the plural), the fact type and 0-based
+     *  far-role slot the role was resolved in, the declared target type of that far role, and the 1-based source line
+     *  of the bullet. */
+    public record ClosedRole(String key, FactType factType, int farIndex, ObjectType targetType, int line) {}
 
     /** A characteristic a situation gives on an instance under its declared name. {@code holds} is false where the
      *  situation states that it does not hold ("is niet X", "heeft geen X"), the case file's

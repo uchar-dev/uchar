@@ -1311,6 +1311,8 @@ public final class SemanticTokens {
         for (ToewijzingContext t : inst.toewijzing()) {
             if (t instanceof AttribuutLeegToewijzingContext a) {
                 emptyMemberOrRole(range(a.toewijzingNaam()), ot);
+            } else if (t instanceof RolToManyLeegToewijzingContext r) {
+                roleOrAmbiguousEmpty(range(r.toewijzingNaam()), ot);
             } else if (t instanceof AttribuutToewijzingContext a) {
                 member(range(a.toewijzingNaam()), Kind.ATTRIBUTE, ot);
             }
@@ -1486,6 +1488,26 @@ public final class SemanticTokens {
         if (hitsAttr && hitsRole) claim(r, Kind.UNRESOLVED, false, null);
         else if (hitsRole) role(range, ot);
         else member(range, Kind.ATTRIBUTE, ot);
+    }
+
+    /** A bullet {@code de|het <naam> zijn leeg} on an instance of {@code ot}: a non-reciprocal to-many role, refused as
+     *  ambiguous where an attribute or cell on {@code ot} carries the same name ({@link ScenarioResolver}). */
+    private void roleOrAmbiguousEmpty(int[] range, ObjectType ot) {
+        int[] r = withoutArticle(range);
+        if (r == null) return;
+        String written = text(r[0], r[1]);
+        if (ot == null) {
+            boolean hitsAttr = !members(written, Kind.ATTRIBUTE).isEmpty();
+            boolean hitsRole = !roles(written).isEmpty();
+            if (hitsAttr && hitsRole) claim(r, Kind.UNRESOLVED, false, null);
+            else role(range, null);
+            return;
+        }
+        boolean hitsAttr = ot.attributeName(written) != null
+                || !ExpressionBuilder.cellReadings(model, ot, written).isEmpty();
+        boolean hitsRole = !ScenarioResolver.rolesNamed(model, ot, written).isEmpty();
+        if (hitsAttr && hitsRole) claim(r, Kind.UNRESOLVED, false, null);
+        else role(range, ot);
     }
 
     /** A name of {@code kind}: unresolved without a candidate, linked to the one candidate, and of its kind without a

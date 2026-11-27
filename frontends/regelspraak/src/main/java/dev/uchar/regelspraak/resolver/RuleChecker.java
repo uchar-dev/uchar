@@ -3060,7 +3060,6 @@ final class RuleChecker {
      *  subtype of {@code nearType} leaves the role input outside that subtype, and the back-link role of an object
      *  creation on a case instance of the created type remains input as well (RUNTIME-SEMANTICS ch. 1.5). */
     private Msg ownRoleWriter(FactType ft, int farIdx, ObjectType nearType) {
-        Role far = ft.roles.get(farIdx);
         for (ResolvedObjectCreation oc : model.objectCreations) {
             if (oc.subject() == null || oc.createdType() == null || !nearType.isA(oc.subject())) continue;
             RegelSpraakModel.RoleBindingRef rb = oc.connectingRole() != null ? oc.connectingRole()
@@ -3089,8 +3088,8 @@ final class RuleChecker {
 
     private ObjectType factCreationTargetType(FactType ft, String targetRole) {
         if (targetRole == null || ft.roles.size() != 2) return null;
-        boolean m0 = sameName(ft.roles.get(0).name(), targetRole);
-        boolean m1 = sameName(ft.roles.get(1).name(), targetRole);
+        boolean m0 = roleMatchesSlot(ft, 0, targetRole);
+        boolean m1 = roleMatchesSlot(ft, 1, targetRole);
         if (m0 && !m1) return model.objectTypeByName(ft.roles.get(0).objectTypeName());
         if (m1 && !m0) return model.objectTypeByName(ft.roles.get(1).objectTypeName());
         return null;

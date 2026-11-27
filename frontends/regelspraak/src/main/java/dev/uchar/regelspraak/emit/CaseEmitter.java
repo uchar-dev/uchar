@@ -127,6 +127,11 @@ public final class CaseEmitter {
             for (EmptyRole r : i.rolesEmpty()) w.value(r.key());
             w.endArray();
         }
+        if (!i.rolesClosed().isEmpty()) {
+            w.key("rolesClosed").beginArray();
+            for (ClosedRole r : i.rolesClosed()) w.value(r.key());
+            w.endArray();
+        }
         w.key("characteristics").beginArray();
         for (CharacteristicValue k : i.characteristics()) if (k.holds() && k.periods() == null) w.value(k.characteristic());
         w.endArray();

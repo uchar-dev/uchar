@@ -370,7 +370,7 @@ class CompleteMarkerTest {
         return (List<Map<String, Object>>) ft.get("roles");
     }
 
-    @Test void the_marker_writes_complete_on_a_non_reciprocal_to_one_role_in_schema_key_order() {
+    @Test void the_marker_writes_complete_on_non_reciprocal_to_one_and_to_many_roles_in_schema_key_order() {
         String source = """
                 Afleiden uit leeg: nee
 
@@ -380,7 +380,7 @@ class CompleteMarkerTest {
 
                 Feittype vinder van een vondst
                     de vinder Jutter (volledig gegeven)
-                    de vondst (mv: vondsten) Vondst
+                    de vondst (mv: vondsten) Vondst (volledig gegeven)
                 Eén vinder heeft meerdere vondsten
 
                 Feittype keuring van een vondst
@@ -393,8 +393,13 @@ class CompleteMarkerTest {
         assertEquals(List.of("node", "name", "objectType", "many", "complete"), List.copyOf(vinder.keySet()));
         assertEquals(Boolean.FALSE, vinder.get("many"));
         assertEquals(Boolean.TRUE, vinder.get("complete"));
-        assertFalse(factTypeRoles(ir, 0).get(1).containsKey("complete"));
 
+        Map<String, Object> vondst = factTypeRoles(ir, 0).get(1);
+        assertEquals(List.of("node", "name", "objectType", "plural", "many", "complete"), List.copyOf(vondst.keySet()));
+        assertEquals(Boolean.TRUE, vondst.get("many"));
+        assertEquals(Boolean.TRUE, vondst.get("complete"));
+
+        assertFalse(factTypeRoles(ir, 1).get(0).containsKey("complete"));
         Map<String, Object> keuring = factTypeRoles(ir, 1).get(1);
         assertEquals(List.of("node", "name", "objectType", "plural", "many", "complete"),
                 List.copyOf(keuring.keySet()));
@@ -405,28 +410,11 @@ class CompleteMarkerTest {
         SemanticTokensCheck.check(files, tokens);
         List<Span> markers = tokens.files().get(0).spans().stream()
                 .filter(s -> s.text().equals("(volledig gegeven)")).toList();
-        assertEquals(2, markers.size());
+        assertEquals(3, markers.size());
         assertTrue(markers.stream().allMatch(s -> s.kind() == Kind.KEYWORD && !s.declaration() && s.declaredAt() == null));
     }
 
-    @Test void rgs_474_refuses_complete_on_to_many_and_reciprocal_roles() {
-        Diagnostic many = refused("""
-                Afleiden uit leeg: nee
-
-                Objecttype de Jutter (mv: Jutters) (bezield)
-                Objecttype de Vondst (mv: Vondsten)
-
-                Feittype vinder van een vondst
-                    de vinder Jutter
-                    de vondst (mv: vondsten) Vondst (volledig gegeven)
-                Eén vinder heeft meerdere vondsten
-                """, "RGS-474");
-        assertEquals(8, many.line());
-        assertTrue(many.message(Locale.forLanguageTag("nl")).contains("kardinaliteit 'meerdere'"),
-                many.message(Locale.forLanguageTag("nl")));
-        assertTrue(many.message(Locale.ENGLISH).contains("cardinality 'meerdere'"),
-                many.message(Locale.ENGLISH));
-
+    @Test void rgs_474_refuses_complete_on_reciprocal_roles_only() {
         Diagnostic reciprocal = refused("""
                 Afleiden uit leeg: nee
 
@@ -478,6 +466,30 @@ class CompleteMarkerTest {
         String subtypeWriterAllowed = clean(objectCreationBase.formatted("", "(volledig gegeven)", "Strandvondst")).document();
         assertEquals(Boolean.TRUE, factTypeRoles(subtypeWriterAllowed, 0).get(1).get("complete"));
 
+        // 1:n ObjectCreation writes the to-many role ('keuring' / mv 'keuringen') on Vondst -> refused on 'keuring', allowed on 'vondst'
+        String toManyObjectCreation = """
+                Afleiden uit leeg: nee
+
+                Objecttype de Vondst (mv: Vondsten)
+                Objecttype de Keuring (mv: Keuringen)
+                    het rapportnummer Numeriek (geheel getal);
+
+                Feittype keuringen van een vondst
+                    de vondst Vondst %s
+                    de keuring (mv: keuringen) Keuring %s
+                Eén vondst heeft meerdere keuringen
+
+                Regel maak keuring
+                    geldig altijd
+                        Een Vondst heeft een keuring met rapportnummer gelijk aan 1.
+                """;
+        Diagnostic ocManyRefused = refused(toManyObjectCreation.formatted("", "(volledig gegeven)"), "RGS-475");
+        assertEquals(9, ocManyRefused.line());
+        assertTrue(ocManyRefused.message(Locale.forLanguageTag("nl")).contains("objectcreatie 'maak keuring' op Vondst zelf legt"),
+                ocManyRefused.message(Locale.forLanguageTag("nl")));
+        String ocManyBackLinkAllowed = clean(toManyObjectCreation.formatted("(volledig gegeven)", "")).document();
+        assertEquals(Boolean.TRUE, factTypeRoles(ocManyBackLinkAllowed, 0).get(0).get("complete"));
+
         // Self-relation: slot 1 ('volgende vergunning') written by ObjectCreation -> refused on slot 1, allowed on slot 0
         String selfRel = """
                 Afleiden uit leeg: nee
@@ -502,7 +514,7 @@ class CompleteMarkerTest {
         String selfAllowed = clean(selfRel.formatted("(volledig gegeven)", "")).document();
         assertEquals(Boolean.TRUE, factTypeRoles(selfAllowed, 0).get(0).get("complete"));
 
-        // FactCreation: writes 'hulpjutter' (the anchorRole, to-one) on Vondst -> refused on 'hulpjutter'
+        // FactCreation: writes both 'hulpjutter' (to-one on Vondst) AND 'hulpvondst' (to-many on Jutter) -> refused on either!
         String factCreationModel = """
                 Afleiden uit leeg: nee
 
@@ -515,17 +527,22 @@ class CompleteMarkerTest {
                 Eén vinder heeft meerdere vondsten
 
                 Feittype hulp bij een vondst
-                    de hulpjutter Jutter (volledig gegeven)
-                    de hulpvondst (mv: hulpvondsten) Vondst
+                    de hulpjutter Jutter %s
+                    de hulpvondst (mv: hulpvondsten) Vondst %s
                 Eén hulpjutter helpt bij meerdere hulpvondsten
 
                 Regel koppel hulpvondst
                     geldig altijd
                         Een hulpvondst van een Jutter is een vondst van de Jutter.
                 """;
-        Diagnostic fcRefused = refused(factCreationModel, "RGS-475");
-        assertEquals(12, fcRefused.line());
-        assertTrue(fcRefused.message(Locale.forLanguageTag("nl")).contains("feitcreatie 'koppel hulpvondst' op Vondst zelf legt"),
-                fcRefused.message(Locale.forLanguageTag("nl")));
+        Diagnostic fcToOneRefused = refused(factCreationModel.formatted("(volledig gegeven)", ""), "RGS-475");
+        assertEquals(12, fcToOneRefused.line());
+        assertTrue(fcToOneRefused.message(Locale.forLanguageTag("nl")).contains("feitcreatie 'koppel hulpvondst' op Vondst zelf legt"),
+                fcToOneRefused.message(Locale.forLanguageTag("nl")));
+
+        Diagnostic fcToManyRefused = refused(factCreationModel.formatted("", "(volledig gegeven)"), "RGS-475");
+        assertEquals(13, fcToManyRefused.line());
+        assertTrue(fcToManyRefused.message(Locale.forLanguageTag("nl")).contains("feitcreatie 'koppel hulpvondst' op Jutter zelf legt"),
+                fcToManyRefused.message(Locale.forLanguageTag("nl")));
     }
 }

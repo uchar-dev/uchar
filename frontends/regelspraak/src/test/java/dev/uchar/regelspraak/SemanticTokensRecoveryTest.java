@@ -218,7 +218,7 @@ class SemanticTokensRecoveryTest {
 
                 Feittype vondstmelding
                     de vinder Jutter (volledig gegeven)
-                    de vondst (mv: vondsten) Vondst
+                    de vondst (mv: vondsten) Vondst (volledig gegeven)
                 Eén vinder heeft meerdere vondsten
                 """;
         for (String broken : List.of("- de vinder", "- de vinder is", "- de vinder is leeg van")) {
@@ -240,9 +240,32 @@ class SemanticTokensRecoveryTest {
                 assertNotNull(role.declaredAt(), broken);
             }
         }
+        for (String broken : List.of("- de vondsten", "- de vondsten zijn", "- de vondsten zijn leeg van",
+                "- de vondsten zijn V1,", "- de vondsten zijn V1 (volledig")) {
+            String scenario = """
+                    Scenario afgebroken collectie
+                    Gegeven is de volgende situatie:
+                    een Vondst V1
+                    een Jutter J1
+                    """ + broken + "\nMet als verwacht resultaat:\n- de gegevens zijn consistent\n";
+            List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("model.rgs", model),
+                    new SemanticTokens.SourceFile("toets.rgs", scenario));
+            SemanticTokens.Document d = Resolver.tokens(files);
+            assertTrue(d.diagnostics().stream().anyMatch(x -> "RGS-216".equals(x.code())),
+                    () -> broken + ": the syntax error is in the output: " + d.diagnostics());
+            SemanticTokensCheck.check(files, d);
+            if (broken.contains("zijn leeg") || broken.contains("zijn V1")) {
+                SemanticTokens.Span role = d.files().get(1).spans().stream()
+                        .filter(s -> s.text().equals("vondsten")).findFirst().orElseThrow();
+                assertEquals(SemanticTokens.Kind.ROLE, role.kind(), broken);
+                assertNotNull(role.declaredAt(), broken);
+            }
+        }
         for (String cutRole : List.of(
                 model.substring(0, model.indexOf("(volledig gegeven)") + "(volledig".length()),
-                model.substring(0, model.indexOf("(volledig gegeven)") + "(volledig gegeven)".length()))) {
+                model.substring(0, model.indexOf("(volledig gegeven)") + "(volledig gegeven)".length()),
+                model.substring(0, model.lastIndexOf("(volledig gegeven)") + "(volledig".length()),
+                model.substring(0, model.lastIndexOf("(volledig gegeven)") + "(volledig gegeven)".length()))) {
             List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("cut.rgs", cutRole));
             SemanticTokens.Document d = Resolver.tokens(files);
             SemanticTokensCheck.check(files, d);

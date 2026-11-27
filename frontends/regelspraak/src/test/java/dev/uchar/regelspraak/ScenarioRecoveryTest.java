@@ -119,7 +119,7 @@ class ScenarioRecoveryTest {
                     de vondst (mv: vondsten) Vondst
                 Eén vinder heeft meerdere vondsten
                 """;
-        for (String model : List.of("Afleiden uit leeg: nee\n\n" + roleModel, roleModel))
+        for (String model : List.of("Afleiden uit leeg: nee\n\n" + roleModel, roleModel)) {
             for (String bullet : List.of("- de vinder", "- de vinder is",
                     "- de vinder is leeg van", "- de vinder is leeg van 01-01-2025")) {
                 ScenarioBundle b = ScenarioResolver.resolve(model + SCENARIO.replace("- de taxatie is 3", bullet));
@@ -129,6 +129,18 @@ class ScenarioRecoveryTest {
                 SemanticTokens.Document d = tokens(model, SCENARIO.replace("- de taxatie is 3", bullet));
                 assertTrue(d.diagnostics().stream().anyMatch(x -> "RGS-216".equals(x.code()) && "toets.rgs".equals(x.file())));
             }
+            for (String bullet : List.of("- de vondsten", "- de vondsten zijn",
+                    "- de vondsten zijn leeg van", "- de vondsten zijn leeg van 01-01-2025",
+                    "- de vondsten zijn V,", "- de vondsten zijn V en", "- de vondsten zijn V (volledig")) {
+                String scen = SCENARIO.replace("- de taxatie is 3", "- de taxatie is 3\neen Jutter J1\n" + bullet);
+                ScenarioBundle b = ScenarioResolver.resolve(model + scen);
+                assertFalse(b.isOk());
+                assertEquals(List.of("RGS-216"), codes(b.model().errors()), () -> bullet + " in\n" + model);
+                assertEquals(List.of(), codes(b.warnings()), () -> "no warning on " + bullet);
+                SemanticTokens.Document d = tokens(model, scen);
+                assertTrue(d.diagnostics().stream().anyMatch(x -> "RGS-216".equals(x.code()) && "toets.rgs".equals(x.file())));
+            }
+        }
     }
 
     /** Both routes return on {@code scenario} and report a syntax error; returns the codes of the ERRORs of

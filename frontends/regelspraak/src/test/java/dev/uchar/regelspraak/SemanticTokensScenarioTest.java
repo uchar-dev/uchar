@@ -401,6 +401,11 @@ class SemanticTokensScenarioTest {
                 een Vondst V1
                 - de afhaaldatum is leeg
                 - de vinder is leeg
+                een Vondst V2
+                een Jutter J1
+                - de vondsten zijn leeg
+                een Jutter J2
+                - de vondsten zijn V2 (volledig gegeven)
                 Met als verwacht resultaat:
                 - de gegevens zijn consistent
                 """;
@@ -420,6 +425,10 @@ class SemanticTokensScenarioTest {
                 lines.get(4));
         assertEquals(List.of("- punctuation", "de keyword", "vinder role 8", "is keyword", "leeg keyword"),
                 lines.get(5));
+        assertEquals(List.of("- punctuation", "de keyword", "vondsten role 9", "zijn keyword", "leeg keyword"),
+                lines.get(8));
+        assertEquals(List.of("- punctuation", "de keyword", "vondsten role 9", "zijn keyword", "V2 label 6",
+                "(volledig gegeven) keyword"), lines.get(10));
     }
 
     /** A characteristic declared with a leading "niet" binds its own declaration where its whole name is written, in

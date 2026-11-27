@@ -714,13 +714,28 @@ public final class ScenarioResolver {
     /** One block's contribution to a labelled instance. */
     private record InstanceFragment(String label, ObjectType objectType, List<AttributeValue> attributes,
                                      List<RoleAssignment> roles, List<EmptyRoleAssignment> rolesEmpty,
+                                     List<ClosedEmptyRoleAssignment> rolesClosedEmpty,
                                      List<RoleEvent> roleEvents, List<CharacteristicValue> characteristics, int line) {}
-    /** A role assignment keyed by its directed role slot, so a later assignment of the same role replaces it. */
-    private record RoleAssignment(RoleSlot slot, RoleValue value) {}
+    /** A role assignment keyed by its directed role slot, so a later assignment of the same role replaces it;
+     *  {@code closed} is non-null where a to-many list carries '(volledig gegeven)'. */
+    private record RoleAssignment(RoleSlot slot, RoleValue value, ClosedRole closed) {}
     /** A non-reciprocal to-one role stated to have no link ("de/het <rol> is leeg"). */
     private record EmptyRoleAssignment(RoleSlot slot, EmptyRole value) {}
-    /** One link or 'is leeg' event on a directed role slot within a situation block, in written order. */
-    private record RoleEvent(String targetLabel, RoleSlot slot, boolean linked, String roleNameOnTarget, int line) {}
+    /** A non-reciprocal to-many role stated to be empty ("de/het <rol-mv> zijn leeg"). */
+    private record ClosedEmptyRoleAssignment(RoleSlot slot, ClosedRole value) {}
+    private enum RoleEventKind { EMPTY, DIRECT_OPEN, DIRECT_CLOSED, COUNTERPART }
+    /** One link, 'is leeg', 'zijn leeg' or '(volledig gegeven)' event on a directed role slot within a situation
+     *  block, in written order. */
+    private record RoleEvent(String targetLabel, RoleSlot slot, RoleEventKind kind, Set<String> closedTargets,
+                             String counterpartLabel, String roleNameOnTarget, int line) {}
+
+    private static final class SlotBlockState {
+        boolean seenEmpty;
+        boolean seenAnyLink;
+        boolean seenDirectOpen;
+        Set<String> closedTargets;
+        final List<String> counterpartTargets = new ArrayList<>();
+    }
 
     private BlockResult validateBlock(SituatieBlokContext block) {
         List<InstanceFragment> instances = new ArrayList<>();
@@ -736,9 +751,9 @@ public final class ScenarioResolver {
                 if (pw != null) parameters.add(pw);
             }
         }
-        // within one block an attribute is given a value or 'is leeg', a role is given a link or 'is leeg' (from
-        // either end of the relation), and a characteristic holds or does not; only a block merged later replaces what
-        // it inherits
+        // within one block an attribute is given a value or 'is leeg', a role slot receives one coherent assignment
+        // (never both a link and 'is leeg'/'zijn leeg', nor a link outside a '(volledig gegeven)' list), and a
+        // characteristic holds or does not; only a block merged later replaces what it inherits
         Map<String, Map<String, Boolean>> filled = new HashMap<>();
         for (InstanceFragment f : instances)
             for (AttributeValue a : f.attributes()) {
@@ -748,15 +763,49 @@ public final class ScenarioResolver {
                 if (earlier != null && earlier != hasValue)
                     error(a.line(), "RGS-470", params("attribute", a.attribute(), "label", f.label()));
             }
-        Map<String, Map<RoleSlot, Boolean>> linked = new HashMap<>();
+        Map<String, Map<RoleSlot, SlotBlockState>> slotStates = new HashMap<>();
         Set<String> roleConflicts = new java.util.HashSet<>();
         for (InstanceFragment f : instances)
             for (RoleEvent ev : f.roleEvents()) {
-                Boolean earlier = linked.computeIfAbsent(ev.targetLabel(), x -> new HashMap<>())
-                        .putIfAbsent(ev.slot(), ev.linked());
-                if (earlier != null && earlier != ev.linked()
-                        && roleConflicts.add(ev.targetLabel() + "\u0000" + ev.slot().factTypeNorm() + "\u0000" + ev.slot().farIndex()))
-                    error(ev.line(), "RGS-479", params("label", ev.targetLabel(), "role", ev.roleNameOnTarget()));
+                SlotBlockState st = slotStates.computeIfAbsent(ev.targetLabel(), x -> new HashMap<>())
+                        .computeIfAbsent(ev.slot(), x -> new SlotBlockState());
+                String key = ev.targetLabel() + "\u0000" + ev.slot().factTypeNorm() + "\u0000" + ev.slot().farIndex();
+                Msg conflict = null;
+                switch (ev.kind()) {
+                    case EMPTY -> {
+                        if (st.seenAnyLink) conflict = Msg.frontend("RGS-479.linked-and-empty");
+                        st.seenEmpty = true;
+                    }
+                    case DIRECT_OPEN -> {
+                        if (st.seenEmpty) conflict = Msg.frontend("RGS-479.linked-and-empty");
+                        else if (st.closedTargets != null) conflict = Msg.frontend("RGS-479.conflicting-lists");
+                        st.seenAnyLink = true;
+                        st.seenDirectOpen = true;
+                    }
+                    case DIRECT_CLOSED -> {
+                        if (st.seenEmpty) conflict = Msg.frontend("RGS-479.linked-and-empty");
+                        else if (st.seenDirectOpen || (st.closedTargets != null && !st.closedTargets.equals(ev.closedTargets())))
+                            conflict = Msg.frontend("RGS-479.conflicting-lists");
+                        else {
+                            String outsider = st.counterpartTargets.stream()
+                                    .filter(ct -> !ev.closedTargets().contains(ct)).findFirst().orElse(null);
+                            if (outsider != null)
+                                conflict = Msg.frontend("RGS-479.outside-complete", "label", ev.targetLabel(), "target", outsider);
+                        }
+                        st.seenAnyLink = true;
+                        if (st.closedTargets == null) st.closedTargets = ev.closedTargets();
+                    }
+                    case COUNTERPART -> {
+                        if (st.seenEmpty) conflict = Msg.frontend("RGS-479.linked-and-empty");
+                        else if (st.closedTargets != null && !st.closedTargets.contains(ev.counterpartLabel()))
+                            conflict = Msg.frontend("RGS-479.outside-complete", "label", ev.targetLabel(),
+                                    "target", ev.counterpartLabel());
+                        st.seenAnyLink = true;
+                        st.counterpartTargets.add(ev.counterpartLabel());
+                    }
+                }
+                if (conflict != null && roleConflicts.add(key))
+                    error(ev.line(), "RGS-479", params("conflict", conflict, "label", ev.targetLabel(), "role", ev.roleNameOnTarget()));
             }
         Map<String, Map<String, Boolean>> given = new HashMap<>();
         for (InstanceFragment f : instances)
@@ -787,23 +836,39 @@ public final class ScenarioResolver {
         Set<String> fixed = new java.util.HashSet<>();
         List<RoleAssignment> roles = new ArrayList<>();
         List<EmptyRoleAssignment> rolesEmpty = new ArrayList<>();
+        List<ClosedEmptyRoleAssignment> rolesClosedEmpty = new ArrayList<>();
         List<RoleEvent> roleEvents = new ArrayList<>();
         List<CharacteristicValue> characteristics = new ArrayList<>();
         Map<String, List<TimeWindow>> periods = new LinkedHashMap<>();
         for (ToewijzingContext t : inst.toewijzing()) {
             if (t instanceof AttribuutLeegToewijzingContext a)
                 attributeOrRoleEmpty(a, label, ot, attributes, rolesEmpty, roleEvents);
+            else if (t instanceof RolToManyLeegToewijzingContext r)
+                roleToManyEmpty(r, label, ot, rolesClosedEmpty, roleEvents);
             else if (t instanceof AttribuutToewijzingContext a) attribute(a, ot, attributes, timelines, cells, fixed);
-            else if (t instanceof RolToOneToewijzingContext r)
-                role(label, ot, src(r.toewijzingNaam()), List.of(r.UPPER_ID().getText()), false, r.getStart().getLine(),
-                        roles, roleEvents);
-            else if (t instanceof RolToManyToewijzingContext r) {
-                List<String> labels = new ArrayList<>();
-                for (var u : r.UPPER_ID()) labels.add(u.getText());
-                role(label, ot, src(r.toewijzingNaam()), labels, true, r.getStart().getLine(), roles, roleEvents);
+            else if (t instanceof RolToOneToewijzingContext r) {
+                if (!DefinitionResolver.recovered(r))
+                    role(label, ot, src(r.toewijzingNaam()), List.of(r.UPPER_ID().getText()), false, false, null,
+                            r.getStart().getLine(), roles, roleEvents);
+            } else if (t instanceof RolToManyToewijzingContext r) {
+                if (!DefinitionResolver.recovered(r)) {
+                    List<String> labels = new ArrayList<>();
+                    for (var u : r.UPPER_ID()) labels.add(u.getText());
+                    boolean complete = r.VOLLEDIG_GEGEVEN() != null;
+                    String snippet = complete && model.inferFromEmpty()
+                            ? r.getStart().getInputStream()
+                                    .getText(org.antlr.v4.runtime.misc.Interval.of(
+                                            r.bepaaldLidwoord().getStart().getStartIndex(),
+                                            r.VOLLEDIG_GEGEVEN().getSymbol().getStopIndex()))
+                                    .replaceAll("\\s+", " ").trim()
+                            : null;
+                    role(label, ot, src(r.toewijzingNaam()), labels, true, complete, snippet, r.getStart().getLine(),
+                            roles, roleEvents);
+                }
             } else if (t instanceof KenmerkToewijzingContext k) characteristic(k, ot, characteristics, periods);
         }
-        return new InstanceFragment(label, ot, attributes, roles, rolesEmpty, roleEvents, characteristics, line);
+        return new InstanceFragment(label, ot, attributes, roles, rolesEmpty, rolesClosedEmpty, roleEvents,
+                characteristics, line);
     }
 
     private void attributeOrRoleEmpty(AttribuutLeegToewijzingContext a, String label, ObjectType ot,
@@ -840,8 +905,9 @@ public final class ScenarioResolver {
             Role far = hit.role();
             if (ft.reciprocal || far.many()) {
                 error(line, "RGS-477", params("factType", ft.name,
-                        "reason", Msg.frontend(ft.reciprocal ? "RGS-477.reciprocal" : "RGS-477.many",
-                                ft.reciprocal ? "factType" : "role", ft.reciprocal ? ft.name : written),
+                        "reason", ft.reciprocal
+                                ? Msg.frontend("RGS-477.is-reciprocal", "factType", ft.name)
+                                : Msg.frontend("RGS-477.is-many"),
                         "role", written));
                 return;
             }
@@ -855,7 +921,7 @@ public final class ScenarioResolver {
             EmptyRoleAssignment empty = new EmptyRoleAssignment(slot,
                     new EmptyRole(key, ft, hit.farIndex(), targetType, line));
             rolesEmpty.add(empty);
-            roleEvents.add(new RoleEvent(label, slot, false, far.name(), line));
+            roleEvents.add(new RoleEvent(label, slot, RoleEventKind.EMPTY, null, null, far.name(), line));
             if (model.inferFromEmpty()) {
                 String snippet = a.getStart().getInputStream()
                         .getText(org.antlr.v4.runtime.misc.Interval.of(a.bepaaldLidwoord().getStart().getStartIndex(),
@@ -885,6 +951,68 @@ public final class ScenarioResolver {
                             a.LEEG().getSymbol().getStopIndex()))
                     .replaceAll("\\s+", " ").trim();
             idleBullets.add(new IdleBullet(empty, new Typing.Coded("RGS-473", params("written", snippet)), line));
+        }
+    }
+
+    private void roleToManyEmpty(RolToManyLeegToewijzingContext r, String label, ObjectType ot,
+                                 List<ClosedEmptyRoleAssignment> rolesClosedEmpty, List<RoleEvent> roleEvents) {
+        if (DefinitionResolver.recovered(r)) return;
+        int line = r.getStart().getLine();
+        String written = withoutArticle(src(r.toewijzingNaam()));
+        if (ot == null) return;
+        String directAttr = ot.attributeName(written);
+        List<ExpressionBuilder.CellReading> cellReadings = directAttr != null ? List.of()
+                : ExpressionBuilder.cellReadings(model, ot, written);
+        boolean hitsAttr = directAttr != null || !cellReadings.isEmpty();
+        List<RoleHit> roleHits = rolesNamed(model, ot, written);
+        boolean hitsRole = !roleHits.isEmpty();
+        if (hitsAttr && hitsRole) {
+            String attrName = directAttr;
+            if (attrName == null) {
+                ExpressionBuilder.CellChoice choice = ExpressionBuilder.chooseCell(cellReadings);
+                attrName = choice.cells().isEmpty() ? choice.partial().attribute() : choice.cells().get(0).attribute();
+            }
+            RoleHit rh = roleHits.get(0);
+            error(line, "RGS-476", params("attribute", attrName, "factType", rh.factType().name, "objectType", ot.name,
+                    "role", rh.role().name(), "written", written));
+            return;
+        }
+        if (!hitsRole) {
+            error(line, "RGS-246", params("objectType", ot.name, "role", written));
+            return;
+        }
+        if (roleHits.size() > 1) {
+            error(line, "RGS-247", params("role", written, "objectType", ot.name));
+            return;
+        }
+        RoleHit hit = roleHits.get(0);
+        FactType ft = hit.factType();
+        Role far = hit.role();
+        if (ft.reciprocal || !far.many()) {
+            error(line, "RGS-477", params("factType", ft.name,
+                    "reason", ft.reciprocal
+                            ? Msg.frontend("RGS-477.zijn-reciprocal", "factType", ft.name)
+                            : Msg.frontend("RGS-477.zijn-one"),
+                    "role", written));
+            return;
+        }
+        if (r.periode() != null) {
+            error(line, "RGS-478", params("role", written));
+            return;
+        }
+        String key = far.plural() != null && norm(far.plural()).equals(norm(written)) ? far.plural() : far.name();
+        RoleSlot slot = new RoleSlot(norm(ft.name), hit.farIndex());
+        ObjectType targetType = model.objectTypeByName(far.objectTypeName());
+        ClosedEmptyRoleAssignment closedEmpty = new ClosedEmptyRoleAssignment(slot,
+                new ClosedRole(key, ft, hit.farIndex(), targetType, line));
+        rolesClosedEmpty.add(closedEmpty);
+        roleEvents.add(new RoleEvent(label, slot, RoleEventKind.EMPTY, null, null, far.name(), line));
+        if (model.inferFromEmpty()) {
+            String snippet = r.getStart().getInputStream()
+                    .getText(org.antlr.v4.runtime.misc.Interval.of(r.bepaaldLidwoord().getStart().getStartIndex(),
+                            r.LEEG().getSymbol().getStopIndex()))
+                    .replaceAll("\\s+", " ").trim();
+            idleBullets.add(new IdleBullet(closedEmpty, new Typing.Coded("RGS-480", params("written", snippet)), line));
         }
     }
 
@@ -1064,7 +1192,8 @@ public final class ScenarioResolver {
      *  type in which {@code ot} fills a role, matched by its declared name or plural — the reading of the case
      *  readers, so the key the case file carries resolves there to this role. */
     private void role(String label, ObjectType ot, String writtenWithArticle, List<String> labels, boolean listForm,
-                      int line, List<RoleAssignment> roles, List<RoleEvent> roleEvents) {
+                      boolean complete, String completeSnippet, int line, List<RoleAssignment> roles,
+                      List<RoleEvent> roleEvents) {
         if (ot == null) return;
         String written = withoutArticle(writtenWithArticle);
         List<RoleHit> hits = rolesNamed(model, ot, written);
@@ -1081,6 +1210,12 @@ public final class ScenarioResolver {
         RoleHit hit = hits.get(0);
         FactType ft = hit.factType();
         Role far = hit.role();
+        if (complete && ft.reciprocal) {
+            error(line, "RGS-477", params("factType", ft.name,
+                    "reason", Msg.frontend("RGS-477.complete-reciprocal", "factType", ft.name),
+                    "role", written));
+            return;
+        }
         if (far.many() && !listForm) {
             error(line,
                     "RGS-248", params("role", written));
@@ -1093,14 +1228,21 @@ public final class ScenarioResolver {
         }
         String key = far.plural() != null && norm(far.plural()).equals(norm(written)) ? far.plural() : far.name();
         RoleSlot slot = new RoleSlot(norm(ft.name), hit.farIndex());
-        roles.add(new RoleAssignment(slot, new RoleValue(key, ft, hit.farIndex(),
-                model.objectTypeByName(far.objectTypeName()), List.copyOf(labels), far.many(), line)));
+        ObjectType targetType = model.objectTypeByName(far.objectTypeName());
+        ClosedRole closed = complete ? new ClosedRole(key, ft, hit.farIndex(), targetType, line) : null;
+        RoleAssignment ra = new RoleAssignment(slot,
+                new RoleValue(key, ft, hit.farIndex(), targetType, List.copyOf(labels), far.many(), line), closed);
+        roles.add(ra);
+        if (complete && model.inferFromEmpty() && completeSnippet != null)
+            idleBullets.add(new IdleBullet(ra, new Typing.Coded("RGS-480", params("written", completeSnippet)), line));
         if (!ft.reciprocal && ft.roles.size() == 2) {
-            roleEvents.add(new RoleEvent(label, slot, true, far.name(), line));
+            roleEvents.add(new RoleEvent(label, slot,
+                    complete ? RoleEventKind.DIRECT_CLOSED : RoleEventKind.DIRECT_OPEN,
+                    complete ? Set.copyOf(labels) : null, null, far.name(), line));
             RoleSlot counterSlot = new RoleSlot(norm(ft.name), 1 - hit.farIndex());
             String nearName = ft.roles.get(1 - hit.farIndex()).name();
             for (String tgt : labels)
-                roleEvents.add(new RoleEvent(tgt, counterSlot, true, nearName, line));
+                roleEvents.add(new RoleEvent(tgt, counterSlot, RoleEventKind.COUNTERPART, null, label, nearName, line));
         }
     }
 
@@ -1455,9 +1597,12 @@ public final class ScenarioResolver {
         Map<String, InstanceBuilder> instances = new LinkedHashMap<>();
         Map<String, ParameterValue> parameters = new LinkedHashMap<>();
         for (BlockResult block : sources) {
-            // snapshot which (label, slot) pairs are linked at the end of the preceding blocks so 'is leeg' in this
-            // block counts as a replacement iff a preceding block had linked that slot from either end
+            // snapshot which (label, slot) pairs are linked at the end of the preceding blocks so 'is leeg'/'zijn leeg'
+            // counts as a replacement iff a preceding block had linked that slot from either end, and so a
+            // '(volledig gegeven)' list counts as a replacement iff a preceding block had a counterpart link outside
+            // that list
             Set<String> linkedBeforeBlock = new java.util.HashSet<>();
+            Map<String, Set<String>> counterpartLinksBeforeBlock = new HashMap<>();
             if (!reportErrors) {
                 for (InstanceBuilder b : instances.values())
                     for (Map.Entry<RoleSlot, RoleValue> e : b.roles.entrySet()) {
@@ -1466,8 +1611,11 @@ public final class ScenarioResolver {
                             continue;
                         linkedBeforeBlock.add(b.label + "\u0000" + e.getKey().factTypeNorm() + "\u0000" + e.getKey().farIndex());
                         int nearIdx = 1 - e.getKey().farIndex();
-                        for (String tgt : rv.targetLabels())
-                            linkedBeforeBlock.add(tgt + "\u0000" + e.getKey().factTypeNorm() + "\u0000" + nearIdx);
+                        for (String tgt : rv.targetLabels()) {
+                            String tgtSlotKey = tgt + "\u0000" + e.getKey().factTypeNorm() + "\u0000" + nearIdx;
+                            linkedBeforeBlock.add(tgtSlotKey);
+                            counterpartLinksBeforeBlock.computeIfAbsent(tgtSlotKey, x -> new java.util.HashSet<>()).add(b.label);
+                        }
                     }
             }
             for (InstanceFragment frag : block.instances()) {
@@ -1483,18 +1631,45 @@ public final class ScenarioResolver {
                 frag.attributes().forEach(builder::setAttribute);
                 frag.characteristics().forEach(builder::setCharacteristic);
             }
+            Set<String> closedInBlock = new java.util.HashSet<>();
+            for (InstanceFragment frag : block.instances())
+                for (RoleAssignment ra : frag.roles())
+                    if (ra.closed() != null)
+                        closedInBlock.add(frag.label() + "\u0000" + ra.slot().factTypeNorm() + "\u0000" + ra.slot().farIndex());
             for (InstanceFragment frag : block.instances()) {
                 InstanceBuilder builder = instances.get(frag.label());
                 for (RoleAssignment ra : frag.roles()) {
+                    if (!reportErrors && ra.closed() != null) {
+                        Set<String> inheritedCounterparts = counterpartLinksBeforeBlock.get(
+                                frag.label() + "\u0000" + ra.slot().factTypeNorm() + "\u0000" + ra.slot().farIndex());
+                        if (inheritedCounterparts != null
+                                && inheritedCounterparts.stream().anyMatch(c -> !ra.value().targetLabels().contains(c)))
+                            replaces.add(ra);
+                    }
                     builder.setRole(ra);
                     RoleValue rv = ra.value();
                     if (!rv.factType().reciprocal && rv.factType().roles.size() == 2) {
                         RoleSlot counterSlot = new RoleSlot(ra.slot().factTypeNorm(), 1 - ra.slot().farIndex());
                         for (String tgt : rv.targetLabels()) {
                             InstanceBuilder tb = instances.get(tgt);
-                            if (tb != null) tb.rolesEmpty.remove(counterSlot);
+                            if (tb != null) {
+                                tb.rolesEmpty.remove(counterSlot);
+                                if (!closedInBlock.contains(tgt + "\u0000" + counterSlot.factTypeNorm() + "\u0000" + counterSlot.farIndex()))
+                                    tb.rolesClosed.remove(counterSlot);
+                            }
                         }
                     }
+                }
+            }
+            for (InstanceFragment frag : block.instances()) {
+                InstanceBuilder builder = instances.get(frag.label());
+                for (RoleAssignment ra : frag.roles()) {
+                    if (ra.closed() == null) continue;
+                    Set<String> allowed = Set.copyOf(ra.value().targetLabels());
+                    RoleSlot counterSlot = new RoleSlot(ra.slot().factTypeNorm(), 1 - ra.slot().farIndex());
+                    for (InstanceBuilder other : instances.values())
+                        if (!allowed.contains(other.label))
+                            other.unlinkCounterpart(counterSlot, frag.label());
                 }
                 for (EmptyRoleAssignment er : frag.rolesEmpty()) {
                     if (!reportErrors && linkedBeforeBlock.contains(
@@ -1502,6 +1677,15 @@ public final class ScenarioResolver {
                         replaces.add(er);
                     builder.setRoleEmpty(er);
                     RoleSlot counterSlot = new RoleSlot(er.slot().factTypeNorm(), 1 - er.slot().farIndex());
+                    for (InstanceBuilder other : instances.values())
+                        other.unlinkCounterpart(counterSlot, frag.label());
+                }
+                for (ClosedEmptyRoleAssignment cr : frag.rolesClosedEmpty()) {
+                    if (!reportErrors && linkedBeforeBlock.contains(
+                            frag.label() + "\u0000" + cr.slot().factTypeNorm() + "\u0000" + cr.slot().farIndex()))
+                        replaces.add(cr);
+                    builder.setRoleClosedEmpty(cr);
+                    RoleSlot counterSlot = new RoleSlot(cr.slot().factTypeNorm(), 1 - cr.slot().farIndex());
                     for (InstanceBuilder other : instances.values())
                         other.unlinkCounterpart(counterSlot, frag.label());
                 }
@@ -1539,6 +1723,7 @@ public final class ScenarioResolver {
         private final Map<String, AttributeValue> attributes = new LinkedHashMap<>();
         private final Map<RoleSlot, RoleValue> roles = new LinkedHashMap<>();
         private final Map<RoleSlot, EmptyRole> rolesEmpty = new LinkedHashMap<>();
+        private final Map<RoleSlot, ClosedRole> rolesClosed = new LinkedHashMap<>();
         private final Map<String, CharacteristicValue> characteristics = new LinkedHashMap<>();
 
         InstanceBuilder(String label, ObjectType objectType) { this.label = label; this.objectType = objectType; }
@@ -1557,10 +1742,16 @@ public final class ScenarioResolver {
         void setRole(RoleAssignment t) {
             rolesEmpty.remove(t.slot());
             roles.put(t.slot(), t.value());
+            if (t.closed() != null) rolesClosed.put(t.slot(), t.closed());
+            else rolesClosed.remove(t.slot());
         }
         void setRoleEmpty(EmptyRoleAssignment er) {
             roles.remove(er.slot());
             rolesEmpty.put(er.slot(), er.value());
+        }
+        void setRoleClosedEmpty(ClosedEmptyRoleAssignment cr) {
+            roles.remove(cr.slot());
+            rolesClosed.put(cr.slot(), cr.value());
         }
         void unlinkCounterpart(RoleSlot counterSlot, String unlinkedTarget) {
             RoleValue rv = roles.get(counterSlot);
@@ -1575,7 +1766,7 @@ public final class ScenarioResolver {
         Instance build() {
             return new Instance(label, objectType, new ArrayList<>(attributes.values()),
                     new ArrayList<>(roles.values()), new ArrayList<>(rolesEmpty.values()),
-                    new ArrayList<>(characteristics.values()));
+                    new ArrayList<>(rolesClosed.values()), new ArrayList<>(characteristics.values()));
         }
     }
 

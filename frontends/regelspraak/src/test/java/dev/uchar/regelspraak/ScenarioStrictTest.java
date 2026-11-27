@@ -1334,7 +1334,7 @@ class ScenarioStrictTest {
                 Met als verwacht resultaat:
                 - de gegevens zijn consistent
                 """;
-        assertEquals(List.of("RGS-479 {label=V1, role=vorige vergunning}"),
+        assertEquals(List.of("RGS-479 {conflict=heeft in één situatieblok zowel een koppeling als 'is leeg' of 'zijn leeg', label=V1, role=vorige vergunning}"),
                 errorsOn(counterpartConflict, "- de volgende vergunning is V1"));
     }
 
@@ -1396,9 +1396,9 @@ class ScenarioStrictTest {
                 Met als verwacht resultaat:
                 - de gegevens zijn consistent
                 """;
-        assertEquals(List.of("RGS-477 {factType=vondstmelding, reason=maar heeft kardinaliteit 'meerdere', role=vondsten}"),
+        assertEquals(List.of("RGS-477 {factType=vondstmelding, reason=is met 'is leeg' gegeven, maar heeft kardinaliteit 'meerdere'; schrijf 'zijn leeg' om een niet-wederkerige naar-veel-rol als vaststaand leeg te sluiten (rolesClosed), role=vondsten}"),
                 errorsOn(model, "- de vondsten is leeg"));
-        assertEquals(List.of("RGS-477 {factType=strandmaat, reason=maar 'strandmaat' is een wederkerig feittype, role=maat}"),
+        assertEquals(List.of("RGS-477 {factType=strandmaat, reason=is met 'is leeg' gegeven, maar 'strandmaat' is een wederkerig feittype; alleen een niet-wederkerige naar-één-rol kan met 'is leeg' als vaststaand leeg worden geleverd (rolesEmpty), role=maat}"),
                 errorsOn(model, "- de maat is leeg"));
         assertEquals(List.of("RGS-476 {attribute=keurmeester, factType=keuring, objectType=Vondst, role=keurmeester, written=keurmeester}"),
                 errorsOn(model, "- de keurmeester is leeg"));
@@ -1408,9 +1408,309 @@ class ScenarioStrictTest {
                 errorsOn(model, "- de beoordelaar is leeg"));
         assertEquals(List.of("RGS-478 {role=vinder}"),
                 errorsOn(model, "- de vinder is leeg van"));
-        assertEquals(List.of("RGS-479 {label=V1, role=vinder}"),
+        assertEquals(List.of("RGS-479 {conflict=heeft in één situatieblok zowel een koppeling als 'is leeg' of 'zijn leeg', label=V1, role=vinder}"),
                 errorsOn(model, "- de vinder is leeg // direct op V1"));
-        assertEquals(List.of("RGS-479 {label=V2, role=vinder}"),
+        assertEquals(List.of("RGS-479 {conflict=heeft in één situatieblok zowel een koppeling als 'is leeg' of 'zijn leeg', label=V2, role=vinder}"),
                 errorsOn(model, "- de vinder is leeg // tegenrol op J1"));
+    }
+
+    @Test void role_zijn_leeg_and_volledig_gegeven_write_rolesClosed_in_schema_key_order_and_are_idempotent() {
+        String source = NEE + MODEL + """
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                Objecttype de Ploeg (mv: Ploegen)
+                Objecttype de Keuring (mv: Keuringen)
+
+                Feittype ploegverband
+                    het ploeglid Jutter
+                    de ploeg Ploeg
+                Eén ploeglid heeft één ploeg
+
+                Feittype vondstmelding
+                    de vinder Jutter
+                    de vondst (mv: vondsten) Vondst
+                Eén vinder heeft meerdere vondsten
+
+                Feittype keuring van een vondst
+                    de keurmeester Jutter
+                    de gekeurde vondst (mv: gekeurde vondsten) Vondst
+                Eén keurmeester heeft meerdere gekeurde vondsten
+
+                Scenario collectie gesloten en sleutelvolgorde
+                Gegeven is de volgende situatie:
+                een Vondst V1
+                - het gewicht is 7
+                - de afhaaldatum is leeg
+                - de vinder is J1
+                een Vondst V2
+                een Jutter J1
+                - de ploeg is leeg
+                - de vondsten zijn V1 en V2 (volledig gegeven)
+                - de vondsten zijn V1, V2 (volledig gegeven)
+                - de gekeurde vondst zijn leeg
+                - de gekeurde vondsten zijn leeg
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        ResolvedScenario resolved = only(source);
+        String emitted = CaseEmitter.emit(resolved);
+        int j1At = emitted.indexOf("\"label\": \"J1\"");
+        String j1Slice = emitted.substring(j1At);
+        List<String> keys = List.of("\"label\"", "\"objectType\"", "\"attributes\"",
+                "\"roles\"", "\"rolesEmpty\"", "\"rolesClosed\"", "\"characteristics\"");
+        int prev = -1;
+        for (String key : keys) {
+            int pos = j1Slice.indexOf(key);
+            assertTrue(pos > prev, () -> key + " out of order in:\n" + j1Slice);
+            prev = pos;
+        }
+        assertTrue(j1Slice.contains("""
+                "rolesClosed": [
+                          "vondsten",
+                          "gekeurde vondsten"
+                        ]"""), j1Slice);
+        assertFalse(j1Slice.contains("\"gekeurde vondsten\": ["), j1Slice);
+        assertFalse(emitted.substring(0, j1At).contains("rolesClosed"), "omitted when empty on V1 and V2");
+
+        List<ResolvedScenario.ClosedRole> closed = resolved.situation().instance("J1").rolesClosed();
+        assertEquals(2, closed.size());
+        assertEquals("vondsten", closed.get(0).key());
+        assertEquals("vondstmelding", closed.get(0).factType().name);
+        assertEquals(1, closed.get(0).farIndex());
+        assertEquals("Vondst", closed.get(0).targetType().name);
+        assertEquals(ScenarioFixture.lineOf(source, "- de vondsten zijn V1, V2 (volledig gegeven)"), closed.get(0).line());
+        assertEquals("gekeurde vondsten", closed.get(1).key());
+        assertEquals("keuring van een vondst", closed.get(1).factType().name);
+        assertEquals(1, closed.get(1).farIndex());
+        assertEquals("Vondst", closed.get(1).targetType().name);
+        assertEquals(ScenarioFixture.lineOf(source, "- de gekeurde vondsten zijn leeg"), closed.get(1).line());
+    }
+
+    @Test void role_zijn_leeg_and_volledig_gegeven_override_across_gebaseerd_op_and_warn_only_when_idle() {
+        String base = """
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                Objecttype de Vondst (mv: Vondsten)
+
+                Feittype vondstmelding
+                    de vinder Jutter
+                    de vondst (mv: vondsten) Vondst
+                Eén vinder heeft meerdere vondsten
+
+                Situatie gekoppeld via vondsten:
+                een Jutter J1
+                een Vondst V1
+                - de vinder is J1
+                een Vondst V2
+                - de vinder is J1
+                een Vondst V3
+                - de vinder is leeg
+
+                Situatie gesloten leeg:
+                een Jutter J1
+                - de vondsten zijn leeg
+                een Vondst V1
+                een Vondst V2
+
+                Situatie gesloten gevuld:
+                een Jutter J1
+                - de vondsten zijn V1 (volledig gegeven)
+                een Vondst V1
+                een Vondst V2
+
+                Scenario zijn leeg ontkoppelt tegenkoppelingen
+                gebaseerd op de situatie gekoppeld via vondsten
+                Gegeven is de volgende situatie:
+                een Jutter J1
+                - de vondsten zijn leeg
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+
+                Scenario volledig gegeven snoeit buitenstaander en wist rolesEmpty
+                gebaseerd op de situatie gekoppeld via vondsten
+                Gegeven is de volgende situatie:
+                een Jutter J1
+                - de vondsten zijn V1 en V3 (volledig gegeven)
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+
+                Scenario open lijst heropent gesloten collectie
+                gebaseerd op de situatie gesloten gevuld
+                Gegeven is de volgende situatie:
+                een Jutter J1
+                - de vondsten zijn V1 en V2
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+
+                Scenario tegenkoppeling heropent gesloten lege collectie
+                gebaseerd op de situatie gesloten leeg
+                Gegeven is de volgende situatie:
+                een Vondst V2
+                - de vinder is J1
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+
+                Scenario tegenkoppeling met gelijktijdige sluiting houdt collectie gesloten
+                gebaseerd op de situatie gesloten leeg
+                Gegeven is de volgende situatie:
+                een Vondst V2
+                - de vinder is J1
+                een Jutter J1
+                - de vondsten zijn V1 en V2 (volledig gegeven)
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        for (String prefix : List.of(NEE, "")) {
+            ScenarioBundle bundle = ScenarioResolver.resolve(prefix + base);
+            assertTrue(bundle.isOk(), () -> bundle.model().errors().toString());
+            List<ResolvedScenario> s = bundle.scenarios();
+            assertEquals(5, s.size());
+
+            // Scenario 0: J1.vondsten closed empty, V1 and V2 unlinked from J1 (while V3 keeps its rolesEmpty: ["vinder"])
+            String c0 = CaseEmitter.emit(s.get(0));
+            assertTrue(c0.contains("\"rolesClosed\": [\n          \"vondsten\"\n        ]"), c0);
+            assertFalse(c0.contains("\"vinder\":"), "V1 and V2 unlinked from J1:\n" + c0);
+
+            // Scenario 1: J1.vondsten = [V1, V3] closed; V2 unlinked from J1, V3.rolesEmpty cleared
+            String c1 = CaseEmitter.emit(s.get(1));
+            assertTrue(c1.contains("\"vondsten\": [\n            \"V1\",\n            \"V3\"\n          ]"), c1);
+            assertTrue(c1.contains("\"rolesClosed\": [\n          \"vondsten\"\n        ]"), c1);
+            String v2Slice = c1.substring(c1.indexOf("\"label\": \"V2\""), c1.indexOf("\"label\": \"V3\""));
+            assertFalse(v2Slice.contains("\"J1\""), "V2 unlinked from J1:\n" + v2Slice);
+            assertFalse(c1.substring(c1.indexOf("\"label\": \"V3\"")).contains("rolesEmpty"),
+                    "V3.rolesEmpty cleared:\n" + c1);
+
+            // Scenario 2: Open list replaces J1.vondsten and removes inherited rolesClosed
+            String c2 = CaseEmitter.emit(s.get(2));
+            assertTrue(c2.contains("\"vondsten\": [\n            \"V1\",\n            \"V2\"\n          ]"), c2);
+            assertFalse(c2.contains("rolesClosed"), "rolesClosed removed when reopened:\n" + c2);
+
+            // Scenario 3: Counterpart link V2 -> J1 removes J1's inherited rolesClosed
+            String c3 = CaseEmitter.emit(s.get(3));
+            assertTrue(c3.contains("\"vinder\": [\n            \"J1\"\n          ]"), c3);
+            assertFalse(c3.contains("rolesClosed"), "rolesClosed removed by counterpart link:\n" + c3);
+
+            // Scenario 4: Counterpart link V2 -> J1 alongside J1's own '(volledig gegeven)' (with V2 in it) stays closed
+            String c4 = CaseEmitter.emit(s.get(4));
+            assertTrue(c4.contains("\"rolesClosed\": [\n          \"vondsten\"\n        ]"), c4);
+
+            if (prefix.isEmpty()) {
+                // Idle bullets that cleared no inherited link:
+                // 1) '- de vinder is leeg' in 'gekoppeld via vondsten'
+                // 2) '- de vondsten zijn leeg' in 'gesloten leeg'
+                // 3) '- de vondsten zijn V1 (volledig gegeven)' in 'gesloten gevuld'
+                // 4) '- de vondsten zijn V1 en V2 (volledig gegeven)' in Scenario 4 (gesloten leeg had no links)
+                // Scenarios 0 and 1 DID clear inherited links on V1/V2, so neither warns!
+                assertEquals(List.of(
+                        ScenarioFixture.lineOf(base, "- de vinder is leeg") + " RGS-480 {written=de vinder is leeg}",
+                        ScenarioFixture.lineOf(base, "- de vondsten zijn leeg") + " RGS-480 {written=de vondsten zijn leeg}",
+                        ScenarioFixture.lineOf(base, "- de vondsten zijn V1 (volledig gegeven)")
+                                + " RGS-480 {written=de vondsten zijn V1 (volledig gegeven)}",
+                        ScenarioFixture.lineOf(base, "- de vondsten zijn V1 en V2 (volledig gegeven)")
+                                + " RGS-480 {written=de vondsten zijn V1 en V2 (volledig gegeven)}"),
+                        warnings(bundle));
+            } else {
+                assertEquals(List.of(), bundle.warnings());
+            }
+        }
+    }
+
+    @Test void role_zijn_leeg_and_volledig_gegeven_refuse_invalid_targets_periods_and_same_block_conflicts() {
+        String model = NEE + """
+                Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+                    1. voorjaar
+                    2. najaar
+
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                    de pakketvondsten Tekst;
+                Objecttype de Vondst (mv: Vondsten)
+                    de afhaaldatum Datum in dagen;
+                    het pakket Numeriek (geheel getal) gedimensioneerd met seizoen;
+
+                Feittype vondstmelding
+                    de vinder Jutter
+                    de vondst (mv: vondsten) Vondst
+                Eén vinder heeft meerdere vondsten
+
+                Feittype pakketvondsten
+                    de pakketjutter Jutter
+                    de pakketvondst (mv: pakketvondsten) Vondst
+                Eén pakketjutter heeft meerdere pakketvondsten
+
+                Feittype eerste keuring
+                    de keurder Jutter
+                    de gekeurde vondst (mv: gekeurde vondsten) Vondst
+                Eén keurder keurt meerdere gekeurde vondsten
+
+                Feittype tweede keuring
+                    de herkeurder Jutter
+                    de gekeurde vondst (mv: gekeurde vondsten) Vondst
+                Eén herkeurder herkeurt meerdere gekeurde vondsten
+
+                Wederkerig feittype strandmaat
+                    de maat (mv: maten) Jutter
+                Eén maat is strandmaat van één maat
+
+                Scenario geweigerd op collecties
+                Gegeven is de volgende situatie:
+                een Vondst V1
+                - de onbekende zijn leeg
+                - de afhaaldatum zijn leeg
+                - het pakket zijn leeg
+                - het pakket in voorjaar zijn leeg
+                - de vinder zijn leeg
+                - de vinder is J2
+                een Vondst V2
+                - de vinder is J3
+                een Jutter J1
+                - de pakketvondsten zijn leeg
+                - de gekeurde vondsten zijn leeg
+                - de maten zijn leeg
+                - de maten zijn J2 (volledig gegeven)
+                - de vondsten zijn leeg van 01-01-2025 tot 01-02-2025
+                - de vondsten zijn V1
+                - de vondsten zijn leeg // direct op J1
+                een Jutter J2
+                - de vondsten zijn leeg // tegenrol van V1
+                een Jutter J3
+                - de vondsten zijn V1 (volledig gegeven) // V2 buiten lijst (V2 stond eerder)
+                een Jutter J4
+                - de vondsten zijn V1 (volledig gegeven)
+                een Vondst V4
+                - de vinder is J4 // V4 buiten lijst (J4 stond eerder)
+                een Jutter J5
+                - de vondsten zijn V1 (volledig gegeven)
+                - de vondsten zijn V1, V2 // open naast volledig gegeven
+                Met als verwacht resultaat:
+                - de gegevens zijn consistent
+                """;
+        assertEquals(List.of("RGS-246 {objectType=Vondst, role=onbekende}"),
+                errorsOn(model, "- de onbekende zijn leeg"));
+        assertEquals(List.of("RGS-246 {objectType=Vondst, role=afhaaldatum}"),
+                errorsOn(model, "- de afhaaldatum zijn leeg"));
+        assertEquals(List.of("RGS-246 {objectType=Vondst, role=pakket}"),
+                errorsOn(model, "- het pakket zijn leeg"));
+        assertEquals(List.of("RGS-246 {objectType=Vondst, role=pakket in voorjaar}"),
+                errorsOn(model, "- het pakket in voorjaar zijn leeg"));
+        assertEquals(List.of("RGS-477 {factType=vondstmelding, reason=is met 'zijn leeg' gegeven, maar heeft kardinaliteit 'één'; schrijf 'is leeg' om een niet-wederkerige naar-één-rol als vaststaand leeg te leveren (rolesEmpty), role=vinder}"),
+                errorsOn(model, "- de vinder zijn leeg"));
+        assertEquals(List.of("RGS-476 {attribute=pakketvondsten, factType=pakketvondsten, objectType=Jutter, role=pakketvondst, written=pakketvondsten}"),
+                errorsOn(model, "- de pakketvondsten zijn leeg"));
+        assertEquals(List.of("RGS-247 {objectType=Jutter, role=gekeurde vondsten}"),
+                errorsOn(model, "- de gekeurde vondsten zijn leeg"));
+        assertEquals(List.of("RGS-477 {factType=strandmaat, reason=is met 'zijn leeg' gegeven, maar 'strandmaat' is een wederkerig feittype; alleen een niet-wederkerige naar-veel-rol kan met 'zijn leeg' als vaststaand leeg worden gesloten (rolesClosed), role=maten}"),
+                errorsOn(model, "- de maten zijn leeg"));
+        assertEquals(List.of("RGS-477 {factType=strandmaat, reason=is met '(volledig gegeven)' gegeven, maar 'strandmaat' is een wederkerig feittype; een wederkerig feittype kent geen open of gesloten onderscheid en levert geen rol in rolesClosed, role=maten}"),
+                errorsOn(model, "- de maten zijn J2 (volledig gegeven)"));
+        assertEquals(List.of("RGS-478 {role=vondsten}"),
+                errorsOn(model, "- de vondsten zijn leeg van"));
+        assertEquals(List.of("RGS-479 {conflict=heeft in één situatieblok zowel een koppeling als 'is leeg' of 'zijn leeg', label=J1, role=vondst}"),
+                errorsOn(model, "- de vondsten zijn leeg // direct op J1"));
+        assertEquals(List.of("RGS-479 {conflict=heeft in één situatieblok zowel een koppeling als 'is leeg' of 'zijn leeg', label=J2, role=vondst}"),
+                errorsOn(model, "- de vondsten zijn leeg // tegenrol van V1"));
+        assertEquals(List.of("RGS-479 {conflict=is in één situatieblok met '(volledig gegeven)' gesloten zonder V2, terwijl 'V2' in datzelfde blok naar J3 koppelt, label=J3, role=vondst}"),
+                errorsOn(model, "- de vondsten zijn V1 (volledig gegeven) // V2 buiten lijst"));
+        assertEquals(List.of("RGS-479 {conflict=is in één situatieblok met '(volledig gegeven)' gesloten zonder V4, terwijl 'V4' in datzelfde blok naar J4 koppelt, label=J4, role=vondst}"),
+                errorsOn(model, "- de vinder is J4 // V4 buiten lijst"));
+        assertEquals(List.of("RGS-479 {conflict=krijgt in één situatieblok zowel een '(volledig gegeven)'-lijst als een open of afwijkende lijst, label=J5, role=vondst}"),
+                errorsOn(model, "- de vondsten zijn V1, V2 // open naast volledig gegeven"));
     }
 }

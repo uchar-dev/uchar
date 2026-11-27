@@ -1406,12 +1406,10 @@ public final class DefinitionResolver {
             roles = markCardinality(ft.name, roles, ctx.feitTypeCardinaliteit(), recovered);
         for (int i = 0; i < roles.size(); i++) {
             Role r = roles.get(i);
-            if (r.complete() && (ft.reciprocal || r.many())) {
+            if (r.complete() && ft.reciprocal) {
                 if (!recovered)
-                    error("RGS-474", params("complete", "(volledig gegeven)", "factType", ft.name,
-                            "reason", Msg.frontend(ft.reciprocal ? "RGS-474.reciprocal" : "RGS-474.many",
-                                    ft.reciprocal ? "factType" : "role", ft.reciprocal ? ft.name : r.name()),
-                            "role", r.name()), ctx.rolSpecificatie(i).getStart().getLine());
+                    error("RGS-474", params("complete", "(volledig gegeven)", "factType", ft.name, "role", r.name()),
+                            ctx.rolSpecificatie(i).getStart().getLine());
                 roles.set(i, new Role(r.name(), r.objectTypeName(), r.plural(), r.many(), false));
             }
         }

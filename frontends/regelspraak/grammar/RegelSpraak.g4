@@ -205,9 +205,10 @@ situatieOnderdeel
 instantie : EEN objectTypeNaam UPPER_ID toewijzing* ;
 toewijzing
     : bullet bepaaldLidwoord toewijzingNaam IS situatieWaarde periode?       DOT? # attribuutToewijzing     // de/het <attr> is <waarde> [van <d> tot <d>]
-    | bullet bepaaldLidwoord toewijzingNaam IS LEEG periode?                 DOT? # attribuutLeegToewijzing // de/het <attr> is leeg
+    | bullet bepaaldLidwoord toewijzingNaam IS LEEG periode?                 DOT? # attribuutLeegToewijzing // de/het <attr>|<rol> is leeg
+    | bullet bepaaldLidwoord toewijzingNaam ZIJN LEEG periode?               DOT? # rolToManyLeegToewijzing // de/het <rol-mv> zijn leeg
     | bullet bepaaldLidwoord toewijzingNaam IS UPPER_ID                      DOT? # rolToOneToewijzing      // de/het <rol> is <LABEL>
-    | bullet bepaaldLidwoord toewijzingNaam ZIJN UPPER_ID ( ( COMMA | EN ) UPPER_ID )* DOT? # rolToManyToewijzing // de/het <rol> zijn <LABEL>, <LABEL> en <LABEL>
+    | bullet bepaaldLidwoord toewijzingNaam ZIJN UPPER_ID ( ( COMMA | EN ) UPPER_ID )* VOLLEDIG_GEGEVEN? DOT? # rolToManyToewijzing // de/het <rol-mv> zijn <LABEL>, <LABEL> en <LABEL> [(volledig gegeven)]
     | bullet ( IS | HEEFT ) lidwoord? kaleNaam periode?        DOT? # kenmerkToewijzing       // is/heeft [lidw] <kenmerk> [van <d> tot <d>] | is niet/heeft geen <kenmerk>
     ;
 // One period of a timeline, from inclusive to exclusive, the case format's [from, to): a
@@ -677,7 +678,7 @@ feitTypeNaamWoord
     ;
 // §13.3.9.1: '<lidwoord>? <rolnaam> <objecttypenaam>'. Capitalisation splits role
 // (lowercase) from objecttype (capitalised) — see header note on naming.
-// Dialect extension ("Volledig gegeven"): optional VOLLEDIG_GEGEVEN on a non-reciprocal to-one role.
+// Dialect extension ("Volledig gegeven"): optional VOLLEDIG_GEGEVEN on a role of a non-reciprocal fact type.
 rolSpecificatie : bepaaldLidwoord? rolNaam ( MV_START meervoudsvorm RPAREN )? benaming* objectTypeNaam VOLLEDIG_GEGEVEN? ;
 rolNaam         : lowerNaam ; // §13.3.9.4
 
