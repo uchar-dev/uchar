@@ -270,6 +270,30 @@ class SemanticTokensRecoveryTest {
             SemanticTokens.Document d = Resolver.tokens(files);
             SemanticTokensCheck.check(files, d);
         }
+        for (String brokenExpectation : List.of("- de vondsten van J1 staan niet zeker",
+                "- de vondsten van J1 staan", "- de vondsten van J1 zijn", "- de vinder van V1 is",
+                "- het aantal vondsten van J1 is")) {
+            String scenario = """
+                    Scenario afgebroken rolverwachting
+                    Gegeven is de volgende situatie:
+                    een Vondst V1
+                    een Jutter J1
+                    Met als verwacht resultaat:
+                    """ + brokenExpectation + "\n- de gegevens zijn consistent\n";
+            List<SemanticTokens.SourceFile> files = List.of(new SemanticTokens.SourceFile("model.rgs", model),
+                    new SemanticTokens.SourceFile("toets.rgs", scenario));
+            SemanticTokens.Document d = Resolver.tokens(files);
+            assertTrue(d.diagnostics().stream().anyMatch(x -> "RGS-216".equals(x.code())),
+                    () -> brokenExpectation + ": the syntax error is in the output: " + d.diagnostics());
+            SemanticTokensCheck.check(files, d);
+            if (brokenExpectation.endsWith("zeker")) {
+                List<String> line = new ArrayList<>();
+                for (SemanticTokens.Span s : d.files().get(1).spans())
+                    if (s.line() == 6 && !s.text().equals("-")) line.add(s.text() + " " + s.kind().wire());
+                assertEquals(List.of("de keyword", "vondsten role", "van keyword", "J1 label", "staan keyword",
+                        "niet keyword", "zeker word"), line);
+            }
+        }
     }
 
     /** Floors, measured at the build (card semantic-tokens, 2026-10-22): the cut sources read, and how many of them

@@ -790,7 +790,7 @@ RGS-463	attribuut '{attribute}' van {objectType}: '{complete}' staat naast '{opg
 RGS-464	{kind} '{name}' van {objectType}: '{complete}' staat op een lid dat {writer} op {objectType} zelf schrijft — het lid volgt dan op elk object van {objectType} zijn schrijvers en is nergens invoer, dus de markering doet niets (RUNTIME-SEMANTICS ch. 1.5); laat '{complete}' weg, of zet het op de invoerleden die {writer} leest (dialect, Volledig gegeven)
 RGS-465	het kenmerk '{characteristic}' van {label} staat in één situatieblok als geldend en als niet geldend; binnen een blok geldt een kenmerk of niet, en een geërfd kenmerk wordt alleen vervangen door een later blok: een volgende situatie waarop het scenario of de situatie gebaseerd is, of het eigen blok van het scenario of de situatie
 RGS-466	het kenmerk '{characteristic}' is als niet geldend gegeven, maar met een periode of als tijdsafhankelijk kenmerk; een casebestand levert alleen een kenmerk zonder tijdlijn als niet geldend, zonder periode (characteristicsAbsent), en een tijdsafhankelijk kenmerk geldt buiten de perioden die de situatie geeft niet
-RGS-467	{member} van {label}: 'staat niet vast' verwacht een open lid, maar in een document zonder 'Afleiden uit leeg: nee' is geen lid open; verwacht een waarde, 'is leeg', of bij een kenmerk 'is', 'heeft', 'is niet', 'heeft geen' of 'heeft niet het' (RUNTIME-SEMANTICS ch. 1.5)
+RGS-467	{member} van {label}: 'staat niet vast' of 'staan niet vast' verwacht een open lid of een open rol, maar in een document zonder 'Afleiden uit leeg: nee' is geen lid of rol open; verwacht een waarde, 'is leeg', bij een rol 'zijn leeg', 'is <LABEL>' of 'het aantal … is …', of bij een kenmerk 'is', 'heeft', 'is niet', 'heeft geen' of 'heeft niet het' (RUNTIME-SEMANTICS ch. 1.5)
 RGS-468	'{written}' is het gedimensioneerde attribuut '{attribute}' of een cel ervan en krijgt de verwachting 'staat niet vast', maar een casebestand verwacht alleen een attribuut zonder dimensies als open (attributeOpen), en geen cel
 RGS-469	'{written}' verandert in een document zonder 'Afleiden uit leeg: nee' niets: daar geldt een kenmerk dat de situatie niet noemt al niet; de zin telt alleen in een document met 'Afleiden uit leeg: nee'
 RGS-470	het attribuut '{attribute}' van {label} heeft in één situatieblok zowel een waarde als 'is leeg'; binnen een blok krijgt een attribuut een waarde of is het leeg, en een geërfd attribuut wordt alleen vervangen door een later blok: een volgende situatie waarop het scenario of de situatie gebaseerd is, of het eigen blok van het scenario of de situatie
@@ -801,9 +801,17 @@ RGS-474	rol '{role}' van feittype '{factType}': '{complete}' staat alleen op een
 RGS-475	rol '{role}' van feittype '{factType}': '{complete}' staat op een rol die {writer} op {nearType} zelf legt — de koppeling volgt dan op elk object van {nearType} haar schrijvers en is nergens zuivere invoer, dus de markering doet niets (RUNTIME-SEMANTICS ch. 1.5); laat '{complete}' weg, of zet het op de invoerleden die {writer} leest (dialect, Volledig gegeven)
 RGS-475.fact-creation	feitcreatie '{name}'
 RGS-475.object-creation	objectcreatie '{name}'
-RGS-476	'{written}' op {objectType} is met 'is leeg' of 'zijn leeg' gegeven, maar noemt zowel het attribuut '{attribute}' van {objectType} als de rol '{role}' van het feittype '{factType}'; maak de naam eenduidig zodat vaststaat of het attribuut (attributesEmpty) of de rol (rolesEmpty of rolesClosed) leeg is
+RGS-476	'{written}' op {objectType} noemt zowel het attribuut '{attribute}' van {objectType} als de rol '{role}' van het feittype '{factType}'; maak de naam eenduidig zodat vaststaat of het attribuut of de rol wordt bedoeld
 RGS-477	de rol '{role}' van het feittype '{factType}' {reason}
 RGS-477.complete-reciprocal	is met '(volledig gegeven)' gegeven, maar '{factType}' is een wederkerig feittype; een wederkerig feittype kent geen open of gesloten onderscheid en levert geen rol in rolesClosed
+RGS-477.expect-is-many	wordt met 'is leeg' verwacht, maar heeft kardinaliteit 'meerdere'; schrijf 'zijn leeg' of 'het aantal … is 0'
+RGS-477.expect-is-reciprocal	wordt met 'is leeg' verwacht, maar '{factType}' is een wederkerig feittype; schrijf 'zijn leeg' of 'het aantal … is 0'
+RGS-477.expect-open-reciprocal	krijgt de verwachting '{written}', maar '{factType}' is een wederkerig feittype; een wederkerig feittype kent geen open of gesloten onderscheid (roleOpen)
+RGS-477.expect-staan-one	krijgt de verwachting 'staan niet vast', maar heeft kardinaliteit 'één'; schrijf 'staat niet vast'
+RGS-477.expect-staat-many	krijgt de verwachting 'staat niet vast', maar heeft kardinaliteit 'meerdere'; schrijf 'staan niet vast' of 'het aantal … staat niet vast'
+RGS-477.expect-target-many	krijgt het verwachte doel {target} met 'is {target}', maar heeft kardinaliteit 'meerdere'; een verwacht roldoel (roleTarget) hoort bij een niet-wederkerige naar-één-rol
+RGS-477.expect-target-reciprocal	krijgt het verwachte doel {target} met 'is {target}', maar '{factType}' is een wederkerig feittype; een verwacht roldoel (roleTarget) hoort bij een niet-wederkerige naar-één-rol
+RGS-477.expect-zijn-one	wordt met 'zijn leeg' verwacht, maar heeft kardinaliteit 'één'; schrijf 'is leeg'
 RGS-477.is-many	is met 'is leeg' gegeven, maar heeft kardinaliteit 'meerdere'; schrijf 'zijn leeg' om een niet-wederkerige naar-veel-rol als vaststaand leeg te sluiten (rolesClosed)
 RGS-477.is-reciprocal	is met 'is leeg' gegeven, maar '{factType}' is een wederkerig feittype; alleen een niet-wederkerige naar-één-rol kan met 'is leeg' als vaststaand leeg worden geleverd (rolesEmpty)
 RGS-477.zijn-one	is met 'zijn leeg' gegeven, maar heeft kardinaliteit 'één'; schrijf 'is leeg' om een niet-wederkerige naar-één-rol als vaststaand leeg te leveren (rolesEmpty)
@@ -814,3 +822,13 @@ RGS-479.conflicting-lists	krijgt in één situatieblok zowel een '(volledig gege
 RGS-479.linked-and-empty	heeft in één situatieblok zowel een koppeling als 'is leeg' of 'zijn leeg'
 RGS-479.outside-complete	is in één situatieblok met '(volledig gegeven)' gesloten zonder {target}, terwijl '{target}' in datzelfde blok naar {label} koppelt
 RGS-480	'{written}' verandert in een document zonder 'Afleiden uit leeg: nee' niets aan de sluiting van de rol: daar is elke rol al gesloten op de gegeven koppelingen; sluiting met 'is leeg', 'zijn leeg' of '(volledig gegeven)' telt alleen in een document met 'Afleiden uit leeg: nee' of waar zij een geërfde koppeling opheft
+RGS-481	'{written}' noemt het attribuut '{attribute}', maar {reason}
+RGS-481.staan	krijgt de meervoudsvorm 'staan niet vast'; schrijf 'staat niet vast' voor een open attribuut
+RGS-481.target	krijgt het label {target} met 'is {target}'; een verwacht roldoel (roleTarget) hoort bij een rol, en een attribuut of cel verwacht een waarde of 'is leeg'
+RGS-481.zijn-leeg	krijgt de meervoudsvorm 'zijn leeg'; schrijf 'is leeg' voor een leeg attribuut of een lege cel
+RGS-482	de verwachting voor de rol '{role}' van het feittype '{factType}' schrijft '{written}'; een rol heeft geen waarde of tijdlijn en verwacht 'is leeg', 'zijn leeg', 'is <LABEL>', 'staat niet vast', 'staan niet vast' of 'het aantal {role} van <LABEL> is <aantal>'
+RGS-483	de rolverwachting 'het aantal {role}' {reason}
+RGS-483.not-count	krijgt '{value}', maar een verwacht aantal gekoppelde instanties (roleCount) is een niet-negatief geheel getal zonder eenheid en zonder decimalen
+RGS-483.other-form	schrijft '{written}'; 'het aantal {role}' verwacht een aantal ('is 0', 'is 1', …) of 'staat niet vast'
+RGS-483.period	draagt een periode, maar een rol heeft geen tijdlijn; schrijf 'het aantal {role} van <LABEL> is <aantal>' zonder periode
+RGS-483.staan	krijgt 'staan niet vast', maar 'het aantal' is enkelvoud; schrijf 'het aantal {role} van <LABEL> staat niet vast'

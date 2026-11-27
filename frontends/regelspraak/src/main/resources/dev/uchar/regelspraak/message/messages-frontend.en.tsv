@@ -790,7 +790,7 @@ RGS-463	attribute '{attribute}' of {objectType}: '{complete}' stands beside '{op
 RGS-464	{kind} '{name}' of {objectType}: '{complete}' stands on a member that {writer} writes on {objectType} itself — the member then follows its writers on every object of {objectType} and is input nowhere, so the marking does nothing (RUNTIME-SEMANTICS ch. 1.5); leave '{complete}' out, or put it on the input members that {writer} reads (dialect, Volledig gegeven)
 RGS-465	the characteristic '{characteristic}' of {label} stands in one situation block as holding and as not holding; within a block a characteristic holds or does not, and an inherited characteristic is replaced only by a later block: a next situation the scenario or the situation is based on, or the scenario's or the situation's own block
 RGS-466	the characteristic '{characteristic}' is given as not holding, but with a period or as a time-dependent characteristic; a case file supplies only a characteristic without a timeline as not holding, without a period (characteristicsAbsent), and a time-dependent characteristic does not hold outside the periods the situation gives
-RGS-467	{member} of {label}: 'staat niet vast' expects an open member, but in a document without 'Afleiden uit leeg: nee' no member is open; expect a value, 'is leeg', or for a characteristic 'is', 'heeft', 'is niet', 'heeft geen' or 'heeft niet het' (RUNTIME-SEMANTICS ch. 1.5)
+RGS-467	{member} of {label}: 'staat niet vast' or 'staan niet vast' expects an open member or an open role, but in a document without 'Afleiden uit leeg: nee' no member or role is open; expect a value, 'is leeg', for a role 'zijn leeg', 'is <LABEL>' or 'het aantal … is …', or for a characteristic 'is', 'heeft', 'is niet', 'heeft geen' or 'heeft niet het' (RUNTIME-SEMANTICS ch. 1.5)
 RGS-468	'{written}' is the dimensioned attribute '{attribute}' or a cell of it and is given the expectation 'staat niet vast', but a case file expects only an attribute without dimensions as open (attributeOpen), and no cell
 RGS-469	'{written}' changes nothing in a document without 'Afleiden uit leeg: nee': there a characteristic the situation does not name already does not hold; the sentence counts only in a document with 'Afleiden uit leeg: nee'
 RGS-470	the attribute '{attribute}' of {label} has in one situation block both a value and 'is leeg'; within a block an attribute is given a value or is empty, and an inherited attribute is replaced only by a later block: a next situation the scenario or the situation is based on, or the scenario's or the situation's own block
@@ -801,9 +801,17 @@ RGS-474	role '{role}' of fact type '{factType}': '{complete}' stands only on a r
 RGS-475	role '{role}' of fact type '{factType}': '{complete}' stands on a role that {writer} lays on {nearType} itself — the link then follows its writers on every object of {nearType} and is pure input nowhere, so the marking does nothing (RUNTIME-SEMANTICS ch. 1.5); leave '{complete}' out, or put it on the input members that {writer} reads (dialect, Volledig gegeven)
 RGS-475.fact-creation	fact creation '{name}'
 RGS-475.object-creation	object creation '{name}'
-RGS-476	'{written}' on {objectType} is given with 'is leeg' or 'zijn leeg', but names both the attribute '{attribute}' of {objectType} and the role '{role}' of the fact type '{factType}'; disambiguate the name so it stands whether the attribute (attributesEmpty) or the role (rolesEmpty or rolesClosed) is empty
+RGS-476	'{written}' on {objectType} names both the attribute '{attribute}' of {objectType} and the role '{role}' of the fact type '{factType}'; disambiguate the name so it stands whether the attribute or the role is meant
 RGS-477	the role '{role}' of the fact type '{factType}' {reason}
 RGS-477.complete-reciprocal	is given with '(volledig gegeven)', but '{factType}' is a reciprocal fact type; a reciprocal fact type has no open or closed distinction and supplies no role in rolesClosed
+RGS-477.expect-is-many	is expected with 'is leeg', but has cardinality 'meerdere'; write 'zijn leeg' or 'het aantal … is 0'
+RGS-477.expect-is-reciprocal	is expected with 'is leeg', but '{factType}' is a reciprocal fact type; write 'zijn leeg' or 'het aantal … is 0'
+RGS-477.expect-open-reciprocal	is given the expectation '{written}', but '{factType}' is a reciprocal fact type; a reciprocal fact type has no open or closed distinction (roleOpen)
+RGS-477.expect-staan-one	is given the expectation 'staan niet vast', but has cardinality 'één'; write 'staat niet vast'
+RGS-477.expect-staat-many	is given the expectation 'staat niet vast', but has cardinality 'meerdere'; write 'staan niet vast' or 'het aantal … staat niet vast'
+RGS-477.expect-target-many	is given the expected target {target} with 'is {target}', but has cardinality 'meerdere'; an expected role target (roleTarget) belongs to a non-reciprocal to-one role
+RGS-477.expect-target-reciprocal	is given the expected target {target} with 'is {target}', but '{factType}' is a reciprocal fact type; an expected role target (roleTarget) belongs to a non-reciprocal to-one role
+RGS-477.expect-zijn-one	is expected with 'zijn leeg', but has cardinality 'één'; write 'is leeg'
 RGS-477.is-many	is given with 'is leeg', but has cardinality 'meerdere'; write 'zijn leeg' to close a non-reciprocal to-many role as settled empty (rolesClosed)
 RGS-477.is-reciprocal	is given with 'is leeg', but '{factType}' is a reciprocal fact type; only a non-reciprocal to-one role can be supplied as settled empty with 'is leeg' (rolesEmpty)
 RGS-477.zijn-one	is given with 'zijn leeg', but has cardinality 'één'; write 'is leeg' to supply a non-reciprocal to-one role as settled empty (rolesEmpty)
@@ -814,3 +822,13 @@ RGS-479.conflicting-lists	receives in one situation block both a '(volledig gege
 RGS-479.linked-and-empty	has in one situation block both a link and 'is leeg' or 'zijn leeg'
 RGS-479.outside-complete	is closed with '(volledig gegeven)' in one situation block without {target}, while '{target}' links to {label} in that same block
 RGS-480	'{written}' changes nothing in the closure of the role in a document without 'Afleiden uit leeg: nee': there every role is closed on the given links already; closing with 'is leeg', 'zijn leeg' or '(volledig gegeven)' counts only in a document with 'Afleiden uit leeg: nee' or where it clears an inherited link
+RGS-481	'{written}' names the attribute '{attribute}', but {reason}
+RGS-481.staan	is given the plural form 'staan niet vast'; write 'staat niet vast' for an open attribute
+RGS-481.target	is given the label {target} with 'is {target}'; an expected role target (roleTarget) belongs to a role, and an attribute or cell expects a value or 'is leeg'
+RGS-481.zijn-leeg	is given the plural form 'zijn leeg'; write 'is leeg' for an empty attribute or an empty cell
+RGS-482	the expectation for the role '{role}' of the fact type '{factType}' writes '{written}'; a role has no value or timeline and expects 'is leeg', 'zijn leeg', 'is <LABEL>', 'staat niet vast', 'staan niet vast' or 'het aantal {role} van <LABEL> is <count>'
+RGS-483	the role expectation 'het aantal {role}' {reason}
+RGS-483.not-count	is given '{value}', but an expected count of linked instances (roleCount) is a non-negative whole number without a unit and without decimals
+RGS-483.other-form	writes '{written}'; 'het aantal {role}' expects a count ('is 0', 'is 1', …) or 'staat niet vast'
+RGS-483.period	carries a period, but a role has no timeline; write 'het aantal {role} van <LABEL> is <count>' without a period
+RGS-483.staan	is given 'staan niet vast', but 'het aantal' is singular; write 'het aantal {role} van <LABEL> staat niet vast'

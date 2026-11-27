@@ -426,3 +426,6 @@ RGS-477	role-closure-wrong-kind	ERROR	factType,reason,role
 RGS-478	role-empty-with-period	ERROR	role
 RGS-479	role-conflict-in-block	ERROR	conflict,label,role
 RGS-480	role-closure-changes-nothing	WARNING	written
+RGS-481	attribute-expectation-role-form	ERROR	attribute,reason,written
+RGS-482	role-expectation-invalid-form	ERROR	factType,role,written
+RGS-483	role-count-expectation-invalid	ERROR	reason,role

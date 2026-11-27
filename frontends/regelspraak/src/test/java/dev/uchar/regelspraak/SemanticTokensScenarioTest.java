@@ -431,6 +431,61 @@ class SemanticTokensScenarioTest {
                 "(volledig gegeven) keyword"), lines.get(10));
     }
 
+    @Test void role_expectations_mark_roles_labels_counts_and_open_keywords_and_preserve_aantal_attributes() {
+        String model = """
+                Afleiden uit leeg: nee
+
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                    het aantal penningbesluiten Numeriek (niet-negatief geheel getal);
+                Objecttype de Vondst (mv: Vondsten)
+                Objecttype het Penningbesluit (mv: Penningbesluiten)
+
+                Feittype vondstmelding
+                    de vinder Jutter
+                    de vondst (mv: vondsten) Vondst
+                Eén vinder heeft meerdere vondsten
+
+                Feittype penningtoekenning
+                    de gerechtigde Jutter
+                    het penningbesluit (mv: penningbesluiten) Penningbesluit
+                Eén gerechtigde heeft meerdere penningbesluiten
+                """;
+        String test = """
+                Scenario rolverwachtingen
+                Gegeven is de volgende situatie:
+                een Jutter J1
+                een Jutter J2
+                een Vondst V1
+                een Vondst V2
+                Met als verwacht resultaat:
+                - de vinder van V1 is leeg
+                - de vondsten van J1 zijn leeg
+                - de vinder van V1 is J1
+                - het aantal vondsten van J1 is 2
+                - de vinder van V2 staat niet vast
+                - de vondsten van J2 staan niet vast
+                - het aantal vondsten van J2 staat niet vast
+                - het aantal penningbesluiten van J1 is 1
+                """;
+        java.util.Map<Integer, List<String>> lines = lines(model, test);
+        assertEquals(List.of("- punctuation", "de keyword", "vinder role 9", "van keyword", "V1 label 5",
+                "is keyword", "leeg keyword"), lines.get(8));
+        assertEquals(List.of("- punctuation", "de keyword", "vondsten role 10", "van keyword", "J1 label 3",
+                "zijn keyword", "leeg keyword"), lines.get(9));
+        assertEquals(List.of("- punctuation", "de keyword", "vinder role 9", "van keyword", "V1 label 5",
+                "is keyword", "J1 label 3"), lines.get(10));
+        assertEquals(List.of("- punctuation", "het keyword", "aantal keyword", "vondsten role 10", "van keyword",
+                "J1 label 3", "is keyword", "2 number"), lines.get(11));
+        assertEquals(List.of("- punctuation", "de keyword", "vinder role 9", "van keyword", "V2 label 6",
+                "staat keyword", "niet keyword", "vast keyword"), lines.get(12));
+        assertEquals(List.of("- punctuation", "de keyword", "vondsten role 10", "van keyword", "J2 label 4",
+                "staan keyword", "niet keyword", "vast keyword"), lines.get(13));
+        assertEquals(List.of("- punctuation", "het keyword", "aantal keyword", "vondsten role 10", "van keyword",
+                "J2 label 4", "staat keyword", "niet keyword", "vast keyword"), lines.get(14));
+        assertEquals(List.of("- punctuation", "het keyword", "aantal penningbesluiten attribute 4", "van keyword",
+                "J1 label 3", "is keyword", "1 number"), lines.get(15));
+    }
+
     /** A characteristic declared with a leading "niet" binds its own declaration where its whole name is written, in
      *  a situation and in an expectation, as the scenario route reads it; beside it, "geen drijfhout" is the negation
      *  of "drijfhout". Each line as its spans, a name with the line of the declaration it points at. Measured on the

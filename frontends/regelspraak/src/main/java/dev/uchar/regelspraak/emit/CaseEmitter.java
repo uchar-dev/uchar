@@ -203,6 +203,28 @@ public final class CaseEmitter {
                 w.key("label").value(v.label());
                 w.key("characteristic").value(v.characteristic());
             }
+            case ROLE_EMPTY -> {
+                w.key("kind").value("roleEmpty");
+                w.key("label").value(v.label());
+                w.key("role").value(v.role());
+            }
+            case ROLE_COUNT -> {
+                w.key("kind").value("roleCount");
+                w.key("label").value(v.label());
+                w.key("role").value(v.role());
+                w.key("count").value(v.count());
+            }
+            case ROLE_TARGET -> {
+                w.key("kind").value("roleTarget");
+                w.key("label").value(v.label());
+                w.key("role").value(v.role());
+                w.key("target").value(v.target());
+            }
+            case ROLE_OPEN -> {
+                w.key("kind").value("roleOpen");
+                w.key("label").value(v.label());
+                w.key("role").value(v.role());
+            }
             case CELL_VALUE -> {
                 w.key("kind").value("cellValue");
                 w.key("label").value(v.label());

@@ -1713,4 +1713,295 @@ class ScenarioStrictTest {
         assertEquals(List.of("RGS-479 {conflict=krijgt in één situatieblok zowel een '(volledig gegeven)'-lijst als een open of afwijkende lijst, label=J5, role=vondst}"),
                 errorsOn(model, "- de vondsten zijn V1, V2 // open naast volledig gegeven"));
     }
+
+    @Test void role_expectations_emit_roleEmpty_roleCount_roleTarget_and_roleOpen_in_canonical_key_order_and_preserve_declared_aantal_attributes() {
+        String source = NEE + """
+                Objecttype de Jutter (mv: Jutters) (bezield)
+                    het aantal penningbesluiten Numeriek (niet-negatief geheel getal);
+                    de staan Tekst;
+                Objecttype de Strandjutter is een Jutter (mv: Strandjutters) (bezield)
+                Objecttype de Vondst (mv: Vondsten)
+                Objecttype het Penningbesluit (mv: Penningbesluiten)
+
+                Feittype vondstmelding
+                    de vinder Jutter
+                    de vondst (mv: vondsten) Vondst
+                Eén vinder heeft meerdere vondsten
+
+                Feittype penningtoekenning
+                    de gerechtigde Jutter
+                    het penningbesluit (mv: penningbesluiten) Penningbesluit
+                Eén gerechtigde heeft meerdere penningbesluiten
+
+                Wederkerig feittype strandmaat
+                    de maat (mv: maten) Jutter
+                Eén maat is strandmaat van meerdere maten
+
+                Scenario rolverwachtingen
+                Gegeven is de volgende situatie:
+                een Jutter J1
+                - de staan is "rechtop"
+                een Strandjutter J2
+                een Vondst V1
+                - de vinder is J2
+                een Vondst V2
+                - de vinder is leeg
+                een Vondst V3
+                Met als verwacht resultaat:
+                - de vinder van V2 is leeg
+                - de vondsten van J1 zijn leeg
+                - de maten van J1 zijn leeg
+                - het aantal vondsten van J2 is 1
+                - het aantal vondst van J1 is 0
+                - het aantal maten van J1 is 0
+                - de vinder van V1 is J2
+                - de vinder van V3 staat niet vast
+                - de vondsten van J1 staan niet vast
+                - het aantal vondsten van J2 staat niet vast
+                - het aantal penningbesluiten van J1 is 1
+                - het aantal penningbesluiten van J2 staat niet vast
+                - de staan van J1 is "rechtop"
+                """;
+        String emitted = CaseEmitter.emit(only(source));
+        String expectedSlice = emitted.substring(emitted.indexOf("\"expected\": ["));
+        assertEquals("""
+                "expected": [
+                    {
+                      "kind": "roleEmpty",
+                      "label": "V2",
+                      "role": "vinder"
+                    },
+                    {
+                      "kind": "roleEmpty",
+                      "label": "J1",
+                      "role": "vondsten"
+                    },
+                    {
+                      "kind": "roleEmpty",
+                      "label": "J1",
+                      "role": "maten"
+                    },
+                    {
+                      "kind": "roleCount",
+                      "label": "J2",
+                      "role": "vondsten",
+                      "count": 1
+                    },
+                    {
+                      "kind": "roleCount",
+                      "label": "J1",
+                      "role": "vondst",
+                      "count": 0
+                    },
+                    {
+                      "kind": "roleCount",
+                      "label": "J1",
+                      "role": "maten",
+                      "count": 0
+                    },
+                    {
+                      "kind": "roleTarget",
+                      "label": "V1",
+                      "role": "vinder",
+                      "target": "J2"
+                    },
+                    {
+                      "kind": "roleOpen",
+                      "label": "V3",
+                      "role": "vinder"
+                    },
+                    {
+                      "kind": "roleOpen",
+                      "label": "J1",
+                      "role": "vondsten"
+                    },
+                    {
+                      "kind": "roleOpen",
+                      "label": "J2",
+                      "role": "vondsten"
+                    },
+                    {
+                      "kind": "attributeValue",
+                      "label": "J1",
+                      "attribute": "aantal penningbesluiten",
+                      "value": {
+                        "number": "1"
+                      }
+                    },
+                    {
+                      "kind": "attributeOpen",
+                      "label": "J2",
+                      "attribute": "aantal penningbesluiten"
+                    },
+                    {
+                      "kind": "attributeValue",
+                      "label": "J1",
+                      "attribute": "staan",
+                      "value": {
+                        "text": "rechtop"
+                      }
+                    }
+                  ]
+                }
+                """, expectedSlice);
+    }
+
+    @Test void role_expectations_refuse_ambiguity_wrong_verbs_invalid_targets_invalid_counts_and_open_without_strict_empty() {
+        String model = """
+                Eenheidsysteem Gewicht
+                    de kilogram kg
+
+                Dimensie het seizoen, bestaande uit de seizoenen (na het attribuut met voorzetsel in):
+                    1. voorjaar
+                    2. najaar
+
+                Objecttype de Persoon (mv: Personen) (bezield)
+                Objecttype de Jutter is een Persoon (mv: Jutters) (bezield)
+                    de pakketvondsten Tekst;
+                Objecttype de Vondst (mv: Vondsten)
+                    de afhaaldatum Datum in dagen;
+                    de keurmeester Tekst;
+                    het pakket Numeriek (geheel getal) gedimensioneerd met seizoen;
+
+                Feittype vondstmelding
+                    de vinder Jutter
+                    de vondst (mv: vondsten) Vondst
+                Eén vinder heeft meerdere vondsten
+
+                Feittype keuring
+                    de keurmeester Jutter
+                    de gekeurde vondst (mv: gekeurde vondsten) Vondst
+                Eén keurmeester heeft meerdere gekeurde vondsten
+
+                Feittype herkeuring
+                    de herkeurder Jutter
+                    de gekeurde vondst (mv: gekeurde vondsten) Vondst
+                Eén herkeurder heeft meerdere gekeurde vondsten
+
+                Feittype pakketvondsten
+                    de pakketjutter Jutter
+                    de pakketvondst (mv: pakketvondsten) Vondst
+                Eén pakketjutter heeft meerdere pakketvondsten
+
+                Wederkerig feittype strandmaat
+                    de maat (mv: maten) Jutter
+                Eén maat is strandmaat van meerdere maten
+
+                """;
+        String strictRefusals = NEE + model + """
+                Scenario geweigerde rolverwachtingen
+                Gegeven is de volgende situatie:
+                een Persoon P1
+                een Jutter J1
+                een Vondst V1
+                Met als verwacht resultaat:
+                - de keurmeester van V1 is leeg
+                - de keurmeester van V1 is J1
+                - de keurmeester van V1 staat niet vast
+                - de pakketvondsten van J1 zijn leeg
+                - de pakketvondsten van J1 staan niet vast
+                - de gekeurde vondsten van J1 zijn leeg
+                - het aantal gekeurde vondsten van J1 is 0
+                - de onbekende van V1 zijn leeg
+                - de onbekende van V1 is J1
+                - de onbekende van V1 staan niet vast
+                - de vondsten van J1 is leeg
+                - de maten van J1 is leeg
+                - de vinder van V1 zijn leeg
+                - de vondsten van J1 is V1
+                - de maten van J1 is J1
+                - de vinder van V1 is J99
+                - de vinder van V1 is P1
+                - de vondsten van J1 staat niet vast
+                - de vinder van V1 staan niet vast
+                - de maten van J1 staan niet vast
+                - het aantal maten van J1 staat niet vast
+                - de afhaaldatum van V1 zijn leeg
+                - het pakket in voorjaar van V1 zijn leeg
+                - de afhaaldatum van V1 staan niet vast
+                - de afhaaldatum van V1 is V1
+                - de vinder van V1 is 1
+                - de vinder van V1 is altijd leeg
+                - de vinder van V1 is altijd 1
+                - het aantal vondsten van J1 is -1
+                - het aantal vondsten van J1 is 1,5
+                - het aantal vondsten van J1 is 2,0
+                - het aantal vondsten van J1 is 1/2
+                - het aantal vondsten van J1 is 2 kg
+                - het aantal vondsten van J1 is "2"
+                - het aantal vondsten van J1 is 1 van 01-01-2025 tot 01-02-2025
+                - het aantal vondsten van J1 staan niet vast
+                - het aantal vondsten van J1 is leeg
+                - het aantal vondsten van J1 is V1
+                - het aantal vondsten van J1 is altijd 0
+                """;
+        assertEquals(List.of("RGS-476 {attribute=keurmeester, factType=keuring, objectType=Vondst, role=keurmeester, written=keurmeester}"),
+                errorsOn(strictRefusals, "- de keurmeester van V1 is leeg"));
+        assertEquals(List.of("RGS-476 {attribute=keurmeester, factType=keuring, objectType=Vondst, role=keurmeester, written=keurmeester}"),
+                errorsOn(strictRefusals, "- de keurmeester van V1 is J1"));
+        assertEquals(List.of("RGS-476 {attribute=keurmeester, factType=keuring, objectType=Vondst, role=keurmeester, written=keurmeester}"),
+                errorsOn(strictRefusals, "- de keurmeester van V1 staat niet vast"));
+        assertEquals(List.of("RGS-476 {attribute=pakketvondsten, factType=pakketvondsten, objectType=Jutter, role=pakketvondst, written=pakketvondsten}"),
+                errorsOn(strictRefusals, "- de pakketvondsten van J1 zijn leeg"));
+        assertEquals(List.of("RGS-476 {attribute=pakketvondsten, factType=pakketvondsten, objectType=Jutter, role=pakketvondst, written=pakketvondsten}"),
+                errorsOn(strictRefusals, "- de pakketvondsten van J1 staan niet vast"));
+        assertEquals(List.of("RGS-247 {objectType=Jutter, role=gekeurde vondsten}"),
+                errorsOn(strictRefusals, "- de gekeurde vondsten van J1 zijn leeg"));
+        assertEquals(List.of("RGS-247 {objectType=Jutter, role=gekeurde vondsten}"),
+                errorsOn(strictRefusals, "- het aantal gekeurde vondsten van J1 is 0"));
+        assertEquals(List.of("RGS-246 {objectType=Vondst, role=onbekende}"),
+                errorsOn(strictRefusals, "- de onbekende van V1 zijn leeg"));
+        assertEquals(List.of("RGS-246 {objectType=Vondst, role=onbekende}"),
+                errorsOn(strictRefusals, "- de onbekende van V1 is J1"));
+        assertEquals(List.of("RGS-246 {objectType=Vondst, role=onbekende}"),
+                errorsOn(strictRefusals, "- de onbekende van V1 staan niet vast"));
+        assertTrue(errorsOn(strictRefusals, "- de vondsten van J1 is leeg").get(0).startsWith("RGS-477 "));
+        assertTrue(errorsOn(strictRefusals, "- de maten van J1 is leeg").get(0).startsWith("RGS-477 "));
+        assertTrue(errorsOn(strictRefusals, "- de vinder van V1 zijn leeg").get(0).startsWith("RGS-477 "));
+        assertTrue(errorsOn(strictRefusals, "- de vondsten van J1 is V1").get(0).startsWith("RGS-477 "));
+        assertTrue(errorsOn(strictRefusals, "- de maten van J1 is J1").get(0).startsWith("RGS-477 "));
+        assertEquals(List.of("RGS-266 {label=J99, role=vinder}"),
+                errorsOn(strictRefusals, "- de vinder van V1 is J99"));
+        assertEquals(List.of("RGS-267 {expectedType=Jutter, label=P1, objectType=Persoon, role=vinder}"),
+                errorsOn(strictRefusals, "- de vinder van V1 is P1"));
+        assertTrue(errorsOn(strictRefusals, "- de vondsten van J1 staat niet vast").get(0).startsWith("RGS-477 "));
+        assertTrue(errorsOn(strictRefusals, "- de vinder van V1 staan niet vast").get(0).startsWith("RGS-477 "));
+        assertTrue(errorsOn(strictRefusals, "- de maten van J1 staan niet vast").get(0).startsWith("RGS-477 "));
+        assertTrue(errorsOn(strictRefusals, "- het aantal maten van J1 staat niet vast").get(0).startsWith("RGS-477 "));
+        assertTrue(errorsOn(strictRefusals, "- de afhaaldatum van V1 zijn leeg").get(0).startsWith("RGS-481 "));
+        assertTrue(errorsOn(strictRefusals, "- het pakket in voorjaar van V1 zijn leeg").get(0).startsWith("RGS-481 "));
+        assertTrue(errorsOn(strictRefusals, "- de afhaaldatum van V1 staan niet vast").get(0).startsWith("RGS-481 "));
+        assertTrue(errorsOn(strictRefusals, "- de afhaaldatum van V1 is V1").get(0).startsWith("RGS-481 "));
+        assertTrue(errorsOn(strictRefusals, "- de vinder van V1 is 1").get(0).startsWith("RGS-482 "));
+        assertTrue(errorsOn(strictRefusals, "- de vinder van V1 is altijd leeg").get(0).startsWith("RGS-482 "));
+        assertTrue(errorsOn(strictRefusals, "- de vinder van V1 is altijd 1").get(0).startsWith("RGS-482 "));
+        assertTrue(errorsOn(strictRefusals, "- het aantal vondsten van J1 is -1").get(0).startsWith("RGS-483 "));
+        assertTrue(errorsOn(strictRefusals, "- het aantal vondsten van J1 is 1,5").get(0).startsWith("RGS-483 "));
+        assertTrue(errorsOn(strictRefusals, "- het aantal vondsten van J1 is 2,0").get(0).startsWith("RGS-483 "));
+        assertTrue(errorsOn(strictRefusals, "- het aantal vondsten van J1 is 1/2").get(0).startsWith("RGS-483 "));
+        assertTrue(errorsOn(strictRefusals, "- het aantal vondsten van J1 is 2 kg").get(0).startsWith("RGS-483 "));
+        assertTrue(errorsOn(strictRefusals, "- het aantal vondsten van J1 is \"2\"").get(0).startsWith("RGS-483 "));
+        assertTrue(errorsOn(strictRefusals, "- het aantal vondsten van J1 is 1 van").get(0).startsWith("RGS-483 "));
+        assertTrue(errorsOn(strictRefusals, "- het aantal vondsten van J1 staan niet vast").get(0).startsWith("RGS-483 "));
+        assertTrue(errorsOn(strictRefusals, "- het aantal vondsten van J1 is leeg").get(0).startsWith("RGS-483 "));
+        assertTrue(errorsOn(strictRefusals, "- het aantal vondsten van J1 is V1").get(0).startsWith("RGS-483 "));
+        assertTrue(errorsOn(strictRefusals, "- het aantal vondsten van J1 is altijd 0").get(0).startsWith("RGS-483 "));
+
+        String withoutStrict = model + """
+                Scenario open rol zonder afleiden uit leeg nee
+                Gegeven is de volgende situatie:
+                een Jutter J1
+                een Vondst V1
+                Met als verwacht resultaat:
+                - de vinder van V1 staat niet vast
+                - de vondsten van J1 staan niet vast
+                - het aantal vondsten van J1 staat niet vast
+                """;
+        assertEquals(List.of("RGS-467 {label=V1, member=de rol 'vinder'}"),
+                errorsOn(withoutStrict, "- de vinder van V1 staat niet vast"));
+        assertEquals(List.of("RGS-467 {label=J1, member=de rol 'vondsten'}"),
+                errorsOn(withoutStrict, "- de vondsten van J1 staan niet vast"));
+        assertEquals(List.of("RGS-467 {label=J1, member=de rol 'vondsten'}"),
+                errorsOn(withoutStrict, "- het aantal vondsten van J1 staat niet vast"));
+    }
 }

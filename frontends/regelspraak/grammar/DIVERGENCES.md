@@ -3306,17 +3306,32 @@ ends at the first header keyword. The expectations, one bullet each:
 | `- <LABEL> is\|heeft niet [een\|de\|het] <kenmerk>`, `- <LABEL> is\|heeft geen <kenmerk>` | `characteristicAbsent` (a characteristic without a timeline) |
 | `- de\|het <attribuut> van <LABEL> staat niet vast` | `attributeOpen` (an attribute without a timeline, in a document with `Afleiden uit leeg: nee`) |
 | `- of <LABEL> [een\|de\|het] <kenmerk> is\|heeft[,] staat niet vast` | `characteristicOpen` (a characteristic without a timeline, in a document with `Afleiden uit leeg: nee`) |
+| `- de\|het <rol> van <LABEL> is leeg` | `roleEmpty` (a non-reciprocal to-one role) |
+| `- de\|het <rol-mv> van <LABEL> zijn leeg` | `roleEmpty` (a to-many or reciprocal role) |
+| `- het aantal <rol> van <LABEL> is <aantal>` | `roleCount` (when the full name `aantal <rol>` names neither an attribute/cell nor a role, and `<aantal>` is a non-negative whole number without a unit or decimals) |
+| `- de\|het <rol> van <LABEL> is <LABEL2>` | `roleTarget` (a non-reciprocal to-one role, `<LABEL2>` declared in the merged situation with a compatible type) |
+| `- de\|het <rol> van <LABEL> staat niet vast`, `- de\|het <rol-mv> van <LABEL> staan niet vast`, `- het aantal <rol> van <LABEL> staat niet vast` | `roleOpen` (a non-reciprocal role, in a document with `Afleiden uit leeg: nee`) |
 | `- de gegevens zijn consistent` | `consistent` |
 | `- de gegevens zijn inconsistent [volgens "<regel>" [voor <LABEL>]]` | `inconsistent` with its optional `rule` and `label` |
 
 The segment bullets of one label and attribute are one `attributeTimeline`,
-at the place of the first. An expectation without a period on a time-dependent attribute names no day of its
+at the place of the first. On every `<naam> van <LABEL>` expectation the full written name (without its article) is
+tested first against the declared attributes and cells of `<LABEL>`'s type and the roles opposite it (`RGS-476` when it
+names both, `RGS-247` when it names several roles), so a declared attribute such as `het aantal penningbesluiten` keeps
+its `attributeValue` reading; only where the full name names neither and the bullet opens with `het aantal <rest>` is
+`<rest>` resolved as a role (`RGS-247` when ambiguous; `RGS-483` when the value is not a unitless non-negative whole
+number without decimals, carries a period, or writes another form). On a role expectation the verb follows the role's
+cardinality (`is leeg` and `staat niet vast` on a non-reciprocal to-one role, `zijn leeg` on a to-many or reciprocal
+role, `staan niet vast` on a non-reciprocal to-many role, `is <LABEL2>` on a non-reciprocal to-one role; `RGS-477` on
+the wrong verb or on a reciprocal role where inapplicable, `RGS-266`/`RGS-267` on an unknown or incompatible `<LABEL2>`,
+`RGS-482` on a value or timeline form on a role, and `RGS-481` on a role-only form written on an attribute or cell).
+An expectation without a period on a time-dependent attribute names no day of its
 timeline and is refused (RGS-399, pointing to `is altijd leeg`, `is altijd <waarde>` or a period); so is an
 expectation on a time-dependent characteristic (RGS-400), for which the case format has no expectation over periods.
-`staat niet vast` expects an open member (RUNTIME-SEMANTICS ch. 1.5): the verb of the characteristic form follows its
+`staat niet vast` and `staan niet vast` expect an open member or an open role (RUNTIME-SEMANTICS ch. 1.5): the verb of the characteristic form follows its
 kind, as in `- <LABEL> is|heeft <kenmerk>`, and the name takes no negation (`of V1 niet afhaalbaar is` names a
 characteristic `niet afhaalbaar`). A document without
-`Afleiden uit leeg: nee` has no open member, so there both forms are refused (RGS-467); on a time-dependent attribute or
+`Afleiden uit leeg: nee` has no open member or role, so there all open expectation forms are refused (RGS-467); on a time-dependent attribute or
 characteristic they are refused as the other expectations without a period are (RGS-399, RGS-400), and on a dimensioned
 attribute, with a cell or without, because `attributeOpen` names an attribute without dimensions and no cell (RGS-468,
 before RGS-467 and before the refusal of a cell without its labels).
@@ -3333,7 +3348,7 @@ tokens only: a name word may be a number, so a date that may also be a
 `NUMBER` would let a characteristic's `van`-segment compete for `van 2024`.
 The empty timeline is `ALTIJD LEEG`. `volgens` is matched as a `LOWER_ID` by
 its text, on the one position after `inconsistent` (a source carries the
-word elsewhere as a name word). So are `staat` and `vast` of `staat niet
+word elsewhere as a name word). So are `staat`, `staan` and `vast` of `staat/staan niet
 vast`, after the label of an expectation and after the verb of its
 characteristic form only; `of` and `niet` keep their tokens `OF` and `NIET`,
 which a name carries as before (an attribute `de staat`, `het gewicht of
@@ -4600,8 +4615,9 @@ lower to. Any other chain is read as `--ir` reads it. The output has the same fo
   keep their lexical kind. Where the opener or the label names no type, every type's members are candidates, as for a
   name its place does not decide;
 - `de parameter …` names a `parameter`; the negation `geen` or `niet` before a characteristic in a situation and in an
-  expectation (where the whole name names no characteristic, as the scenario route reads it), the words `staat` and
-  `vast` of `staat niet vast`, and the word `volgens` of an inconsistency are keywords; the rule an inconsistency names is a text literal, a `string`.
+  expectation (where the whole name names no characteristic, as the scenario route reads it), the words `staat`, `staan`
+  and `vast` of `staat/staan niet vast`, `aantal` in `het aantal <rol>` role-count/open expectations, and the word
+  `volgens` of an inconsistency are keywords; the rule an inconsistency names is a text literal, a `string`.
 
 **After a syntax error.** The parse tree is ANTLR's recovery. Rule text in it is read as any rule text: a word there
 that names nothing is `unresolved`. A word the recovery placed in no name and no rule text keeps its lexical kind

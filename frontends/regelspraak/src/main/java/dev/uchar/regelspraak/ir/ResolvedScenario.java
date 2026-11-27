@@ -129,24 +129,53 @@ public record ResolvedScenario(String name, Scope scope, LocalDate asOfDate, Sit
 
     /** One expectation; {@code kind} selects the meaningful fields. {@code labels} are the labels of the cell of a
      *  {@link ExpectationKind#CELL_VALUE} or {@link ExpectationKind#CELL_EMPTY}, as {@link Cell} carries them;
-     *  {@code timeline} is the expected timeline of an {@link ExpectationKind#ATTRIBUTE_TIMELINE} (empty when the whole
-     *  timeline is expected empty); {@code rule} and {@code label} of an {@link ExpectationKind#INCONSISTENT} are its
-     *  optional key. */
+     *  {@code role}, {@code count} and {@code target} are the fields of the four role expectations
+     *  ({@link ExpectationKind#ROLE_EMPTY}, {@link ExpectationKind#ROLE_COUNT}, {@link ExpectationKind#ROLE_TARGET},
+     *  {@link ExpectationKind#ROLE_OPEN}); {@code timeline} is the expected timeline of an
+     *  {@link ExpectationKind#ATTRIBUTE_TIMELINE} (empty when the whole timeline is expected empty); {@code rule} and
+     *  {@code label} of an {@link ExpectationKind#INCONSISTENT} are its optional key. */
     public record Expectation(ExpectationKind kind, String label, String attribute, List<String> labels,
-                              String characteristic, ScenarioValue expectedValue, List<Segment> timeline, String rule,
-                              int line) {}
+                              String characteristic, String role, Integer count, String target,
+                              ScenarioValue expectedValue, List<Segment> timeline, String rule,
+                              int line) {
+        public Expectation(ExpectationKind kind, String label, String attribute, List<String> labels,
+                           String characteristic, ScenarioValue expectedValue, List<Segment> timeline, String rule,
+                           int line) {
+            this(kind, label, attribute, labels, characteristic, null, null, null, expectedValue, timeline, rule, line);
+        }
+
+        public static Expectation roleEmpty(String label, String role, int line) {
+            return new Expectation(ExpectationKind.ROLE_EMPTY, label, null, null, null, role, null, null, null, null, null, line);
+        }
+
+        public static Expectation roleCount(String label, String role, int count, int line) {
+            return new Expectation(ExpectationKind.ROLE_COUNT, label, null, null, null, role, count, null, null, null, null, line);
+        }
+
+        public static Expectation roleTarget(String label, String role, String target, int line) {
+            return new Expectation(ExpectationKind.ROLE_TARGET, label, null, null, null, role, null, target, null, null, null, line);
+        }
+
+        public static Expectation roleOpen(String label, String role, int line) {
+            return new Expectation(ExpectationKind.ROLE_OPEN, label, null, null, null, role, null, null, null, null, null, line);
+        }
+    }
     public enum ExpectationKind {
-        ATTRIBUTE_VALUE,    // de <attr> van <LABEL> is <waarde>
-        ATTRIBUTE_EMPTY,      // de <attr> van <LABEL> is leeg
-        ATTRIBUTE_TIMELINE,  // de <attr> van <LABEL> is <waarde> van <d> tot <d> (one per segment) | is altijd leeg
-        CELL_VALUE,          // de <cel> van <LABEL> is <waarde>
-        CELL_EMPTY,          // de <cel> van <LABEL> is leeg
-        CHARACTERISTIC_PRESENT,    // <LABEL> is/heeft [een] <kenmerk>
-        CHARACTERISTIC_ABSENT,     // <LABEL> is/heeft geen <kenmerk>
-        ATTRIBUTE_OPEN,      // de <attr> van <LABEL> staat niet vast
-        CHARACTERISTIC_OPEN, // of <LABEL> <kenmerk> is/heeft, staat niet vast
-        CONSISTENT,          // de gegevens zijn consistent
-        INCONSISTENT         // de gegevens zijn inconsistent [volgens "<regel>" [voor <LABEL>]]
+        ATTRIBUTE_VALUE,       // de <attr> van <LABEL> is <waarde>
+        ATTRIBUTE_EMPTY,       // de <attr> van <LABEL> is leeg
+        ATTRIBUTE_TIMELINE,    // de <attr> van <LABEL> is <waarde> van <d> tot <d> (one per segment) | is altijd leeg
+        CELL_VALUE,            // de <cel> van <LABEL> is <waarde>
+        CELL_EMPTY,            // de <cel> van <LABEL> is leeg
+        CHARACTERISTIC_PRESENT,// <LABEL> is/heeft [een] <kenmerk>
+        CHARACTERISTIC_ABSENT, // <LABEL> is/heeft geen <kenmerk>
+        ATTRIBUTE_OPEN,        // de <attr> van <LABEL> staat niet vast
+        CHARACTERISTIC_OPEN,   // of <LABEL> <kenmerk> is/heeft, staat niet vast
+        ROLE_EMPTY,            // de <rol> van <LABEL> is/zijn leeg
+        ROLE_COUNT,            // het aantal <rol> van <LABEL> is <aantal>
+        ROLE_TARGET,           // de <rol> van <LABEL> is <LABEL>
+        ROLE_OPEN,             // de <rol> van <LABEL> staat/staan niet vast | het aantal <rol> van <LABEL> staat niet vast
+        CONSISTENT,            // de gegevens zijn consistent
+        INCONSISTENT           // de gegevens zijn inconsistent [volgens "<regel>" [voor <LABEL>]]
     }
 
     /** A normalised value — exactly one field is non-null. {@code number} is the exact case lexeme (a decimal with a

@@ -140,6 +140,18 @@ class ScenarioRecoveryTest {
                 SemanticTokens.Document d = tokens(model, scen);
                 assertTrue(d.diagnostics().stream().anyMatch(x -> "RGS-216".equals(x.code()) && "toets.rgs".equals(x.file())));
             }
+            for (String exp : List.of("- de vondsten van J1 zijn", "- de vondsten van J1 staan",
+                    "- de vondsten van J1 staan niet", "- de vondsten van J1 staan niet zeker",
+                    "- de vinder van V is", "- het aantal vondsten van J1 is")) {
+                String scen = SCENARIO.replace("- de taxatie is 3", "- de taxatie is 3\neen Jutter J1")
+                        .replace("- de taxatie van V is 3", exp + "\n- de gegevens zijn consistent");
+                ScenarioBundle b = ScenarioResolver.resolve(model + scen);
+                assertFalse(b.isOk());
+                assertTrue(codes(b.model().errors()).contains("RGS-216"), () -> exp + " in\n" + model);
+                assertEquals(List.of(), codes(b.warnings()), () -> "no warning on " + exp);
+                SemanticTokens.Document d = tokens(model, scen);
+                assertTrue(d.diagnostics().stream().anyMatch(x -> "RGS-216".equals(x.code()) && "toets.rgs".equals(x.file())));
+            }
         }
     }
 

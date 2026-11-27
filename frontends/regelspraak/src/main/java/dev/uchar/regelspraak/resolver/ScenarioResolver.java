@@ -25,6 +25,7 @@ import dev.uchar.regelspraak.parser.RegelSpraak.*;
 import dev.uchar.regelspraak.parser.RegelSpraakLexer;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -1772,6 +1773,98 @@ public final class ScenarioResolver {
 
     // ---------------- expectations ----------------
 
+    /** What the written name of a member-or-role expectation resolves to on {@code ot}: an attribute/cell, one role
+     *  (directly or through {@code het aantal <rest>}), or neither after any ambiguity diagnostic has been raised. */
+    private enum ExpectationTargetKind { ATTRIBUTE, DIRECT_ROLE, ROLE_COUNT, NEITHER, REFUSED }
+
+    private record ExpectationTarget(ExpectationTargetKind kind, String attrHint, RoleHit role, String roleKey,
+                                     String roleWritten) {}
+
+    /** Resolves {@code article} + {@code nameCtx} on {@code ot} according to the two-tier precedence rule:
+     *  (1) full written name against declared attributes/cells and reachable roles (`RGS-476` if both, `RGS-247` if
+     *  multiple roles);
+     *  (2) only when the full name hits neither and the bullet opens with {@code het aantal <rest>}, {@code <rest>}
+     *  against reachable roles (`RGS-247` if multiple roles). */
+    private ExpectationTarget resolveExpectationTarget(BepaaldLidwoordContext article, VerwachtingNaamContext nameCtx,
+                                                       ObjectType ot, int line) {
+        String rawAfterArticle = src(nameCtx);
+        String written = withoutArticle(rawAfterArticle);
+        String directAttr = ot.attributeName(written);
+        List<ExpressionBuilder.CellReading> cellReadings = directAttr != null ? List.of()
+                : ExpressionBuilder.cellReadings(model, ot, written);
+        boolean hitsAttr = directAttr != null || !cellReadings.isEmpty();
+        List<RoleHit> roleHits = rolesNamed(model, ot, written);
+        boolean hitsRole = !roleHits.isEmpty();
+        if (hitsAttr && hitsRole) {
+            String attrName = resolvedAttributeHint(directAttr, cellReadings);
+            RoleHit rh = roleHits.get(0);
+            error(line, "RGS-476", params("attribute", attrName, "factType", rh.factType().name, "objectType", ot.name,
+                    "role", rh.role().name(), "written", written));
+            return new ExpectationTarget(ExpectationTargetKind.REFUSED, null, null, null, written);
+        }
+        if (hitsAttr) {
+            return new ExpectationTarget(ExpectationTargetKind.ATTRIBUTE,
+                    resolvedAttributeHint(directAttr, cellReadings), null, null, written);
+        }
+        if (hitsRole) {
+            if (roleHits.size() > 1) {
+                error(line, "RGS-247", params("role", written, "objectType", ot.name));
+                return new ExpectationTarget(ExpectationTargetKind.REFUSED, null, null, null, written);
+            }
+            RoleHit hit = roleHits.get(0);
+            return new ExpectationTarget(ExpectationTargetKind.DIRECT_ROLE, null, hit, roleKey(hit.role(), written),
+                    written);
+        }
+        if (article != null && article.HET() != null && rawAfterArticle.length() > 7
+                && rawAfterArticle.substring(0, 7).equalsIgnoreCase("aantal ")) {
+            String rest = rawAfterArticle.substring(7).trim();
+            List<RoleHit> countHits = rolesNamed(model, ot, rest);
+            if (!countHits.isEmpty()) {
+                if (countHits.size() > 1) {
+                    error(line, "RGS-247", params("role", rest, "objectType", ot.name));
+                    return new ExpectationTarget(ExpectationTargetKind.REFUSED, null, null, null, rest);
+                }
+                RoleHit hit = countHits.get(0);
+                return new ExpectationTarget(ExpectationTargetKind.ROLE_COUNT, null, hit, roleKey(hit.role(), rest),
+                        rest);
+            }
+        }
+        return new ExpectationTarget(ExpectationTargetKind.NEITHER, null, null, null, written);
+    }
+
+    private static String resolvedAttributeHint(String directAttr, List<ExpressionBuilder.CellReading> cellReadings) {
+        if (directAttr != null) return directAttr;
+        ExpressionBuilder.CellChoice choice = ExpressionBuilder.chooseCell(cellReadings);
+        return choice.cells().isEmpty() ? choice.partial().attribute() : choice.cells().get(0).attribute();
+    }
+
+    private static String roleKey(Role far, String written) {
+        return far.plural() != null && norm(far.plural()).equals(norm(written)) ? far.plural() : far.name();
+    }
+
+    /** Parses {@code sw} as a non-negative whole integer without unit or decimals for {@code roleCount}, or null. */
+    private static Integer nonNegativeRoleCount(SituatieWaardeContext sw) {
+        if (!(sw instanceof GetalSituatieWaardeContext gw)) return null;
+        GetalWaardeContext g = gw.getalWaarde();
+        if (g == null || g.NUMBER() == null || g.PERCENT_SIGN() != null || g.eenheidExpressie() != null
+                || g.perEenheid() != null) return null;
+        String text = g.NUMBER().getText();
+        if (text.isEmpty() || !text.chars().allMatch(Character::isDigit)) return null;
+        BigInteger value = new BigInteger(text);
+        return value.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) <= 0 ? value.intValue() : null;
+    }
+
+    private Instance expectationInstance(TerminalNode labelNode, Situation situation, int line) {
+        if (labelNode == null || labelNode.getSymbol().getTokenIndex() < 0) return null;
+        String label = labelNode.getText();
+        Instance inst = situation.instance(label);
+        if (inst == null) {
+            error(line, "RGS-271", params("label", label));
+            return null;
+        }
+        return inst.objectType() == null ? null : inst;
+    }
+
     private List<Expectation> resolveExpectations(List<VerwachtingContext> bullets, Situation situation,
                                                   Predicate<String> carries) {
         List<Expectation> result = new ArrayList<>();
@@ -1780,18 +1873,76 @@ public final class ScenarioResolver {
         for (VerwachtingContext v : bullets) {
             int line = v.getStart().getLine();
             if (v instanceof VerwachtAttribuutLeegContext a) {
-                String label = a.UPPER_ID().getText();
+                if (DefinitionResolver.recovered(a)) continue;
+                Instance inst = expectationInstance(a.UPPER_ID(), situation, line);
+                if (inst == null) continue;
+                String label = inst.label();
+                ObjectType ot = inst.objectType();
                 String written = withoutArticle(src(a.verwachtingNaam()));
-                Named named = expectedMember(label, written, situation, line);
+                boolean zijn = a.ZIJN() != null;
+                ExpectationTarget target = resolveExpectationTarget(a.bepaaldLidwoord(), a.verwachtingNaam(), ot, line);
+                if (target.kind() == ExpectationTargetKind.REFUSED) continue;
+                if (target.kind() == ExpectationTargetKind.DIRECT_ROLE) {
+                    FactType ft = target.role().factType();
+                    Role far = target.role().role();
+                    if (!zijn && (ft.reciprocal || far.many())) {
+                        error(line, "RGS-477", params("factType", ft.name,
+                                "reason", ft.reciprocal
+                                        ? Msg.frontend("RGS-477.expect-is-reciprocal", "factType", ft.name)
+                                        : Msg.frontend("RGS-477.expect-is-many"),
+                                "role", target.roleWritten()));
+                        continue;
+                    }
+                    if (zijn && !ft.reciprocal && !far.many()) {
+                        error(line, "RGS-477", params("factType", ft.name,
+                                "reason", Msg.frontend("RGS-477.expect-zijn-one"),
+                                "role", target.roleWritten()));
+                        continue;
+                    }
+                    result.add(Expectation.roleEmpty(label, target.roleKey(), line));
+                    continue;
+                }
+                if (target.kind() == ExpectationTargetKind.ROLE_COUNT) {
+                    error(line, "RGS-483", params("reason",
+                            Msg.frontend("RGS-483.other-form", "role", target.roleWritten(),
+                                    "written", (zijn ? "zijn" : "is") + " leeg"),
+                            "role", target.roleWritten()));
+                    continue;
+                }
+                if (zijn) {
+                    if (target.kind() == ExpectationTargetKind.ATTRIBUTE)
+                        error(line, "RGS-481", params("attribute", target.attrHint(),
+                                "reason", Msg.frontend("RGS-481.zijn-leeg"), "written", written));
+                    else
+                        error(line, "RGS-246", params("objectType", ot.name, "role", written));
+                    continue;
+                }
+                Named named = member(ot, written, line);
                 if (named == null) continue;
                 if (named.labels() == null && withoutPeriodOnTimeline(label, named.attribute(), situation, line)) continue;
                 result.add(named.labels() == null
                         ? new Expectation(ExpectationKind.ATTRIBUTE_EMPTY, label, named.attribute(), null, null, null, null, null, line)
                         : new Expectation(ExpectationKind.CELL_EMPTY, label, named.attribute(), named.labels(), null, null, null, null, line));
             } else if (v instanceof VerwachtTijdlijnLeegContext a) {
-                String label = a.UPPER_ID().getText();
+                Instance inst = expectationInstance(a.UPPER_ID(), situation, line);
+                if (inst == null) continue;
+                String label = inst.label();
+                ObjectType ot = inst.objectType();
                 String written = withoutArticle(src(a.verwachtingNaam()));
-                Named named = expectedMember(label, written, situation, line);
+                ExpectationTarget target = resolveExpectationTarget(a.bepaaldLidwoord(), a.verwachtingNaam(), ot, line);
+                if (target.kind() == ExpectationTargetKind.REFUSED) continue;
+                if (target.kind() == ExpectationTargetKind.DIRECT_ROLE) {
+                    error(line, "RGS-482", params("factType", target.role().factType().name, "role", target.roleWritten(),
+                            "written", "is altijd leeg"));
+                    continue;
+                }
+                if (target.kind() == ExpectationTargetKind.ROLE_COUNT) {
+                    error(line, "RGS-483", params("reason",
+                            Msg.frontend("RGS-483.other-form", "role", target.roleWritten(), "written", "is altijd leeg"),
+                            "role", target.roleWritten()));
+                    continue;
+                }
+                Named named = member(ot, written, line);
                 if (named == null) continue;
                 String attr = named.attribute();
                 if (named.labels() != null) {
@@ -1811,16 +1962,46 @@ public final class ScenarioResolver {
                 alwaysEmpty.put(key, true);
                 result.add(t);
             } else if (v instanceof VerwachtAttribuutWaardeContext a) {
-                String label = a.UPPER_ID().getText();
+                Instance inst = expectationInstance(a.UPPER_ID(), situation, line);
+                if (inst == null) continue;
+                String label = inst.label();
+                ObjectType ot = inst.objectType();
                 String written = withoutArticle(src(a.verwachtingNaam()));
-                Named named = expectedMember(label, written, situation, line);
+                ExpectationTarget target = resolveExpectationTarget(a.bepaaldLidwoord(), a.verwachtingNaam(), ot, line);
+                if (target.kind() == ExpectationTargetKind.REFUSED) continue;
+                if (target.kind() == ExpectationTargetKind.DIRECT_ROLE) {
+                    String rhs = "is " + src(a.situatieWaarde())
+                            + (a.verwachtePeriode() == null ? "" : " " + src(a.verwachtePeriode()));
+                    error(line, "RGS-482", params("factType", target.role().factType().name, "role", target.roleWritten(),
+                            "written", rhs.trim()));
+                    continue;
+                }
+                if (target.kind() == ExpectationTargetKind.ROLE_COUNT) {
+                    if (DefinitionResolver.recovered(a)) continue;
+                    if (a.verwachtePeriode() != null) {
+                        error(line, "RGS-483", params("reason",
+                                Msg.frontend("RGS-483.period", "role", target.roleWritten()),
+                                "role", target.roleWritten()));
+                        continue;
+                    }
+                    Integer count = nonNegativeRoleCount(a.situatieWaarde());
+                    if (count == null) {
+                        error(line, "RGS-483", params("reason",
+                                Msg.frontend("RGS-483.not-count", "value", src(a.situatieWaarde())),
+                                "role", target.roleWritten()));
+                        continue;
+                    }
+                    result.add(Expectation.roleCount(label, target.roleKey(), count, line));
+                    continue;
+                }
+                Named named = member(ot, written, line);
                 if (named == null) continue;
                 String attr = named.attribute();
                 if (named.labels() != null && a.verwachtePeriode() != null) {
                     error(line, "RGS-369", params("written", written, "attribute", attr));
                     continue;
                 }
-                Datatype dt = situation.instance(label).objectType().attribute(attr);
+                Datatype dt = ot.attribute(attr);
                 ScenarioValue w = readValue(a.situatieWaarde(), dt, line,
                         Msg.frontend("PART.what.expectation", "name", attr));
                 if (named.labels() != null) {
@@ -1837,7 +2018,7 @@ public final class ScenarioResolver {
                 if (!temporalAttribute(label, attr, situation, line)) continue;
                 TimeWindow p = readExpectedPeriod(a.verwachtePeriode());
                 if (p == null || w == null
-                        || !onGrid(p, situation.instance(label).objectType(), attr, Msg.frontend("PART.what.expectation", "name", attr), line))
+                        || !onGrid(p, ot, attr, Msg.frontend("PART.what.expectation", "name", attr), line))
                     continue;
                 String key = label + "|" + norm(attr);
                 if (Boolean.TRUE.equals(alwaysEmpty.get(key))) {
@@ -1854,11 +2035,78 @@ public final class ScenarioResolver {
                 }
                 List<Segment> tl = t.timeline();
                 if (followsExpected(tl, p, line)) tl.add(new Segment(p.van(), p.until(), w));
+            } else if (v instanceof VerwachtRolDoelContext r) {
+                if (DefinitionResolver.recovered(r)) continue;
+                Instance inst = expectationInstance(r.UPPER_ID(0), situation, line);
+                if (inst == null) continue;
+                String label = inst.label();
+                ObjectType ot = inst.objectType();
+                String written = withoutArticle(src(r.verwachtingNaam()));
+                String targetLabel = r.UPPER_ID(1).getText();
+                ExpectationTarget target = resolveExpectationTarget(r.bepaaldLidwoord(), r.verwachtingNaam(), ot, line);
+                if (target.kind() == ExpectationTargetKind.REFUSED) continue;
+                if (target.kind() == ExpectationTargetKind.ATTRIBUTE) {
+                    error(line, "RGS-481", params("attribute", target.attrHint(),
+                            "reason", Msg.frontend("RGS-481.target", "target", targetLabel), "written", written));
+                    continue;
+                }
+                if (target.kind() == ExpectationTargetKind.ROLE_COUNT) {
+                    error(line, "RGS-483", params("reason",
+                            Msg.frontend("RGS-483.other-form", "role", target.roleWritten(),
+                                    "written", "is " + targetLabel),
+                            "role", target.roleWritten()));
+                    continue;
+                }
+                if (target.kind() == ExpectationTargetKind.NEITHER) {
+                    error(line, "RGS-246", params("objectType", ot.name, "role", written));
+                    continue;
+                }
+                FactType ft = target.role().factType();
+                Role far = target.role().role();
+                if (ft.reciprocal || far.many()) {
+                    error(line, "RGS-477", params("factType", ft.name,
+                            "reason", ft.reciprocal
+                                    ? Msg.frontend("RGS-477.expect-target-reciprocal", "factType", ft.name,
+                                            "target", targetLabel)
+                                    : Msg.frontend("RGS-477.expect-target-many", "target", targetLabel),
+                            "role", target.roleWritten()));
+                    continue;
+                }
+                Instance targetInst = situation.instance(targetLabel);
+                if (targetInst == null) {
+                    error(line, "RGS-266", params("role", target.roleKey(), "label", targetLabel));
+                    continue;
+                }
+                ObjectType expectedType = model.objectTypeByName(far.objectTypeName());
+                if (expectedType != null && targetInst.objectType() != null
+                        && !targetInst.objectType().isA(expectedType)) {
+                    error(line, "RGS-267", params("role", target.roleKey(), "expectedType", expectedType.name,
+                            "label", targetLabel, "objectType", targetInst.objectType().name));
+                    continue;
+                }
+                result.add(Expectation.roleTarget(label, target.roleKey(), targetLabel, line));
             } else if (v instanceof VerwachtTijdlijnAltijdContext a) {
                 // one segment over all time: the timeline is this value on every day (RUNTIME-SEMANTICS ch. 3.1)
-                String label = a.UPPER_ID().getText();
+                Instance inst = expectationInstance(a.UPPER_ID(), situation, line);
+                if (inst == null) continue;
+                String label = inst.label();
+                ObjectType ot = inst.objectType();
                 String written = withoutArticle(src(a.verwachtingNaam()));
-                Named named = expectedMember(label, written, situation, line);
+                ExpectationTarget target = resolveExpectationTarget(a.bepaaldLidwoord(), a.verwachtingNaam(), ot, line);
+                if (target.kind() == ExpectationTargetKind.REFUSED) continue;
+                if (target.kind() == ExpectationTargetKind.DIRECT_ROLE) {
+                    error(line, "RGS-482", params("factType", target.role().factType().name, "role", target.roleWritten(),
+                            "written", "is altijd " + src(a.situatieWaarde())));
+                    continue;
+                }
+                if (target.kind() == ExpectationTargetKind.ROLE_COUNT) {
+                    error(line, "RGS-483", params("reason",
+                            Msg.frontend("RGS-483.other-form", "role", target.roleWritten(),
+                                    "written", "is altijd " + src(a.situatieWaarde())),
+                            "role", target.roleWritten()));
+                    continue;
+                }
+                Named named = member(ot, written, line);
                 if (named == null) continue;
                 String attr = named.attribute();
                 if (named.labels() != null) {
@@ -1866,7 +2114,7 @@ public final class ScenarioResolver {
                     continue;
                 }
                 if (!temporalAttribute(label, attr, situation, line)) continue;
-                Datatype dt = situation.instance(label).objectType().attribute(attr);
+                Datatype dt = ot.attribute(attr);
                 ScenarioValue w = readValue(a.situatieWaarde(), dt, line,
                         Msg.frontend("PART.what.expectation", "name", attr));
                 if (w == null) continue;
@@ -1887,16 +2135,77 @@ public final class ScenarioResolver {
             } else if (v instanceof VerwachtAttribuutOpenContext a) {
                 // the syntax error names a bullet the recovery cut short or patched, and nothing more is read from it
                 if (DefinitionResolver.recovered(a)) continue;
-                String label = a.UPPER_ID().getText();
+                Instance inst = expectationInstance(a.UPPER_ID(), situation, line);
+                if (inst == null) continue;
+                String label = inst.label();
+                ObjectType ot = inst.objectType();
                 String written = withoutArticle(src(a.verwachtingNaam()));
+                boolean staan = a.staanWoord() != null;
+                ExpectationTarget target = resolveExpectationTarget(a.bepaaldLidwoord(), a.verwachtingNaam(), ot, line);
+                if (target.kind() == ExpectationTargetKind.REFUSED) continue;
+                if (target.kind() == ExpectationTargetKind.DIRECT_ROLE) {
+                    FactType ft = target.role().factType();
+                    Role far = target.role().role();
+                    if (ft.reciprocal) {
+                        error(line, "RGS-477", params("factType", ft.name,
+                                "reason", Msg.frontend("RGS-477.expect-open-reciprocal", "factType", ft.name,
+                                        "written", staan ? "staan niet vast" : "staat niet vast"),
+                                "role", target.roleWritten()));
+                        continue;
+                    }
+                    if (!staan && far.many()) {
+                        error(line, "RGS-477", params("factType", ft.name,
+                                "reason", Msg.frontend("RGS-477.expect-staat-many"),
+                                "role", target.roleWritten()));
+                        continue;
+                    }
+                    if (staan && !far.many()) {
+                        error(line, "RGS-477", params("factType", ft.name,
+                                "reason", Msg.frontend("RGS-477.expect-staan-one"),
+                                "role", target.roleWritten()));
+                        continue;
+                    }
+                    if (!openAdmitted(label, Msg.frontend("PART.member-phrase.role", "name", target.roleKey()), line))
+                        continue;
+                    result.add(Expectation.roleOpen(label, target.roleKey(), line));
+                    continue;
+                }
+                if (target.kind() == ExpectationTargetKind.ROLE_COUNT) {
+                    if (staan) {
+                        error(line, "RGS-483", params("reason",
+                                Msg.frontend("RGS-483.staan", "role", target.roleWritten()),
+                                "role", target.roleWritten()));
+                        continue;
+                    }
+                    FactType ft = target.role().factType();
+                    if (ft.reciprocal) {
+                        error(line, "RGS-477", params("factType", ft.name,
+                                "reason", Msg.frontend("RGS-477.expect-open-reciprocal", "factType", ft.name,
+                                        "written", "staat niet vast"),
+                                "role", target.roleWritten()));
+                        continue;
+                    }
+                    if (!openAdmitted(label, Msg.frontend("PART.member-phrase.role", "name", target.roleKey()), line))
+                        continue;
+                    result.add(Expectation.roleOpen(label, target.roleKey(), line));
+                    continue;
+                }
+                if (staan) {
+                    if (target.kind() == ExpectationTargetKind.ATTRIBUTE)
+                        error(line, "RGS-481", params("attribute", target.attrHint(),
+                                "reason", Msg.frontend("RGS-481.staan"), "written", written));
+                    else
+                        error(line, "RGS-246", params("objectType", ot.name, "role", written));
+                    continue;
+                }
                 // the case format's attributeOpen names an attribute without dimensions, and no cell: refused first,
                 // since neither 'Afleiden uit leeg: nee' nor the labels of a cell would admit the bullet
-                String dimensioned = dimensionedAttribute(label, written, situation);
+                String dimensioned = dimensionedAttribute(ot, written);
                 if (dimensioned != null) {
                     error(line, "RGS-468", params("written", written, "attribute", dimensioned));
                     continue;
                 }
-                Named named = expectedMember(label, written, situation, line);
+                Named named = member(ot, written, line);
                 if (named == null) continue;
                 String attr = named.attribute();
                 // a timeline is refused in either kind of document, so before the refusal of the document's kind

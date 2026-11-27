@@ -1359,20 +1359,27 @@ public final class SemanticTokens {
     }
 
     private void expectation(VerwachtingContext v, Map<String, Opened> labels) {
-        if (v instanceof VerwachtAttribuutLeegContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
-        else if (v instanceof VerwachtTijdlijnLeegContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
-        else if (v instanceof VerwachtTijdlijnAltijdContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
-        else if (v instanceof VerwachtAttribuutWaardeContext a) attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
-        else if (v instanceof VerwachtAttribuutOpenContext a) {
-            attributeOf(a.UPPER_ID(), a.verwachtingNaam(), labels);
-            openWords(a.staatWoord(), a.vastWoord());
+        if (v instanceof VerwachtAttribuutLeegContext a)
+            memberOrRoleOf(a.bepaaldLidwoord(), a.UPPER_ID(), a.verwachtingNaam(), labels, a.ZIJN() != null);
+        else if (v instanceof VerwachtTijdlijnLeegContext a)
+            memberOrRoleOf(a.bepaaldLidwoord(), a.UPPER_ID(), a.verwachtingNaam(), labels, false);
+        else if (v instanceof VerwachtTijdlijnAltijdContext a)
+            memberOrRoleOf(a.bepaaldLidwoord(), a.UPPER_ID(), a.verwachtingNaam(), labels, false);
+        else if (v instanceof VerwachtAttribuutWaardeContext a)
+            memberOrRoleOf(a.bepaaldLidwoord(), a.UPPER_ID(), a.verwachtingNaam(), labels, false);
+        else if (v instanceof VerwachtRolDoelContext r) {
+            memberOrRoleOf(r.bepaaldLidwoord(), r.UPPER_ID(0), r.verwachtingNaam(), labels, true);
+            instanceReference(r.UPPER_ID(1), labels);
+        } else if (v instanceof VerwachtAttribuutOpenContext a) {
+            memberOrRoleOf(a.bepaaldLidwoord(), a.UPPER_ID(), a.verwachtingNaam(), labels, a.staanWoord() != null);
+            openWords(a.staatWoord(), a.staanWoord(), a.vastWoord());
         } else if (v instanceof VerwachtKenmerkContext k) characteristicOf(k.UPPER_ID(), k.kaleNaam(), labels);
         else if (v instanceof VerwachtKenmerkHeeftContext k) characteristicOf(k.UPPER_ID(), k.kaleNaam(), labels);
         else if (v instanceof VerwachtKenmerkOpenContext k) {
             // the open form takes no negation: the scenario route reads the name as written
             instanceReference(k.UPPER_ID(), labels);
             member(range(k.kaleNaam()), Kind.CHARACTERISTIC, typeOf(k.UPPER_ID(), labels));
-            openWords(k.staatWoord(), k.vastWoord());
+            openWords(k.staatWoord(), null, k.vastWoord());
         } else if (v instanceof VerwachtInconsistentContext c && c.inconsistentieSleutel() != null) {
             InconsistentieSleutelContext key = c.inconsistentieSleutel();
             // 'volgens' is a word to the lexer and a keyword of the expectation on this one position
@@ -1381,16 +1388,63 @@ public final class SemanticTokens {
         }
     }
 
-    private void attributeOf(TerminalNode label, VerwachtingNaamContext name, Map<String, Opened> labels) {
+    /** An expectation on {@code article} + {@code name} of {@code label}, read with {@link ScenarioResolver}'s two-tier
+     *  precedence: full written name against attributes/cells and roles first (unresolved if both match), then
+     *  {@code het aantal <rol>} when the full name matches neither. */
+    private void memberOrRoleOf(BepaaldLidwoordContext article, TerminalNode label, VerwachtingNaamContext name,
+                                Map<String, Opened> labels, boolean roleOnly) {
         instanceReference(label, labels);
-        member(range(name), Kind.ATTRIBUTE, typeOf(label, labels));
+        ObjectType ot = typeOf(label, labels);
+        int[] range = range(name);
+        int[] r = withoutArticle(range);
+        if (r == null) return;
+        String written = text(r[0], r[1]);
+        if (ot == null) {
+            boolean hitsAttr = !members(written, Kind.ATTRIBUTE).isEmpty();
+            boolean hitsRole = !roles(written).isEmpty();
+            if (hitsAttr && hitsRole) { claim(r, Kind.UNRESOLVED, false, null); return; }
+            if (hitsAttr) { member(range, Kind.ATTRIBUTE, null); return; }
+            if (hitsRole) { role(range, null); return; }
+            if (article != null && article.HET() != null && r[0] == range[0] && r[0] < r[1]
+                    && pieceText(r[0]).equalsIgnoreCase("aantal")) {
+                int restStart = next(r[0], r[1]);
+                String rest = text(restStart, r[1]);
+                if (!roles(rest).isEmpty()) {
+                    if (isWord(pieces.get(r[0]).type())) claim(new int[]{r[0], r[0]}, Kind.KEYWORD, false, null);
+                    role(new int[]{restStart, r[1]}, null);
+                    return;
+                }
+            }
+            if (roleOnly) role(range, null);
+            else member(range, Kind.ATTRIBUTE, null);
+            return;
+        }
+        boolean hitsAttr = ot.attributeName(written) != null
+                || !ExpressionBuilder.cellReadings(model, ot, written).isEmpty();
+        boolean hitsRole = !ScenarioResolver.rolesNamed(model, ot, written).isEmpty();
+        if (hitsAttr && hitsRole) { claim(r, Kind.UNRESOLVED, false, null); return; }
+        if (hitsAttr) { member(range, Kind.ATTRIBUTE, ot); return; }
+        if (hitsRole) { role(range, ot); return; }
+        if (article != null && article.HET() != null && r[0] == range[0] && r[0] < r[1]
+                && pieceText(r[0]).equalsIgnoreCase("aantal")) {
+            int restStart = next(r[0], r[1]);
+            String rest = text(restStart, r[1]);
+            if (!ScenarioResolver.rolesNamed(model, ot, rest).isEmpty()) {
+                if (isWord(pieces.get(r[0]).type())) claim(new int[]{r[0], r[0]}, Kind.KEYWORD, false, null);
+                role(new int[]{restStart, r[1]}, ot);
+                return;
+            }
+        }
+        if (roleOnly) role(range, ot);
+        else member(range, Kind.ATTRIBUTE, ot);
     }
 
-    /** 'staat' and 'vast' of {@code staat niet vast}: words to the lexer, keywords of the expectation on this one
-     *  position ('niet' is a keyword token). A word whose predicate failed is another word the recovery took in, and
-     *  keeps its lexical kind. */
-    private void openWords(StaatWoordContext staat, VastWoordContext vast) {
+    /** 'staat', 'staan' and 'vast' of {@code staat/staan niet vast}: words to the lexer, keywords of the expectation on
+     *  this one position ('niet' is a keyword token). A word whose predicate failed is another word the recovery took
+     *  in, and keeps its lexical kind. */
+    private void openWords(StaatWoordContext staat, StaanWoordContext staan, VastWoordContext vast) {
         if (staat != null && staat.exception == null) claim(staat, Kind.KEYWORD, false, null);
+        if (staan != null && staan.exception == null) claim(staan, Kind.KEYWORD, false, null);
         if (vast != null && vast.exception == null) claim(vast, Kind.KEYWORD, false, null);
     }
 
