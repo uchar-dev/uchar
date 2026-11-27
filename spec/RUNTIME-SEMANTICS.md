@@ -1406,11 +1406,25 @@ stands below them, stays open while a writer leaves it open, and takes the
 writer's value (or link, or holds) where a writer decides. An expectation
 `attributeEmpty` holds where the attribute is settled `leeg`,
 `characteristicAbsent` where the characteristic stands not to hold, and
-`attributeOpen` and `characteristicOpen` where the member is open.
-In a document without the property nothing is open: the first two read as
-ch. 1.2 does, the last two hold nowhere, and `attributesEmpty`, `rolesEmpty`,
+`attributeOpen` and `characteristicOpen` where the member is open; on the
+directed role slot `(label, factType, far)` resolved at load (ch. 5.7), with $S$
+its standing linked target instances at the fixpoint (case instances and created
+instances alike, across case-supplied, reverse-materialised and created links)
+and `is_open` whether that directed role slot is open (`link ... open` in the
+end state of ch. 5.12a), `roleEmpty` holds where `not is_open` and $|S| = 0$,
+`roleCount` where `not is_open` and $|S| = \text{count}$, `roleTarget` (on a
+non-reciprocal `to-one` role) where `not is_open` and $S = \{\text{target}\}$
+(on an unwritten `to-one` input role or an `ObjectCreation`, $S = \{\text{target}\}$
+already implies `not is_open`), and `roleOpen` where `is_open` (an open
+`to-one` input role, an open `to-many` input role — even when $|S| \ge 1$ — or a
+role slot left open by an `ObjectCreation` or `FactCreation` whose condition or
+chain is undetermined).
+In a document without the property nothing is open: `attributeEmpty` and
+`characteristicAbsent` read as ch. 1.2 does, `roleEmpty` and `roleCount` read
+$|S|$ directly (`is_open` is `false`), `attributeOpen`, `characteristicOpen` and
+`roleOpen` hold nowhere, and `attributesEmpty`, `rolesEmpty`,
 `rolesClosed` and `characteristicsAbsent` change no outcome. On the input before any rule is
-evaluated nothing is open either.
+evaluated (`--noop`) nothing is open either (`WV-1.5-case-role-*`).
 Example (WV-1.5-case-*): with the vindloon of the examples above and no
 taxatie, `attributeOpen` holds for the vindloon and `attributeEmpty` does
 not; with taxatie 50 the reverse, and so without the property and without a
@@ -5997,6 +6011,45 @@ characteristic, is a case error without a code: the member has a value per
 period or per cell and none of its own, so the case does not fit the document's
 declarations, and a timeline is expected with `attributeTimeline` (witnesses
 `WV-5.7-case-reader-refuses-…` in `ref/test/`).
+
+**Role expectations (`roleEmpty`, `roleCount`, `roleTarget`, `roleOpen`).** A
+case can pin the fixpoint state of a role slot from an existing case instance
+`label` without auxiliary counting or navigation rules in the domain model:
+
+- *Load validation (step 3; every violation is a case error without an `EF-*`
+  code, as for an undeclared expected attribute or characteristic):* `label`
+  must name an instance declared in `input.instances`; `role` must resolve from
+  the object type of `label` to a single far role `far` of a declared `FactType`
+  `ft` whose opposite (`near`) role's `objectType` covers `label`'s `objectType`
+  (`⊑`), matching `role` under the name equality of IR-SPEC ch. 2.1 against
+  `far`'s singular `name` or declared `plural` (for a reciprocal fact type, its
+  single role is both `near` and `far`; on a non-reciprocal self-relation whose
+  two roles carry distinct names, each role selects its own directed slot; 0 or
+  $\ge 2$ matches are refused as a case error without a code). For `roleCount`,
+  `count` must be an integer $\ge 0$. For `roleTarget`, `far` must be a
+  non-reciprocal `to-one` role (`many: false`, `reciprocal: false`), `target`
+  must name an instance declared in `input.instances`, and the object type of
+  `target` must fill `far.objectType` (`⊑`) (witnesses
+  `WV-5.7-case-reader-refuses-role*` in `ref/test/`).
+- *Truth at the fixpoint (step 5, end state of ch. 5.12a):* let $S$ be the set
+  of target instances linked on the resolved directed role slot
+  `(label, ft, far)` at the fixpoint — both case instances and instances made by
+  an `ObjectCreation` (ch. 5.5), across case-supplied links, reverse-materialised
+  legs (ch. 5.7a) and links laid by an `ObjectCreation` or `FactCreation`
+  (ch. 5.5) — and let `is_open` indicate whether `(label, ft, far)` is open at
+  the fixpoint (ch. 1.5; always `false` in a document without `inferFromEmpty:
+  false`, under `--closed-inputs` when no creation leaves the slot open, and on
+  the raw input before rule evaluation under `--noop`):
+  - `roleEmpty` (`label`, `role`): holds iff `not is_open` and $|S| = 0$;
+  - `roleCount` (`label`, `role`, `count`): holds iff `not is_open` and
+    $|S| = \text{count}$;
+  - `roleTarget` (`label`, `role`, `target`): holds iff `not is_open` and
+    $S = \{\text{target}\}$ (on an unwritten `to-one` input role or an
+    `ObjectCreation`, $S = \{\text{target}\}$ already implies `not is_open`; if
+    the slot is open, empty, linked to another case label or linked to a
+    nameless created object, `roleTarget` fails);
+  - `roleOpen` (`label`, `role`): holds iff `is_open` (witnesses
+    `WV-5.7-role-expectations-*` and `WV-1.5-case-role-*` in `ref/test/`).
 
 **Divergence by two writers of one target.** Two rules that write one
 attribute and whose conditions both hold on one instance demand, by

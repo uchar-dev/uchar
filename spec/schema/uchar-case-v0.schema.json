@@ -342,6 +342,48 @@
             "label": { "type": "string", "minLength": 1 },
             "characteristic": { "type": "string", "minLength": 1 }
           }
+        },
+        {
+          "description": "The directed role slot on 'label' is not open and has 0 linked target instances, case-supplied and created alike (RUNTIME-SEMANTICS ch. 1.5, ch. 5.7). Valid for any role (to-one, to-many or reciprocal).",
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "label", "role"],
+          "properties": {
+            "kind": { "const": "roleEmpty" },
+            "label": { "type": "string", "minLength": 1 },
+            "role": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "description": "The directed role slot on 'label' is not open and has exactly 'count' linked target instances, case-supplied and created alike (RUNTIME-SEMANTICS ch. 1.5, ch. 5.7). Valid for any role (to-one, to-many or reciprocal).",
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "label", "role", "count"],
+          "properties": {
+            "kind": { "const": "roleCount" },
+            "label": { "type": "string", "minLength": 1 },
+            "role": { "type": "string", "minLength": 1 },
+            "count": { "type": "integer", "minimum": 0 }
+          }
+        },
+        {
+          "description": "The directed non-reciprocal to-one role slot on 'label' is not open and is linked to the case instance 'target' (RUNTIME-SEMANTICS ch. 1.5, ch. 5.7).",
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "label", "role", "target"],
+          "properties": {
+            "kind": { "const": "roleTarget" },
+            "label": { "type": "string", "minLength": 1 },
+            "role": { "type": "string", "minLength": 1 },
+            "target": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "description": "The directed role slot on 'label' is open at the fixpoint (RUNTIME-SEMANTICS ch. 1.5, ch. 5.7). Valid for any role; in a document without inferFromEmpty false no role slot is open, so there this expectation never holds.",
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "label", "role"],
+          "properties": {
+            "kind": { "const": "roleOpen" },
+            "label": { "type": "string", "minLength": 1 },
+            "role": { "type": "string", "minLength": 1 }
+          }
         }
       ]
     }

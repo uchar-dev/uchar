@@ -2367,7 +2367,7 @@ functor-unification as a bound-term match, over a term produced by a
 
 On the check side, `model.ml` reads the fold family's scalar results as
 ordinary `val/3` — the reified lists are internal (`#show` carries only
-`val`/`has`/`inconsistent`/`tl`), so a numeric fold result and a
+`val`/`has`/`role`/`inconsistent`/`tl`), so a numeric fold result and a
 `ListLength` count are plain numeric expectations, and a leeg target
 (absent list) reports underived through the same `val_present` path. A
 **list-valued** `attributeValue` expectation has no corpus case and
@@ -3553,18 +3553,26 @@ document, `Ir_v0.Desugar.document` runs as in S1, `ctx.case_only` is `[]`,
 runs, none of the strict predicates or `#show` directives are emitted,
 conditions lower directly through `cond_atoms` rather than `judge`, and
 the generated program is identical to S1–S18. `Model.check` reads
-`let strict = not doc.infer_from_empty` as well: on a strict document it
-checks `attributeEmpty`/`attributeOpen` and
-`characteristicAbsent`/`characteristicOpen` against the shown `settled/2`
-and `hasnot/2` atoms (`#show settled/2. #show hasnot/2.`).
+`let strict = not doc.infer_from_empty` as well: in every document
+`#show role/3.` projects the standing links (case-supplied, reverse-materialised
+and created alike, including `oc<k>(...)` terms minted by `ObjectCreation`) so
+`Model.check` evaluates `roleEmpty`, `roleCount` and `roleTarget` on the
+resolved directed role slot `(label, role_term ~fact_type far)`; on a strict
+document `#show settled/2. #show hasnot/2. #show ropen/2.` additionally projects
+the closed-empty member atoms and open role slots so `Model.check` checks
+`attributeEmpty`/`attributeOpen`, `characteristicAbsent`/`characteristicOpen`
+and `roleEmpty`/`roleCount`/`roleTarget`/`roleOpen` against `settled/2`,
+`hasnot/2` and `ropen/2` (on an ordinary document `ropen/2` is never shown, no
+role slot is open, and `roleOpen` never holds).
 
 **The three states and their atoms.** A member of an object is carried in
-three disjoint states:
+three disjoint states, alongside `role/3` and `ropen/2` on directed role slots:
 
-| member kind | filled | settled leeg | open |
+| member or slot kind | filled / linked | settled leeg / closed | open |
 |---|---|---|---|
 | attribute | `val(I,A,V)` | `settled(I,A)` | neither derived |
 | characteristic | `has(I,K)` | `hasnot(I,K)` | neither derived |
+| directed role slot `R = (ft, canonical)` | `role(I,R,T)` | `not ropen(I,R)` | `ropen(I,R)` (may coexist with `role(I,R,T)` on an open to-many input role or undetermined `FactCreation`) |
 
 Both standing states are derived positively, so open is the absence of
 both. When `ctx.strict` is `true`, the program preamble declares

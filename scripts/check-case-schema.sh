@@ -15,8 +15,9 @@
 #      case can never hide inside the green corpus, or vice versa;
 #   5. canonical key order: every object in every case file follows the
 #      `properties` order of its schema definition (`rolesClosed` directly
-#      after `rolesEmpty` and before `characteristics`), held by self-test
-#      rows in both polarities.
+#      after `rolesEmpty` and before `characteristics`, and the role
+#      expectations `roleEmpty`, `roleCount`, `roleTarget`, `roleOpen`),
+#      held by self-test rows in both polarities.
 # A zone without a case file fails: an empty input set is never silently green.
 #
 # NO monotone floor here (maintainer decision 2026-09-09, the counting-floors
@@ -348,6 +349,78 @@ STATE_ROWS = [
      "a characteristicOpen names a characteristic, never an attribute"),
     ("#/$defs/expectation", {"kind": "characteristicOpen", "characteristic": "kostbaar"}, False,
      "a characteristicOpen names its instance"),
+    ("#/$defs/expectation", {"kind": "roleEmpty", "label": "J1", "role": "vondsten"}, True,
+     "a closed empty role slot"),
+    ("#/$defs/expectation", {"kind": "roleEmpty", "label": "J1"}, False,
+     "a roleEmpty names its role"),
+    ("#/$defs/expectation", {"kind": "roleEmpty", "role": "vondsten"}, False,
+     "a roleEmpty names its instance"),
+    ("#/$defs/expectation", {"kind": "roleEmpty", "label": "", "role": "vondsten"}, False,
+     "a roleEmpty label is non-empty"),
+    ("#/$defs/expectation", {"kind": "roleEmpty", "label": "J1", "role": ""}, False,
+     "a roleEmpty role is non-empty"),
+    ("#/$defs/expectation", {"kind": "roleEmpty", "label": "J1", "role": "vondsten", "count": 0}, False,
+     "a roleEmpty carries no count"),
+    ("#/$defs/expectation", {"kind": "roleEmpty", "label": "J1", "role": "vinder", "target": "V1"}, False,
+     "a roleEmpty carries no target"),
+    ("#/$defs/expectation", {"kind": "roleCount", "label": "J1", "role": "vondsten", "count": 0}, True,
+     "a roleCount of 0"),
+    ("#/$defs/expectation", {"kind": "roleCount", "label": "J1", "role": "vondsten", "count": 3}, True,
+     "a positive roleCount"),
+    ("#/$defs/expectation", {"kind": "roleCount", "label": "J1", "role": "vondsten"}, False,
+     "a roleCount carries its count"),
+    ("#/$defs/expectation", {"kind": "roleCount", "label": "J1", "count": 2}, False,
+     "a roleCount names its role"),
+    ("#/$defs/expectation", {"kind": "roleCount", "role": "vondsten", "count": 2}, False,
+     "a roleCount names its instance"),
+    ("#/$defs/expectation", {"kind": "roleCount", "label": "J1", "role": "", "count": 2}, False,
+     "a roleCount role is non-empty"),
+    ("#/$defs/expectation", {"kind": "roleCount", "label": "J1", "role": "vondsten", "count": -1}, False,
+     "a roleCount count is non-negative"),
+    ("#/$defs/expectation", {"kind": "roleCount", "label": "J1", "role": "vondsten", "count": 1.5}, False,
+     "a roleCount count is an integer, never a fraction"),
+    ("#/$defs/expectation", {"kind": "roleCount", "label": "J1", "role": "vondsten", "count": "2"}, False,
+     "a roleCount count is a JSON integer, never a string"),
+    ("#/$defs/expectation", {"kind": "roleCount", "label": "J1", "role": "vondsten", "count": True}, False,
+     "a roleCount count is an integer, never a boolean"),
+    ("#/$defs/expectation", {"kind": "roleCount", "label": "J1", "role": "vondsten", "count": False}, False,
+     "a roleCount count is an integer, never false"),
+    ("#/$defs/expectation", {"kind": "roleCount", "label": "J1", "role": "vondsten", "count": None}, False,
+     "a roleCount count is an integer, never null"),
+    ("#/$defs/expectation", {"kind": "roleCount", "label": "J1", "role": "vondsten", "count": 1, "target": "V1"}, False,
+     "a roleCount carries no target"),
+    ("#/$defs/expectation", {"kind": "roleTarget", "label": "V1", "role": "vinder", "target": "J1"}, True,
+     "a roleTarget naming its target label"),
+    ("#/$defs/expectation", {"kind": "roleTarget", "label": "V1", "role": "vinder"}, False,
+     "a roleTarget carries its target"),
+    ("#/$defs/expectation", {"kind": "roleTarget", "label": "V1", "target": "J1"}, False,
+     "a roleTarget names its role"),
+    ("#/$defs/expectation", {"kind": "roleTarget", "role": "vinder", "target": "J1"}, False,
+     "a roleTarget names its instance"),
+    ("#/$defs/expectation", {"kind": "roleTarget", "label": "", "role": "vinder", "target": "J1"}, False,
+     "a roleTarget label is non-empty"),
+    ("#/$defs/expectation", {"kind": "roleTarget", "label": "V1", "role": "", "target": "J1"}, False,
+     "a roleTarget role is non-empty"),
+    ("#/$defs/expectation", {"kind": "roleTarget", "label": "V1", "role": "vinder", "target": ""}, False,
+     "a roleTarget target is non-empty"),
+    ("#/$defs/expectation", {"kind": "roleTarget", "label": "V1", "role": "vinder", "target": ["J1"]}, False,
+     "a roleTarget target is one label string, never a list"),
+    ("#/$defs/expectation", {"kind": "roleTarget", "label": "V1", "role": "vinder", "target": 1}, False,
+     "a roleTarget target is a string"),
+    ("#/$defs/expectation", {"kind": "roleTarget", "label": "V1", "role": "vinder", "target": "J1", "count": 1}, False,
+     "a roleTarget carries no count"),
+    ("#/$defs/expectation", {"kind": "roleOpen", "label": "J1", "role": "vondsten"}, True,
+     "an open role slot"),
+    ("#/$defs/expectation", {"kind": "roleOpen", "label": "J1"}, False,
+     "a roleOpen names its role"),
+    ("#/$defs/expectation", {"kind": "roleOpen", "role": "vondsten"}, False,
+     "a roleOpen names its instance"),
+    ("#/$defs/expectation", {"kind": "roleOpen", "label": "J1", "role": ""}, False,
+     "a roleOpen role is non-empty"),
+    ("#/$defs/expectation", {"kind": "roleOpen", "label": "J1", "role": "vondsten", "count": 0}, False,
+     "a roleOpen carries no count"),
+    ("#/$defs/expectation", {"kind": "roleOpen", "label": "V1", "role": "vinder", "target": "J1"}, False,
+     "a roleOpen carries no target"),
 ]
 for ref_, doc, want_ok, why in STATE_ROWS:
     n_selftest += 1
@@ -440,6 +513,15 @@ def _case_with_instance_keys(pairs):
     }
 
 
+def _case_with_expectation_keys(pairs):
+    return {
+        "format": "uchar-case-v0",
+        "asOfDate": None,
+        "input": {"instances": [], "parameters": {}},
+        "expected": [dict(pairs)],
+    }
+
+
 ORDER_ROWS = [
     ("rolesClosed directly after rolesEmpty and before characteristics",
      _case_with_instance_keys([
@@ -464,6 +546,28 @@ ORDER_ROWS = [
          ("label", "J1"), ("objectType", "Jutter"), ("attributes", {}),
          ("roles", {}), ("characteristics", []), ("rolesClosed", ["vondsten"]),
      ]), False),
+    ("roleEmpty in canonical order kind, label, role",
+     _case_with_expectation_keys([("kind", "roleEmpty"), ("label", "J1"), ("role", "vondsten")]), True),
+    ("roleEmpty with role before label",
+     _case_with_expectation_keys([("kind", "roleEmpty"), ("role", "vondsten"), ("label", "J1")]), False),
+    ("roleEmpty with kind after label",
+     _case_with_expectation_keys([("label", "J1"), ("kind", "roleEmpty"), ("role", "vondsten")]), False),
+    ("roleCount in canonical order kind, label, role, count",
+     _case_with_expectation_keys([("kind", "roleCount"), ("label", "J1"), ("role", "vondsten"), ("count", 2)]), True),
+    ("roleCount with count before role",
+     _case_with_expectation_keys([("kind", "roleCount"), ("label", "J1"), ("count", 2), ("role", "vondsten")]), False),
+    ("roleCount with role before label",
+     _case_with_expectation_keys([("kind", "roleCount"), ("role", "vondsten"), ("label", "J1"), ("count", 2)]), False),
+    ("roleTarget in canonical order kind, label, role, target",
+     _case_with_expectation_keys([("kind", "roleTarget"), ("label", "V1"), ("role", "vinder"), ("target", "J1")]), True),
+    ("roleTarget with target before role",
+     _case_with_expectation_keys([("kind", "roleTarget"), ("label", "V1"), ("target", "J1"), ("role", "vinder")]), False),
+    ("roleTarget with role before label",
+     _case_with_expectation_keys([("kind", "roleTarget"), ("role", "vinder"), ("label", "V1"), ("target", "J1")]), False),
+    ("roleOpen in canonical order kind, label, role",
+     _case_with_expectation_keys([("kind", "roleOpen"), ("label", "J1"), ("role", "vondsten")]), True),
+    ("roleOpen with role before label",
+     _case_with_expectation_keys([("kind", "roleOpen"), ("role", "vondsten"), ("label", "J1")]), False),
 ]
 for row, doc, want_in_order in ORDER_ROWS:
     n_selftest += 1
