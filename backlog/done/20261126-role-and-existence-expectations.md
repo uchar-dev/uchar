@@ -58,3 +58,19 @@ Out of scope:
 - globale type-brede tellingen (`instanceCount` / `createdCount`) en genavigeerde eigenschappen op aangemaakte objecten (`rolePath`) — geparkeerd tot een concrete casus erom vraagt
 - de werkbank (`werkbank/`, `v2/herleving-ww`, `eval/datasets/herleving-ww`)
 - `regelspraak-toolchain` (vervolgkaart `20261126-role-and-existence-expectations-in-service.md` samen met `open-to-many-roles-in-service` in één pin-bump na deze uchar-landing)
+
+## Result (2026-11-27)
+
+- **Case-schema & normatieve semantiek (`spec/schema/uchar-case-v0.schema.json`, `scripts/check-case-schema.sh`, `spec/RUNTIME-SEMANTICS.md` ch. 1.5 & ch. 5.7, `spec/ASP-TRANSLATION.md` S20, `spec/CONSTRUCTS.md` rijen 37 & 48):**
+  - Vier rolverwachtingen op bestaande casuslabels toegevoegd aan `$defs.expectation` met kanonieke eigenschapsvolgorde (`roleEmpty`: `kind, label, role`; `roleCount`: `kind, label, role, count`; `roleTarget`: `kind, label, role, target`; `roleOpen`: `kind, label, role`) en dekkende zelf-tests in `check-case-schema.sh` (`214` rijen).
+  - Uniforme laadweigeringen zonder `EF-*`-code (onbekend `label`, niet-bestaande/onbereikbare of ambigue `role`, niet-gehele of negatieve `count`, en voor `roleTarget` een `to-many`- of wederkerige rol, onbekend `target`-label of type-onverenigbaar `target`) en fixpuntregels gespecificeerd: elke positieve rolverwachting controleert eerst dat het gerichte rolslot niet open is, waarna `roleEmpty`, `roleCount` en `roleTarget` het doelensemble op het fixpunt toetsen (waarbij naamloze aangemaakte instanties meegeteld worden in `roleCount`, `roleEmpty` uitsluiten, maar nooit matchen met `roleTarget`), en `roleOpen` precies dan slaagt wanneer het gerichte rolslot openstaat.
+- **Uitvoerders (`ref/`, `backends/clingo/`, `backends/drools/`):**
+  - `ref/lib/case.ml`: `expected_role` laadvalidatie, `role_state` op het fixpunt en onder `--noop` (ruwe casuslinks, nooit open), met worked examples `WV-5.7-rolverwachtingen` en `WV-1.5-rolverwachtingen-strikt` (inclusief open creatie) in `ref/test/test_ref.ml`.
+  - `backends/clingo/`: `#show role/3.` en onder `inferFromEmpty: false` `#show ropen/2.` wanneer een rolverwachting aanwezig is, plus extractie en vergelijking in `model.ml` en tests in `test_clingo.ml`.
+  - `backends/drools/`: `CaseRunner`, `DroolsBackend.compare` en `EndState` uitgebreid voor zowel `EXEC_MODEL` als `DRL_TEXT` met identieke laadvalidatie, fixpuntcontrole over `links` en `openLinks` (inclusief `ObjectCreation`, `FactCreation`, zelfrelaties en 1:1 wederkerigheid), `PART.mismatch.role` in `messages-drools.{nl,en}.tsv` en `RoleExpectationsWitnessTest`.
+- **RegelSpraak-scenariolaag (`frontends/regelspraak/`):**
+  - `RegelSpraak.g4` uitgebreid zonder nieuwe lexer-keywords (`( IS | ZIJN ) LEEG`, `verwachtRolDoel`, `( staatWoord | staanWoord ) NIET vastWoord`).
+  - Tweelagige resolutie in `ScenarioResolver` en `SemanticTokens` (volledige geschreven naam vóór `het aantal <rest>`, achterwaarts compatibel met bestaande attributen zoals `het aantal penningbesluiten` in `jutterswet-penningbesluit`), emissie in `CaseEmitter`, diagnostiek (`RGS-476`, `RGS-477`, `RGS-481`..`RGS-483`, `RGS-247`, `RGS-266`, `RGS-267`, `RGS-467`), documentatie in `grammar/DIVERGENCES.md` en tests in `ScenarioStrictTest`, `ScenarioRecoveryTest`, `SemanticTokensScenarioTest` en `SemanticTokensRecoveryTest`.
+- **Corpusgetuigen & poorten (`corpus/golden/jutterswet-rolverwachting/`, `corpus/golden/jutterswet-rolverwachting-strikt/`, `scripts/check-drools.sh`):**
+  - Twee nieuwe rechtenvrije Jutterswet-goldens met `source.rgs`, `scenario.rgs`, `ir.json`, `case*.json` en DRL-tekstpinnen toegevoegd (`jutterswet-penningbesluit` ongewijzigd gelaten); `EXPECTED_PLAYED` in `scripts/check-drools.sh` verhoogd van `402` naar `404`.
+  - Volledige `make gates` groen (`17/17` poorten + `3` builds + `after-run`, `red=0`) en `scripts/check-self-contained.sh` groen.
