@@ -1,0 +1,147 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "bonus": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "rolesClosed": [
+          "vondsten"
+        ],
+        "characteristics": []
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "bonus": {
+            "number": "10"
+          }
+        },
+        "roles": {
+          "vondsten": [
+            "V1",
+            "V2"
+          ]
+        },
+        "rolesClosed": [
+          "vondsten"
+        ],
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "80"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "20"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V3",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "40"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "attributeValue",
+      "label": "J1",
+      "attribute": "vondstenaantal",
+      "value": {
+        "number": "0"
+      }
+    },
+    {
+      "kind": "attributeEmpty",
+      "label": "J1",
+      "attribute": "totale waarde"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "vondstloos"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "vondstenaantal",
+      "value": {
+        "number": "2"
+      }
+    },
+    {
+      "kind": "attributeValue",
+      "label": "J2",
+      "attribute": "totale waarde",
+      "value": {
+        "number": "100"
+      }
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "actief"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "schaars kostbaar"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "enkelvoudig kostbaar"
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "J2",
+      "characteristic": "rijkelijk voorzien"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V3",
+      "attribute": "vindpremie",
+      "value": {
+        "number": "40"
+      }
+    },
+    {
+      "kind": "characteristicAbsent",
+      "label": "V3",
+      "characteristic": "toegewezen"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

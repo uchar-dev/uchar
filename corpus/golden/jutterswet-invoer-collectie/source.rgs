@@ -1,0 +1,83 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de bonus Numeriek (geheel getal);
+    het vondstenaantal Numeriek (geheel getal);
+    de totale waarde Numeriek (geheel getal);
+    het keuringenaantal Numeriek (geheel getal);
+    het totaal keurloon Numeriek (geheel getal);
+    is actief kenmerk (bijvoeglijk);
+    is vondstloos kenmerk (bijvoeglijk);
+    is louter kostbaar kenmerk (bijvoeglijk);
+    is bescheiden kenmerk (bijvoeglijk);
+    is rijkelijk voorzien kenmerk (bijvoeglijk);
+    is schaars kostbaar kenmerk (bijvoeglijk);
+    is enkelvoudig kostbaar kenmerk (bijvoeglijk);
+
+Objecttype de Vondst (mv: Vondsten)
+    de waarde Numeriek (geheel getal);
+    de vindpremie Numeriek (geheel getal);
+    is toegewezen kenmerk (bijvoeglijk);
+
+Objecttype de Keuring (mv: Keuringen)
+    het keurloon Numeriek (geheel getal);
+
+Feittype vinding
+    de vinder Jutter
+    de vondst (mv: vondsten) Vondst
+Eén vinder heeft meerdere vondsten
+
+Feittype keurwerk
+    de keurmeester Jutter
+    de verrichte keuring (mv: verrichte keuringen) Keuring (volledig gegeven)
+Eén keurmeester verricht meerdere verrichte keuringen
+
+Regel vondstenaantal
+    geldig altijd
+        Het vondstenaantal van een Jutter moet berekend worden als het aantal vondsten van de Jutter.
+
+Regel totale waarde
+    geldig altijd
+        De totale waarde van een Jutter moet berekend worden als de som van de waarde van alle vondsten van de Jutter.
+
+Regel keuringenaantal
+    geldig altijd
+        Het keuringenaantal van een Jutter moet berekend worden als het aantal verrichte keuringen van de Jutter.
+
+Regel totaal keurloon
+    geldig altijd
+        Het totaal keurloon van een Jutter moet berekend worden als de som van het keurloon van alle verrichte keuringen van de Jutter.
+
+Regel actief
+    geldig altijd
+        Een Jutter is actief indien hij een vondst heeft.
+
+Regel vondstloos
+    geldig altijd
+        Een Jutter is vondstloos indien hij geen vondst heeft.
+
+Regel louter kostbaar
+    geldig altijd
+        Een Jutter is louter kostbaar indien de waarde van alle vondsten van de Jutter groter is dan 50.
+
+Regel bescheiden
+    geldig altijd
+        Een Jutter is bescheiden indien de waarde van geen van de vondsten van de Jutter groter is dan 50.
+
+Regel rijkelijk voorzien
+    geldig altijd
+        Een Jutter is rijkelijk voorzien indien de waarde van ten minste 2 van de vondsten van de Jutter groter is dan 50.
+
+Regel schaars kostbaar
+    geldig altijd
+        Een Jutter is schaars kostbaar indien de waarde van ten hoogste 1 van de vondsten van de Jutter groter is dan 50.
+
+Regel enkelvoudig kostbaar
+    geldig altijd
+        Een Jutter is enkelvoudig kostbaar indien de waarde van precies 1 van de vondsten van de Jutter groter is dan 50.
+
+Regel vindpremie
+    geldig altijd
+        De vindpremie van een Vondst moet berekend worden als zijn waarde plus de bonus van de vinder van de Vondst.
+
+Regel toegewezen
+    geldig altijd
+        Een Vondst is toegewezen indien hij een vondst is.

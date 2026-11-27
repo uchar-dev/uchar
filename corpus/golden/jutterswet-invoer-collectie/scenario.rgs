@@ -1,0 +1,85 @@
+Situatie tegenkoppelingen:
+een Jutter J1
+- de bonus is 10
+een Vondst V1
+- de waarde is 80
+- de vinder is J1
+een Vondst V2
+- de waarde is 30
+- de vinder is J1
+
+Scenario niets genoemd
+Gegeven is de volgende situatie:
+een Jutter J1
+- de bonus is 10
+Met als verwacht resultaat:
+- het vondstenaantal van J1 is 0
+- de totale waarde van J1 is leeg
+- het keuringenaantal van J1 is 0
+- het totaal keurloon van J1 is leeg
+- J1 is niet actief
+- J1 is vondstloos
+- J1 is louter kostbaar
+- J1 is bescheiden
+- J1 is niet rijkelijk voorzien
+- J1 is schaars kostbaar
+- J1 is niet enkelvoudig kostbaar
+- de gegevens zijn consistent
+
+Scenario als leeg en volledig gegeven
+Gegeven is de volgende situatie:
+een Jutter J1
+- de bonus is 10
+- de vondsten zijn leeg
+een Jutter J2
+- de bonus is 10
+- de vondsten zijn V1 en V2 (volledig gegeven)
+een Vondst V1
+- de waarde is 80
+een Vondst V2
+- de waarde is 20
+een Vondst V3
+- de waarde is 40
+Met als verwacht resultaat:
+- het vondstenaantal van J1 is 0
+- de totale waarde van J1 is leeg
+- J1 is vondstloos
+- het vondstenaantal van J2 is 2
+- de totale waarde van J2 is 100
+- J2 is actief
+- J2 is schaars kostbaar
+- J2 is enkelvoudig kostbaar
+- J2 is niet rijkelijk voorzien
+- de vindpremie van V3 is 40
+- V3 is niet toegewezen
+- de gegevens zijn consistent
+
+Scenario zijn leeg vervangt tegenkoppelingen
+gebaseerd op de situatie tegenkoppelingen
+Gegeven is de volgende situatie:
+een Jutter J1
+- de vondsten zijn leeg
+Met als verwacht resultaat:
+- het vondstenaantal van J1 is 0
+- de totale waarde van J1 is leeg
+- J1 is vondstloos
+- de vindpremie van V1 is 80
+- V1 is niet toegewezen
+- de gegevens zijn consistent
+
+Scenario volledig gegeven snoeit tegenkoppeling
+gebaseerd op de situatie tegenkoppelingen
+Gegeven is de volgende situatie:
+een Jutter J1
+- de vondsten zijn V1 en V4 (volledig gegeven)
+een Vondst V4
+- de waarde is 20
+Met als verwacht resultaat:
+- het vondstenaantal van J1 is 2
+- de totale waarde van J1 is 100
+- J1 is enkelvoudig kostbaar
+- de vindpremie van V1 is 90
+- V1 is toegewezen
+- de vindpremie van V2 is 30
+- V2 is niet toegewezen
+- de gegevens zijn consistent

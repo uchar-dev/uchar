@@ -1,0 +1,180 @@
+Situatie tegenkoppelingen:
+een Jutter J1
+- de bonus is 10
+een Vondst V1
+- de waarde is 80
+- de vinder is J1
+een Vondst V2
+- de waarde is 30
+- de vinder is J1
+
+Situatie gesloten lijst:
+een Jutter J1
+- de bonus is 10
+- de vondsten zijn V1 (volledig gegeven)
+een Vondst V1
+- de waarde is 80
+een Vondst V2
+- de waarde is 20
+
+Situatie zonder vondsten:
+een Jutter J1
+- de bonus is 10
+- de vondsten zijn leeg
+een Vondst V1
+- de waarde is 80
+
+Scenario open zonder elementen
+Gegeven is de volgende situatie:
+een Jutter J1
+- de bonus is 10
+Met als verwacht resultaat:
+- het vondstenaantal van J1 staat niet vast
+- de totale waarde van J1 staat niet vast
+- het keuringenaantal van J1 is 0
+- het totaal keurloon van J1 is leeg
+- of J1 actief is, staat niet vast
+- of J1 vondstloos is, staat niet vast
+- of J1 louter kostbaar is, staat niet vast
+- of J1 bescheiden is, staat niet vast
+- of J1 rijkelijk voorzien is, staat niet vast
+- of J1 schaars kostbaar is, staat niet vast
+- of J1 enkelvoudig kostbaar is, staat niet vast
+- de gegevens zijn consistent
+
+Scenario open met gemengde vondsten
+Gegeven is de volgende situatie:
+een Jutter J1
+- de bonus is 10
+- de vondsten zijn V1 en V2
+- de verrichte keuringen zijn K1
+een Vondst V1
+- de waarde is 80
+een Vondst V2
+- de waarde is 30
+een Keuring K1
+- het keurloon is 25
+Met als verwacht resultaat:
+- het vondstenaantal van J1 staat niet vast
+- de totale waarde van J1 staat niet vast
+- het keuringenaantal van J1 is 1
+- het totaal keurloon van J1 is 25
+- J1 is actief
+- J1 is niet vondstloos
+- J1 is niet louter kostbaar
+- J1 is niet bescheiden
+- of J1 rijkelijk voorzien is, staat niet vast
+- of J1 schaars kostbaar is, staat niet vast
+- of J1 enkelvoudig kostbaar is, staat niet vast
+- de vindpremie van V1 is 90
+- V1 is toegewezen
+- de gegevens zijn consistent
+
+Scenario open met twee kostbare vondsten
+Gegeven is de volgende situatie:
+een Jutter J1
+- de bonus is 10
+- de vondsten zijn V1 en V2
+een Vondst V1
+- de waarde is 80
+een Vondst V2
+- de waarde is 60
+Met als verwacht resultaat:
+- het vondstenaantal van J1 staat niet vast
+- de totale waarde van J1 staat niet vast
+- het keuringenaantal van J1 is 0
+- J1 is actief
+- J1 is niet vondstloos
+- of J1 louter kostbaar is, staat niet vast
+- J1 is niet bescheiden
+- J1 is rijkelijk voorzien
+- J1 is niet schaars kostbaar
+- J1 is niet enkelvoudig kostbaar
+- de gegevens zijn consistent
+
+Scenario gesloten leeg vervangt tegenkoppelingen
+gebaseerd op de situatie tegenkoppelingen
+Gegeven is de volgende situatie:
+een Jutter J1
+- de vondsten zijn leeg
+Met als verwacht resultaat:
+- het vondstenaantal van J1 is 0
+- de totale waarde van J1 is leeg
+- het keuringenaantal van J1 is 0
+- J1 is niet actief
+- J1 is vondstloos
+- J1 is louter kostbaar
+- J1 is bescheiden
+- J1 is niet rijkelijk voorzien
+- J1 is schaars kostbaar
+- J1 is niet enkelvoudig kostbaar
+- de vindpremie van V1 staat niet vast
+- of V1 toegewezen is, staat niet vast
+- de gegevens zijn consistent
+
+Scenario volledig gegeven snoeit buitenstaander en laat losse vondst open
+gebaseerd op de situatie tegenkoppelingen
+Gegeven is de volgende situatie:
+een Jutter J1
+- de vondsten zijn V1 en V4 (volledig gegeven)
+een Vondst V3
+- de waarde is 40
+een Vondst V4
+- de waarde is 20
+Met als verwacht resultaat:
+- het vondstenaantal van J1 is 2
+- de totale waarde van J1 is 100
+- J1 is actief
+- J1 is niet vondstloos
+- J1 is niet louter kostbaar
+- J1 is niet bescheiden
+- J1 is niet rijkelijk voorzien
+- J1 is schaars kostbaar
+- J1 is enkelvoudig kostbaar
+- de vindpremie van V1 is 90
+- V1 is toegewezen
+- de vindpremie van V2 staat niet vast
+- of V2 toegewezen is, staat niet vast
+- de vindpremie van V3 staat niet vast
+- of V3 toegewezen is, staat niet vast
+- de gegevens zijn consistent
+
+Scenario open lijst heropent gesloten collectie
+gebaseerd op de situatie gesloten lijst
+Gegeven is de volgende situatie:
+een Jutter J1
+- de vondsten zijn V1 en V2
+Met als verwacht resultaat:
+- het vondstenaantal van J1 staat niet vast
+- de totale waarde van J1 staat niet vast
+- het keuringenaantal van J1 is 0
+- J1 is actief
+- J1 is niet vondstloos
+- J1 is niet louter kostbaar
+- J1 is niet bescheiden
+- of J1 rijkelijk voorzien is, staat niet vast
+- of J1 schaars kostbaar is, staat niet vast
+- of J1 enkelvoudig kostbaar is, staat niet vast
+- de vindpremie van V2 is 30
+- V2 is toegewezen
+- de gegevens zijn consistent
+
+Scenario tegenkoppeling heropent gesloten lege collectie
+gebaseerd op de situatie zonder vondsten
+Gegeven is de volgende situatie:
+een Vondst V1
+- de vinder is J1
+Met als verwacht resultaat:
+- het vondstenaantal van J1 staat niet vast
+- de totale waarde van J1 staat niet vast
+- het keuringenaantal van J1 is 0
+- J1 is actief
+- J1 is niet vondstloos
+- of J1 louter kostbaar is, staat niet vast
+- J1 is niet bescheiden
+- of J1 rijkelijk voorzien is, staat niet vast
+- of J1 schaars kostbaar is, staat niet vast
+- of J1 enkelvoudig kostbaar is, staat niet vast
+- de vindpremie van V1 is 90
+- V1 is toegewezen
+- de gegevens zijn consistent
