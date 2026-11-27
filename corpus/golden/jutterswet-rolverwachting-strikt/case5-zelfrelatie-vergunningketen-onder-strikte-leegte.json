@@ -1,0 +1,87 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "G1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "volgnummer": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "volgende vergunning": [
+            "G2"
+          ]
+        },
+        "rolesEmpty": [
+          "vorige vergunning"
+        ],
+        "characteristics": []
+      },
+      {
+        "label": "G2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "volgnummer": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "roleEmpty",
+      "label": "G1",
+      "role": "vorige vergunning"
+    },
+    {
+      "kind": "roleCount",
+      "label": "G1",
+      "role": "vorige vergunningen",
+      "count": 0
+    },
+    {
+      "kind": "roleTarget",
+      "label": "G1",
+      "role": "volgende vergunning",
+      "target": "G2"
+    },
+    {
+      "kind": "roleCount",
+      "label": "G1",
+      "role": "volgende vergunningen",
+      "count": 1
+    },
+    {
+      "kind": "roleTarget",
+      "label": "G2",
+      "role": "vorige vergunning",
+      "target": "G1"
+    },
+    {
+      "kind": "roleOpen",
+      "label": "G2",
+      "role": "volgende vergunning"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "G1",
+      "characteristic": "aanvangsvergunning"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "G2",
+      "characteristic": "opvolgend"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

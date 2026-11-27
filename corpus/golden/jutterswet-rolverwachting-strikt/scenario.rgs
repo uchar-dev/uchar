@@ -1,0 +1,108 @@
+Situatie open tegenkoppeling:
+een Jutter J1
+- de bonus is 10
+een Vondst V1
+- de waarde is 80
+- de vinder is J1
+
+Scenario open rollen zonder koppeling
+Gegeven is de volgende situatie:
+een Jutter J1
+- de bonus is 10
+een Vondst V1
+- de waarde is 50
+een Keuring K1
+- het keurloon is 25
+Met als verwacht resultaat:
+- de vondsten van J1 staan niet vast
+- het aantal vondsten van J1 staat niet vast
+- de verrichte keuringen van J1 zijn leeg
+- het aantal verrichte keuringen van J1 is 0
+- de vinder van V1 staat niet vast
+- het aantal vinders van V1 staat niet vast
+- de keurmeester van K1 is leeg
+- het aantal keurmeesters van K1 is 0
+- of J1 actief is, staat niet vast
+- of V1 toegewezen is, staat niet vast
+- de gegevens zijn consistent
+
+Scenario open collectie naast bekende koppelingen
+Gegeven is de volgende situatie:
+een Jutter J1
+- de bonus is 10
+- de vondsten zijn V1 en V2
+- de verrichte keuringen zijn K1
+een Vondst V1
+- de waarde is 80
+een Vondst V2
+- de waarde is 30
+een Keuring K1
+- het keurloon is 25
+Met als verwacht resultaat:
+- de vondsten van J1 staan niet vast
+- het aantal vondsten van J1 staat niet vast
+- het aantal verrichte keuringen van J1 is 1
+- de vinder van V1 is J1
+- het aantal vinders van V1 is 1
+- de vinder van V2 is J1
+- de keurmeester van K1 is J1
+- J1 is actief
+- V1 is toegewezen
+- de vindpremie van V1 is 90
+- de gegevens zijn consistent
+
+Scenario gesloten lege rollen
+gebaseerd op de situatie open tegenkoppeling
+Gegeven is de volgende situatie:
+een Jutter J1
+- de vondsten zijn leeg
+een Vondst V2
+- de waarde is 40
+- de vinder is leeg
+Met als verwacht resultaat:
+- de vondsten van J1 zijn leeg
+- het aantal vondsten van J1 is 0
+- de vinder van V1 staat niet vast
+- de vinder van V2 is leeg
+- het aantal vinders van V2 is 0
+- J1 is vondstloos
+- V2 is verweesd
+- de gegevens zijn consistent
+
+Scenario volledig gegeven collectie en subtype doel
+Gegeven is de volgende situatie:
+een Strandjutter SJ1
+- de bonus is 15
+- de vondsten zijn V1 en V2 (volledig gegeven)
+een Vondst V1
+- de waarde is 60
+een Vondst V2
+- de waarde is 40
+Met als verwacht resultaat:
+- het aantal vondsten van SJ1 is 2
+- de vinder van V1 is SJ1
+- het aantal vinders van V1 is 1
+- de vinder van V2 is SJ1
+- SJ1 is actief
+- V1 is toegewezen
+- de vindpremie van V1 is 75
+- de gegevens zijn consistent
+
+Scenario zelfrelatie vergunningketen onder strikte leegte
+Gegeven is de volgende situatie:
+een Vergunning G1
+- het volgnummer is 1
+- de vorige vergunning is leeg
+- de volgende vergunning is G2
+een Vergunning G2
+- het volgnummer is 2
+Met als verwacht resultaat:
+- de vorige vergunning van G1 is leeg
+- het aantal vorige vergunningen van G1 is 0
+- de volgende vergunning van G1 is G2
+- het aantal volgende vergunningen van G1 is 1
+- de vorige vergunning van G2 is G1
+- de volgende vergunning van G2 staat niet vast
+- G1 is aanvangsvergunning
+- G2 is opvolgend
+- de gegevens zijn consistent

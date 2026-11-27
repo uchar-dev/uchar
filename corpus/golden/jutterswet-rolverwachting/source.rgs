@@ -1,0 +1,72 @@
+Objecttype de Jutter (mv: Jutters) (bezield)
+    de vondstscore Numeriek (niet-negatief geheel getal);
+    het keurjaar Numeriek (geheel getal);
+    is verdienstelijk kenmerk (bijvoeglijk);
+    is afgewezen kenmerk (bijvoeglijk);
+
+Objecttype het Penningbesluit (mv: Penningbesluiten)
+    de toelage Numeriek (niet-negatief geheel getal);
+
+Objecttype de Oorkonde (mv: Oorkonden)
+    het jaartal Numeriek (geheel getal);
+
+Objecttype de Haven (mv: Havens)
+    de naam Tekst;
+    is gekeurd kenmerk (bijvoeglijk);
+
+Objecttype de Vergunning (mv: Vergunningen)
+    het volgnummer Numeriek (niet-negatief geheel getal);
+
+Feittype penningtoekenning
+    de gerechtigde Jutter
+    het penningbesluit (mv: penningbesluiten) Penningbesluit
+Eén gerechtigde heeft meerdere penningbesluiten
+
+Feittype oorkondeverlening
+    de ontvanger Jutter
+    de oorkonde (mv: oorkonden) Oorkonde
+Eén ontvanger heeft één oorkonde
+
+Feittype thuishavenrelatie
+    de thuishaven Haven
+    de vaste jutter (mv: vaste jutters) Jutter
+Eén thuishaven telt meerdere vaste jutters
+
+Feittype haventoewijzing
+    de toegewezen haven Haven
+    de aangewezen jutter (mv: aangewezen jutters) Jutter
+Eén toegewezen haven telt meerdere aangewezen jutters
+
+Feittype opvolging
+    de vorige vergunning Vergunning
+    de volgende vergunning Vergunning
+Eén vorige vergunning heeft één volgende vergunning
+
+Wederkerig feittype partnerschap
+    de strandmaat (mv: strandmaten) Jutter
+Eén strandmaat werkt samen met één strandmaat
+
+Regel afwijzing onder drempel
+    geldig altijd
+        Een Jutter is afgewezen
+        indien zijn vondstscore kleiner is dan 10.
+
+Regel stel basisbesluit vast
+    geldig altijd
+        Een Jutter heeft een Penningbesluit met toelage gelijk aan 50
+        indien zijn vondstscore groter of gelijk is aan 10.
+
+Regel stel erebesluit vast
+    geldig altijd
+        Een Jutter heeft een Penningbesluit met toelage gelijk aan 100
+        indien hij verdienstelijk is.
+
+Regel verleen oorkonde
+    geldig altijd
+        Een Jutter heeft een Oorkonde met jaartal gelijk aan zijn keurjaar
+        indien zijn vondstscore groter of gelijk is aan 20.
+
+Regel wijs haven toe
+    geldig altijd
+        Een aangewezen jutter van een Haven is een vaste jutter van de Haven
+        indien de Haven gekeurd is.

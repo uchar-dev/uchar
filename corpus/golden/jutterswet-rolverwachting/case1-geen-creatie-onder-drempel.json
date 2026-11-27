@@ -1,0 +1,86 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstscore": {
+            "number": "4"
+          },
+          "keurjaar": {
+            "number": "2026"
+          }
+        },
+        "roles": {
+          "thuishaven": [
+            "H1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "H1",
+        "objectType": "Haven",
+        "attributes": {
+          "naam": {
+            "text": "Westkade"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "afgewezen"
+    },
+    {
+      "kind": "roleEmpty",
+      "label": "J1",
+      "role": "penningbesluiten"
+    },
+    {
+      "kind": "roleCount",
+      "label": "J1",
+      "role": "penningbesluiten",
+      "count": 0
+    },
+    {
+      "kind": "roleEmpty",
+      "label": "J1",
+      "role": "oorkonde"
+    },
+    {
+      "kind": "roleCount",
+      "label": "J1",
+      "role": "oorkonden",
+      "count": 0
+    },
+    {
+      "kind": "roleEmpty",
+      "label": "J1",
+      "role": "toegewezen haven"
+    },
+    {
+      "kind": "roleTarget",
+      "label": "J1",
+      "role": "thuishaven",
+      "target": "H1"
+    },
+    {
+      "kind": "roleEmpty",
+      "label": "H1",
+      "role": "aangewezen jutters"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

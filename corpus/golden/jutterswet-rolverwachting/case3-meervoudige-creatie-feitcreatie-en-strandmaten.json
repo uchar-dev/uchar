@@ -1,0 +1,161 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstscore": {
+            "number": "25"
+          },
+          "keurjaar": {
+            "number": "2026"
+          }
+        },
+        "roles": {
+          "thuishaven": [
+            "H1"
+          ],
+          "strandmaat": [
+            "J2"
+          ]
+        },
+        "characteristics": [
+          "verdienstelijk"
+        ]
+      },
+      {
+        "label": "J2",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstscore": {
+            "number": "6"
+          },
+          "keurjaar": {
+            "number": "2026"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "J3",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstscore": {
+            "number": "12"
+          },
+          "keurjaar": {
+            "number": "2026"
+          }
+        },
+        "roles": {
+          "oorkonde": [
+            "O1"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "O1",
+        "objectType": "Oorkonde",
+        "attributes": {
+          "jaartal": {
+            "number": "2020"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "H1",
+        "objectType": "Haven",
+        "attributes": {
+          "naam": {
+            "text": "Noordkade"
+          }
+        },
+        "roles": {},
+        "characteristics": [
+          "gekeurd"
+        ]
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "roleCount",
+      "label": "J1",
+      "role": "penningbesluiten",
+      "count": 2
+    },
+    {
+      "kind": "roleCount",
+      "label": "J1",
+      "role": "oorkonden",
+      "count": 1
+    },
+    {
+      "kind": "roleTarget",
+      "label": "J1",
+      "role": "toegewezen haven",
+      "target": "H1"
+    },
+    {
+      "kind": "roleCount",
+      "label": "H1",
+      "role": "aangewezen jutters",
+      "count": 1
+    },
+    {
+      "kind": "roleCount",
+      "label": "J1",
+      "role": "strandmaten",
+      "count": 1
+    },
+    {
+      "kind": "roleCount",
+      "label": "J2",
+      "role": "strandmaten",
+      "count": 1
+    },
+    {
+      "kind": "roleEmpty",
+      "label": "J3",
+      "role": "strandmaten"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J2",
+      "characteristic": "afgewezen"
+    },
+    {
+      "kind": "roleEmpty",
+      "label": "J2",
+      "role": "penningbesluiten"
+    },
+    {
+      "kind": "roleEmpty",
+      "label": "J2",
+      "role": "toegewezen haven"
+    },
+    {
+      "kind": "roleTarget",
+      "label": "J3",
+      "role": "oorkonde",
+      "target": "O1"
+    },
+    {
+      "kind": "roleCount",
+      "label": "J3",
+      "role": "penningbesluiten",
+      "count": 1
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

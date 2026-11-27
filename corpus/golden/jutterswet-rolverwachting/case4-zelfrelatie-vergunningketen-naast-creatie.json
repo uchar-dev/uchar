@@ -1,0 +1,82 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "vondstscore": {
+            "number": "15"
+          },
+          "keurjaar": {
+            "number": "2026"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vergunning",
+        "attributes": {
+          "volgnummer": {
+            "number": "1"
+          }
+        },
+        "roles": {
+          "volgende vergunning": [
+            "V2"
+          ]
+        },
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vergunning",
+        "attributes": {
+          "volgnummer": {
+            "number": "2"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "roleCount",
+      "label": "J1",
+      "role": "penningbesluiten",
+      "count": 1
+    },
+    {
+      "kind": "roleEmpty",
+      "label": "V1",
+      "role": "vorige vergunning"
+    },
+    {
+      "kind": "roleTarget",
+      "label": "V1",
+      "role": "volgende vergunning",
+      "target": "V2"
+    },
+    {
+      "kind": "roleTarget",
+      "label": "V2",
+      "role": "vorige vergunning",
+      "target": "V1"
+    },
+    {
+      "kind": "roleEmpty",
+      "label": "V2",
+      "role": "volgende vergunning"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

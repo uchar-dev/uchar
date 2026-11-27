@@ -1,0 +1,87 @@
+Scenario geen creatie onder drempel
+Gegeven is de volgende situatie:
+een Jutter J1
+- de vondstscore is 4
+- het keurjaar is 2026
+- de thuishaven is H1
+een Haven H1
+- de naam is "Westkade"
+Met als verwacht resultaat:
+- J1 is afgewezen
+- de penningbesluiten van J1 zijn leeg
+- het aantal penningbesluiten van J1 is 0
+- de oorkonde van J1 is leeg
+- het aantal oorkonden van J1 is 0
+- de toegewezen haven van J1 is leeg
+- de thuishaven van J1 is H1
+- de aangewezen jutters van H1 zijn leeg
+- de gegevens zijn consistent
+
+Scenario enkele creatie zonder oorkonde of haventoewijzing
+Gegeven is de volgende situatie:
+een Jutter J1
+- de vondstscore is 14
+- het keurjaar is 2026
+- de thuishaven is H1
+een Haven H1
+- de naam is "Westkade"
+Met als verwacht resultaat:
+- J1 is niet afgewezen
+- het aantal penningbesluiten van J1 is 1
+- de oorkonde van J1 is leeg
+- de toegewezen haven van J1 is leeg
+- de aangewezen jutters van H1 zijn leeg
+- de gegevens zijn consistent
+
+Scenario meervoudige creatie feitcreatie en strandmaten
+Gegeven is de volgende situatie:
+een Jutter J1
+- de vondstscore is 25
+- het keurjaar is 2026
+- is verdienstelijk
+- de thuishaven is H1
+- de strandmaat is J2
+een Jutter J2
+- de vondstscore is 6
+- het keurjaar is 2026
+een Jutter J3
+- de vondstscore is 12
+- het keurjaar is 2026
+- de oorkonde is O1
+een Oorkonde O1
+- het jaartal is 2020
+een Haven H1
+- de naam is "Noordkade"
+- is gekeurd
+Met als verwacht resultaat:
+- het aantal penningbesluiten van J1 is 2
+- het aantal oorkonden van J1 is 1
+- de toegewezen haven van J1 is H1
+- het aantal aangewezen jutters van H1 is 1
+- het aantal strandmaten van J1 is 1
+- het aantal strandmaten van J2 is 1
+- de strandmaten van J3 zijn leeg
+- J2 is afgewezen
+- de penningbesluiten van J2 zijn leeg
+- de toegewezen haven van J2 is leeg
+- de oorkonde van J3 is O1
+- het aantal penningbesluiten van J3 is 1
+- de gegevens zijn consistent
+
+Scenario zelfrelatie vergunningketen naast creatie
+Gegeven is de volgende situatie:
+een Jutter J1
+- de vondstscore is 15
+- het keurjaar is 2026
+een Vergunning V1
+- het volgnummer is 1
+- de volgende vergunning is V2
+een Vergunning V2
+- het volgnummer is 2
+Met als verwacht resultaat:
+- het aantal penningbesluiten van J1 is 1
+- de vorige vergunning van V1 is leeg
+- de volgende vergunning van V1 is V2
+- de vorige vergunning van V2 is V1
+- de volgende vergunning van V2 is leeg
+- de gegevens zijn consistent

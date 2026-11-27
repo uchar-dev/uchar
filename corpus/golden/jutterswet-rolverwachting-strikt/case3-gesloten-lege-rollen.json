@@ -1,0 +1,90 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "J1",
+        "objectType": "Jutter",
+        "attributes": {
+          "bonus": {
+            "number": "10"
+          }
+        },
+        "roles": {},
+        "rolesClosed": [
+          "vondsten"
+        ],
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "80"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "40"
+          }
+        },
+        "roles": {},
+        "rolesEmpty": [
+          "vinder"
+        ],
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "roleEmpty",
+      "label": "J1",
+      "role": "vondsten"
+    },
+    {
+      "kind": "roleCount",
+      "label": "J1",
+      "role": "vondsten",
+      "count": 0
+    },
+    {
+      "kind": "roleOpen",
+      "label": "V1",
+      "role": "vinder"
+    },
+    {
+      "kind": "roleEmpty",
+      "label": "V2",
+      "role": "vinder"
+    },
+    {
+      "kind": "roleCount",
+      "label": "V2",
+      "role": "vinders",
+      "count": 0
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "J1",
+      "characteristic": "vondstloos"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V2",
+      "characteristic": "verweesd"
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}

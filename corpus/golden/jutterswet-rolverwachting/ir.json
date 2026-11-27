@@ -1,0 +1,535 @@
+{
+  "format": "uchar-ir-v1",
+  "model": {
+    "objectTypes": [
+      {
+        "node": "ObjectType",
+        "name": "Jutter",
+        "animate": true,
+        "plural": "Jutters",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "vondstscore",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          },
+          {
+            "node": "Attribute",
+            "name": "keurjaar",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "verdienstelijk",
+            "kind": "adjectival"
+          },
+          {
+            "node": "Characteristic",
+            "name": "afgewezen",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Penningbesluit",
+        "animate": false,
+        "plural": "Penningbesluiten",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "toelage",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Oorkonde",
+        "animate": false,
+        "plural": "Oorkonden",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "jaartal",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "unspecified"
+            }
+          }
+        ],
+        "characteristics": []
+      },
+      {
+        "node": "ObjectType",
+        "name": "Haven",
+        "animate": false,
+        "plural": "Havens",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "naam",
+            "datatype": {
+              "node": "Text"
+            }
+          }
+        ],
+        "characteristics": [
+          {
+            "node": "Characteristic",
+            "name": "gekeurd",
+            "kind": "adjectival"
+          }
+        ]
+      },
+      {
+        "node": "ObjectType",
+        "name": "Vergunning",
+        "animate": false,
+        "plural": "Vergunningen",
+        "attributes": [
+          {
+            "node": "Attribute",
+            "name": "volgnummer",
+            "datatype": {
+              "node": "Number",
+              "whole": true,
+              "decimals": 0,
+              "sign": "nonNegative"
+            }
+          }
+        ],
+        "characteristics": []
+      }
+    ],
+    "factTypes": [
+      {
+        "node": "FactType",
+        "name": "penningtoekenning",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "gerechtigde",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "penningbesluit",
+            "objectType": "Penningbesluit",
+            "plural": "penningbesluiten",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "oorkondeverlening",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "ontvanger",
+            "objectType": "Jutter",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "oorkonde",
+            "objectType": "Oorkonde",
+            "plural": "oorkonden",
+            "many": false
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "thuishavenrelatie",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "thuishaven",
+            "objectType": "Haven",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "vaste jutter",
+            "objectType": "Jutter",
+            "plural": "vaste jutters",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "haventoewijzing",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "toegewezen haven",
+            "objectType": "Haven",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "aangewezen jutter",
+            "objectType": "Jutter",
+            "plural": "aangewezen jutters",
+            "many": true
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "opvolging",
+        "reciprocal": false,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "vorige vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          },
+          {
+            "node": "Role",
+            "name": "volgende vergunning",
+            "objectType": "Vergunning",
+            "many": false
+          }
+        ]
+      },
+      {
+        "node": "FactType",
+        "name": "partnerschap",
+        "reciprocal": true,
+        "roles": [
+          {
+            "node": "Role",
+            "name": "strandmaat",
+            "objectType": "Jutter",
+            "plural": "strandmaten",
+            "many": false
+          }
+        ]
+      }
+    ],
+    "parameters": [],
+    "domains": [],
+    "unitSystems": [],
+    "dimensions": [],
+    "timelines": [],
+    "dayKinds": []
+  },
+  "rules": {
+    "rules": [
+      {
+        "node": "Rule",
+        "name": "afwijzing onder drempel",
+        "versions": [
+          {
+            "validity": {
+              "node": "Validity"
+            },
+            "target": {
+              "node": "AttributeReference",
+              "attribute": "afgewezen",
+              "subjectType": "Jutter",
+              "source": {
+                "snippet": "Een Jutter is afgewezen"
+              }
+            },
+            "value": {
+              "node": "Literal",
+              "value": {
+                "boolean": true
+              },
+              "type": {
+                "node": "Boolean"
+              },
+              "source": {
+                "snippet": "waar"
+              }
+            },
+            "condition": {
+              "node": "Comparison",
+              "op": "less",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vondstscore",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn vondstscore"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "10"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "10"
+                }
+              },
+              "source": {
+                "snippet": "zijn vondstscore kleiner is dan 10"
+              }
+            },
+            "initialisation": false
+          }
+        ]
+      }
+    ],
+    "dayKindDefinitions": [],
+    "objectCreations": [
+      {
+        "node": "ObjectCreation",
+        "name": "stel basisbesluit vast",
+        "versions": [
+          {
+            "createdType": "Penningbesluit",
+            "subject": "Jutter",
+            "assignments": [
+              {
+                "node": "MemberAssignment",
+                "member": "toelage",
+                "value": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "50"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "50"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "condition": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vondstscore",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn vondstscore"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "10"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "10"
+                }
+              },
+              "source": {
+                "snippet": "zijn vondstscore groter of gelijk is aan 10"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "penningtoekenning",
+              "role": "penningbesluit"
+            }
+          }
+        ]
+      },
+      {
+        "node": "ObjectCreation",
+        "name": "stel erebesluit vast",
+        "versions": [
+          {
+            "createdType": "Penningbesluit",
+            "subject": "Jutter",
+            "assignments": [
+              {
+                "node": "MemberAssignment",
+                "member": "toelage",
+                "value": {
+                  "node": "Literal",
+                  "value": {
+                    "number": "100"
+                  },
+                  "type": {
+                    "node": "Number",
+                    "whole": true,
+                    "decimals": 0,
+                    "sign": "unspecified"
+                  },
+                  "source": {
+                    "snippet": "100"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "verdienstelijk",
+              "negated": false,
+              "source": {
+                "snippet": "hij verdienstelijk is"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "penningtoekenning",
+              "role": "penningbesluit"
+            }
+          }
+        ]
+      },
+      {
+        "node": "ObjectCreation",
+        "name": "verleen oorkonde",
+        "versions": [
+          {
+            "createdType": "Oorkonde",
+            "subject": "Jutter",
+            "assignments": [
+              {
+                "node": "MemberAssignment",
+                "member": "jaartal",
+                "value": {
+                  "node": "AttributeReference",
+                  "attribute": "keurjaar",
+                  "subjectType": "Jutter",
+                  "source": {
+                    "snippet": "zijn keurjaar"
+                  }
+                },
+                "characteristic": false
+              }
+            ],
+            "condition": {
+              "node": "Comparison",
+              "op": "greaterOrEqual",
+              "left": {
+                "node": "AttributeReference",
+                "attribute": "vondstscore",
+                "subjectType": "Jutter",
+                "source": {
+                  "snippet": "zijn vondstscore"
+                }
+              },
+              "right": {
+                "node": "Literal",
+                "value": {
+                  "number": "20"
+                },
+                "type": {
+                  "node": "Number",
+                  "whole": true,
+                  "decimals": 0,
+                  "sign": "unspecified"
+                },
+                "source": {
+                  "snippet": "20"
+                }
+              },
+              "source": {
+                "snippet": "zijn vondstscore groter of gelijk is aan 20"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            },
+            "connectingRole": {
+              "node": "RoleBinding",
+              "factType": "oorkondeverlening",
+              "role": "oorkonde"
+            }
+          }
+        ]
+      }
+    ],
+    "allocations": [],
+    "consistencies": [],
+    "uniquenesses": [],
+    "factCreations": [
+      {
+        "node": "FactCreation",
+        "name": "wijs haven toe",
+        "versions": [
+          {
+            "factType": "haventoewijzing",
+            "anchorRole": "toegewezen haven",
+            "targetRole": "aangewezen jutter",
+            "anchor": "Haven",
+            "path": [
+              {
+                "node": "RoleBinding",
+                "factType": "thuishavenrelatie",
+                "role": "vaste jutter"
+              }
+            ],
+            "condition": {
+              "node": "CharacteristicCheck",
+              "characteristic": "gekeurd",
+              "negated": false,
+              "source": {
+                "snippet": "de Haven gekeurd is"
+              }
+            },
+            "validity": {
+              "node": "Validity"
+            }
+          }
+        ]
+      }
+    ],
+    "startPointDeterminations": [],
+    "ruleGroups": []
+  },
+  "diagnostics": []
+}

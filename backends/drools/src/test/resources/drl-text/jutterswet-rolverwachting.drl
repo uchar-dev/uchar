@@ -1,0 +1,285 @@
+package dev.uchar.regelspraak.tms;
+
+import dev.uchar.regelspraak.graph.ProducerConsumer.ElementKey;
+import dev.uchar.regelspraak.runtime.RegelSpraakRuntime;
+import dev.uchar.regelspraak.transpiler.tms.ComputeHelpers;
+import dev.uchar.regelspraak.transpiler.tms.CreationPhase;
+import dev.uchar.regelspraak.transpiler.tms.CreationStamp;
+import dev.uchar.regelspraak.transpiler.tms.Fault;
+import dev.uchar.regelspraak.transpiler.tms.HasCharacteristic;
+import dev.uchar.regelspraak.transpiler.tms.RelationLink;
+import dev.uchar.regelspraak.transpiler.tms.SecondFillingFault;
+
+// zijn vondstscore kleiner is dan 10
+function boolean toets_afwijzingOnderDrempel(Object $vondstscore) {
+    return RegelSpraakRuntime.rsAggVergelijk($vondstscore, new java.math.BigDecimal("10"), "<");
+}
+
+rule "afwijzing onder drempel"
+    dialect "mvel"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstscore : vondstscore )
+    eval( toets_afwijzingOnderDrempel($vondstscore) )
+then
+    insertLogical(new HasCharacteristic($onderwerp, ElementKey.of("jutter", "afgewezen", true)));
+end
+
+function boolean beta_stelBasisbesluitVast(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// zijn vondstscore groter of gelijk is aan 10
+function boolean toets_stelBasisbesluitVast(Object $vondstscore) {
+    return RegelSpraakRuntime.rsAggVergelijk($vondstscore, new java.math.BigDecimal("10"), ">=");
+}
+
+// 50
+function Object creatie_stelBasisbesluitVast(Object $fase, Object $herkomsten_creatie_3, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("stel basisbesluit vast", 0, "Jutter", (java.util.List) $herkomsten_creatie_3, 100);
+    Object i0 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget(new java.math.BigDecimal("50"), Integer.valueOf(0), "toelage", "stel basisbesluit vast"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Penningbesluit");
+    ComputeHelpers.set(nieuw, "toelage", i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("stel basisbesluit vast", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("penningtoekenning", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "stel basisbesluit vast"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $vondstscore : vondstscore )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    accumulate( $herkomst_creatie_2 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_3 : collectList($herkomst_creatie_2) )
+    not( $gemaakt_creatie_5 : CreationStamp( rule == "stel basisbesluit vast", subject == $onderwerp ) )
+    not( $nieuw_creatie_6 : CreationStamp( object == $onderwerp, beta_stelBasisbesluitVast(this, $fase) ) )
+    eval( toets_stelBasisbesluitVast($vondstscore) )
+    not( $eigen_fout : Fault( rule == "stel basisbesluit vast", subject == $onderwerp ) )
+then
+    Object v = creatie_stelBasisbesluitVast($fase, $herkomsten_creatie_3, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "stel basisbesluit vast", ComputeHelpers.designate(v, "stel basisbesluit vast")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+function boolean beta_stelErebesluitVast(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// hij verdienstelijk is
+function boolean toets_stelErebesluitVast(Object $verdienstelijk) {
+    return ComputeHelpers.characteristic($verdienstelijk, Boolean.TRUE);
+}
+
+// 100
+function Object creatie_stelErebesluitVast(Object $fase, Object $herkomsten_creatie_16, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("stel erebesluit vast", 0, "Jutter", (java.util.List) $herkomsten_creatie_16, 100);
+    Object i0 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget(new java.math.BigDecimal("100"), Integer.valueOf(0), "toelage", "stel erebesluit vast"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Penningbesluit");
+    ComputeHelpers.set(nieuw, "toelage", i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("stel erebesluit vast", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("penningtoekenning", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "stel erebesluit vast"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( $verdienstelijk : (ComputeHelpers.holds(verdienstelijk)) )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    accumulate( $herkomst_creatie_15 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_16 : collectList($herkomst_creatie_15) )
+    not( $gemaakt_creatie_18 : CreationStamp( rule == "stel erebesluit vast", subject == $onderwerp ) )
+    not( $nieuw_creatie_19 : CreationStamp( object == $onderwerp, beta_stelErebesluitVast(this, $fase) ) )
+    eval( toets_stelErebesluitVast($verdienstelijk) )
+    not( $eigen_fout : Fault( rule == "stel erebesluit vast", subject == $onderwerp ) )
+then
+    Object v = creatie_stelErebesluitVast($fase, $herkomsten_creatie_16, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "stel erebesluit vast", ComputeHelpers.designate(v, "stel erebesluit vast")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+function boolean beta_verleenOorkonde(Object eigen, Object ander) {
+    return ComputeHelpers.inPhase(eigen, ander);
+}
+
+// zijn vondstscore groter of gelijk is aan 20
+function boolean toets_verleenOorkonde(Object $vondstscore) {
+    return RegelSpraakRuntime.rsAggVergelijk($vondstscore, new java.math.BigDecimal("20"), ">=");
+}
+
+// zijn keurjaar
+function Object creatie_verleenOorkonde(Object $keurjaar, Object $fase, Object $herkomsten_creatie_29, Object $onderwerp) {
+    int diepte = ComputeHelpers.creationDepth("verleen oorkonde", 0, "Jutter", (java.util.List) $herkomsten_creatie_29, 100);
+    Object i0 = null;
+    try {
+        i0 = ComputeHelpers.collapse(ComputeHelpers.fitTarget($keurjaar, Integer.valueOf(0), "jaartal", "verleen oorkonde"));
+    } catch (RuntimeException e) {
+        return ComputeHelpers.caught(e);
+    }
+    Object nieuw = ComputeHelpers.newObject($onderwerp, "dev.uchar.regelspraak.facts.Oorkonde");
+    ComputeHelpers.set(nieuw, "jaartal", i0);
+    int fase = ((Integer) $fase).intValue();
+    java.util.List feiten = new java.util.ArrayList();
+    feiten.add(nieuw);
+    feiten.add(new CreationStamp("verleen oorkonde", $onderwerp, nieuw, fase, 0, diepte));
+    feiten.add(new RelationLink("oorkondeverlening", $onderwerp, nieuw, fase));
+    return feiten;
+}
+
+rule "verleen oorkonde"
+    dialect "mvel"
+    agenda-group "uchar-objectcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Jutter( oorkonde == null, $vondstscore : vondstscore, $keurjaar : keurjaar )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    accumulate( $herkomst_creatie_28 : CreationStamp( object == $onderwerp ); $herkomsten_creatie_29 : collectList($herkomst_creatie_28) )
+    not( $gemaakt_creatie_31 : CreationStamp( rule == "verleen oorkonde", subject == $onderwerp ) )
+    not( $nieuw_creatie_32 : CreationStamp( object == $onderwerp, beta_verleenOorkonde(this, $fase) ) )
+    eval( toets_verleenOorkonde($vondstscore) )
+    not( $eigen_fout : Fault( rule == "verleen oorkonde", subject == $onderwerp ) )
+then
+    Object v = creatie_verleenOorkonde($keurjaar, $fase, $herkomsten_creatie_29, $onderwerp);
+    if (ComputeHelpers.isEvaluationFault(v)) {
+        insert(new Fault($onderwerp, "verleen oorkonde", ComputeHelpers.designate(v, "verleen oorkonde")));
+    } else {
+        java.util.List feiten = (java.util.List) v;
+        insert(feiten.get(0));
+        insert(feiten.get(1));
+        insert(feiten.get(2));
+    }
+end
+
+// de Haven gekeurd is
+function boolean toets_wijsHavenToe(Object $gekeurd) {
+    return ComputeHelpers.characteristic($gekeurd, Boolean.TRUE);
+}
+
+function boolean beta_wijsHavenToe(Object eigen, Object ander) {
+    return ComputeHelpers.meeting(eigen, ander, java.util.Arrays.asList("thuishaven"), java.util.Arrays.asList());
+}
+
+rule "wijs haven toe"
+    dialect "mvel"
+    agenda-group "uchar-feitcreatie"
+when
+    $onderwerp : dev.uchar.regelspraak.facts.Haven( $gekeurd : (ComputeHelpers.holds(gekeurd)) )
+    $creatiefase : CreationPhase( stratum >= 0, $fase : number )
+    eval( toets_wijsHavenToe($gekeurd) )
+    $stap_keten_43 : dev.uchar.regelspraak.facts.Jutter( beta_wijsHavenToe(this, $onderwerp) )
+    not( $bestaand_feitcreatie_45 : RelationLink( relation == "haventoewijzing", first == $onderwerp, second == $stap_keten_43 ) )
+then
+    insert(new RelationLink("haventoewijzing", $onderwerp, $stap_keten_43, $fase));
+end
+
+rule "koppeling penningtoekenning uit de invoer: Penningbesluit.gerechtigde"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Penningbesluit( gerechtigde != null, $ander : gerechtigde )
+then
+    insertLogical(new RelationLink("penningtoekenning", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingPenningtoekenningTweedeVullingVanGerechtigde(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling penningtoekenning: tweede vulling van gerechtigde"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "penningtoekenning", $nabij : second )
+    $twee : RelationLink( relation == "penningtoekenning", second != null, second == $een.second, beta_koppelingPenningtoekenningTweedeVullingVanGerechtigde(this, $een) )
+then
+    insertLogical(new Fault($nabij, "penningtoekenning", new SecondFillingFault("gerechtigde", $nabij)));
+end
+
+rule "koppeling oorkondeverlening uit de invoer: Jutter.oorkonde"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Jutter( oorkonde != null, $ander : oorkonde )
+then
+    insertLogical(new RelationLink("oorkondeverlening", $houder, $ander, 0));
+end
+
+rule "koppeling oorkondeverlening uit de invoer: Oorkonde.ontvanger"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Oorkonde( ontvanger != null, $ander : ontvanger )
+then
+    insertLogical(new RelationLink("oorkondeverlening", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingOorkondeverleningTweedeVullingVanOorkonde(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "second");
+}
+
+rule "koppeling oorkondeverlening: tweede vulling van oorkonde"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "oorkondeverlening", $nabij : first )
+    $twee : RelationLink( relation == "oorkondeverlening", first != null, first == $een.first, beta_koppelingOorkondeverleningTweedeVullingVanOorkonde(this, $een) )
+then
+    insertLogical(new Fault($nabij, "oorkondeverlening", new SecondFillingFault("oorkonde", $nabij)));
+end
+
+function boolean beta_koppelingOorkondeverleningTweedeVullingVanOntvanger(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling oorkondeverlening: tweede vulling van ontvanger"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "oorkondeverlening", $nabij : second )
+    $twee : RelationLink( relation == "oorkondeverlening", second != null, second == $een.second, beta_koppelingOorkondeverleningTweedeVullingVanOntvanger(this, $een) )
+then
+    insertLogical(new Fault($nabij, "oorkondeverlening", new SecondFillingFault("ontvanger", $nabij)));
+end
+
+rule "koppeling haventoewijzing uit de invoer: Jutter.toegewezen haven"
+    dialect "mvel"
+when
+    $houder : dev.uchar.regelspraak.facts.Jutter( toegewezenHaven != null, $ander : toegewezenHaven )
+then
+    insertLogical(new RelationLink("haventoewijzing", $ander, $houder, 0));
+end
+
+function boolean beta_koppelingHaventoewijzingTweedeVullingVanToegewezenHaven(Object eigen, Object ander) {
+    return ComputeHelpers.otherFilling(eigen, ander, "first");
+}
+
+rule "koppeling haventoewijzing: tweede vulling van toegewezen haven"
+    dialect "mvel"
+when
+    $een : RelationLink( relation == "haventoewijzing", $nabij : second )
+    $twee : RelationLink( relation == "haventoewijzing", second != null, second == $een.second, beta_koppelingHaventoewijzingTweedeVullingVanToegewezenHaven(this, $een) )
+then
+    insertLogical(new Fault($nabij, "haventoewijzing", new SecondFillingFault("toegewezen haven", $nabij)));
+end
+

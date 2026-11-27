@@ -1,0 +1,97 @@
+{
+  "format": "uchar-case-v0",
+  "asOfDate": null,
+  "input": {
+    "instances": [
+      {
+        "label": "SJ1",
+        "objectType": "Strandjutter",
+        "attributes": {
+          "bonus": {
+            "number": "15"
+          }
+        },
+        "roles": {
+          "vondsten": [
+            "V1",
+            "V2"
+          ]
+        },
+        "rolesClosed": [
+          "vondsten"
+        ],
+        "characteristics": []
+      },
+      {
+        "label": "V1",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "60"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      },
+      {
+        "label": "V2",
+        "objectType": "Vondst",
+        "attributes": {
+          "waarde": {
+            "number": "40"
+          }
+        },
+        "roles": {},
+        "characteristics": []
+      }
+    ],
+    "parameters": {}
+  },
+  "expected": [
+    {
+      "kind": "roleCount",
+      "label": "SJ1",
+      "role": "vondsten",
+      "count": 2
+    },
+    {
+      "kind": "roleTarget",
+      "label": "V1",
+      "role": "vinder",
+      "target": "SJ1"
+    },
+    {
+      "kind": "roleCount",
+      "label": "V1",
+      "role": "vinders",
+      "count": 1
+    },
+    {
+      "kind": "roleTarget",
+      "label": "V2",
+      "role": "vinder",
+      "target": "SJ1"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "SJ1",
+      "characteristic": "actief"
+    },
+    {
+      "kind": "characteristicPresent",
+      "label": "V1",
+      "characteristic": "toegewezen"
+    },
+    {
+      "kind": "attributeValue",
+      "label": "V1",
+      "attribute": "vindpremie",
+      "value": {
+        "number": "75"
+      }
+    },
+    {
+      "kind": "consistent"
+    }
+  ]
+}
