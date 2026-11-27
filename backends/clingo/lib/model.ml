@@ -507,6 +507,8 @@ let check (doc : Ir_v0.Ast.document) (case : Case.t) (model : atom list) : strin
           else if strict && not (has model "hasnot" [ A_str label; A_str (norm char) ]) then
             Some (Printf.sprintf "%s: characteristic %S is open, expected absent" label char)
           else None
+      | Role_empty _ | Role_count _ | Role_target _ | Role_open _ ->
+          fault "a role expectation is not checked here yet"
       | Consistent -> (
           match List.filter (fun a -> a.name = "inconsistent") model with
           | [] -> None

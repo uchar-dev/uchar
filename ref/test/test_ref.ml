@@ -12817,6 +12817,256 @@ let () =
   accepted "WV-5.7-case-reader-timeline-expectation-on-time-dependent"
     {|{ "kind": "attributeTimeline", "label": "j1", "attribute": "vergoeding", "timeline": [] }|}
 
+(* Role expectations at load and at the fixpoint in an ordinary document
+   (RUNTIME-SEMANTICS ch. 5.7): every load refusal is a case error without an
+   EF-* code, and roleEmpty, roleCount, roleTarget and roleOpen evaluate on the
+   resolved directed role slot across to-one, to-many, reciprocal and
+   self-referencing fact types, subtype fillers, object creations, fact
+   creations and raw --noop input. *)
+let () =
+  let role ?plural ?(many = false) ?(complete = false) name otype : Ir_v0.Ast.role_ref =
+    { role_identifier = Some name; role_object_type_name = Some otype; role_plural = plural;
+      role_many = many; role_complete = complete }
+  in
+  let ft ?(reciprocal = false) name roles : string * Ir_v0.Ast.fact_type_name =
+    (name, { ft_name = Some name; reciprocal; role_names = roles })
+  in
+  let ot_sub name super attrs chars : string * Ir_v0.Ast.object_type =
+    let n, o = ot name attrs chars in
+    (n, { o with ot_supertype = Some super })
+  in
+  let doc : Ir_v0.Ast.document =
+    { empty_doc with
+      object_types =
+        [ ot "Jutter" [ ("aantal", Some num0) ] [];
+          ot_sub "Hoofdjutter" "Jutter" [] [];
+          ot "Vondst" [ ("waarde", Some num0) ] [];
+          ot_sub "Strandvondst" "Vondst" [] [];
+          ot "Loods" [] [];
+          ot "Rapport" [] [];
+          ot "Penningbesluit" [] [];
+          ot "Vergunning" [] [] ];
+      fact_types =
+        [ ft "vangst" [ role ~plural:"vinders" "vinder" "Jutter"; role ~plural:"vondsten" ~many:true "vondst" "Vondst" ];
+          ft "strandkeuring" [ role "keurmeester" "Jutter"; role "gekeurde strandvondst" "Strandvondst" ];
+          ft "rapportage" [ role "gekeurde jutter" "Jutter"; role "rapport" "Rapport" ];
+          ft "penningtoekenning" [ role "begunstigde" "Jutter"; role ~plural:"besluiten" ~many:true "besluit" "Penningbesluit" ];
+          ft "toewijzing" [ role "beheerder" "Jutter"; role ~plural:"toegewezen vondsten" ~many:true "toegewezen vondst" "Vondst" ];
+          ft "toezichtA" [ role "toezichthouder" "Jutter"; role ~many:true "stukA" "Vondst" ];
+          ft "toezichtB" [ role "toezichthouder" "Loods"; role ~many:true "stukB" "Vondst" ];
+          ft ~reciprocal:true "samenwerking" [ role ~plural:"partners" "partner" "Jutter" ];
+          ft "opvolging" [ role "vorige vergunning" "Vergunning"; role "volgende vergunning" "Vergunning" ] ];
+      object_creations =
+        [ { oc_name = Some "maak rapport"; created_type = Some "Rapport"; oc_subject = Some "Jutter";
+            assignments = [];
+            oc_condition =
+              Some
+                (Comparison
+                   { op = Greater; left_side = Some (aref "aantal" "Jutter"); right_side = Some (litv "5" num0);
+                     time_period = None; source_name = None });
+            oc_validity = None; oc_connecting_role = None; oc_pointer = "/rules/objectCreations/0/versions/0" };
+          { oc_name = Some "eerste besluit"; created_type = Some "Penningbesluit"; oc_subject = Some "Jutter";
+            assignments = [];
+            oc_condition =
+              Some
+                (Comparison
+                   { op = Greater; left_side = Some (aref "aantal" "Jutter"); right_side = Some (litv "5" num0);
+                     time_period = None; source_name = None });
+            oc_validity = None; oc_connecting_role = None; oc_pointer = "/rules/objectCreations/1/versions/0" };
+          { oc_name = Some "tweede besluit"; created_type = Some "Penningbesluit"; oc_subject = Some "Jutter";
+            assignments = [];
+            oc_condition =
+              Some
+                (Comparison
+                   { op = Greater; left_side = Some (aref "aantal" "Jutter"); right_side = Some (litv "10" num0);
+                     time_period = None; source_name = None });
+            oc_validity = None; oc_connecting_role = None; oc_pointer = "/rules/objectCreations/2/versions/0" } ];
+      fact_creations =
+        [ { fc_name = Some "wijs beheerder toe"; anchor_point = Some "Jutter"; fc_target = Some "Vondst";
+            intermediates = [];
+            fc_condition =
+              Some
+                (Comparison
+                   { op = Greater; left_side = Some (aref "aantal" "Jutter"); right_side = Some (litv "5" num0);
+                     time_period = None; source_name = None });
+            fc_validity = None; fc_fact_type = "toewijzing"; anchor_role = "beheerder";
+            objective_role = "toegewezen vondst"; join_role = { rb_fact_type = "vangst"; rb_role = "vondst" };
+            fc_pointer = "/rules/factCreations/0/versions/0" } ] }
+  in
+  let default_instances =
+    {|{ "label": "J1", "objectType": "Jutter", "attributes": { "aantal": { "number": "12" } }, "roles": { "vondsten": [ "V1", "S1" ], "partner": [ "H1" ] }, "characteristics": [] },
+      { "label": "J2", "objectType": "Jutter", "attributes": { "aantal": { "number": "2" } }, "roles": {}, "characteristics": [] },
+      { "label": "H1", "objectType": "Hoofdjutter", "attributes": { "aantal": { "number": "0" } }, "roles": {}, "characteristics": [] },
+      { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "S1", "objectType": "Strandvondst", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "L1", "objectType": "Loods", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "R1", "objectType": "Rapport", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "G1", "objectType": "Vergunning", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "G2", "objectType": "Vergunning", "attributes": {}, "roles": { "vorige vergunning": [ "G1" ] }, "characteristics": [] }|}
+  in
+  let load ?(instances = default_instances) expected =
+    let f = Filename.temp_file "ref-role-expectations" ".json" in
+    Out_channel.with_open_text f (fun oc ->
+        Printf.fprintf oc
+          {|{ "format": "uchar-case-v0", "asOfDate": null,
+  "input": { "instances": [ %s ], "parameters": {} },
+  "expected": [ %s ] }|}
+          instances expected);
+    let r = try Ok (Case.load_file doc f) with Case.Error { code; params; text } -> Error (code, params, text) in
+    Sys.remove f;
+    r
+  in
+  let refused ident expected ~needle =
+    match load expected with
+    | Error (c, p, t) ->
+        check (ident ^ " (got: " ^ t ^ ")") (c = None && p = [] && Case.contains ~needle t)
+    | Ok _ -> check (ident ^ " (loaded)") false
+  in
+  let eval ?(raw = false) ?instances expected =
+    match load ?instances expected with
+    | Error (_, _, t) -> [ "CASE ERROR: " ^ t ]
+    | Ok c -> Case.check c (if raw then c.world else Eval.evaluate (env_of doc) c.world)
+  in
+  let holds ident got = check (ident ^ " (got: " ^ String.concat "; " got ^ ")") (got = []) in
+  let fails ident want got = check (ident ^ " (got: " ^ String.concat "; " got ^ ")") (got = [ want ]) in
+  (* Load refusals: every violation is a case error without an EF-* code *)
+  refused "WV-5.7-case-reader-refuses-roleEmpty-unknown-label"
+    {|{ "kind": "roleEmpty", "label": "J99", "role": "vondsten" }|}
+    ~needle:{|expectation references unknown label "J99"|};
+  refused "WV-5.7-case-reader-refuses-roleCount-unknown-label"
+    {|{ "kind": "roleCount", "label": "J99", "role": "vondsten", "count": 0 }|}
+    ~needle:{|expectation references unknown label "J99"|};
+  refused "WV-5.7-case-reader-refuses-roleTarget-unknown-label"
+    {|{ "kind": "roleTarget", "label": "V99", "role": "vinder", "target": "J1" }|}
+    ~needle:{|expectation references unknown label "V99"|};
+  refused "WV-5.7-case-reader-refuses-roleOpen-unknown-label"
+    {|{ "kind": "roleOpen", "label": "J99", "role": "vondsten" }|}
+    ~needle:{|expectation references unknown label "J99"|};
+  refused "WV-5.7-case-reader-refuses-roleEmpty-undeclared-role"
+    {|{ "kind": "roleEmpty", "label": "J1", "role": "onbestaand" }|}
+    ~needle:{|expected[0]: expected role "onbestaand" does not resolve to a declared role opposite "Jutter"|};
+  refused "WV-5.7-case-reader-refuses-roleCount-unreachable-role"
+    {|{ "kind": "roleCount", "label": "L1", "role": "vondsten", "count": 0 }|}
+    ~needle:{|expected[0]: expected role "vondsten" does not resolve to a declared role opposite "Loods"|};
+  refused "WV-5.7-case-reader-refuses-roleOpen-ambiguous-role"
+    {|{ "kind": "roleOpen", "label": "V1", "role": "toezichthouder" }|}
+    ~needle:{|expected[0]: expected role "toezichthouder" is ambiguous from "Vondst"|};
+  refused "WV-5.7-case-reader-refuses-roleTarget-ambiguous-role"
+    {|{ "kind": "roleTarget", "label": "V1", "role": "toezichthouder", "target": "J1" }|}
+    ~needle:{|expected[0]: expected role "toezichthouder" is ambiguous from "Vondst"|};
+  refused "WV-5.7-case-reader-refuses-roleCount-negative-count"
+    {|{ "kind": "roleCount", "label": "J1", "role": "vondsten", "count": -1 }|}
+    ~needle:{|expected[0].count: expected a non-negative integer, got -1|};
+  refused "WV-5.7-case-reader-refuses-roleCount-float-count"
+    {|{ "kind": "roleCount", "label": "J1", "role": "vondsten", "count": 1.5 }|}
+    ~needle:{|expected[0].count: expected a non-negative integer, got 1.5|};
+  refused "WV-5.7-case-reader-refuses-roleCount-string-count"
+    {|{ "kind": "roleCount", "label": "J1", "role": "vondsten", "count": "2" }|}
+    ~needle:{|expected[0].count: expected a non-negative integer, got "2"|};
+  refused "WV-5.7-case-reader-refuses-roleCount-bool-count"
+    {|{ "kind": "roleCount", "label": "J1", "role": "vondsten", "count": true }|}
+    ~needle:{|expected[0].count: expected a non-negative integer, got true|};
+  refused "WV-5.7-case-reader-refuses-roleCount-missing-count"
+    {|{ "kind": "roleCount", "label": "J1", "role": "vondsten" }|}
+    ~needle:{|expected[0]: missing field "count"|};
+  refused "WV-5.7-case-reader-refuses-roleTarget-on-to-many"
+    {|{ "kind": "roleTarget", "label": "J1", "role": "vondsten", "target": "V1" }|}
+    ~needle:{|expected[0]: roleTarget on to-many role "vondsten" of fact type "vangst"|};
+  refused "WV-5.7-case-reader-refuses-roleTarget-on-reciprocal"
+    {|{ "kind": "roleTarget", "label": "J1", "role": "partner", "target": "J2" }|}
+    ~needle:{|expected[0]: roleTarget on role "partner" of the reciprocal fact type "samenwerking"|};
+  refused "WV-5.7-case-reader-refuses-roleTarget-unknown-target"
+    {|{ "kind": "roleTarget", "label": "V1", "role": "vinder", "target": "J99" }|}
+    ~needle:{|expected[0]: roleTarget references unknown target label "J99"|};
+  refused "WV-5.7-case-reader-refuses-roleTarget-minted-target-label"
+    {|{ "kind": "roleTarget", "label": "J1", "role": "rapport", "target": "oc0::J1" }|}
+    ~needle:{|expected[0]: roleTarget references unknown target label "oc0::J1"|};
+  refused "WV-5.7-case-reader-refuses-roleTarget-incompatible-target-type"
+    {|{ "kind": "roleTarget", "label": "V1", "role": "vinder", "target": "L1" }|}
+    ~needle:{|expected[0]: roleTarget on role "vinder" of "V1" targets "L1" of type "Loods"; declared filler type is "Jutter"|};
+  refused "WV-5.7-case-reader-refuses-roleTarget-supertype-for-subtype-role"
+    {|{ "kind": "roleTarget", "label": "J1", "role": "gekeurde strandvondst", "target": "V1" }|}
+    ~needle:{|expected[0]: roleTarget on role "gekeurde strandvondst" of "J1" targets "V1" of type "Vondst"; declared filler type is "Strandvondst"|};
+  (* Ordinary evaluation: to-one, to-many, reciprocal, self-relation, subtype label/target,
+     ObjectCreation, FactCreation, and --noop raw input *)
+  holds "WV-5.7-role-expectations-ordinary-pass"
+    (eval
+       {|{ "kind": "roleCount", "label": "J1", "role": "vondsten", "count": 2 },
+         { "kind": "roleCount", "label": "J1", "role": "  VONDST ", "count": 2 },
+         { "kind": "roleEmpty", "label": "J2", "role": "vondsten" },
+         { "kind": "roleCount", "label": "J2", "role": "vondsten", "count": 0 },
+         { "kind": "roleTarget", "label": "V1", "role": "vinder", "target": "J1" },
+         { "kind": "roleTarget", "label": "S1", "role": "vinders", "target": "J1" },
+         { "kind": "roleCount", "label": "J1", "role": "partners", "count": 1 },
+         { "kind": "roleCount", "label": "H1", "role": "partner", "count": 1 },
+         { "kind": "roleEmpty", "label": "J2", "role": "partner" },
+         { "kind": "roleEmpty", "label": "G1", "role": "vorige vergunning" },
+         { "kind": "roleTarget", "label": "G1", "role": "volgende vergunning", "target": "G2" },
+         { "kind": "roleTarget", "label": "G2", "role": "vorige vergunning", "target": "G1" },
+         { "kind": "roleEmpty", "label": "G2", "role": "volgende vergunning" },
+         { "kind": "roleCount", "label": "J1", "role": "rapport", "count": 1 },
+         { "kind": "roleEmpty", "label": "J2", "role": "rapport" },
+         { "kind": "roleCount", "label": "J1", "role": "besluiten", "count": 2 },
+         { "kind": "roleEmpty", "label": "J2", "role": "besluiten" },
+         { "kind": "roleCount", "label": "J1", "role": "toegewezen vondsten", "count": 2 },
+         { "kind": "roleTarget", "label": "V1", "role": "beheerder", "target": "J1" },
+         { "kind": "roleTarget", "label": "S1", "role": "beheerder", "target": "J1" },
+         { "kind": "roleEmpty", "label": "J2", "role": "toegewezen vondsten" }|});
+  (* Subtype target accepted by roleTarget (Hoofdjutter <= Jutter, Strandvondst <= Strandvondst) *)
+  holds "WV-5.7-role-expectations-subtype-target"
+    (eval
+       ~instances:
+         {|{ "label": "H1", "objectType": "Hoofdjutter", "attributes": { "aantal": { "number": "0" } }, "roles": { "gekeurde strandvondst": [ "S1" ] }, "characteristics": [] },
+           { "label": "S1", "objectType": "Strandvondst", "attributes": {}, "roles": { "vinder": [ "H1" ] }, "characteristics": [] }|}
+       {|{ "kind": "roleTarget", "label": "S1", "role": "vinder", "target": "H1" },
+         { "kind": "roleTarget", "label": "H1", "role": "gekeurde strandvondst", "target": "S1" }|});
+  (* 1:1 ObjectCreation inputrole guard: input rapport R1 stands and blocks minted rapport *)
+  holds "WV-5.7-role-expectations-object-creation-1to1-input-guard"
+    (eval
+       ~instances:
+         {|{ "label": "J1", "objectType": "Jutter", "attributes": { "aantal": { "number": "12" } }, "roles": { "rapport": [ "R1" ] }, "characteristics": [] },
+           { "label": "R1", "objectType": "Rapport", "attributes": {}, "roles": {}, "characteristics": [] }|}
+       {|{ "kind": "roleTarget", "label": "J1", "role": "rapport", "target": "R1" },
+         { "kind": "roleCount", "label": "J1", "role": "rapport", "count": 1 }|});
+  (* Mismatches in an ordinary document: roleTarget fails on nameless minted object, wrong target or empty;
+     roleOpen never holds; roleEmpty and roleCount report concrete links *)
+  fails "WV-5.7-role-expectations-minted-fails-roleTarget"
+    "J1.rapport = [oc0::J1], expected R1"
+    (eval {|{ "kind": "roleTarget", "label": "J1", "role": "rapport", "target": "R1" }|});
+  fails "WV-5.7-role-expectations-wrong-roleTarget"
+    "V1.vinder = [J1], expected J2"
+    (eval {|{ "kind": "roleTarget", "label": "V1", "role": "vinder", "target": "J2" }|});
+  fails "WV-5.7-role-expectations-empty-fails-roleTarget"
+    "J2.rapport is empty, expected R1"
+    (eval {|{ "kind": "roleTarget", "label": "J2", "role": "rapport", "target": "R1" }|});
+  fails "WV-5.7-role-expectations-ordinary-roleOpen-empty"
+    "J2.vondsten is empty, expected open"
+    (eval {|{ "kind": "roleOpen", "label": "J2", "role": "vondsten" }|});
+  fails "WV-5.7-role-expectations-ordinary-roleOpen-linked"
+    "J1.vondsten = [V1, S1], expected open"
+    (eval {|{ "kind": "roleOpen", "label": "J1", "role": "vondsten" }|});
+  fails "WV-5.7-role-expectations-wrong-roleCount"
+    "J1.vondsten count = 2 ([V1, S1]), expected 1"
+    (eval {|{ "kind": "roleCount", "label": "J1", "role": "vondsten", "count": 1 }|});
+  fails "WV-5.7-role-expectations-nonempty-fails-roleEmpty"
+    "J1.vondsten = [V1, S1], expected empty"
+    (eval {|{ "kind": "roleEmpty", "label": "J1", "role": "vondsten" }|});
+  (* --noop raw input: creations have not fired, input and reverse-materialised links stand *)
+  holds "WV-5.7-role-expectations-noop-raw-input"
+    (eval ~raw:true
+       {|{ "kind": "roleEmpty", "label": "J1", "role": "rapport" },
+         { "kind": "roleEmpty", "label": "J1", "role": "besluiten" },
+         { "kind": "roleEmpty", "label": "J1", "role": "toegewezen vondsten" },
+         { "kind": "roleEmpty", "label": "V1", "role": "beheerder" },
+         { "kind": "roleCount", "label": "J1", "role": "vondsten", "count": 2 },
+         { "kind": "roleTarget", "label": "V1", "role": "vinder", "target": "J1" }|});
+  fails "WV-5.7-role-expectations-noop-refutes-created-roleCount"
+    "J1.besluiten count = 0 ([]), expected 2"
+    (eval ~raw:true {|{ "kind": "roleCount", "label": "J1", "role": "besluiten", "count": 2 }|});
+  fails "WV-5.7-role-expectations-noop-refutes-created-roleTarget"
+    "V1.beheerder is empty, expected J1"
+    (eval ~raw:true {|{ "kind": "roleTarget", "label": "V1", "role": "beheerder", "target": "J1" }|})
+
 (* The worked examples of RUNTIME-SEMANTICS ch. 5.8c, verbatim: a cell read,
    on the subject and over a path of roles, the fold over one dimension and
    over two, the input precision of a cell, and the reading of a cell at the
@@ -18292,7 +18542,7 @@ let () =
       ".chars"; ".left_side" ]
   in
   let input = "reads the input world: what the case gives the target" in
-  let end_check = "the end check of a case: the state first (World.attr_open, char_open), then the stored value" in
+  let end_check = "the end check of a case: the state first (World.attr_open, char_open, links_open), then the stored value" in
   let case_links = "the case reader builds and checks the links the case gives, before any evaluation (ch. 5.7a)" in
   let end_state = "the end state of ch. 5.12a: the state first (World.attr_open, char_open, links_open), then what is stored" in
   let listed =
@@ -18312,6 +18562,7 @@ let () =
       ("ref/lib/case.ml", "check", "World.attr", 5, end_check);
       ("ref/lib/case.ml", "check", "World.timeline", 1, end_check);
       ("ref/lib/case.ml", "check", "World.has_char", 3, end_check);
+      ("ref/lib/case.ml", "check", "World.links", 1, end_check);
       ("ref/lib/end_state.ml", "object_lines", "World.attr", 3, end_state);
       ("ref/lib/end_state.ml", "object_lines", "World.timeline", 1, end_state);
       ("ref/lib/end_state.ml", "object_lines", "World.has_char", 1, end_state);
@@ -18967,7 +19218,241 @@ let () =
   holds "WV-1.5-case-raw-input (attributeEmpty)" (run ~raw:true none (attribute "attributeEmpty"));
   fails "WV-1.5-case-raw-input (characteristicOpen)" "V1: characteristic \"kostbaar\" stands not to hold, expected open"
     (run ~raw:true none (characteristic "characteristicOpen"));
-  holds "WV-1.5-case-raw-input (characteristicAbsent)" (run ~raw:true none (characteristic "characteristicAbsent"))
+  holds "WV-1.5-case-raw-input (characteristicAbsent)" (run ~raw:true none (characteristic "characteristicAbsent"));
+  (* WV-1.5-case-role-*: roleEmpty, roleCount, roleTarget and roleOpen under
+     inferFromEmpty false (ch. 1.5, ch. 5.7): open vs closed to-one and to-many
+     input roles (including an open to-many role with >= 1 known elements),
+     reciprocal and self-referencing roles, object creations and fact creations
+     with established true, established false and open conditions, --closed-inputs,
+     ordinary documents without the property, and --noop raw input *)
+  let role_exp_doc ?(strict = true) ?(complete_many = false) ?(complete_one = false) () : Ir_v0.Ast.document =
+    let r ?plural ?(many = false) ?(complete = false) name otype : Ir_v0.Ast.role_ref =
+      { role_identifier = Some name; role_object_type_name = Some otype; role_plural = plural;
+        role_many = many; role_complete = complete }
+    in
+    let ft ?(reciprocal = false) name roles : string * Ir_v0.Ast.fact_type_name =
+      (name, { ft_name = Some name; reciprocal; role_names = roles })
+    in
+    { (ov_doc ~strict
+         [ ot "Jutter" [ ("ervaring", Some num0) ] [ "bijzonder"; "gemeld" ];
+           ov_vondst [ "waarde" ] [];
+           ot "Rapport" [] [];
+           ot "Penningbesluit" [] [];
+           ot "Vergunning" [] [] ]
+         [])
+      with
+      fact_types =
+        [ ft "vangst"
+            [ r ~plural:"vinders" ~complete:complete_one "vinder" "Jutter";
+              r ~plural:"vondsten" ~many:true ~complete:complete_many "vondst" "Vondst" ];
+          ft "rapportage" [ r "gekeurde jutter" "Jutter"; r "rapport" "Rapport" ];
+          ft "penningtoekenning" [ r "begunstigde" "Jutter"; r ~plural:"besluiten" ~many:true "besluit" "Penningbesluit" ];
+          ft "hulp" [ r "hulpjutter" "Jutter"; r ~plural:"hulpvondsten" ~many:true "hulpvondst" "Vondst" ];
+          ft ~reciprocal:true "samenwerking" [ r ~plural:"partners" "partner" "Jutter" ];
+          ft "opvolging" [ r "vorige vergunning" "Vergunning"; r "volgende vergunning" "Vergunning" ] ];
+      object_creations =
+        [ { oc_name = Some "maak rapport"; created_type = Some "Rapport"; oc_subject = Some "Jutter";
+            assignments = [];
+            oc_condition = Some (ov_jcmp "ervaring" "5");
+            oc_validity = None; oc_connecting_role = None; oc_pointer = "/rules/objectCreations/0/versions/0" };
+          { oc_name = Some "basisbesluit"; created_type = Some "Penningbesluit"; oc_subject = Some "Jutter";
+            assignments = [];
+            oc_condition = Some (ov_jcmp "ervaring" "5");
+            oc_validity = None; oc_connecting_role = None; oc_pointer = "/rules/objectCreations/1/versions/0" };
+          { oc_name = Some "bonusbesluit"; created_type = Some "Penningbesluit"; oc_subject = Some "Jutter";
+            assignments = [];
+            oc_condition = Some (ov_check "bijzonder");
+            oc_validity = None; oc_connecting_role = None; oc_pointer = "/rules/objectCreations/2/versions/0" } ];
+      fact_creations =
+        [ { fc_name = Some "wijs hulp toe"; anchor_point = Some "Jutter"; fc_target = Some "Vondst";
+            intermediates = [];
+            fc_condition = Some (ov_check ~negation:true "gemeld");
+            fc_validity = None; fc_fact_type = "hulp"; anchor_role = "hulpjutter";
+            objective_role = "hulpvondst"; join_role = { rb_fact_type = "vangst"; rb_role = "vondst" };
+            fc_pointer = "/rules/factCreations/0/versions/0" } ] }
+  in
+  let run_role ?(raw = false) ?(closed_inputs = false) ?(strict = true) ?(complete_many = false)
+      ?(complete_one = false) instances expected =
+    let d = role_exp_doc ~strict ~complete_many ~complete_one () in
+    match load_multi d instances expected with
+    | Error (_, _, text) -> [ "CASE ERROR: " ^ text ]
+    | Ok c -> Case.check c (if raw then c.world else Eval.evaluate ~closed_inputs (env_of d) c.world)
+  in
+  (* 1. Open vs closed to-one input role *)
+  let unlinked_v1 =
+    {|{ "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "J1", "objectType": "Jutter", "attributes": { "ervaring": { "number": "0" } }, "roles": {}, "characteristics": [ "gemeld" ], "characteristicsAbsent": [ "bijzonder" ] }|}
+  in
+  holds "WV-1.5-case-role-to-one (open when omitted)"
+    (run_role unlinked_v1 {|{ "kind": "roleOpen", "label": "V1", "role": "vinder" }|});
+  fails "WV-1.5-case-role-to-one (open fails roleEmpty)"
+    "V1.vinder is open, expected empty"
+    (run_role unlinked_v1 {|{ "kind": "roleEmpty", "label": "V1", "role": "vinder" }|});
+  fails "WV-1.5-case-role-to-one (open fails roleCount 0)"
+    "V1.vinder is open, expected count 0"
+    (run_role unlinked_v1 {|{ "kind": "roleCount", "label": "V1", "role": "vinder", "count": 0 }|});
+  fails "WV-1.5-case-role-to-one (open fails roleTarget)"
+    "V1.vinder is open, expected J1"
+    (run_role unlinked_v1 {|{ "kind": "roleTarget", "label": "V1", "role": "vinder", "target": "J1" }|});
+  holds "WV-1.5-case-role-to-one (closed via rolesEmpty)"
+    (run_role
+       {|{ "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "rolesEmpty": [ "vinder" ], "characteristics": [] }|}
+       {|{ "kind": "roleEmpty", "label": "V1", "role": "vinder" },
+         { "kind": "roleCount", "label": "V1", "role": "vinder", "count": 0 }|});
+  fails "WV-1.5-case-role-to-one (rolesEmpty fails roleOpen)"
+    "V1.vinder is empty, expected open"
+    (run_role
+       {|{ "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "rolesEmpty": [ "vinder" ], "characteristics": [] }|}
+       {|{ "kind": "roleOpen", "label": "V1", "role": "vinder" }|});
+  holds "WV-1.5-case-role-to-one (closed via complete: true)"
+    (run_role ~complete_one:true unlinked_v1
+       {|{ "kind": "roleEmpty", "label": "V1", "role": "vinder" },
+         { "kind": "roleCount", "label": "V1", "role": "vinder", "count": 0 }|});
+  holds "WV-1.5-case-role-to-one (closed via --closed-inputs)"
+    (run_role ~closed_inputs:true unlinked_v1
+       {|{ "kind": "roleEmpty", "label": "V1", "role": "vinder" },
+         { "kind": "roleCount", "label": "V1", "role": "vinder", "count": 0 }|});
+  (* 2. Open vs closed to-many input role, including >= 1 known elements *)
+  let j1_with_two_open =
+    {|{ "label": "J1", "objectType": "Jutter", "attributes": { "ervaring": { "number": "0" } }, "roles": { "vondsten": [ "V1", "V2" ] }, "characteristics": [ "gemeld" ], "characteristicsAbsent": [ "bijzonder" ] },
+      { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] },
+      { "label": "V2", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] }|}
+  in
+  holds "WV-1.5-case-role-to-many (open with 2 linked elements: roleOpen holds, reverse to-one roleTarget holds)"
+    (run_role j1_with_two_open
+       {|{ "kind": "roleOpen", "label": "J1", "role": "vondsten" },
+         { "kind": "roleTarget", "label": "V1", "role": "vinder", "target": "J1" },
+         { "kind": "roleCount", "label": "V1", "role": "vinder", "count": 1 }|});
+  fails "WV-1.5-case-role-to-many (open with 2 linked elements fails roleCount 2)"
+    "J1.vondsten is open, expected count 2"
+    (run_role j1_with_two_open {|{ "kind": "roleCount", "label": "J1", "role": "vondsten", "count": 2 }|});
+  fails "WV-1.5-case-role-to-many (open with 2 linked elements fails roleEmpty)"
+    "J1.vondsten is open, expected empty"
+    (run_role j1_with_two_open {|{ "kind": "roleEmpty", "label": "J1", "role": "vondsten" }|});
+  holds "WV-1.5-case-role-to-many (rolesClosed with 2 linked elements: roleCount 2 holds)"
+    (run_role
+       {|{ "label": "J1", "objectType": "Jutter", "attributes": { "ervaring": { "number": "0" } }, "roles": { "vondsten": [ "V1", "V2" ] }, "rolesClosed": [ "vondsten" ], "characteristics": [ "gemeld" ], "characteristicsAbsent": [ "bijzonder" ] },
+         { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] },
+         { "label": "V2", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] }|}
+       {|{ "kind": "roleCount", "label": "J1", "role": "vondsten", "count": 2 }|});
+  fails "WV-1.5-case-role-to-many (rolesClosed with 2 linked elements fails roleOpen)"
+    "J1.vondsten = [V1, V2], expected open"
+    (run_role
+       {|{ "label": "J1", "objectType": "Jutter", "attributes": { "ervaring": { "number": "0" } }, "roles": { "vondsten": [ "V1", "V2" ] }, "rolesClosed": [ "vondsten" ], "characteristics": [ "gemeld" ], "characteristicsAbsent": [ "bijzonder" ] },
+         { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] },
+         { "label": "V2", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] }|}
+       {|{ "kind": "roleOpen", "label": "J1", "role": "vondsten" }|});
+  holds "WV-1.5-case-role-to-many (rolesClosed empty: roleEmpty and roleCount 0 hold)"
+    (run_role
+       {|{ "label": "J1", "objectType": "Jutter", "attributes": { "ervaring": { "number": "0" } }, "roles": {}, "rolesClosed": [ "vondsten" ], "characteristics": [ "gemeld" ], "characteristicsAbsent": [ "bijzonder" ] }|}
+       {|{ "kind": "roleEmpty", "label": "J1", "role": "vondsten" },
+         { "kind": "roleCount", "label": "J1", "role": "vondsten", "count": 0 }|});
+  (* 3. Reciprocal fact type (always closed) and self-relation (directions separated) *)
+  holds "WV-1.5-case-role-reciprocal-and-self-relation"
+    (run_role
+       {|{ "label": "J1", "objectType": "Jutter", "attributes": { "ervaring": { "number": "0" } }, "roles": {}, "characteristics": [ "gemeld" ], "characteristicsAbsent": [ "bijzonder" ] },
+         { "label": "G1", "objectType": "Vergunning", "attributes": {}, "roles": {}, "characteristics": [] },
+         { "label": "G2", "objectType": "Vergunning", "attributes": {}, "roles": { "vorige vergunning": [ "G1" ] }, "rolesEmpty": [ "volgende vergunning" ], "characteristics": [] }|}
+       {|{ "kind": "roleEmpty", "label": "J1", "role": "partner" },
+         { "kind": "roleCount", "label": "J1", "role": "partners", "count": 0 },
+         { "kind": "roleOpen", "label": "G1", "role": "vorige vergunning" },
+         { "kind": "roleTarget", "label": "G1", "role": "volgende vergunning", "target": "G2" },
+         { "kind": "roleTarget", "label": "G2", "role": "vorige vergunning", "target": "G1" },
+         { "kind": "roleEmpty", "label": "G2", "role": "volgende vergunning" }|});
+  fails "WV-1.5-case-role-reciprocal-never-open"
+    "J1.partner is empty, expected open"
+    (run_role
+       {|{ "label": "J1", "objectType": "Jutter", "attributes": { "ervaring": { "number": "0" } }, "roles": {}, "characteristics": [ "gemeld" ], "characteristicsAbsent": [ "bijzonder" ] }|}
+       {|{ "kind": "roleOpen", "label": "J1", "role": "partner" }|});
+  (* 4. ObjectCreation with established true, established false, and open conditions *)
+  holds "WV-1.5-case-role-object-creation (established true: 1 rapport, 2 besluiten)"
+    (run_role
+       {|{ "label": "J1", "objectType": "Jutter", "attributes": { "ervaring": { "number": "10" } }, "roles": {}, "characteristics": [ "bijzonder", "gemeld" ] }|}
+       {|{ "kind": "roleCount", "label": "J1", "role": "rapport", "count": 1 },
+         { "kind": "roleCount", "label": "J1", "role": "besluiten", "count": 2 }|});
+  holds "WV-1.5-case-role-object-creation (established false: rapport and besluiten settled empty without rolesEmpty/rolesClosed)"
+    (run_role
+       {|{ "label": "J1", "objectType": "Jutter", "attributes": { "ervaring": { "number": "2" } }, "roles": {}, "characteristics": [ "gemeld" ], "characteristicsAbsent": [ "bijzonder" ] }|}
+       {|{ "kind": "roleEmpty", "label": "J1", "role": "rapport" },
+         { "kind": "roleCount", "label": "J1", "role": "rapport", "count": 0 },
+         { "kind": "roleEmpty", "label": "J1", "role": "besluiten" },
+         { "kind": "roleCount", "label": "J1", "role": "besluiten", "count": 0 }|});
+  let open_oc_j1 =
+    {|{ "label": "J1", "objectType": "Jutter", "attributes": {}, "roles": {}, "characteristics": [ "gemeld" ] },
+      { "label": "R1", "objectType": "Rapport", "attributes": {}, "roles": {}, "characteristics": [] }|}
+  in
+  holds "WV-1.5-case-role-object-creation (open condition: roleOpen holds)"
+    (run_role open_oc_j1
+       {|{ "kind": "roleOpen", "label": "J1", "role": "rapport" },
+         { "kind": "roleOpen", "label": "J1", "role": "besluiten" }|});
+  fails "WV-1.5-case-role-object-creation (open condition fails roleEmpty)"
+    "J1.rapport is open, expected empty"
+    (run_role open_oc_j1 {|{ "kind": "roleEmpty", "label": "J1", "role": "rapport" }|});
+  fails "WV-1.5-case-role-object-creation (open condition fails roleCount 0)"
+    "J1.rapport is open, expected count 0"
+    (run_role open_oc_j1 {|{ "kind": "roleCount", "label": "J1", "role": "rapport", "count": 0 }|});
+  fails "WV-1.5-case-role-object-creation (open condition fails roleTarget)"
+    "J1.rapport is open, expected R1"
+    (run_role open_oc_j1 {|{ "kind": "roleTarget", "label": "J1", "role": "rapport", "target": "R1" }|});
+  (* 1 true creation + 1 open creation on a to-many role: 1 object minted AND slot still open *)
+  let half_open_besluiten =
+    {|{ "label": "J1", "objectType": "Jutter", "attributes": { "ervaring": { "number": "10" } }, "roles": {}, "characteristics": [ "gemeld" ] }|}
+  in
+  holds "WV-1.5-case-role-object-creation (1 minted + 1 open creation: roleOpen holds)"
+    (run_role half_open_besluiten {|{ "kind": "roleOpen", "label": "J1", "role": "besluiten" }|});
+  fails "WV-1.5-case-role-object-creation (1 minted + 1 open creation fails roleCount 1)"
+    "J1.besluiten is open, expected count 1"
+    (run_role half_open_besluiten {|{ "kind": "roleCount", "label": "J1", "role": "besluiten", "count": 1 }|});
+  (* 5. FactCreation with established true, established false, open condition, and open join chain *)
+  holds "WV-1.5-case-role-fact-creation (established true on closed join chain)"
+    (run_role
+       {|{ "label": "J1", "objectType": "Jutter", "attributes": { "ervaring": { "number": "0" } }, "roles": { "vondsten": [ "V1" ] }, "rolesClosed": [ "vondsten" ], "characteristics": [], "characteristicsAbsent": [ "gemeld", "bijzonder" ] },
+         { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] }|}
+       {|{ "kind": "roleCount", "label": "J1", "role": "hulpvondsten", "count": 1 },
+         { "kind": "roleTarget", "label": "V1", "role": "hulpjutter", "target": "J1" }|});
+  holds "WV-1.5-case-role-fact-creation (established false: roleEmpty and roleCount 0 hold)"
+    (run_role
+       {|{ "label": "J1", "objectType": "Jutter", "attributes": { "ervaring": { "number": "0" } }, "roles": { "vondsten": [ "V1" ] }, "rolesClosed": [ "vondsten" ], "characteristics": [ "gemeld" ], "characteristicsAbsent": [ "bijzonder" ] },
+         { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] }|}
+       {|{ "kind": "roleEmpty", "label": "J1", "role": "hulpvondsten" },
+         { "kind": "roleCount", "label": "J1", "role": "hulpvondsten", "count": 0 },
+         { "kind": "roleEmpty", "label": "V1", "role": "hulpjutter" },
+         { "kind": "roleCount", "label": "V1", "role": "hulpjutter", "count": 0 }|});
+  let open_fc_cond =
+    {|{ "label": "J1", "objectType": "Jutter", "attributes": { "ervaring": { "number": "0" } }, "roles": { "vondsten": [ "V1" ] }, "rolesClosed": [ "vondsten" ], "characteristics": [], "characteristicsAbsent": [ "bijzonder" ] },
+      { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] }|}
+  in
+  holds "WV-1.5-case-role-fact-creation (open condition leaves anchor and target role slots open)"
+    (run_role open_fc_cond
+       {|{ "kind": "roleOpen", "label": "J1", "role": "hulpvondsten" },
+         { "kind": "roleOpen", "label": "V1", "role": "hulpjutter" }|});
+  fails "WV-1.5-case-role-fact-creation (open condition fails roleEmpty on anchor)"
+    "J1.hulpvondsten is open, expected empty"
+    (run_role open_fc_cond {|{ "kind": "roleEmpty", "label": "J1", "role": "hulpvondsten" }|});
+  fails "WV-1.5-case-role-fact-creation (open condition fails roleTarget on target)"
+    "V1.hulpjutter is open, expected J1"
+    (run_role open_fc_cond {|{ "kind": "roleTarget", "label": "V1", "role": "hulpjutter", "target": "J1" }|});
+  holds "WV-1.5-case-role-fact-creation (open join-chain hop leaves anchor and every target-type instance open)"
+    (run_role
+       {|{ "label": "J1", "objectType": "Jutter", "attributes": { "ervaring": { "number": "0" } }, "roles": { "vondsten": [ "V1" ] }, "characteristics": [], "characteristicsAbsent": [ "gemeld", "bijzonder" ] },
+         { "label": "V1", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] },
+         { "label": "V2", "objectType": "Vondst", "attributes": {}, "roles": {}, "characteristics": [] }|}
+       {|{ "kind": "roleOpen", "label": "J1", "role": "hulpvondsten" },
+         { "kind": "roleOpen", "label": "V1", "role": "hulpjutter" },
+         { "kind": "roleOpen", "label": "V2", "role": "hulpjutter" }|});
+  (* 6. Ordinary document without inferFromEmpty false and --noop raw input *)
+  fails "WV-1.5-case-role-without-property (roleOpen never holds)"
+    "V1.vinder is empty, expected open"
+    (run_role ~strict:false unlinked_v1 {|{ "kind": "roleOpen", "label": "V1", "role": "vinder" }|});
+  holds "WV-1.5-case-role-without-property (roleEmpty holds without rolesEmpty)"
+    (run_role ~strict:false unlinked_v1 {|{ "kind": "roleEmpty", "label": "V1", "role": "vinder" }|});
+  fails "WV-1.5-case-role-raw-input (roleOpen never holds on --noop)"
+    "V1.vinder is empty, expected open"
+    (run_role ~raw:true unlinked_v1 {|{ "kind": "roleOpen", "label": "V1", "role": "vinder" }|});
+  holds "WV-1.5-case-role-raw-input (roleEmpty and roleCount read raw input on --noop)"
+    (run_role ~raw:true j1_with_two_open
+       {|{ "kind": "roleCount", "label": "J1", "role": "vondsten", "count": 2 },
+         { "kind": "roleEmpty", "label": "J1", "role": "rapport" }|})
 
 (* --- ch. 5.12 and 5.12a in a document with inferFromEmpty false ------------
    The reading at the fixpoint and the end state of a session, with open values

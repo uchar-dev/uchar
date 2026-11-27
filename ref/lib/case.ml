@@ -45,6 +45,10 @@ type expectation =
   | Char_present of { label : string; char : string }
   | Char_absent of { label : string; char : string }
   | Char_open of { label : string; char : string }
+  | Role_empty of { label : string; role : string; fact_type : string; far : role_ref }
+  | Role_count of { label : string; role : string; fact_type : string; far : role_ref; count : int }
+  | Role_target of { label : string; role : string; fact_type : string; far : role_ref; target : string }
+  | Role_open of { label : string; role : string; fact_type : string; far : role_ref }
   | Consistent
   | Inconsistent of { rule : string option; label : string option; code : string option }
       (* [code]: the EF code (RUNTIME-SEMANTICS ch. 5.7b) a matching channel
@@ -115,6 +119,13 @@ let field ~at kvs k =
 let str_field ~at kvs k = str ~at:(child at k) (field ~at kvs k)
 let obj_field ~at kvs k = obj ~at:(child at k) (field ~at kvs k)
 let list_field ~at kvs k = list_ ~at:(child at k) (field ~at kvs k)
+
+let non_neg_int_field ~at kvs k =
+  let cat = child at k in
+  match field ~at kvs k with
+  | `Int n when n >= 0 -> n
+  | `Int n -> fail "%s: expected a non-negative integer, got %d" cat n
+  | j -> fail "%s: expected a non-negative integer, got %s" cat (got j)
 
 (* --- typed values against a declared datatype -------------------------- *)
 
@@ -404,35 +415,35 @@ let find_object_type (doc : document) name =
 
 (* the fact-type roles a role key on an instance of [otype] refers to:
    the key names the *other* role (by name or plural) of a fact type in
-   which [otype] can fill the opposite role. Returns (fact type, FAR
-   role — the one the key names and the targets fill, SISTER role — the
-   one the keying instance itself fills). On the reciprocal shape the
+   which [otype] can fill the opposite role. Returns all hits (fact type,
+   FAR role — the one the key names and the targets fill, SISTER role —
+   the one the keying instance itself fills). On the reciprocal shape the
    single role is both. *)
+let role_hits (doc : document) ~otype ~key =
+  List.concat_map
+    (fun (ftn, (ft : fact_type_name)) ->
+      (* the declared filler type is an UPPER bound (ch. 2.6): an
+         instance of S fills every role declared at a T with S ⊑ T *)
+      let fills (r : role_ref) =
+        Ir_v0.Checks.subtype_of doc ~sub:otype
+          ~super:(Option.value r.role_object_type_name ~default:"")
+      in
+      let matches (r : role_ref) =
+        (match r.role_identifier with Some n -> norm n = norm key | None -> false)
+        || (match r.role_plural with Some m -> norm m = norm key | None -> false)
+      in
+      match ft.role_names with
+      | [ a; b ] ->
+          (if fills a && matches b then [ (ftn, b, a) ] else [])
+          @ if fills b && matches a then [ (ftn, a, b) ] else []
+      | [ r ] when ft.reciprocal ->
+          (* reciprocal: the single role is its own opposite *)
+          if fills r && matches r then [ (ftn, r, r) ] else []
+      | _ -> [])
+    doc.fact_types
+
 let resolve_role_ft (doc : document) ~otype ~key =
-  let hits =
-    List.concat_map
-      (fun (ftn, (ft : fact_type_name)) ->
-        (* the declared filler type is an UPPER bound (ch. 2.6): an
-           instance of S fills every role declared at a T with S ⊑ T *)
-        let fills (r : role_ref) =
-          Ir_v0.Checks.subtype_of doc ~sub:otype
-            ~super:(Option.value r.role_object_type_name ~default:"")
-        in
-        let matches (r : role_ref) =
-          (match r.role_identifier with Some n -> norm n = norm key | None -> false)
-          || (match r.role_plural with Some m -> norm m = norm key | None -> false)
-        in
-        match ft.role_names with
-        | [ a; b ] ->
-            (if fills a && matches b then [ (ftn, b, a) ] else [])
-            @ if fills b && matches a then [ (ftn, a, b) ] else []
-        | [ r ] when ft.reciprocal ->
-            (* reciprocal: the single role is its own opposite *)
-            if fills r && matches r then [ (ftn, r, r) ] else []
-        | _ -> [])
-      doc.fact_types
-  in
-  match hits with
+  match role_hits doc ~otype ~key with
   | [ p ] -> p
   | [] -> fail "role key %S does not resolve to a declared role opposite %S" key otype
   | _ ->
@@ -1148,6 +1159,51 @@ let load_expectation (doc : document) (world : World.t) ~at (j : Yojson.Safe.t) 
         if kind = "characteristicPresent" then Char_present { label = i.label; char = c }
         else Char_absent { label = i.label; char = c }
       end
+  | "roleEmpty" | "roleCount" | "roleTarget" | "roleOpen" -> (
+      let i = get_instance () in
+      let role = str_field ~at kvs "role" in
+      (* role expectations validate against declarations without an EF-* code,
+         as attribute and characteristic expectations do (RUNTIME-SEMANTICS
+         ch. 5.7) *)
+      let fact_type, far =
+        match role_hits doc ~otype:i.otype ~key:role with
+        | [ (ft_name, far, _) ] -> (ft_name, far)
+        | [] ->
+            fail "%s: expected role %S does not resolve to a declared role opposite %S"
+              at role i.otype
+        | _ -> fail "%s: expected role %S is ambiguous from %S" at role i.otype
+      in
+      match kind with
+      | "roleEmpty" -> Role_empty { label = i.label; role; fact_type; far }
+      | "roleOpen" -> Role_open { label = i.label; role; fact_type; far }
+      | "roleCount" ->
+          let count = non_neg_int_field ~at kvs "count" in
+          Role_count { label = i.label; role; fact_type; far; count }
+      | _ ->
+          (match Ir_v0.Checks.find_ci doc.fact_types fact_type with
+          | Some ft when ft.reciprocal ->
+              fail
+                "%s: roleTarget on role %S of the reciprocal fact type %S: roleTarget applies only to a \
+                 non-reciprocal to-one role"
+                at role fact_type
+          | _ -> ());
+          if far.role_many then
+            fail
+              "%s: roleTarget on to-many role %S of fact type %S: roleTarget applies only to a \
+               non-reciprocal to-one role"
+              at role fact_type;
+          let target = str_field ~at kvs "target" in
+          let ti =
+            match SMap.find_opt target world.instances with
+            | Some ti -> ti
+            | None -> fail "%s: roleTarget references unknown target label %S" at target
+          in
+          let expect = Option.value far.role_object_type_name ~default:"" in
+          if not (Ir_v0.Checks.subtype_of doc ~sub:ti.otype ~super:expect) then
+            fail
+              "%s: roleTarget on role %S of %S targets %S of type %S; declared filler type is %S"
+              at role i.label target ti.otype expect;
+          Role_target { label = i.label; role; fact_type; far; target })
   | "consistent" -> Consistent
   | "inconsistent" ->
       let opt_str k = Option.map (str ~at:(child at k)) (List.assoc_opt k kvs) in
@@ -1368,6 +1424,10 @@ let load_file (doc : document) path : t =
 
 (* returns the list of mismatches, empty on success *)
 let check (case : t) (final : World.t) : string list =
+  let role_state label ~fact_type far =
+    let i = World.get final label in
+    (World.links_open final i ~fact_type far, World.links i ~fact_type far)
+  in
   List.filter_map
     (fun e ->
       match e with
@@ -1468,6 +1528,32 @@ let check (case : t) (final : World.t) : string list =
             Some (Printf.sprintf "%s carries characteristic %S, expected open" label char)
           else if World.char_open final (World.get final label) char then None
           else Some (Printf.sprintf "%s: characteristic %S stands not to hold, expected open" label char)
+      | Role_empty { label; role; fact_type; far } ->
+          let is_open, targets = role_state label ~fact_type far in
+          if is_open then Some (Printf.sprintf "%s.%s is open, expected empty" label role)
+          else if targets = [] then None
+          else Some (Printf.sprintf "%s.%s = [%s], expected empty" label role (String.concat ", " targets))
+      | Role_count { label; role; fact_type; far; count } ->
+          let is_open, targets = role_state label ~fact_type far in
+          if is_open then Some (Printf.sprintf "%s.%s is open, expected count %d" label role count)
+          else if List.length targets = count then None
+          else
+            Some
+              (Printf.sprintf "%s.%s count = %d ([%s]), expected %d" label role
+                 (List.length targets) (String.concat ", " targets) count)
+      | Role_target { label; role; fact_type; far; target } -> (
+          let is_open, targets = role_state label ~fact_type far in
+          if is_open then Some (Printf.sprintf "%s.%s is open, expected %s" label role target)
+          else
+            match targets with
+            | [ actual ] when String.equal actual target -> None
+            | [] -> Some (Printf.sprintf "%s.%s is empty, expected %s" label role target)
+            | _ -> Some (Printf.sprintf "%s.%s = [%s], expected %s" label role (String.concat ", " targets) target))
+      | Role_open { label; role; fact_type; far } ->
+          let is_open, targets = role_state label ~fact_type far in
+          if is_open then None
+          else if targets = [] then Some (Printf.sprintf "%s.%s is empty, expected open" label role)
+          else Some (Printf.sprintf "%s.%s = [%s], expected open" label role (String.concat ", " targets))
       | Consistent ->
           if final.channel = [] then None
           else
