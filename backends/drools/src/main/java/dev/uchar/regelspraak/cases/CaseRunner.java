@@ -653,6 +653,10 @@ public final class CaseRunner {
     /** The members open at the fixpoint per bean, by their kind and declared name, as {@link Fixpoint#open} gives them:
      *  what the comparison reads them by. */
     private final Map<Object, java.util.Set<String>> open = new java.util.IdentityHashMap<>();
+    /** The standing links, open role slots and created objects of the session being compared. */
+    private List<EndState.Link> sessionLinks = List.of();
+    private List<EndState.OpenLink> sessionOpenLinks = List.of();
+    private final Map<Object, Fixpoint.MadeObject> madeObjects = new java.util.IdentityHashMap<>();
 
     /** Whether {@code member}, its kind and declared name, of {@code bean} is open at the fixpoint. */
     private boolean open(Object bean, String member) {
@@ -1044,10 +1048,21 @@ public final class CaseRunner {
                                                    Map<String, Object> perLabel, Map<String, ObjectType> types,
                                                    List<Object> inconsistencies, List<Fixpoint.OpenValue> open,
                                                    JsonNode expectations) {
+        return comparison(build, perLabel, types, inconsistencies, open, List.of(), List.of(), List.of(), expectations);
+    }
+
+    static DroolsBackend.Comparison comparison(DroolsBackend.Build build,
+                                                   Map<String, Object> perLabel, Map<String, ObjectType> types,
+                                                   List<Object> inconsistencies, List<Fixpoint.OpenValue> open,
+                                                   List<Fixpoint.MadeObject> made, List<EndState.Link> links,
+                                                   List<EndState.OpenLink> openLinks, JsonNode expectations) {
         CaseRunner r = new CaseRunner(build.model(), build.kieBase(), build.beanLoader(), build.dayKindGlobals());
         r.backendBuild = build;
         r.labelToBean.putAll(perLabel);
         r.labelType.putAll(types);
+        r.sessionLinks = links;
+        r.sessionOpenLinks = openLinks;
+        for (Fixpoint.MadeObject m : made) r.madeObjects.put(m.object(), m);
         for (Fixpoint.OpenValue o : open) {
             if (o.role()) continue;
             r.open.computeIfAbsent(o.object(), k -> new java.util.HashSet<>())
@@ -1057,8 +1072,9 @@ public final class CaseRunner {
         List<String> mis = new ArrayList<>();
         int position = 0;
         for (JsonNode v : expectations) {
-            expectationFields(v, "expected[" + position + "]");
-            String m = r.compare(v, inconsistencies);
+            String at = "expected[" + position + "]";
+            expectationFields(v, at);
+            String m = r.compare(v, inconsistencies, at);
             if (m != null) mis.add(m);
             position++;
             out.add(new ScenarioResult.ExpectationResult(source(v), r.expected(v), r.actual(v, inconsistencies), m == null,
@@ -1092,6 +1108,10 @@ public final class CaseRunner {
             Map.entry("attributeTimeline", List.of("label", "attribute", "timeline")),
             Map.entry("cellValue", List.of("label", "attribute", "labels")),
             Map.entry("cellEmpty", List.of("label", "attribute", "labels")),
+            Map.entry("roleEmpty", List.of("label", "role")),
+            Map.entry("roleCount", List.of("label", "role", "count")),
+            Map.entry("roleTarget", List.of("label", "role", "target")),
+            Map.entry("roleOpen", List.of("label", "role")),
             Map.entry("consistent", List.of()),
             Map.entry("inconsistent", List.of()));
 
@@ -1103,7 +1123,7 @@ public final class CaseRunner {
         for (String field : EXPECTATION_FIELDS.getOrDefault(kind, List.of())) member(v, at, field);
     }
 
-    private String compare(JsonNode v, List<Object> inconsistencies) {
+    private String compare(JsonNode v, List<Object> inconsistencies, String at) {
         String kind = v.get("kind").asText();
         return switch (kind) {
             case "attributeValue" -> attribute(v, false, false);
@@ -1112,6 +1132,7 @@ public final class CaseRunner {
             case "characteristicPresent" -> characteristic(v, true, false);
             case "characteristicAbsent" -> characteristic(v, false, false);
             case "characteristicOpen" -> characteristic(v, false, true);
+            case "roleEmpty", "roleCount", "roleTarget", "roleOpen" -> roleExpectation(v, at);
             case "consistent" -> consistency(inconsistencies, false, v);
             case "inconsistent" -> consistency(inconsistencies, true, v);
             case "attributeTimeline" -> timeline(v);
@@ -1119,6 +1140,113 @@ public final class CaseRunner {
             case "cellEmpty" -> cell(v, true);
             default -> throw new IllegalArgumentException("unknown expectation kind \"" + kind + "\"");
         };
+    }
+
+    private record ResolvedRoleExpectation(String kind, String label, Object bean, String roleKey,
+                                           CaseInput.OppositeRole hit, Integer count, String target) {}
+
+    private record RoleState(boolean open, List<Object> targets) {}
+
+    /** Validates and resolves a role expectation ({@code roleEmpty}, {@code roleCount}, {@code roleTarget},
+     *  {@code roleOpen}) 1-to-1 with {@code Case.load_file} in {@code ref}: every violation is a case defect without an
+     *  {@code EF-*} code. */
+    private ResolvedRoleExpectation resolveExpectedRole(JsonNode v, String at) {
+        String kind = v.get("kind").asText();
+        JsonNode labelNode = v.get("label");
+        if (labelNode == null || !labelNode.isTextual())
+            throw new IllegalArgumentException(at + ".label: expected a string, got " + labelNode);
+        String label = labelNode.asText();
+        ObjectType ot = typeOfLabel(v, label);
+        JsonNode roleNode = v.get("role");
+        if (roleNode == null || !roleNode.isTextual() || roleNode.asText().isBlank())
+            throw new IllegalArgumentException(at + ".role: expected a non-empty string, got " + roleNode);
+        String roleKey = roleNode.asText();
+        List<CaseInput.OppositeRole> hits = CaseInput.resolveOppositeRoles(model, ot, roleKey);
+        if (hits.isEmpty())
+            throw new IllegalArgumentException(at + ": expected role \"" + roleKey
+                    + "\" does not resolve to a declared role opposite \"" + ot.name + "\"");
+        if (hits.size() > 1)
+            throw new IllegalArgumentException(at + ": expected role \"" + roleKey
+                    + "\" is ambiguous from \"" + ot.name + "\"");
+        CaseInput.OppositeRole hit = hits.get(0);
+        Integer count = null;
+        String target = null;
+        if (kind.equals("roleCount")) {
+            JsonNode countNode = v.get("count");
+            if (countNode == null || !countNode.isIntegralNumber() || countNode.isBoolean()
+                    || !countNode.canConvertToInt() || countNode.intValue() < 0)
+                throw new IllegalArgumentException(at + ".count: expected a non-negative integer, got " + countNode);
+            count = countNode.intValue();
+        } else if (kind.equals("roleTarget")) {
+            if (hit.factType().reciprocal)
+                throw new IllegalArgumentException(at + ": roleTarget on role \"" + roleKey
+                        + "\" of the reciprocal fact type \"" + hit.factType().name
+                        + "\": roleTarget applies only to a non-reciprocal to-one role");
+            if (hit.role().many())
+                throw new IllegalArgumentException(at + ": roleTarget on to-many role \"" + roleKey
+                        + "\" of fact type \"" + hit.factType().name
+                        + "\": roleTarget applies only to a non-reciprocal to-one role");
+            JsonNode targetNode = v.get("target");
+            if (targetNode == null || !targetNode.isTextual() || targetNode.asText().isBlank())
+                throw new IllegalArgumentException(at + ".target: expected a non-empty string, got " + targetNode);
+            target = targetNode.asText();
+            ObjectType targetOt = labelType.get(target);
+            if (targetOt == null)
+                throw new IllegalArgumentException(at + ": roleTarget references unknown target label \"" + target + "\"");
+            ObjectType expectedFiller = model.objectTypeByName(hit.role().objectTypeName());
+            if (expectedFiller == null || !targetOt.isA(expectedFiller))
+                throw new IllegalArgumentException(at + ": roleTarget on role \"" + roleKey + "\" of \"" + label
+                        + "\" targets \"" + target + "\" of type \"" + targetOt.name
+                        + "\"; declared filler type is \"" + (expectedFiller == null ? "" : expectedFiller.name) + "\"");
+        }
+        return new ResolvedRoleExpectation(kind, label, labelToBean.get(label), roleKey, hit, count, target);
+    }
+
+    /** Standing state of the directed role slot {@code hit} on {@code bean} at the fixpoint: whether it is open, and
+     *  its linked target objects (input and created alike, direction-exact on self-relations and symmetric on
+     *  reciprocal fact types). */
+    private RoleState roleState(Object bean, CaseInput.OppositeRole hit) {
+        RegelSpraakModel.FactType ft = hit.factType();
+        boolean isOpen = false;
+        if (!ft.reciprocal) {
+            int nearIndex = 1 - hit.roleIndex();
+            for (EndState.OpenLink ol : sessionOpenLinks)
+                if (ol.factType().equals(ft.name) && (nearIndex == 0 ? ol.first() == bean : ol.second() == bean)) {
+                    isOpen = true;
+                    break;
+                }
+        }
+        Map<Object, Boolean> seen = new java.util.IdentityHashMap<>();
+        List<Object> targets = new ArrayList<>();
+        for (EndState.Link l : sessionLinks) {
+            if (!l.factType().equals(ft.name)) continue;
+            if (ft.reciprocal) {
+                if (l.first() == bean && seen.put(l.second(), Boolean.TRUE) == null) targets.add(l.second());
+                if (l.second() == bean && seen.put(l.first(), Boolean.TRUE) == null) targets.add(l.first());
+            } else {
+                int nearIndex = 1 - hit.roleIndex();
+                Object t = nearIndex == 0 && l.first() == bean ? l.second()
+                        : nearIndex == 1 && l.second() == bean ? l.first() : null;
+                if (t != null && seen.put(t, Boolean.TRUE) == null) targets.add(t);
+            }
+        }
+        return new RoleState(isOpen, targets);
+    }
+
+    private String roleExpectation(JsonNode v, String at) {
+        ResolvedRoleExpectation r = resolveExpectedRole(v, at);
+        RoleState state = roleState(r.bean(), r.hit());
+        boolean ok = switch (r.kind()) {
+            case "roleEmpty" -> !state.open() && state.targets().isEmpty();
+            case "roleCount" -> !state.open() && state.targets().size() == r.count();
+            case "roleTarget" -> !state.open() && state.targets().size() == 1
+                    && state.targets().get(0) == labelToBean.get(r.target());
+            case "roleOpen" -> state.open();
+            default -> throw new IllegalStateException("unexpected role expectation kind " + r.kind());
+        };
+        if (ok) return null;
+        return Msg.drools("PART.mismatch.role", "role", r.roleKey(), "label", r.label(),
+                "expected", expectedRoleValue(r), "actual", actualRoleValue(r.kind(), state)).text();
     }
 
     /** The read-back of an attribute: its value or leeg, as the bean holds it after the write-back, where the member
@@ -1444,7 +1572,7 @@ public final class CaseRunner {
                     v.hasNonNull("label") ? v.get("label").asText() : null,
                     v.hasNonNull("code") ? v.get("code").asText() : null);
         StringBuilder b = new StringBuilder(kind);
-        for (String field : new String[]{"label", "attribute", "characteristic"})
+        for (String field : new String[]{"label", "attribute", "characteristic", "role"})
             if (v.hasNonNull(field)) b.append(' ').append(v.get(field).asText());
         if (v.hasNonNull("labels")) b.append(cellLabels(v));
         return b.toString();
@@ -1455,7 +1583,10 @@ public final class CaseRunner {
         return switch (v.get("kind").asText()) {
             case "attributeValue" -> render(valueToArg(v.get("value"), v.get("attribute").asText()));
             case "attributeEmpty" -> render(null);
-            case "attributeOpen", "characteristicOpen" -> Msg.drools("PART.value.open").text();
+            case "attributeOpen", "characteristicOpen", "roleOpen" -> Msg.drools("PART.value.open").text();
+            case "roleEmpty" -> render(null);
+            case "roleCount" -> Integer.toString(v.get("count").intValue());
+            case "roleTarget" -> v.get("target").asText();
             case "attributeTimeline" -> {
                 List<String> segs = new ArrayList<>();
                 for (JsonNode s : v.get("timeline"))
@@ -1496,9 +1627,47 @@ public final class CaseRunner {
                     && open(bean, "characteristic " + characteristicName(ot, v.get("characteristic").asText()))
                     ? Msg.drools("PART.value.open").text() : presence(bean != null && Boolean.TRUE.equals(
                     invokeGetter(bean, Namen.getter(characteristicName(ot, v.get("characteristic").asText())))));
+            case "roleEmpty", "roleCount", "roleTarget", "roleOpen" -> {
+                ResolvedRoleExpectation r = resolveExpectedRole(v, "expected");
+                yield actualRoleValue(r.kind(), roleState(r.bean(), r.hit()));
+            }
             default -> inconsistencies.isEmpty() ? "consistent"
                     : "inconsistent (" + renderIncs(inconsistencies, v.hasNonNull("code")) + ")";
         };
+    }
+
+    private String renderTarget(Object b) {
+        String l = beanLabel(b);
+        if (l != null) return l;
+        Fixpoint.MadeObject m = madeObjects.get(b);
+        return m != null ? "<" + b.getClass().getSimpleName() + ">" : "<" + b.getClass().getSimpleName() + ">";
+    }
+
+    private String renderTargets(List<Object> targets) {
+        List<String> names = new ArrayList<>(targets.size());
+        for (Object t : targets) names.add(renderTarget(t));
+        names.sort(Comparator.naturalOrder());
+        return "[" + String.join(", ", names) + "]";
+    }
+
+    private static String expectedRoleValue(ResolvedRoleExpectation r) {
+        return switch (r.kind()) {
+            case "roleEmpty" -> Msg.drools("PART.value.empty").text();
+            case "roleCount" -> Integer.toString(r.count());
+            case "roleTarget" -> r.target();
+            case "roleOpen" -> Msg.drools("PART.value.open").text();
+            default -> throw new IllegalStateException("unexpected role expectation kind " + r.kind());
+        };
+    }
+
+    private String actualRoleValue(String kind, RoleState state) {
+        if (state.open()) return Msg.drools("PART.value.open").text();
+        if (kind.equals("roleCount"))
+            return state.targets().isEmpty() ? "0"
+                    : state.targets().size() + " (" + renderTargets(state.targets()) + ")";
+        if (state.targets().isEmpty()) return Msg.drools("PART.value.empty").text();
+        if (kind.equals("roleTarget") && state.targets().size() == 1) return renderTarget(state.targets().get(0));
+        return renderTargets(state.targets());
     }
 
     // ---------------- value helpers ----------------

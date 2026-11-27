@@ -1419,10 +1419,12 @@ public final class DroolsBackend {
             throw new IllegalStateException(DroolsCode.COMPARE_NOT_WRITTEN_BACK.reason().text());
         Map<String, Object> perLabel = new HashMap<>();
         Map<String, ObjectType> types = new HashMap<>();
+        Map<Object, ObjectType> typeOf = new java.util.IdentityHashMap<>();
         for (Map.Entry<Class<?>, ObjectType> k : beansClasses(build).entrySet())
             for (Object beanObject : session.getObjects(new ClassObjectFilter(k.getKey()))) {
                 // the filter of a supertype hands out the beans of its subtypes too, which their own class counts
                 if (beanObject.getClass() != k.getKey()) continue;
+                typeOf.put(beanObject, k.getValue());
                 String l = label.apply(beanObject);
                 if (l == null) continue;
                 Object earlierBean = perLabel.putIfAbsent(l, beanObject);
@@ -1431,7 +1433,10 @@ public final class DroolsBackend {
                             name(earlierBean), "second", name(beanObject)).text());
                 types.put(l, k.getValue());
             }
-        return CaseRunner.comparison(build, perLabel, types, fp.inconsistencies(), fp.open(), expectations);
+        List<EndState.Link> links = EndState.links(build.model(), session, typeOf);
+        List<EndState.OpenLink> openLinks = EndState.openLinks(build.model(), session, typeOf.keySet(), links);
+        return CaseRunner.comparison(build, perLabel, types, fp.inconsistencies(), fp.open(), fp.objects(), links,
+                openLinks, expectations);
     }
 
     /** As {@link #fire(Build, KieSession)} on every branch under the cap {@code max(vloer, factor × R × N0)}, rounded

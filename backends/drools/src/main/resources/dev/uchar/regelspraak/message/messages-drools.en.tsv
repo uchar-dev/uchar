@@ -616,6 +616,7 @@ PART.mismatch.cell-empty	cell {attribute}{labels}: expected empty, actual {actua
 PART.mismatch.cell	cell {attribute}{labels}: expected {expected}, actual {actual}
 PART.mismatch.timeline-absent	attribute {attribute}: carries no timeline, expected {expected}
 PART.mismatch.characteristic	characteristic {characteristic}: expected {expected}, actual {actual}
+PART.mismatch.role	role {role} on {label}: expected {expected}, actual {actual}
 PART.mismatch.inconsistent-found	expected consistent, actual inconsistent ({facts})
 PART.mismatch.consistent-found	expected inconsistent{key}, actual consistent
 PART.mismatch.inconsistent-not-found	expected inconsistent{key}, not found among {facts}

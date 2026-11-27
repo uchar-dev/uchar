@@ -616,6 +616,7 @@ PART.mismatch.cell-empty	cel {attribute}{labels}: verwacht leeg, werkelijk {actu
 PART.mismatch.cell	cel {attribute}{labels}: verwacht {expected}, werkelijk {actual}
 PART.mismatch.timeline-absent	attribuut {attribute}: draagt geen tijdreeks, verwacht {expected}
 PART.mismatch.characteristic	kenmerk {characteristic}: verwacht {expected}, werkelijk {actual}
+PART.mismatch.role	rol {role} op {label}: verwacht {expected}, werkelijk {actual}
 PART.mismatch.inconsistent-found	verwacht consistent, werkelijk inconsistent ({facts})
 PART.mismatch.consistent-found	verwacht inconsistent{key}, werkelijk consistent
 PART.mismatch.inconsistent-not-found	verwacht inconsistent{key}, niet gevonden onder {facts}

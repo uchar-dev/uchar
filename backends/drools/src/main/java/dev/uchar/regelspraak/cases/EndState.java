@@ -213,17 +213,19 @@ public record EndState(List<EndObject> objects, List<Link> links, List<OpenLink>
             objects.add(new EndObject(m.object(), null, ot.name, m.creation(), m.subject(), members, opened));
         }
         List<Link> allLinks = links(model, session, typeOf);
-        return new EndState(objects, allLinks, openLinks(model, session, objects, allLinks), channel(fp), fp.faults());
+        return new EndState(objects, allLinks,
+                openLinks(model, session, objects.stream().map(EndObject::object).toList(), allLinks),
+                channel(fp), fp.faults());
     }
 
-    /** Every open non-reciprocal single role on the input objects of the session (RUNTIME-SEMANTICS ch. 1.5, 5.12a):
-     *  an incomplete role in {@link OpenInput} on an object that holds no link in that directed role slot. */
-    private static List<OpenLink> openLinks(RegelSpraakModel model, KieSession session, List<EndObject> objects,
-                                            List<Link> links) {
+    /** Every open non-reciprocal role slot on {@code beans} in {@code session} (RUNTIME-SEMANTICS ch. 1.5, 5.12a):
+     *  an incomplete role in {@link OpenInput} on an object that holds no link in that directed to-one role slot, or
+     *  an unclosed to-many role slot. */
+    static List<OpenLink> openLinks(RegelSpraakModel model, KieSession session, Collection<?> beans,
+                                    List<Link> links) {
         if (!(session.getGlobal(Consequence.OPEN_INPUT) instanceof OpenInput openInput)) return List.of();
         List<OpenLink> out = new ArrayList<>();
-        for (EndObject eo : objects) {
-            Object bean = eo.object();
+        for (Object bean : beans) {
             Set<ElementKey> incomplete = openInput.members().getOrDefault(bean, Set.of());
             for (ElementKey key : incomplete) {
                 if (!key.isRole()) continue;
@@ -333,7 +335,7 @@ public record EndState(List<EndObject> objects, List<Link> links, List<OpenLink>
     /** Every link of the session, once: those its beans hold in their reference fields, the input over a relation with
      *  a to-one role, and those it holds as {@link RelationLink} facts, the input over a relation a form creates or of
      *  two to-many roles and every link a creation laid. */
-    private static List<Link> links(RegelSpraakModel model, KieSession session, Map<Object, ObjectType> typeOf) {
+    static List<Link> links(RegelSpraakModel model, KieSession session, Map<Object, ObjectType> typeOf) {
         Map<Key, Link> out = new LinkedHashMap<>();
         for (Map.Entry<Object, ObjectType> e : typeOf.entrySet()) {
             Object bean = e.getKey();
