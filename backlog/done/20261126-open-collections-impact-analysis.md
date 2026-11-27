@@ -113,3 +113,53 @@ Hangt samen met: `20261126-role-and-existence-expectations.md`.
 ## Omvang
 
 Klein tot middel: één gerichte lees- en analysesessie.
+
+## Result (2026-11-27)
+
+Het volledige verslag met tabellen en exacte bestands- en regelverwijzingen is geschreven in de werkbank onder
+`werknotities/20261126-uchar-stap2-onderzoek/verslag.md`. Advies per onderzoeksvraag en implicaties voor de
+geparkeerde kaarten:
+
+1. **Kwantor-herschrijving vs. waardevouwen (`uchar`: geen wijziging):**
+   bouw geen intervalrekenkunde op waardevouwen (`aantal`, `max`, `min`, `som`, `eerste`, `laatste`). In de regelset
+   zijn 15 regelplaatsen (verspreid over 10 regelclusters) inhoudelijk existentieel of universeel en op de huidige
+   RegelSpraak-frontend en `TmsTranspiler` 1-op-1 zonder fouten of markers herschrijfbaar naar `QuantifierFold`
+   (waaronder de verstreken termijntoets, de samenlooptoets op een nieuw recht boven de grens, de aanmerkingstoets en
+   de urencorrectie; oudere opmerkingen over kwantoren in default-voorwaarden en `of`-lijsten golden alleen voor de
+   uitgefaseerde `ExecModelTranspiler`). Alleen één kenmerk-`QuantifierFold` met een samengestelde `die/dat`-selectie
+   waarin `van` voorkomt raakt een kleine parsergrens in `ExpressionBuilder.quantifiedSubject`. Alle overige
+   collectievouwen zijn echte waardevouwen die inhoudelijk terecht een gesloten collectie vereisen.
+2. **De 44 negatieve-existentie-aannames (plus 11 in `s09`–`s10`) en `20261126-open-to-many-roles.md`:**
+   ontparkeer `20261126-open-to-many-roles.md` voor sluiting op **hele-`0..n`-rol-niveau** (standaard `open` onder
+   strikte modus, per instantie sluitbaar voor zowel 0 als $k \ge 1$ items, plus `(volledig gegeven)` op een
+   `meerdere`-roldeclaratie; bouw geen gefilterde collectiesluiting). Naast de vier onderzochte collecties raakt dit
+   ook de `0..n`-rol voor uitkeringsperioden op het recht, waar 5 regels over vouwen. Voor een systeemkoppeling of een
+   voorportaal met een vaste intake-checklist is hele-collectie-sluiting op alle collecties werkbaar; wil men dat
+   `?openInputs=true` zelf als dynamische dialoogagenda algemene herlevingstoetsen (zoals beschikbaarheid voor arbeid,
+   rechtmatig verblijf en het onderscheid tussen WIA-ontstaan en een nieuw WW-recht) bij naam noemt, dan horen die als
+   eigen toetskenmerken of rollen in het regelmodel te staan in plaats van als afwezige elementen in een brede
+   verzamelcollectie.
+3. **Maandinkomens en `20261126-strict-timelines.md`:**
+   niet blokkerend voor stap 2. Expliciete aanlevering van alle kalendermaanden in het relevante beoordelingsvenster
+   (met nulbedrag, positief bedrag of open bedrag per maandinstantie, plus een gesloten collectie voor dat venster)
+   werkt voor alle onderzochte scenario's, mits in het aanlevercontract of de uitzonderingsregel de asymmetrie tussen
+   een ontbrekende maandinstantie en een nulbedrag wordt bewaakt. Houd `20261126-strict-timelines.md` wel op de
+   backlog als zelfstandig vervolgspoor na stap 2, omdat een maandtijdlijn zowel de aanwezigheids-asymmetrie als het
+   openblijven van eerdere maanden door een open latere maand structureel wegneemt.
+4. **Open punt 52 en `20261126-open-fallback-opgave.md`:**
+   houd `20261126-open-fallback-opgave.md` **geparkeerd**. Van de 8 `(mag opgegeven worden)`-attributen in het model
+   werken er 4 zonder asymmetrie, vertonen de 2 datumattributen op de eindigingsgrond de volle asymmetrie (omdat daar
+   alleen voor de inkomensgrond een rekenregel bestaat) en hebben 2 attributen op het recht een smalle randasymmetrie
+   (bij intrekking en bij een tweede herlevingscyclus). Omdat een lid in `uchar` (hfst. 1.5 + `RGS-148`) niet op
+   hetzelfde type tegelijk deels afgeleid en deels open invoer kan zijn, lost het model dit vandaag al zonder
+   taaluitbreiding op met een zuiver invoerkenmerk op de eindigingsgrond voor de niet-berekende herleefbare redenen
+   (gecombineerd met zuivere invoerdatums of een consistentietoets, dan wel een subtype voor de inkomensgrond), met een
+   duidelijker vraag in uitleg en `?openInputs=true`.
+5. **Controle op stap 1 (`to-one`-rollen en naamconflicten):**
+   over alle 14 feittypen (22 gerichte `to-one`-rolsleuven en 6 `to-many`-rolsleuven, 0 creatieregels) hoort **geen
+   enkele** gelezen `to-one`-rol `(volledig gegeven)` te zijn: zowel de 15 verplichte kern-/ouderkoppelingen als de 6
+   optionele dossierrollen horen bij weglaten `open` te blijven totdat ze gevuld of expliciet als `leeg` gesloten zijn
+   (let bij het bijwerken van de scenariobestanden met name op de zelfrelatie voor het eerdere recht, die via de
+   duurverlengingsafwijking anders de berekende einddatum van de basisuitkering open houdt, evenals op samenloop en
+   aanvraag). Mechanische controle over alle 18 objecttypen en overervingsketens bevestigt **0** attribuut-rol-conflicten
+   (`RGS-476`) en **0** rol-rol-conflicten (`RGS-247`).
